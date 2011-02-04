@@ -1,5 +1,5 @@
 /*
- * pexor_test_user.h
+ * pexor_user.h
  *
  *  Created on: 01.12.2009
  *      Author: J. Adamczewski-Musch
@@ -41,7 +41,8 @@
 #define PEXOR_IOC_WAIT_TOKEN    _IOWR(  PEXOR_IOC_MAGIC, 14, struct pexor_token_io)
 #define PEXOR_IOC_WAIT_TRIGGER    _IO(  PEXOR_IOC_MAGIC, 15)
 #define PEXOR_IOC_SET_TRIXOR    _IOR(  PEXOR_IOC_MAGIC, 16, struct pexor_trixor_set)
-#define PEXOR_IOC_MAXNR 17
+#define PEXOR_IOC_TRBNET_REQUEST _IOWR(  PEXOR_IOC_MAGIC, 17, struct pexor_trbnet_io)
+#define PEXOR_IOC_MAXNR 18
 
 /* the states:*/
 #define PEXOR_STATE_STOPPED 0 /* daq stopped*/
@@ -58,6 +59,12 @@
 #define PEXOR_TRIX_GO           1   /* Command for ioctl set trixor to start acquisition  */
 #define PEXOR_TRIX_HALT         2   /* Command for ioctl set trixor to stop  acquisition  */
 #define PEXOR_TRIX_TIMESET         3   /* Command for ioctl set trixor to set trigger time windows*/
+
+
+#define PEXOR_TRBNETCOM_REG_WRITE             0   /* Command for ioctl trbnet request */
+#define PEXOR_TRBNETCOM_REG_WRITE_MEM          1   /* Command for ioctl trbnet request */
+#define PEXOR_TRBNETCOM_REG_READ          2   /* Command for ioctl trbnet request */
+#define PEXOR_TRBNETCOM_REG_READ_MEM          3   /* Command for ioctl trbnet request */
 
 
 struct pexor_userbuf {
@@ -92,5 +99,17 @@ struct pexor_trixor_set {
         unsigned int fct;     /* optional argument for trixor settings (fast clear time)*/
         unsigned int cvt;     /* optional argument for trixor settings (conversion time)*/
 };
+
+#define TRBNET_MAX_BUFS 64
+
+struct pexor_trbnet_io {
+  unsigned int command;     /* command to issue on trbnet*/
+  unsigned short trb_address;     /* address of board in trbnet*/
+  unsigned int reg_address;    /* address on board*/
+  unsigned char channel;          /* trb channel id (0...3) */
+ struct pexor_userbuf tkbuf[TRBNET_MAX_BUFS]; /* dma buffers with received result data*/
+};
+
+
 
 #endif /* PEXOR_USER_H_ */

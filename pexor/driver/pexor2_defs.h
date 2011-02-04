@@ -13,10 +13,12 @@
 #define MY_DEVICE_ID 0x5303
 
 /* enable usage of SFP */
-#define PEXOR_WITH_SFP 1
+// #define PEXOR_WITH_SFP 1
 
 /* enable usage of TRIXOR */
-#define PEXOR_WITH_TRIXOR 1
+// #define PEXOR_WITH_TRIXOR 1
+
+#define PEXOR_WITH_TRBNET 1
 
 /* define address offsets of pexor */
 
@@ -175,6 +177,30 @@
 #define PEXOR_SFP_PT_INI_REP 0x244
 #define PEXOR_SFP_PT_ERR_REP 0x544
 
+
+
+#define PEXOR_TRB_CHANS 4
+#define PEXOR_TRB_SENDER_CONTROL         0x0100
+#define PEXOR_TRB_TARGET_ADDRESS         0x0101
+#define PEXOR_TRB_SENDER_ERROR           0x0102
+#define PEXOR_TRB_SENDER_DATA            0x0103
+#define PEXOR_TRB_SENDER_STATUS          0x010f
+#define PEXOR_TRB_RECEIVER_DATA          0x0203
+#define PEXOR_TRB_RECEIVER_FIFO_STATUS   0x0204
+#define PEXOR_TRB_API_STATUS             0x0300
+
+#define PEXOR_TRB_DMA_ADD                0x0700
+#define PEXOR_TRB_DMA_LEN                0x0701
+#define PEXOR_TRB_DMA_CTL                0x0702
+
+#define PEXOR_TRB_BIT_DMA_ACTIVE          (0x1 << 0)
+#define PEXOR_TRB_BIT_DMA_MORE            (0x1 << 1)
+
+#define PEXOR_TRB_CMD_REGISTER_READ                0x08
+#define PEXOR_TRB_CMD_REGISTER_READ_MEM            0x0a
+#define PEXOR_TRB_CMD_REGISTER_WRITE               0x09
+#define PEXOR_TRB_CMD_REGISTER_WRITE_MEM           0x0b
+#define PEXOR_TRB_CMD_NETADMINISTRATION            0x0f
 
 
 

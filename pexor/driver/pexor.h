@@ -34,13 +34,12 @@
 #include "pexor2_defs.h"
 
 #define PEXOR_SYSFS_ENABLE 1
-
-/*#define PEXOR_DEBUGPRINT 1*/
+#define PEXOR_DEBUGPRINT 1
 //
 //
-#define PEXOR_ENABLE_IRQ 1
-//
-#define PEXOR_SHARED_IRQ 1
+// #define PEXOR_ENABLE_IRQ 1
+// //
+// #define PEXOR_SHARED_IRQ 1
 
 
 /* modes of interrupt complete handling:*/
@@ -54,7 +53,7 @@
 
 
 /* polling mode in the nextdma function, raising ir when dma is done to
- * test subsequent handlers. if not set, polling mode in 
+ * test subsequent handlers. if not set, polling mode in
  * nextdma will schedule tasklet directly */
 /*#define DMA_EMULATE_IR 1*/
 
@@ -63,11 +62,11 @@
 
 
 /* switch on message signalled interrupt mode. Supported by PEXOR? maybe not*/
-//#define IRQ_ENABLE_MSI 1 
+//#define IRQ_ENABLE_MSI 1
 
 
 /* use streaming dma mapping, i.e. dma buffers are allocated with kmalloc and
- * then mapped for dma. Otherwise, we use coherent mapping 
+ * then mapped for dma. Otherwise, we use coherepriv->pexor.irq_statusnt mapping
  * with pci_alloc_consistent
  * which takes coherent dma buffers from preallocated (?)  pci device memory*/
 /*#define DMA_MAPPING_STREAMING 1*/
@@ -133,7 +132,7 @@
 
 /* if set, we use a schedule() in the dma complete polling.
  * Note: according to linux kernel book, yield() will just prepare this
- * task to be scheduled in near future, but schedule() will initiate the
+ * task to be scheduled in near future, but schedpriv->pexor.irq_statusule() will initiate the
  * schedule directly*/
 #define PEXOR_DMA_POLL_SCHEDULE 0
 
@@ -167,11 +166,11 @@ struct pexor_sfp
   u32 *tk_dsize[PEXOR_SFP_NUMBER];      /* token datasize(byte) of sfp 0...3 */
   u32 *tk_dsize_sel[PEXOR_SFP_NUMBER];  /* selects slave module ID in sfp 0...3
                                            for reading token datasize */
-  u32 *tk_memsize[PEXOR_SFP_NUMBER];    /* memory size filled by token 
+  u32 *tk_memsize[PEXOR_SFP_NUMBER];    /* memory size filled by token
                                            data transfer for sfp 0...3 */
-  u32 *tk_mem[PEXOR_SFP_NUMBER];        /* memory area filled by token 
+  u32 *tk_mem[PEXOR_SFP_NUMBER];        /* memory area filled by token
                                            data transfer for sfp 0...3 */
-  dma_addr_t tk_mem_dma[PEXOR_SFP_NUMBER];  /* token data memory area 
+  dma_addr_t tk_mem_dma[PEXOR_SFP_NUMBER];  /* token data memory area
                                                expressed as dma bus address */
 };
 #endif
@@ -197,6 +196,14 @@ struct dev_pexor
 #ifdef PEXOR_WITH_TRIXOR
     u32* trix_fcti; /* fast clear acceptance time register */
     u32* trix_cvti; /* conversion time register */
+#endif
+#ifdef PEXOR_WITH_TRBNET
+  u32* trbnet_sender_err[PEXOR_TRB_CHANS];
+  u32* trbnet_sender_data[PEXOR_TRB_CHANS];
+  u32* trbnet_sender_ctl[PEXOR_TRB_CHANS];
+  u32* trbnet_dma_ctl[PEXOR_TRB_CHANS];
+  u32* trbnet_dma_add[PEXOR_TRB_CHANS];
+  u32* trbnet_dma_len[PEXOR_TRB_CHANS];
 #endif
     unsigned char init_done; /* object is ready flag*/
 };
@@ -233,17 +240,17 @@ struct pexor_privdata
   struct semaphore ramsem;      /* protects read/write access to mapped ram */
   struct list_head free_buffers;        /* list containing the free buffers */
   struct list_head received_buffers;    /* dma receive queue */
-  struct list_head used_buffers;        /* list containing the buffers in 
+  struct list_head used_buffers;        /* list containing the buffers in
                                            use in client application */
 
   spinlock_t buffers_lock;      /* protect any buffer lists operations */
-  spinlock_t dma_lock;		/* protects DMA Buffer */ 
+  spinlock_t dma_lock;		/* protects DMA Buffer */
 
   atomic_t irq_count;           /* counter for irqs */
   spinlock_t irq_lock;         /* optional lock between top and bottom half? */
-  struct tasklet_struct irq_bottomhalf; /* tasklet structure for isr 
+  struct tasklet_struct irq_bottomhalf; /* tasklet structure for isr
                                            bottom half */
-  wait_queue_head_t irq_dma_queue;      /* wait queue between bottom 
+  wait_queue_head_t irq_dma_queue;      /* wait queue between bottom
                                            half and wait dma ioctl */
   atomic_t dma_outstanding;     /* outstanding dma counter */
   wait_queue_head_t irq_trig_queue;     /* wait queue between bottom half
@@ -407,6 +414,10 @@ int pexor_ioctl_wait_trigger(struct pexor_privdata *priv, unsigned long arg);
  * used to clear deadtime flag from user program and start/stop acquisition mode, etc.*/
 int pexor_ioctl_set_trixor(struct pexor_privdata* priv, unsigned long arg);
 
+/* issue request on trbnet via command/data structure. */
+int pexor_ioctl_trbnet_request(struct pexor_privdata *priv, unsigned long arg);
+
+
 irqreturn_t pexor_isr(int irq, void *dev_id);
 
 
@@ -415,12 +426,12 @@ void pexor_irq_tasklet(unsigned long);
 /* set next receive buffer and start dma engine.
  * if source address is 0, we use pexor RAM area as start
  * roffset is dma startpoint relative to source
- * dmasize gives bytes to transfer by dma; 
+ * dmasize gives bytes to transfer by dma;
  * if 0, we use complete size of allocated dma buffer */
 int pexor_next_dma(struct pexor_privdata *priv, dma_addr_t source,
                    u32 roffset, u32 dmasize);
 
-/* poll the dma register complete bit. 
+/* poll the dma register complete bit.
    returns error if loop exceeds certain cycle number */
 int pexor_poll_dma_complete(struct pexor_privdata *priv);
 
