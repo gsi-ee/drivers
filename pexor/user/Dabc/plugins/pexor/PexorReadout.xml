@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<dabc version="1">
+ <Context name="Pexor-Readout">
+  <Run>
+    <lib value="libDabcMbs.so"/>
+    <lib value="x86_64/lib/libDabcPexor.so"/>
+    <lib value="libpexor.so"/>    
+    <logfile value="ReadoutPexor.log"/>
+  </Run>
+  <Application class="pexorplugin::ReadoutApplication">
+    <PexorID value="0"/>
+    <PexorNumSlaves_0 value="4"/>
+	<PexorNumSlaves_1 value="0"/>
+	<PexorNumSlaves_2 value="0"/>
+	<PexorNumSlaves_3 value="0"/>
+	<PexorDMALen value="262144"/>
+	<PexorDMABuffers value="30"/>
+	<ExploderSubmemSize value="128"/>
+	<PexorFormatMbs value="true"/>
+	<PexorSyncReadout value="true"/>
+	<PexorParallelReadout value="true"/>
+	<PexorUseTrigger value="true"/>
+	<TrixorConversionTime value="50"/>
+	<TrixorFastClearTime  value="40"/>	
+	<PexorOutFile value=""/>
+	<MbsServerKind value="Stream"/>
+	<MbsFileSizeLimit value="110"/>
+    <BufferSize value="262144"/>
+    <NumBuffers value="100"/>    
+    <PexorModuleName value="PexorReadout"/>
+    <PexorModuleThread value="ReadoutThread"/>
+    <PexorDeviceName value="PEXOR3"/>
+    <PexorDeviceThread value="DeviceThread" />
+    
+  </Application>
+  <Module name="PexorReadout">
+     <Ratemeter name="*" debug="true" interval="3" width="5" prec="2"/>
+  </Module>
+ </Context>
+</dabc>
