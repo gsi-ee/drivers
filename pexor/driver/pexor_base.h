@@ -1,45 +1,26 @@
 /*
- * pexor_test.h
+ * pexor_base.h
  *
- *  Created on: 01.12.2009
+ *  Created on: 08.02.2011
  *      Author: J. Adamczewski-Musch, GSI
  *
- *      PEXOR driver internal declarations
+ *      PEXOR driver base functionality
+ *      contains DMA handling, irq, probe etc.
  */
 
-#ifndef _PCI_PEXOR_H_
-#define _PCI_PEXOR_H_
+#ifndef _PCI_PEXOR_BASE_H_
+#define _PCI_PEXOR_BASE_H_
 
-#include <linux/kernel.h>
-#include <linux/version.h>
-#include <linux/module.h>
-#include <linux/pci.h>
-#include <linux/init.h>
-#include <linux/cdev.h>
-#include <linux/sysfs.h>
-#include <linux/fs.h>
-#include <linux/interrupt.h>
-#include <linux/delay.h>
+#include "pexor_common.h"
 
-#include <linux/wait.h>
-#include <asm/uaccess.h>
-#include <asm/atomic.h>
-#include <asm/io.h>
-#include <asm/system.h>
+#ifdef PEXOR_WITH_TRBNET
+#include "pexor_trb.h"
+#else
+#include "pexor_gos.h"
+#endif
 
-#include "pexor_user.h"
 
-/*#include "pexor1_defs.h"*/
-
-#include "pexor2_defs.h"
-
-#define PEXOR_SYSFS_ENABLE 1
-#define PEXOR_DEBUGPRINT 1
-//
-//
-// #define PEXOR_ENABLE_IRQ 1
-// //
-// #define PEXOR_SHARED_IRQ 1
+#define PEXOR_SHARED_IRQ 1
 
 
 /* modes of interrupt complete handling:*/
@@ -66,37 +47,14 @@
 
 
 /* use streaming dma mapping, i.e. dma buffers are allocated with kmalloc and
- * then mapped for dma. Otherwise, we use coherepriv->pexor.irq_statusnt mapping
+ * then mapped for dma. Otherwise, we use coherent mapping
  * with pci_alloc_consistent
  * which takes coherent dma buffers from preallocated (?)  pci device memory*/
 /*#define DMA_MAPPING_STREAMING 1*/
 
 
-#ifdef PEXOR_DEBUGPRINT
-#define pexor_dbg( args... )                    \
-  printk( args );
-#else
-#define pexor_dbg( args... ) ;
-#endif
 
 
-#define pexor_msg( args... )                    \
-  printk( args );
-
-
-#define pexor_sfp_assert_channel(ch)                                    \
-  if(ch < 0 || ch >= PEXOR_SFP_NUMBER)                                  \
-    {                                                                   \
-      pexor_msg(KERN_WARNING "*** channel %d out of range [%d,%d]! \n", \
-                ch, 0 , PEXOR_SFP_NUMBER-1);                            \
-      return -EFAULT;                                                   \
-    }
-
-
-#define pexor_sfp_delay()                       \
-  mb();                                         \
-  ndelay(20);
-/*udelay(10);*/
 
 
 #ifdef DMA_SPINLOCK
@@ -142,38 +100,6 @@
 
 
 
-#ifdef PEXOR_WITH_SFP
-/* this structure contains pointers to sfp registers:*/
-struct pexor_sfp
-{
-  u32 *version;                 /* Program date and version */
-  u32 *req_comm;                /* Request command */
-  u32 *req_addr;                /* Request address */
-  u32 *req_data;                /* Request data */
-  u32 *rep_stat_clr;            /* Reply status flags and clear for all sfp */
-  u32 *rep_stat[PEXOR_SFP_NUMBER];      /* Reply status for sfp 0...3 */
-  u32 *rep_addr[PEXOR_SFP_NUMBER];      /* Reply adresses for sfp 0...3 */
-  u32 *rep_data[PEXOR_SFP_NUMBER];      /* Reply data for sfp 0...3 */
-  u32 *rx_moni;                 /* Receive monitor */
-  u32 *tx_stat;                 /* Transmit status */
-  u32 *reset;                   /* rx/tx reset */
-  u32 *disable;                 /* disable sfps */
-  u32 *fault;                   /* fault flags */
-  u32 *fifo[PEXOR_SFP_NUMBER];  /* debug access to fifos of sfp 0...3 */
-  u32 *tk_stat[PEXOR_SFP_NUMBER];       /* token reply status of sfp 0...3 */
-  u32 *tk_head[PEXOR_SFP_NUMBER];       /* token reply header of sfp 0...3 */
-  u32 *tk_foot[PEXOR_SFP_NUMBER];       /* token reply footer of sfp 0...3 */
-  u32 *tk_dsize[PEXOR_SFP_NUMBER];      /* token datasize(byte) of sfp 0...3 */
-  u32 *tk_dsize_sel[PEXOR_SFP_NUMBER];  /* selects slave module ID in sfp 0...3
-                                           for reading token datasize */
-  u32 *tk_memsize[PEXOR_SFP_NUMBER];    /* memory size filled by token
-                                           data transfer for sfp 0...3 */
-  u32 *tk_mem[PEXOR_SFP_NUMBER];        /* memory area filled by token
-                                           data transfer for sfp 0...3 */
-  dma_addr_t tk_mem_dma[PEXOR_SFP_NUMBER];  /* token data memory area
-                                               expressed as dma bus address */
-};
-#endif
 
 
 struct dev_pexor
@@ -258,11 +184,6 @@ struct pexor_privdata
   atomic_t trig_outstanding;    /* outstanding triggers counter */
 };
 
-/* hold full device number */
-static dev_t pexor_devt;
-
-/* counts number of probed pexor devices */
-static atomic_t pexor_numdevs;
 
 /* helper to access private data in file struct. returns 0 if pexor
  * not initialized */
@@ -283,44 +204,7 @@ void print_pexor(struct dev_pexor *pg);
 void clear_pexor(struct dev_pexor *pg);
 void set_pexor(struct dev_pexor *pg, void *base, unsigned long bar);
 
-#ifdef PEXOR_WITH_SFP
-void set_sfp(struct pexor_sfp *sfp, void *membase, unsigned long bar);
-void print_sfp(struct pexor_sfp *sfp);
-void pexor_show_version(struct pexor_sfp *sfp, char *buf);
 
-/* send request command comm to sfp address addr with optional send data.
- * will not wait for response! */
-void pexor_sfp_request(struct pexor_privdata *privdata, u32 comm, u32 addr,
-                       u32 data);
-
-/* wait for sfp reply on channel ch.
- * return values are put into comm, addr, and data.
- * checkvalue specifies which return type is expected;
- * will return error if not matching */
-int pexor_sfp_get_reply(struct pexor_privdata *privdata, int ch, u32 * comm,
-                        u32 * addr, u32 * data, u32 checkvalue);
-
-/* wait for sfp token reply on channel ch.
- * return values are put into stat, head, and foot. */
-int pexor_sfp_get_token_reply(struct pexor_privdata *privdata, int ch,
-                              u32 * stat, u32 * head, u32 * foot);
-
-
-
-/* initialize the connected slaves on sfp channel ch */
-int pexor_sfp_init_request(struct pexor_privdata *privdata, int ch,
-                           int numslaves);
-
-
-/* clear all sfp connections and wait until complete.
- * return value specifies error if not 0 */
-int pexor_sfp_clear_all(struct pexor_privdata *privdata);
-
-/* clear sfp channel ch and wait for success
- * return value specifies error if not 0 */
-int pexor_sfp_clear_channel(struct pexor_privdata *privdata, int ch);
-
-#endif
 
 int pexor_open(struct inode *inode, struct file *filp);
 int pexor_release(struct inode *inode, struct file *filp);
@@ -392,30 +276,8 @@ int pexor_ioctl_write_register(struct pexor_privdata *priv,
  * via pexor_reg_io structure */
 int pexor_ioctl_read_register(struct pexor_privdata *priv, unsigned long arg);
 
-/* Initiate reading a token buffer from sfp front end hardware.
- * In synchronous mode, will block until transfer is done and delivers back dma buffer with token data.
- * In asynchronous mode, function returns immediately after token request;
- * user needs to ioctl a wait token afterwards.
- * Setup and data contained in user arg structure */
-int pexor_ioctl_request_token(struct pexor_privdata *priv, unsigned long arg);
 
 
-/* Waits for a token to arrive previously requested by
- * an asynchronous ioctl request token
- * Setup and data contained in user arg structure */
-int pexor_ioctl_wait_token(struct pexor_privdata *priv, unsigned long arg);
-
-
-/* Wait for a trigger interrupt from pexor. Will be raised from trixor board
- * and routed to pci throug pexor driver. */
-int pexor_ioctl_wait_trigger(struct pexor_privdata *priv, unsigned long arg);
-
-/* set acquisition state of trixor trigger module extension.
- * used to clear deadtime flag from user program and start/stop acquisition mode, etc.*/
-int pexor_ioctl_set_trixor(struct pexor_privdata* priv, unsigned long arg);
-
-/* issue request on trbnet via command/data structure. */
-int pexor_ioctl_trbnet_request(struct pexor_privdata *priv, unsigned long arg);
 
 
 irqreturn_t pexor_isr(int irq, void *dev_id);
@@ -469,15 +331,8 @@ ssize_t pexor_sysfs_codeversion_show(struct device *dev,
                                      char *buf);
 ssize_t pexor_sysfs_dmaregs_show(struct device *dev,
                                  struct device_attribute *attr, char *buf);
-ssize_t pexor_sysfs_sfpregs_show(struct device *dev,
-                                 struct device_attribute *attr, char *buf);
 
-static DEVICE_ATTR(freebufs, S_IRUGO, pexor_sysfs_freebuffers_show, NULL);
-static DEVICE_ATTR(usedbufs, S_IRUGO, pexor_sysfs_usedbuffers_show, NULL);
-static DEVICE_ATTR(rcvbufs, S_IRUGO, pexor_sysfs_rcvbuffers_show, NULL);
-static DEVICE_ATTR(codeversion, S_IRUGO, pexor_sysfs_codeversion_show, NULL);
-static DEVICE_ATTR(dmaregs, S_IRUGO, pexor_sysfs_dmaregs_show, NULL);
-static DEVICE_ATTR(sfpregs, S_IRUGO, pexor_sysfs_sfpregs_show, NULL);
+
 
 #endif
 #endif

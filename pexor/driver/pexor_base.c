@@ -1,4 +1,12 @@
-#include "pexor.h"
+#include "pexor_base.h"
+
+/* hold full device number */
+static dev_t pexor_devt;
+
+/* counts number of probed pexor devices */
+/*static atomic_t pexor_numdevs;*/
+
+
 
 
 static atomic_t pexor_numdevs=ATOMIC_INIT(0);
@@ -9,8 +17,20 @@ static struct pci_device_id ids[] = {
 };
 MODULE_DEVICE_TABLE(pci, ids);
 
+#ifdef PEXOR_SYSFS_ENABLE
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
+static DEVICE_ATTR(freebufs, S_IRUGO, pexor_sysfs_freebuffers_show, NULL);
+static DEVICE_ATTR(usedbufs, S_IRUGO, pexor_sysfs_usedbuffers_show, NULL);
+static DEVICE_ATTR(rcvbufs, S_IRUGO, pexor_sysfs_rcvbuffers_show, NULL);
+static DEVICE_ATTR(codeversion, S_IRUGO, pexor_sysfs_codeversion_show, NULL);
+static DEVICE_ATTR(dmaregs, S_IRUGO, pexor_sysfs_dmaregs_show, NULL);
 
+#ifdef PEXOR_WITH_SFP
+static DEVICE_ATTR(sfpregs, S_IRUGO, pexor_sysfs_sfpregs_show, NULL);
+#endif
 
+#endif
+#endif /* SYSFS_ENABLE*/
 
 
 static struct file_operations pexor_fops = {
@@ -224,6 +244,7 @@ int pexor_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsign
   /* Select the appropiate command */
   switch (cmd) {
 
+  /* first all common ioctls:*/
 
   case PEXOR_IOC_RESET:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl reset\n");
@@ -268,20 +289,6 @@ int pexor_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsign
     return pexor_ioctl_test(privdata, arg);
     break;
 
-  case PEXOR_IOC_WRITE_BUS:
-    pexor_dbg(KERN_NOTICE "** pexor_ioctl write bus\n");
-    return pexor_ioctl_write_bus(privdata, arg);
-    break;
-
-  case PEXOR_IOC_READ_BUS:
-    pexor_dbg(KERN_NOTICE "** pexor_ioctl read bus\n");
-    return pexor_ioctl_read_bus(privdata, arg);
-    break;
-
-  case PEXOR_IOC_INIT_BUS:
-    pexor_dbg(KERN_NOTICE "** pexor_ioctl init bus\n");
-    return pexor_ioctl_init_bus(privdata, arg);
-    break;
 
   case PEXOR_IOC_WRITE_REGISTER:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl write register\n");
@@ -293,30 +300,52 @@ int pexor_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsign
     return pexor_ioctl_read_register(privdata, arg);
     break;
 
-  case PEXOR_IOC_REQUEST_TOKEN:
-    pexor_dbg(KERN_NOTICE "** pexor_ioctl request token\n");
-    return pexor_ioctl_request_token(privdata, arg);
-    break;
 
-  case PEXOR_IOC_WAIT_TOKEN:
-    pexor_dbg(KERN_NOTICE "** pexor_ioctl wait token\n");
-    return pexor_ioctl_wait_token(privdata, arg);
+    /* special ioctls for different protocol implementations:*/
 
-  case PEXOR_IOC_WAIT_TRIGGER:
-    pexor_dbg(KERN_NOTICE "** pexor_ioctl wait trigger\n");
-    return pexor_ioctl_wait_trigger(privdata, arg);
-    break;
-
+#ifdef PEXOR_WITH_TRBNET
   case PEXOR_IOC_TRBNET_REQUEST:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl trbnet request \n");
     return pexor_ioctl_trbnet_request(privdata, arg);
     break;
+#else
 
-  case	PEXOR_IOC_SET_TRIXOR:
+  case PEXOR_IOC_WRITE_BUS:
+     pexor_dbg(KERN_NOTICE "** pexor_ioctl write bus\n");
+     return pexor_ioctl_write_bus(privdata, arg);
+     break;
+
+   case PEXOR_IOC_READ_BUS:
+     pexor_dbg(KERN_NOTICE "** pexor_ioctl read bus\n");
+     return pexor_ioctl_read_bus(privdata, arg);
+     break;
+
+   case PEXOR_IOC_INIT_BUS:
+     pexor_dbg(KERN_NOTICE "** pexor_ioctl init bus\n");
+     return pexor_ioctl_init_bus(privdata, arg);
+     break;
+
+
+  case PEXOR_IOC_REQUEST_TOKEN:
+     pexor_dbg(KERN_NOTICE "** pexor_ioctl request token\n");
+     return pexor_ioctl_request_token(privdata, arg);
+     break;
+
+   case PEXOR_IOC_WAIT_TOKEN:
+     pexor_dbg(KERN_NOTICE "** pexor_ioctl wait token\n");
+     return pexor_ioctl_wait_token(privdata, arg);
+
+   case PEXOR_IOC_WAIT_TRIGGER:
+     pexor_dbg(KERN_NOTICE "** pexor_ioctl wait trigger\n");
+     return pexor_ioctl_wait_trigger(privdata, arg);
+     break;
+
+   case	PEXOR_IOC_SET_TRIXOR:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl set trixor\n");
     return pexor_ioctl_set_trixor(privdata, arg);
     break;
 
+#endif /* #ifdef PEXOR_WITH_TRBNET */
 
   default:
     return -ENOTTY;
@@ -556,163 +585,8 @@ int pexor_ioctl_setrunstate(struct pexor_privdata* priv, unsigned long arg)
 
 
 
-int pexor_ioctl_trbnet_request(struct pexor_privdata* priv, unsigned long arg)
-{
-#ifdef PEXOR_WITH_TRBNET
-  int command,retval;
-  int rcvbuf=0;
-  u32 dmastat=0;
-  struct pexor_dmabuf* nextbuf;
-  struct pexor_dmabuf dmabuf;
-  struct pexor_trbnet_io descriptor;
-  retval = copy_from_user(&descriptor, (void __user *)arg, sizeof(struct pexor_trbnet_io));
-  if (retval) return retval;
-  command = descriptor.command;
-  switch (command)
-    {
-
-    case PEXOR_TRBNETCOM_REG_WRITE:
-      pexor_msg(KERN_ERR "pexor_ioctl_trbnet_request not implemented %x\n", command);
-      break;
-
-    case PEXOR_TRBNETCOM_REG_WRITE_MEM:
-      pexor_msg(KERN_ERR "pexor_ioctl_trbnet_request not implemented %x\n", command);
-      break;
-
-    case PEXOR_TRBNETCOM_REG_READ:
-      // first send trbnet request
-      pexor_dbg(KERN_ERR "pexor_ioctl_trbnet_request writing to %x\n", priv->pexor.trbnet_sender_err[3]);
-      iowrite32(0x00000000, priv->pexor.trbnet_sender_err[3]);
-      pexor_msg(KERN_ERR "pexor_ioctl_trbnet_request writing %x to %x\n",
-		descriptor.reg_address, priv->pexor.trbnet_sender_data[3])
-	iowrite32(descriptor.reg_address, priv->pexor.trbnet_sender_data[3]);
-      iowrite32(0x00000000, priv->pexor.trbnet_sender_data[3]);
-      iowrite32(0x00000000, priv->pexor.trbnet_sender_data[3]);
-      iowrite32(0x00000000, priv->pexor.trbnet_sender_data[3]);
-      pexor_dbg(KERN_ERR "pexor_ioctl_trbnet_request  writing %x to %x\n",
-		(((u32)descriptor.trb_address << 16) | PEXOR_TRB_CMD_REGISTER_READ), priv->pexor.trbnet_sender_ctl[3]);
-      iowrite32((((u32)descriptor.trb_address << 16) | PEXOR_TRB_CMD_REGISTER_READ), priv->pexor.trbnet_sender_ctl[3]);
-            
-      priv->pexor.dma_control_stat = priv->pexor.trbnet_dma_ctl[3]; /* assign dma control register to channel 3 */
-      pexor_dbg(KERN_ERR "pexor_ioctl_trbnet_request: dma control is %x\n",  priv->pexor.dma_control_stat);
-
-      // here loop on dma:
-      do {
-	spin_lock( &(priv->buffers_lock) );
-	if(list_empty(&(priv->free_buffers)))
-	  {
-	    spin_unlock( &(priv->buffers_lock) );
-	    pexor_dbg(KERN_ERR "pexor_ioctl_trbnet_request: list of free buffers is empty. try again later! \n");
-	    return -EINVAL;
-	    /* TODO: handle dynamically what to do when running out of dma buffers*/
-	  }
-	nextbuf = list_first_entry(&priv->free_buffers, struct pexor_dmabuf, queue_list);
-	spin_unlock(&priv->buffers_lock);
-	      
-	pexor_dbg(KERN_NOTICE "#### pexor_ioctl_trbnet_request will initiate dma %d from "
-		  "to %p, len=%lx, burstsize=%x...\n",
-		  rcvbuf, (void*) nextbuf->dma_addr,  nextbuf->size, PEXOR_BURST);
-	iowrite32(0x0, priv->pexor.trbnet_dma_ctl[3]);                 /* clear dma ctrl first*/
-	iowrite32(nextbuf->dma_addr, priv->pexor.trbnet_dma_add[3]);
-	iowrite32((nextbuf->size) >> 2, priv->pexor.trbnet_dma_len[3]);
-	iowrite32((PEXOR_BURST << 24), priv->pexor.trbnet_dma_ctl[3]); /* set burstsize*/
-	iowrite32(0x1, priv->pexor.trbnet_dma_ctl[3]);                 /* enable dma */
-
-	// wait for dma complete
-	if((retval = pexor_wait_dma_buffer(priv, &dmabuf)) !=0 )
-	  {
-	    pexor_dbg(KERN_ERR "pexor_ioctl_trbnet_request error %d from wait_dma_buffer "
-		      "for buffer %d\n", retval, rcvbuf);
-	    break;
-	  }
-	      
-	descriptor.tkbuf[rcvbuf].addr = dmabuf.virt_addr;
-	descriptor.tkbuf[rcvbuf].size = 
-	  (ioread32(priv->pexor.trbnet_dma_ctl[3]) >> 6 );  /* shift 8 bit and multiply by sizeof(u32) */
-	dmastat = ioread32(priv->pexor.dma_control_stat);   /* check if we need another dma for data */
-	mb();
-	rcvbuf++;
-	if(rcvbuf >= TRBNET_MAX_BUFS)
-	  {
-	    pexor_msg(KERN_ERR "pexor_ioctl_trbnet_request: exceeding maximum defined "
-		      "number of buffer parts 0x%x \n", TRBNET_MAX_BUFS);
-	    break;
-	  }
-	      
-      } while ((dmastat & PEXOR_TRB_BIT_DMA_MORE) != 0);
-	    
-      /* set rest of buffer refs to 0 for user convenience*/
-      for(; rcvbuf < TRBNET_MAX_BUFS; ++rcvbuf)
-	{
-	  descriptor.tkbuf[rcvbuf].addr = 0;
-	  descriptor.tkbuf[rcvbuf].size = 0;
-	}
-	    
-      retval = copy_to_user((void __user *) arg, &descriptor, sizeof(struct pexor_trbnet_io));
-      break;
-	    
-    case PEXOR_TRBNETCOM_REG_READ_MEM:
-      pexor_msg(KERN_ERR "pexor_ioctl_trbnet_request not implemented %x\n", command);
-      break;
-	  
-    default:
-      pexor_dbg(KERN_ERR "pexor_ioctl_trbnet_request %x\n", command);
-      return -EFAULT;
-    };
-#endif
-	
-  return 0;
-}
 
 
-int pexor_ioctl_set_trixor(struct pexor_privdata* priv, unsigned long arg)
-{
-#ifdef PEXOR_WITH_TRIXOR
-  int command,retval;
-  struct pexor_trixor_set descriptor;
-  retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pexor_trixor_set));
-  if(retval) return retval;
-  command=descriptor.command;
-  switch(command)
-    {
-    case PEXOR_TRIX_RES:
-      iowrite32(TRIX_CLEAR, priv->pexor.irq_control);
-      mb();
-      ndelay(20);
-      break;
-
-    case PEXOR_TRIX_GO:
-      iowrite32((TRIX_EN_IRQ | TRIX_GO), priv->pexor.irq_control);
-      mb();
-      ndelay(20);
-      break;
-
-    case PEXOR_TRIX_HALT:
-      iowrite32(TRIX_HALT , priv->pexor.irq_control);
-      mb();
-      ndelay(20);
-      break;
-
-    case PEXOR_TRIX_TIMESET:
-      iowrite32(0x10000 - descriptor.fct , priv->pexor.trix_fcti);
-      mb();
-      ndelay(20);
-      iowrite32(0x10000 - descriptor.cvt , priv->pexor.trix_cvti);
-      mb();
-      ndelay(20);
-
-      break;
-
-    default:
-      pexor_dbg(KERN_ERR "pexor_ioctl_set_trixor unknown command %x\n", command);
-      return -EFAULT;
-
-
-    };
-
-#endif
-  return 0;
-}
 
 int pexor_ioctl_test(struct pexor_privdata* priv, unsigned long arg)
 {
@@ -880,235 +754,9 @@ int pexor_ioctl_clearreceivebuffers(struct pexor_privdata* priv, unsigned long a
   return 0;
 }
 
-int pexor_ioctl_init_bus(struct pexor_privdata* priv, unsigned long arg)
-{
-  int retval=0;
-  u32 sfp=0, slave=0;/*,comm=0;*/
-  struct pexor_bus_io descriptor;
-  retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pexor_bus_io));
-  if(retval) return retval;
-  sfp  = (u32) descriptor.sfp; // sfp connection to initialize chain
-  slave = (u32) descriptor.slave; // maximum # of connected slave boards
-#ifdef PEXOR_WITH_SFP
-  // for pexor standard sfp code, we use this ioctl to initalize chain of slaves:
-  retval=pexor_sfp_clear_channel(priv,sfp);
-  if(retval) return retval;
-  retval = pexor_sfp_init_request(priv,sfp,slave);
-  if(retval) return retval;
-#endif /* PEXOR_WITH_SFP*/
-
-  return retval;
-
-
-}
 
 
 
-int pexor_ioctl_write_bus(struct pexor_privdata* priv, unsigned long arg)
-{
-  int retval=0;
-#ifdef PEXOR_WITH_SFP
-  u32 ad=0,val=0,sfp=0, slave=0,comm=0;
-
-  u32 totaladdress=0;
-  u32 rstat=0, radd=0, rdat=0;
-  struct pexor_bus_io descriptor;
-  retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pexor_bus_io));
-  if(retval) return retval;
-  ad= (u32) descriptor.address;
-  val = (u32) descriptor.value;
-  sfp  = (u32) descriptor.sfp;
-  slave = (u32) descriptor.slave;
-  pexor_dbg(KERN_NOTICE "** pexor_ioctl_write_bus writes value %x to address %x on sfp %x, slave %x\n",val,ad,sfp,slave);
-
-
-  comm = PEXOR_SFP_PT_AD_W_REQ | ( 0x1 << (16 + sfp) );
-  totaladdress = ad + (slave << 24);
-  pexor_sfp_clear_all(priv);
-  //pexor_sfp_clear_channel(priv,sfp);
-  pexor_sfp_request(priv, comm, totaladdress, val);
-  //if((retval=pexor_sfp_get_reply(priv, sfp, &rstat, &radd, &rdat, 0))!=0) // debug: no response check
-  if((retval=pexor_sfp_get_reply(priv, sfp, &rstat, &radd, &rdat, PEXOR_SFP_PT_AD_W_REP))!=0)
-    {
-      pexor_msg(KERN_ERR "** pexor_ioctl_write_bus: error %d at sfp_reply \n",retval);
-      pexor_msg(KERN_ERR "   pexor_ioctl_write_bus: incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat);
-      return -EIO;
-    }
-  descriptor.value=rstat;
-  descriptor.address=radd;
-  retval=copy_to_user((void __user *) arg, &descriptor, sizeof(struct pexor_bus_io));
-
-#endif /* PEXOR_WITH_SFP*/
-
-
-  return retval;
-}
-
-int pexor_ioctl_read_bus(struct pexor_privdata* priv, unsigned long arg)
-{
-  int retval=0;
-#ifdef PEXOR_WITH_SFP
-  u32 ad=0, chan=0, slave=0,comm=0;
-  u32 rstat=0, radd=0, rdat=0;
-  u32 totaladdress=0;
-  struct pexor_bus_io descriptor;
-  retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pexor_bus_io));
-  if(retval) return retval;
-  ad= (u32) descriptor.address;
-  chan  = (u32) descriptor.sfp;
-  slave = (u32) descriptor.slave;
-
-
-
-  pexor_dbg(KERN_NOTICE "** pexor_ioctl_read_bus from_address %x on sfp %x, slave %x\n",ad,chan,slave);
-
-
-
-  comm = PEXOR_SFP_PT_AD_R_REQ | ( 0x1 << (16 + chan) );
-  totaladdress = ad + (slave << 24);
-  pexor_sfp_clear_channel(priv,chan);
-  pexor_sfp_request(priv, comm, totaladdress, 0);
-  //if((retval=pexor_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, 0))!=0) // debug:  no check
-  if((retval=pexor_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEXOR_SFP_PT_AD_R_REP))!=0)
-    {
-      pexor_msg(KERN_ERR "** pexor_ioctl_read_bus: error %d at sfp_reply \n",retval);
-      pexor_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
-	return -EIO;
-    }
-
-  descriptor.value=rdat;
-  retval=copy_to_user((void __user *) arg, &descriptor, sizeof(struct pexor_bus_io));
-
-#endif /* PEXOR_WITH_SFP */
-
-  return retval;
-}
-
-int pexor_ioctl_request_token(struct pexor_privdata* priv, unsigned long arg)
-{
-  int retval=0;
-  u32 comm=0, chan=0, bufid=0;
-  /*u32 rstat=0, radd=0, rdat=0;*/
-  /*u32 tkreply=0, tkhead=0, tkfoot =0;*/
-  /*u32 dmasize=0,oldsize=0;
-    struct pexor_dmabuf dmabuf;*/
-  struct pexor_token_io descriptor;
-  /*
-    #ifdef PEXOR_WITH_SFP
-    struct pexor_sfp* sfp=&(priv->pexor.sfp);
-    #endif
-  */
-  retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pexor_token_io));
-  if(retval) return retval;
-#ifdef PEXOR_WITH_SFP
-  chan  = (u32) descriptor.sfp;
-  bufid = (u32) descriptor.bufid;
-  /* send token request
-     pexor_msg(KERN_NOTICE "** pexor_ioctl_request_token from_sfp 0x%x, bufid 0x%x\n",chan,bufid);*/
-  pexor_sfp_assert_channel(chan);
-  comm = PEXOR_SFP_PT_TK_R_REQ | (0x1 << (16+ chan) );
-  pexor_sfp_clear_channel(priv,chan);
-  pexor_sfp_request(priv, comm, bufid, 0); /* note: slave is not specified; the chain of all slaves will send everything to receive buffer*/
-  if(descriptor.sync != 0)
-    {
-      /* only wait here for dma buffer if synchronous*/
-      return (pexor_ioctl_wait_token(priv, arg));
-    }
-#endif /* PEXOR_WITH_SFP*/
-  return retval;
-}
-
-
-
-int pexor_ioctl_wait_token(struct pexor_privdata* priv, unsigned long arg)
-{
-  int retval=0;
-  u32 chan=0;
-  u32 rstat=0, radd=0, rdat=0;
-  /*u32 tkreply=0, tkhead=0, tkfoot =0;*/
-  u32 dmasize=0,oldsize=0;
-  struct pexor_dmabuf dmabuf;
-  struct pexor_token_io descriptor;
-#ifdef PEXOR_WITH_SFP
-  struct pexor_sfp* sfp=&(priv->pexor.sfp);
-#endif
-  retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pexor_token_io));
-  if(retval) return retval;
-#ifdef PEXOR_WITH_SFP
-  chan  = (u32) descriptor.sfp;
-  //bufid = (u32) descriptor.bufid;
-  /* send token request
-     pexor_msg(KERN_NOTICE "** pexor_ioctl_request_token from_sfp 0x%x, bufid 0x%x\n",chan,bufid);*/
-  pexor_sfp_assert_channel(chan);
-
-
-
-
-
-
-  if((retval=pexor_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, 0))!=0) // debug: do not check reply status
-    //if((retval=pexor_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEXOR_SFP_PT_TK_R_REP))!=0)
-    {
-      pexor_msg(KERN_ERR "** pexor_ioctl_request_token: error %d at sfp_reply \n",retval);
-      pexor_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
-	return -EIO;
-    }
-
-
-
-
-  /* poll for return status: not necessary, since token request command is synchronous
-   * token data will be ready after sfp_get_reply */
-  /*	if((retval=pexor_sfp_get_token_reply(priv, chan, &tkreply, &tkhead, &tkfoot))!=0)
-	{
-	pexor_msg(KERN_ERR "** pexor_ioctl_read_token: error %d at token_reply \n",retval);
-	pexor_msg(KERN_ERR "    incorrect reply:0x%x head:0x%x foot:0x%x \n", tkreply, tkhead, tkfoot);
-	return -EIO;
-	}*/
-
-  /* issue DMA of token data from pexor to dma buffer */
-  /* find out real package length :*/
-  dmasize =  ioread32(sfp->tk_memsize[chan]);
-  mb();
-  ndelay(20);
-  if(dmasize > PEXOR_SFP_TK_MEM_RANGE)
-    {
-      oldsize=dmasize;
-      dmasize=PEXOR_SFP_TK_MEM_RANGE - (PEXOR_SFP_TK_MEM_RANGE % PEXOR_BURST); /* align on last proper burst interval*/
-      pexor_msg(KERN_NOTICE "** pexor_ioctl_request_token reduces dma size from 0x%x to 0x%x \n",oldsize, dmasize);
-    }
-  pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_token uses dma size 0x%x of channel %x\n",dmasize,chan);
-
-  print_register("DUMP token dma size", sfp->tk_memsize[chan]);
-
-  /*	pexor_msg(KERN_NOTICE "** pexor_ioctl_read_token  uses token memory %x (dma:%x)\n",sfp->tk_mem[chan],sfp->tk_mem_dma[chan]);*/
-  print_register("DUMP token memory first content", sfp->tk_mem[chan]);
-  print_register("DUMP token memory second content", (sfp->tk_mem[chan]+1));
-
-  atomic_set(&(priv->state),PEXOR_STATE_DMA_SINGLE);
-  retval=pexor_next_dma( priv, sfp->tk_mem_dma[chan], 0 , dmasize);
-  if(retval)
-    {
-      /* error handling, e.g. no more dma buffer available*/
-      pexor_dbg(KERN_ERR "pexor_ioctl_read_token error %d from nextdma\n", retval);
-      atomic_set(&(priv->state),PEXOR_STATE_STOPPED);
-      return retval;
-    }
-
-  if((retval=pexor_wait_dma_buffer(priv, &dmabuf)) !=0)
-    {
-      pexor_msg(KERN_ERR "pexor_ioctl_read_token error %d from wait_dma_buffer\n", retval);
-      return retval;
-    }
-  descriptor.tkbuf.addr=dmabuf.virt_addr;
-  descriptor.tkbuf.size=dmasize; /* this we will use also for asynch mode!*/
-  retval=copy_to_user((void __user *) arg, &descriptor, sizeof(struct pexor_token_io));
-
-#endif /* PEXOR_WITH_SFP*/
-
-  return retval;
-
-}
 
 
 int pexor_ioctl_write_register(struct pexor_privdata* priv, unsigned long arg)
@@ -1177,25 +825,6 @@ int pexor_ioctl_read_register(struct pexor_privdata* priv, unsigned long arg)
 }
 
 
-int pexor_ioctl_wait_trigger(struct pexor_privdata* priv, unsigned long arg)
-{
-  int wjifs=0;
-  wjifs=wait_event_interruptible_timeout( priv->irq_trig_queue, atomic_read( &(priv->trig_outstanding) ) > 0, PEXOR_WAIT_TIMEOUT );
-  pexor_dbg(KERN_NOTICE "** pexor_wait_trigger after wait_event_interruptible_timeout with TIMEOUT %d, waitjiffies=%d, outstanding=%d \n",PEXOR_WAIT_TIMEOUT, wjifs, atomic_read( &(priv->trig_outstanding)));
-  if(wjifs==0)
-    {
-      pexor_msg(KERN_NOTICE "** pexor_wait_trigger TIMEOUT %d jiffies expired on wait_event_interruptible_timeout... \n",PEXOR_WAIT_TIMEOUT);
-      return PEXOR_TRIGGER_TIMEOUT;
-    }
-  else if(wjifs==-ERESTARTSYS)
-    {
-      pexor_msg(KERN_NOTICE "** pexor_wait_trigger after wait_event_interruptible_timeout woken by signal. abort wait\n");
-      return -EFAULT;
-    }
-  else{}
-  atomic_dec(&(priv->trig_outstanding));
-  return PEXOR_TRIGGER_FIRED;
-}
 
 
 int pexor_mmap(struct file *filp, struct vm_area_struct *vma)
@@ -1299,12 +928,12 @@ struct pexor_dmabuf* new_dmabuffer(struct pci_dev * pdev, size_t size)
 
 int delete_dmabuffer(struct pci_dev * pdev, struct pexor_dmabuf* buf)
 {
-  int i=0;
+  /*int i=0; */
   pexor_dbg(KERN_NOTICE "**pexor_deleting dmabuffer, size=%ld, addr=%lx \n", buf->size, buf->kernel_addr);
-  for (i=0;i<50;++i)
+ /* for (i=0;i<50;++i)
     {
       pexor_dbg(KERN_NOTICE "dmabuffer[%x]=%x \t", i, ioread32(buf->kernel_addr + i*4));
-    }
+    }*/
   /* note: unmapping the virtual adresses is done in user application by munmap*/
 #ifdef	DMA_MAPPING_STREAMING
   /* release dma mapping and free kernel memory for dma buffer*/
@@ -1327,13 +956,13 @@ void cleanup_buffers(struct pexor_privdata* priv)
   struct pexor_dmabuf* next;
   pexor_dbg(KERN_NOTICE "**pexor_cleanup_buffers...\n");
 
-  // 	if(pexor_poll_dma_complete(priv))
-  // 	  {
-  //             pexor_msg(KERN_NOTICE "**pexor_cleanup_buffers: dma is not finished, do not touch buffers!\n");
-  //             return;
-  // 	  }
-  //if(!(int) (priv->buffers_lock)) return;
-  pexor_dma_lock((&(priv->dma_lock)));
+   	if(pexor_poll_dma_complete(priv))
+   	  {
+               pexor_msg(KERN_NOTICE "**pexor_cleanup_buffers: dma is not finished, do not touch buffers!\n");
+               return;
+   	  }
+
+   	pexor_dma_lock((&(priv->dma_lock)));
   //spin_lock(&(priv->dma_lock));
   spin_lock( &(priv->buffers_lock) );
   /* remove reference in receive queue (discard contents):*/
@@ -1366,200 +995,6 @@ void cleanup_buffers(struct pexor_privdata* priv)
 }
 
 
-#ifdef PEXOR_WITH_SFP
-
-void pexor_sfp_request( struct pexor_privdata* privdata,  u32 comm, u32 addr, u32 data )
-{
-  struct pexor_sfp* sfp=&(privdata->pexor.sfp);
-  pexor_dbg(KERN_NOTICE "**pexor_sfp_request, comm=%x, addr=%x data=%x\n", comm, addr, data);
-  iowrite32(addr, sfp->req_addr);
-  pexor_sfp_delay();
-  iowrite32(data, sfp->req_data);
-  pexor_sfp_delay();
-  iowrite32(comm, sfp->req_comm);
-  pexor_sfp_delay();
-}
-
-
-int pexor_sfp_get_reply ( struct pexor_privdata* privdata, int ch,  u32* comm, u32 *addr, u32 *data ,u32 checkvalue)
-{
-  u32 status=0, loopcount=0;
-  struct pexor_sfp* sfp=&(privdata->pexor.sfp);
-  pexor_dbg(KERN_NOTICE "**pexor_sfp_get_reply ***\n");
-  pexor_sfp_assert_channel(ch);
-
-  do
-    {
-      if(loopcount++ > 1000000)/* 1000000*/
-	{
-	  pexor_msg(KERN_WARNING "**pexor_sfp_get_reply polled %d x without success, abort\n",loopcount);
-	  print_register(" ... status after FAILED pexor_sfp_get_reply:", sfp->rep_stat[ch]);
-	  return -EIO;
-	}
-      status= ioread32(sfp->rep_stat[ch]);
-      pexor_sfp_delay();
-
-    }
-  while(((status & 0x3000) >> 12) != 0x02); /* packet received bit is set*/
-
-  *comm =  ioread32(sfp->rep_stat[ch]);
-  pexor_sfp_delay();
-  *addr =  ioread32(sfp->rep_addr[ch]);
-  pexor_sfp_delay();
-  *data =  ioread32(sfp->rep_data[ch]);
-  pexor_sfp_delay();
-  pexor_dbg(KERN_NOTICE "pexor_sfp_get_reply from SFP: %x got status:%x address:%x data: %x \n", ch,*comm, *addr, *data);
-  if(checkvalue==0) return 0; // no check of reply structure
-  if( (*comm & 0xfff) == checkvalue)
-    {
-      if((*comm & 0x4000) !=0)
-	{
-	  pexor_msg(KERN_ERR "pexor_sfp_get_reply: ERROR: Packet Structure : Command Reply 0x%x \n", *comm);
-	  return -EIO;
-	}
-    }
-  else
-    {
-      pexor_msg(KERN_ERR "pexor_sfp_get_reply: ERROR : Command Reply  0x%x is not matching expected value 0x%x\n", (*comm & 0xfff),  checkvalue);
-      return -EIO;
-    }
-  return 0;
-
-}
-
-
-int  pexor_sfp_get_token_reply ( struct pexor_privdata* privdata, int ch,  u32* stat, u32* head, u32* foot)
-{
-  u32 status=0, loopcount=0;
-  struct pexor_sfp* sfp=&(privdata->pexor.sfp);
-  pexor_dbg(KERN_NOTICE "**pexor_sfp_get_reply ***\n");
-  pexor_sfp_assert_channel(ch);
-
-  do
-    {
-      if(loopcount++ > 1000000)
-	{
-	  pexor_msg(KERN_WARNING "**pexor_sfp_get_token reply polled %d x 20 ns without success, abort\n",loopcount);
-	  print_register(" ... status after FAILED pexor_sfp_get_token_reply:0x%x", sfp->tk_stat[ch]);
-	  return -EIO;
-	}
-      status= ioread32(sfp->tk_stat[ch]);
-      pexor_sfp_delay();
-
-    }
-  while(( (status & 0x3000) >> 12) != 0x02); /* packet received bit is set*/
-
-  *stat =  ioread32(sfp->tk_stat[ch]);
-  pexor_sfp_delay();
-  *head =  ioread32(sfp->tk_head[ch]);
-  pexor_sfp_delay();
-  *foot =  ioread32(sfp->tk_foot[ch]);
-  pexor_sfp_delay();
-  pexor_dbg(KERN_NOTICE "pexor_sfp_get_token_reply from SFP: %x got token status:%x header:%x footer: %x \n", ch,*stat, *head, *foot );
-
-  return 0;
-}
-
-
-int  pexor_sfp_init_request( struct pexor_privdata* privdata, int ch, int numslaves)
-{
-  int retval=0;
-  u32 sfp=0, comm=0, maxslave=0;
-  u32 rstat=0, radd=0, rdat=0;
-  sfp= (u32) ch;
-  maxslave = (u32) numslaves;
-  pexor_sfp_assert_channel(ch);
-  comm = PEXOR_SFP_INI_REQ | (0x1 << (16 + sfp) );
-  pexor_dbg(KERN_NOTICE "**pexor_sfp_init_request ***\n");
-  pexor_sfp_request(privdata, comm, 0, maxslave);
-  if((retval=pexor_sfp_get_reply(privdata, sfp, &rstat, &radd, &rdat, 0))!=0)
-    //if((retval=pexor_sfp_get_reply(privdata, sfp, &rstat, &radd, &rdat, PEXOR_SFP_PT_INI_REP))!=0)
-    {
-      pexor_msg(KERN_ERR "** pexor_sfp_init_request: error %d at sfp_reply \n",retval);
-      pexor_msg(KERN_ERR "   pexor_sfp_init_request: incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat);
-      return -EIO;
-    }
-  return retval;
-}
-
-
-
-
-
-int pexor_sfp_clear_all( struct pexor_privdata* privdata)
-{
-  u32 status=0, loopcount=0, clrval;
-  struct pexor_sfp* sfp=&(privdata->pexor.sfp);
-  clrval=0xf;
-  pexor_dbg(KERN_NOTICE "**pexor_sfp_clear_all ***\n");
-  /*iowrite32(clrval, sfp->rep_stat_clr);
-    pexor_sfp_delay();*/
-  do
-    {
-      if(loopcount++ > 1000000)
-	{
-	  pexor_msg(KERN_WARNING "**pexor_sfp_clear_all tried %d x without success, abort\n",loopcount);
-	  print_register(" ... stat_clr after FAILED pexor_sfp_clear_all: 0x%x",sfp->rep_stat_clr);
-	  return -EIO;
-	}
-      iowrite32(clrval, sfp->rep_stat_clr);
-      pexor_sfp_delay();
-      status=ioread32(sfp->rep_stat_clr);
-      pexor_sfp_delay();
-    }
-  while(status != 0x0);
-  pexor_dbg(KERN_INFO "**after pexor_sfp_clear_all: loopcount:%d \n",loopcount);
-  print_register(" ... stat_clr after pexor_sfp_clear_all:",sfp->rep_stat_clr);
-  return 0;
-}
-
-
-int pexor_sfp_clear_channel( struct pexor_privdata* privdata, int ch )
-{
-  u32 repstatus=0, tokenstatus=0, chstatus=0, loopcount=0, clrval;
-  struct pexor_sfp* sfp=&(privdata->pexor.sfp);
-  pexor_dbg(KERN_NOTICE "**pexor_sfp_clear_channel %d ***\n",ch);
-  pexor_sfp_assert_channel(ch);
-  clrval=(0x1 << ch);
-  /*iowrite32(clrval, sfp->rep_stat_clr);
-    pexor_sfp_delay();*/
-  do
-    {
-      if(loopcount++ > 1000000)
-	{
-	  pexor_msg(KERN_WARNING "**pexor_sfp_clear_channel %d tried %d x 20 ns without success, abort\n",ch,loopcount);
-	  print_register(" ... reply status after FAILED pexor_sfp_clear_channel:", sfp->rep_stat[ch]);
-	  print_register(" ... token reply status after FAILED pexor_sfp_clear_channel:", sfp->tk_stat[ch]);
-	  return -EIO;
-	}
-
-
-      iowrite32(clrval, sfp->rep_stat_clr);
-      pexor_sfp_delay();
-      repstatus= ioread32(sfp->rep_stat[ch]) & 0xf000;
-      tokenstatus= ioread32(sfp->tk_stat[ch]) & 0xf000;
-      chstatus=ioread32(sfp->rep_stat_clr) & clrval;
-      pexor_sfp_delay();
-
-    }
-  while( (repstatus!=0x0) || (tokenstatus!=0x0) || (chstatus!=0x0));
-
-  pexor_dbg(KERN_INFO "**after pexor_sfp_clear_channel %d : loopcount:%d \n",ch,loopcount);
-  /*print_register(" ... reply status:", sfp->rep_stat[ch]);
-    print_register(" ... token reply status:", sfp->tk_stat[ch]);
-    print_register(" ... statclr:", sfp->rep_stat_clr);*/
-
-
-
-  return 0;
-}
-
-
-
-
-
-
-#endif /*  PEXOR_WITH_SFP */
 
 
 
@@ -1585,7 +1020,9 @@ void print_register(const char* description, u32* address)
 
 void print_pexor(struct  dev_pexor* pg)
 {
-  int i=0;
+#ifdef PEXOR_WITH_TRBNET
+	int i=0;
+#endif
   if(pg==0) return;
   pexor_dbg(KERN_NOTICE "\n##print_pexor: ###################\n");
   pexor_dbg(KERN_NOTICE "init: \t=%x\n", pg->init_done);
@@ -1641,7 +1078,10 @@ void clear_pexor(struct  dev_pexor* pg)
 
 void set_pexor(struct  dev_pexor* pg, void* membase, unsigned long bar)
 {
-  int i=0;
+
+#ifdef PEXOR_WITH_TRBNET
+	int i=0;
+#endif
   void* dmabase=0;
   if(pg==0) return;
   dmabase=membase+PEXOR_DMA_BASE;
@@ -1702,106 +1142,6 @@ void set_pexor(struct  dev_pexor* pg, void* membase, unsigned long bar)
 
 }
 
-#ifdef PEXOR_WITH_SFP
-
-void set_sfp(struct  pexor_sfp* sfp, void* membase, unsigned long bar)
-{
-  int i=0;
-  void* sfpbase=0;
-  unsigned long offset;
-  if(sfp==0) return;
-  sfpbase=membase+PEXOR_SFP_BASE;
-  sfp->version=(u32*)(sfpbase+PEXOR_SFP_VERSION);
-  sfp->req_comm=(u32*)(sfpbase+PEXOR_SFP_REQ_COMM);
-  sfp->req_addr=(u32*)(sfpbase+PEXOR_SFP_REQ_ADDR);
-  sfp->req_data=(u32*)(sfpbase+PEXOR_SFP_REQ_DATA);
-  sfp->rep_stat_clr=(u32*)(sfpbase+PEXOR_SFP_REP_STAT_CLR);
-  sfp->rx_moni=(u32*)(sfpbase+PEXOR_SFP_RX_MONI);
-  sfp->tx_stat=(u32*)(sfpbase+PEXOR_SFP_TX_STAT);
-  sfp->reset=(u32*)(sfpbase+PEXOR_SFP_RX_RST);
-  sfp->disable=(u32*)(sfpbase+PEXOR_SFP_DISA);
-  sfp->fault=(u32*)(sfpbase+PEXOR_SFP_FAULT);
-  for(i=0; i<PEXOR_SFP_NUMBER;++i)
-    {
-      offset= i * 0x04;
-      sfp->rep_stat[i]=(u32*)(sfpbase+PEXOR_SFP_REP_STAT_0 + offset);
-      sfp->rep_addr[i]=(u32*)(sfpbase+PEXOR_SFP_REP_ADDR_0 + offset);
-      sfp->rep_data[i]=(u32*)(sfpbase+PEXOR_SFP_REP_DATA_0 + offset);
-      sfp->fifo[i]=(u32*)(sfpbase+PEXOR_SFP_FIFO_0 + offset);
-      sfp->tk_stat[i]=(u32*)(sfpbase+PEXOR_SFP_TOKEN_REP_STAT_0 + offset);
-      sfp->tk_head[i]=(u32*)(sfpbase+PEXOR_SFP_TOKEN_REP_HEAD_0 + offset);
-      sfp->tk_foot[i]=(u32*)(sfpbase+PEXOR_SFP_TOKEN_REP_FOOT_0 + offset);
-      sfp->tk_dsize[i]=(u32*)(sfpbase+PEXOR_SFP_TOKEN_DSIZE_0 + offset);
-      sfp->tk_dsize_sel[i]=(u32*)(sfpbase+PEXOR_SFP_TOKEN_DSIZE_SEL_0 + offset);
-      sfp->tk_memsize[i]=(u32*)(sfpbase+PEXOR_SFP_TOKEN_MEM_SIZE_0 + offset);
-      offset= i* 0x40000;
-      sfp->tk_mem[i]=(u32*)(membase+PEXOR_SFP_TK_MEM_0 + offset);
-      sfp->tk_mem_dma[i]=(dma_addr_t) (bar+ PEXOR_SFP_TK_MEM_0 + offset);
-    }
-
-}
-
-
-
-
-
-
-void print_sfp(struct  pexor_sfp* sfp)
-{
-  int i=0;
-  if(sfp==0) return;
-  pexor_dbg(KERN_NOTICE "##print_sfp: ###################\n");
-  print_register("version", sfp->version);
-  print_register("request command",sfp->req_comm);
-  print_register("request address", sfp->req_addr);
-  print_register("request data",sfp->req_data);
-
-  print_register("reply status /clear",sfp->rep_stat_clr);
-  print_register("monitor",sfp->rx_moni);
-  print_register("tx status", sfp->tx_stat);
-  print_register("reset",	sfp->reset);
-  print_register("disable",sfp->disable);
-  print_register("fault", sfp->fault);
-  for(i=0; i<PEXOR_SFP_NUMBER;++i)
-    {
-      pexor_dbg(KERN_NOTICE "-------- sfp number %d -------\n",i);
-      print_register("reply status",sfp->rep_stat[i]);
-      print_register("reply address",sfp->rep_addr[i]);
-      print_register("reply data",sfp->rep_data[i]);
-      print_register("fifo",sfp->fifo[i]);
-      print_register("token reply status",sfp->tk_stat[i]);
-      print_register("token reply header",sfp->tk_head[i]);
-      print_register("token reply footer",sfp->tk_foot[i]);
-      print_register("token data size",sfp->tk_dsize[i]);
-      print_register("token data size select",sfp->tk_dsize_sel[i]);
-      print_register("token mem size",sfp->tk_memsize[i]);
-      print_register("token mem start",sfp->tk_mem[i]);
-      pexor_dbg(KERN_NOTICE "token mem start DMA =%p \n",(void*) sfp->tk_mem_dma[i]);
-    }
-
-  pexor_show_version(sfp,0);
-}
-
-
-void pexor_show_version(struct  pexor_sfp* sfp, char* buf)
-{
-  /* stolen from pexor_gosip.h*/
-  u32 tmp, year,month, day, version[2];
-  char txt[1024];
-  tmp=ioread32(sfp->version);
-  mb();
-  ndelay(20);
-  year=((tmp&0xff000000)>>24)+0x2000;
-  month=(tmp&0xff0000)>>16;
-  day=(tmp&0xff00)>>8;
-  version[0]=(tmp&0xf0)>>4;
-  version[1]=(tmp&0xf);
-  snprintf(txt, 1024,"PEXOR FPGA code compiled at Year=%x Month=%x Date=%x Version=%x.%x \n", year,month,day,version[0],version[1]);
-  pexor_dbg(KERN_NOTICE "%s", txt);
-  if(buf) snprintf(buf, 1024, "%s",txt);
-}
-
-#endif /*  PEXOR_WITH_SFP */
 
 irqreturn_t pexor_isr( int irq, void *dev_id)
 {
@@ -2100,7 +1440,7 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 
 
 
-#ifndef	DMA_EMULATE_IR
+#ifndef 	DMA_EMULATE_IR
   /* schedule tasklet*/
   atomic_inc(&(priv->irq_count));
   pexor_dbg(KERN_NOTICE "pexor_next_dma schedules tasklet... \n");
@@ -2127,11 +1467,11 @@ int pexor_poll_dma_complete(struct pexor_privdata* priv)
   u32 enable=PEXOR_DMA_ENABLED_BIT;
   while(1)
     {
-      pexor_dbg(KERN_ERR "pexor_poll_dma_complete reading from 0x%p \n",priv->pexor.dma_control_stat);
+     /* pexor_dbg(KERN_ERR "pexor_poll_dma_complete reading from 0x%p \n",priv->pexor.dma_control_stat);*/
 
       enable=ioread32(priv->pexor.dma_control_stat);
       mb();
-      pexor_dbg(KERN_ERR "pexor_poll_dma_complete sees dmactrl=: 0x%x , looking for %x\n",enable, PEXOR_DMA_ENABLED_BIT);
+    /*  pexor_dbg(KERN_ERR "pexor_poll_dma_complete sees dmactrl=: 0x%x , looking for %x\n",enable, PEXOR_DMA_ENABLED_BIT);*/
       if((enable & PEXOR_DMA_ENABLED_BIT) == 0) break;
       /* poll until the dma bit is cleared => dma complete*/
 
@@ -2277,7 +1617,9 @@ ssize_t pexor_sysfs_codeversion_show(struct device *dev, struct device_attribute
 {
   char vstring[1024];
   ssize_t curs=0;
+#ifdef PEXOR_WITH_SFP
   struct  dev_pexor* pg;
+#endif
   struct pexor_privdata *privdata;
   privdata= (struct pexor_privdata*) dev_get_drvdata(dev);
   curs=snprintf(vstring, 1024, "*** This is PEXOR driver version %s build on %s at %s \n\t", PEXORVERSION, __DATE__, __TIME__);
@@ -2310,40 +1652,6 @@ ssize_t pexor_sysfs_dmaregs_show(struct device *dev, struct device_attribute *at
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t dma burst size:          0x%x\n", readl(pg->dma_burstsize));
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t RAM start:               0x%x\n", readl(pg->ram_start));
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t RAM end:                 0x%x\n", readl(pg->ram_end));
-  return curs;
-}
-ssize_t pexor_sysfs_sfpregs_show(struct device *dev, struct device_attribute *attr, char *buf)
-{
-  ssize_t curs=0;
-#ifdef PEXOR_WITH_SFP
-  int i=0;
-  struct  dev_pexor* pg;
-  struct pexor_sfp* sfp;
-  struct pexor_privdata *privdata;
-  privdata= (struct pexor_privdata*) dev_get_drvdata(dev);
-  pg=&(privdata->pexor);
-  sfp=&(pg->sfp);
-  curs+=snprintf(buf+curs, PAGE_SIZE-curs, "*** PEXOR sfp register dump:\n");
-  curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t request command:           0x%x\n",readl(sfp->req_comm));
-  curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t request address:           0x%x\n",readl(sfp->req_addr));
-  curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t reply status /clear:       0x%x\n",readl(sfp->rep_stat_clr));
-  curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t rx monitor:                0x%x\n",readl(sfp->rx_moni));
-  curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t tx status:                 0x%x\n",readl(sfp->tx_stat));
-  curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t reset:                     0x%x\n",readl(sfp->reset));
-  curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t disable:                   0x%x\n",readl(sfp->disable));
-  curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t fault:                     0x%x\n",readl(sfp->fault));
-  for(i=0; i<PEXOR_SFP_NUMBER;++i)
-    {
-      curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t  ** sfp %d:\n",i);
-      curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  reply status:  0x%x\n",readl(sfp->rep_stat[i]));
-      curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  reply address: 0x%x\n",readl(sfp->rep_addr[i]));
-      curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  reply data:    0x%x\n",readl(sfp->rep_data[i]));
-      curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  token memsize: 0x%x\n",readl(sfp->tk_memsize[i]));
-    }
-
-#else
-  curs+=snprintf(buf+curs, PAGE_SIZE-curs, "*** PEXOR: no sfp register support!\n");
-#endif
   return curs;
 }
 
@@ -2463,7 +1771,9 @@ void cleanup_device(struct pexor_privdata* priv)
   if (priv->class_dev)
     {
 #ifdef PEXOR_SYSFS_ENABLE
+#ifdef PEXOR_WITH_SFP
       device_remove_file(priv->class_dev, &dev_attr_sfpregs);
+#endif
       device_remove_file(priv->class_dev, &dev_attr_dmaregs);
       device_remove_file(priv->class_dev, &dev_attr_codeversion);
       device_remove_file(priv->class_dev, &dev_attr_rcvbufs);
@@ -2524,9 +1834,9 @@ void cleanup_device(struct pexor_privdata* priv)
 
 static int probe(struct pci_dev *dev, const struct pci_device_id *id)
 {
-  int err = 0, ix = 0, irnumbercount = 0;
+  int err = 0, ix = 0;
 #ifdef PEXOR_ENABLE_IRQ
-  unsigned char irpin = 0, irline = 0;
+  unsigned char irpin = 0, irline = 0, irnumbercount = 0;
   int irtype=0;
 #endif
   struct pexor_privdata *privdata;
@@ -2801,10 +2111,13 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
         {
           pexor_msg(KERN_ERR "Could not add device file node for dma registers.\n");
         }
+#ifdef PEXOR_WITH_SFP
       if(device_create_file(privdata->class_dev, &dev_attr_sfpregs) != 0)
 	{
 	  pexor_msg(KERN_ERR "Could not add device file node for sfp registers.\n");
 	}
+#endif
+
 #endif
     }
   else
@@ -2900,6 +2213,7 @@ static void __exit pexor_exit(void)
 
 
 MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Joern Adamczewski-Musch");
 
 module_init(pexor_init);
 module_exit(pexor_exit);

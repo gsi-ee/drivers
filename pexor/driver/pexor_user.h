@@ -13,7 +13,7 @@
 #include <linux/ioctl.h>
 
 
-#define PEXORVERSION  "0.99"
+#define PEXORVERSION  "0.995"
 
 /* identify name in dev : */
 #define PEXORNAME 		"pexor"

@@ -1,5 +1,9 @@
 obj-m	:= pexor.o
 
+pexor-objs := pexor_base.o pexor_gos.o pexor_trb.o 
+
+
+
 INCDIR = $(PEXORSYS)/user/include
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 PWD       := $(shell pwd)
