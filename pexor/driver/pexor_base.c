@@ -1053,6 +1053,11 @@ void print_pexor(struct  dev_pexor* pg)
   pexor_dbg(KERN_NOTICE "RAM DMA base add=%x \n",(unsigned) pg->ram_dma_base) ;
   pexor_dbg(KERN_NOTICE "RAM DMA cursor add=%x \n",(unsigned) pg->ram_dma_cursor);
 #else
+  print_register("dma statbits  address", pg->dma_statbits);
+  print_register("dma credits", pg->dma_credits);
+  print_register("dma counters", pg->dma_counts);
+
+
   for(i=0;i<PEXOR_TRB_CHANS;++i)
     {
       print_register("trb sender control",pg->trbnet_sender_ctl[i]);
@@ -1100,7 +1105,10 @@ void set_pexor(struct  dev_pexor* pg, void* membase, unsigned long bar)
   pg->dma_source=(u32*)(dmabase+0xFF0);
   pg->dma_dest=(u32*)(dmabase+(PEXOR_TRB_DMA_ADD<<2));
   pg->dma_len=(u32*)(dmabase+(PEXOR_TRB_DMA_LEN<<2));
-  pg->dma_burstsize=(u32*)(dmabase+0xFF0);
+  pg->dma_burstsize=(u32*)(dmabase+ (PEXOR_TRB_DMA_BST<<2));
+  pg->dma_statbits=(u32*)(dmabase+ (PEXOR_TRB_DMA_STA<<2));
+  pg->dma_credits=(u32*)(dmabase+ (PEXOR_TRB_DMA_CRE<<2));
+  pg->dma_counts=(u32*)(dmabase+ (PEXOR_TRB_DMA_CNT<<2));
 
 
 #else
@@ -1126,13 +1134,13 @@ void set_pexor(struct  dev_pexor* pg, void* membase, unsigned long bar)
       pg->trbnet_sender_err[i]=membase + ((PEXOR_TRB_SENDER_ERROR | ((i * 2 + 1) << 4)) << 2);
       pg->trbnet_sender_data[i]=membase + ((PEXOR_TRB_SENDER_DATA | ((i * 2 + 1) << 4)) << 2);
       pg->trbnet_sender_ctl[i]=membase + ((PEXOR_TRB_SENDER_CONTROL | ((i * 2 + 1) << 4)) << 2);
-      pg->trbnet_dma_ctl[i]= membase + (PEXOR_TRB_DMA_CTL << 2 );
+    /*  pg->trbnet_dma_ctl[i]= membase + (PEXOR_TRB_DMA_CTL << 2 );
       pg->trbnet_dma_add[i]= membase + (PEXOR_TRB_DMA_ADD << 2);
-      pg->trbnet_dma_len[i]= membase + (PEXOR_TRB_DMA_LEN << 2);
+      pg->trbnet_dma_len[i]= membase + (PEXOR_TRB_DMA_LEN << 2);*/
     }
   /* override here standard dma registers with channel 3 */
-  pg->dma_control_stat=pg->trbnet_dma_ctl[3];
-  pg->dma_dest=pg->trbnet_dma_add[3];
+  /*pg->dma_control_stat=pg->trbnet_dma_ctl[3];
+  pg->dma_dest=pg->trbnet_dma_add[3];*/
 
 
 #endif
@@ -1410,6 +1418,17 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
      return 0; */
   //spin_lock(&(priv->dma_lock));
   pexor_dma_lock((&(priv->dma_lock)));
+
+  /* TEST*/
+  rev=pexor_poll_dma_complete(priv);
+    if(rev)
+      {
+        pexor_msg(KERN_NOTICE "**pexor_next_dma: dma was not finished, do not start new one!\n");
+        return rev;
+      }
+
+ /* */
+
   iowrite32(priv->pexor.ram_dma_cursor, priv->pexor.dma_source);
   mb();
   iowrite32((u32) nextbuf->dma_addr, priv->pexor.dma_dest);
@@ -1465,6 +1484,7 @@ int pexor_poll_dma_complete(struct pexor_privdata* priv)
 {
   int loops=0;
   u32 enable=PEXOR_DMA_ENABLED_BIT;
+
   while(1)
     {
      /* pexor_dbg(KERN_ERR "pexor_poll_dma_complete reading from 0x%p \n",priv->pexor.dma_control_stat);*/

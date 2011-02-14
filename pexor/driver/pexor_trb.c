@@ -43,7 +43,8 @@ int pexor_ioctl_trbnet_request(struct pexor_privdata* priv, unsigned long arg)
 		(((u32)descriptor.trb_address << 16) | PEXOR_TRB_CMD_REGISTER_READ), priv->pexor.trbnet_sender_ctl[3]);
       iowrite32((((u32)descriptor.trb_address << 16) | PEXOR_TRB_CMD_REGISTER_READ), priv->pexor.trbnet_sender_ctl[3]);
             
-      priv->pexor.dma_control_stat = priv->pexor.trbnet_dma_ctl[3]; /* assign dma control register to channel 3 */
+      /*priv->pexor.dma_control_stat = priv->pexor.trbnet_dma_ctl[3]; assign dma control register to channel 3 */
+
       pexor_dbg(KERN_ERR "pexor_ioctl_trbnet_request: dma control is %x\n",  priv->pexor.dma_control_stat);
 
       // here loop on dma:
@@ -62,11 +63,18 @@ int pexor_ioctl_trbnet_request(struct pexor_privdata* priv, unsigned long arg)
 	pexor_dbg(KERN_NOTICE "#### pexor_ioctl_trbnet_request will initiate dma %d from "
 		  "to %p, len=%lx, burstsize=%x...\n",
 		  rcvbuf, (void*) nextbuf->dma_addr,  nextbuf->size, PEXOR_BURST);
-	iowrite32(0x0, priv->pexor.trbnet_dma_ctl[3]);                 /* clear dma ctrl first*/
+
+	/* OLD for comparison;
+	 * iowrite32(0x0, priv->pexor.trbnet_dma_ctl[3]);                  clear dma ctrl first
 	iowrite32(nextbuf->dma_addr, priv->pexor.trbnet_dma_add[3]);
 	iowrite32((nextbuf->size) >> 2, priv->pexor.trbnet_dma_len[3]);
-	iowrite32((PEXOR_BURST << 24), priv->pexor.trbnet_dma_ctl[3]); /* set burstsize*/
-	iowrite32(0x1, priv->pexor.trbnet_dma_ctl[3]);                 /* enable dma */
+	iowrite32((PEXOR_BURST << 24), priv->pexor.trbnet_dma_ctl[3]);  set burstsize
+	iowrite32(0x1, priv->pexor.trbnet_dma_ctl[3]);                  enable dma */
+
+	iowrite32(nextbuf->dma_addr, priv->pexor.dma_dest);
+	iowrite32((nextbuf->size) >> 2, priv->pexor.dma_len);
+	iowrite32( PEXOR_BURST, priv->pexor.dma_burstsize);
+	iowrite32(0x1, priv->pexor.dma_control_stat);                 /* enable dma */
 
 	// wait for dma complete
 	if((retval = pexor_wait_dma_buffer(priv, &dmabuf)) !=0 )
@@ -75,12 +83,12 @@ int pexor_ioctl_trbnet_request(struct pexor_privdata* priv, unsigned long arg)
 		      "for buffer %d\n", retval, rcvbuf);
 	    break;
 	  }
-	      
-	descriptor.tkbuf[rcvbuf].addr = dmabuf.virt_addr;
-	descriptor.tkbuf[rcvbuf].size = 
-	  (ioread32(priv->pexor.trbnet_dma_ctl[3]) >> 6 );  /* shift 8 bit and multiply by sizeof(u32) */
-	dmastat = ioread32(priv->pexor.dma_control_stat);   /* check if we need another dma for data */
+	dmastat = ioread32(priv->pexor.dma_control_stat);   /* check status: size; do we need another dma for data */
 	mb();
+	descriptor.tkbuf[rcvbuf].addr = dmabuf.virt_addr;
+	/*descriptor.tkbuf[rcvbuf].size =
+	  (ioread32(priv->pexor.trbnet_dma_ctl[3]) >> 6 );   shift 8 bit and multiply by sizeof(u32) */
+	descriptor.tkbuf[rcvbuf].size = (dmastat >> 6 );  /* shift 8 bit and multiply by sizeof(u32) */
 	rcvbuf++;
 	if(rcvbuf >= TRBNET_MAX_BUFS)
 	  {

@@ -112,6 +112,11 @@ struct dev_pexor
   u32 *dma_dest;                /* dma destination address */
   u32 *dma_len;                 /* dma length */
   u32 *dma_burstsize;           /* dma burstsize, <=0x80 */
+#ifdef PEXOR_WITH_TRBNET
+  u32 *dma_statbits;            /* optional further status bits*/
+  u32 *dma_credits;             /* credits*/
+  u32 *dma_counts;              /* counter values*/
+#endif
   u32 *ram_start;               /* RAM start */
   u32 *ram_end;                 /* RAM end */
   dma_addr_t ram_dma_base;      /* RAM start expressed as dma address */
@@ -127,9 +132,9 @@ struct dev_pexor
   u32* trbnet_sender_err[PEXOR_TRB_CHANS];
   u32* trbnet_sender_data[PEXOR_TRB_CHANS];
   u32* trbnet_sender_ctl[PEXOR_TRB_CHANS];
-  u32* trbnet_dma_ctl[PEXOR_TRB_CHANS];
+ /* u32* trbnet_dma_ctl[PEXOR_TRB_CHANS];
   u32* trbnet_dma_add[PEXOR_TRB_CHANS];
-  u32* trbnet_dma_len[PEXOR_TRB_CHANS];
+  u32* trbnet_dma_len[PEXOR_TRB_CHANS];*/
 #endif
     unsigned char init_done; /* object is ready flag*/
 };
