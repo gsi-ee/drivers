@@ -50,6 +50,7 @@ extern const char* xmlPexorID; // id number N of pexor device file /dev/pexor-N
   extern const char* xmlRawFile; // name of output lmd file
   extern const char* xmlDMABufLen; // length of DMA buffers to allocate in driver
   extern const char* xmlDMABufNum; 	// number of DMA buffers
+  extern const char* xmlDMAScatterGatherMode; // switch scatter gather dma on/off
   extern const char* xmlExploderSubmem; // exploder submem size for testbuffer
   extern const char* xmlFormatMbs; // enable mbs formating already in device transport
   extern const char* xmlSyncRead; // switch synchronous or asynchronous token dma
@@ -57,6 +58,7 @@ extern const char* xmlPexorID; // id number N of pexor device file /dev/pexor-N
   extern const char* xmlTriggeredRead; // switch triggered or polling mode readout
   extern const char* xmlTrixorConvTime; // conversion time of TRIXOR module
   extern const char* xmlTrixorFastClearTime; // fast clear time of TRIXOR module
+
   extern const char* xmlModuleName; // Name of readout module instance
   extern const char* xmlModuleThread; // Name of readout thread
   extern const char* xmlDeviceName; // Name of device instance

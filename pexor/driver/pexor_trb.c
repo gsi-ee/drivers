@@ -73,7 +73,7 @@ int pexor_ioctl_trbnet_request(struct pexor_privdata* priv, unsigned long arg)
 
 	iowrite32(nextbuf->dma_addr, priv->pexor.dma_dest);
 	iowrite32((nextbuf->size) >> 2, priv->pexor.dma_len);
-	iowrite32( PEXOR_BURST, priv->pexor.dma_burstsize);
+	//iowrite32( PEXOR_BURST, priv->pexor.dma_burstsize);
 	iowrite32(0x1, priv->pexor.dma_control_stat);                 /* enable dma */
 
 	// wait for dma complete

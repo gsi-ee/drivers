@@ -15,7 +15,7 @@
 
 namespace pexor {
 
-Pexor::Pexor(unsigned int boardid) : Board(std::string("/dev/"))
+Pexor::Pexor(unsigned int boardid) : Board(std::string("/dev/")),fbUseSGBuffers(false)
 {
 	PexorDebug("Pexor ctor");
 	char devname[256];
@@ -57,15 +57,36 @@ int Pexor::Reset()
 
 int* Pexor::Map_DMA_Buffer(size_t size)
 {
-	PexorDebug("Pexor::Map_DMA_Buffer()");
-	void* ptr= mmap(0,size, PROT_READ | PROT_WRITE , MAP_SHARED | MAP_LOCKED , fFileHandle, 0); /* | PROT_WRITE , | MAP_LOCKED*/
-	if(ptr==MAP_FAILED)
+	if(fbUseSGBuffers)
 		{
-			int er=errno;
-			PexorError("\nError %d Mapping DMA buffer - %s\n", er,strerror(er));
-			return 0;
+			// create or use user space buffer and do sg mapping in driver
+			int* buffer = new int[size/sizeof(int)]; // TODO: how to use external buffer here
+			struct pexor_userbuf descriptor;
+			descriptor.addr= (unsigned long) buffer;
+			descriptor.size = size;
+			PexorInfo("Pexor::Map_DMA_Buffer() is sg mapping buffer %lx", descriptor.addr);
+			int rev=::ioctl(fFileHandle, PEXOR_IOC_MAPBUFFER , &descriptor);
+			if(rev)
+				{
+					PexorError("\n\nError %d sg-mapping buffer at  address %lx\n",rev,descriptor.addr);
+					delete buffer;
+					return 0;
+				}
+			return buffer;
 		}
-	return (int*) ptr;
+	else
+		{
+		// get buffer from driver and map it to user space
+		PexorDebug("Pexor::Map_DMA_Buffer()");
+		void* ptr= mmap(0,size, PROT_READ | PROT_WRITE , MAP_SHARED | MAP_LOCKED , fFileHandle, 0); /* | PROT_WRITE , | MAP_LOCKED*/
+		if(ptr==MAP_FAILED)
+			{
+				int er=errno;
+				PexorError("\nError %d Mapping DMA buffer - %s\n", er,strerror(er));
+				return 0;
+			}
+		return (int*) ptr;
+	}
 }
 
 int Pexor::Delete_DMA_Buffer(pexor::DMA_Buffer *buffer)
@@ -75,17 +96,36 @@ int Pexor::Delete_DMA_Buffer(pexor::DMA_Buffer *buffer)
 	struct pexor_userbuf descriptor;
 	descriptor.addr= (unsigned long) buffer->Data();
 	descriptor.size = buffer->Size();
-	rev= ::munmap((void*) descriptor.addr, descriptor.size);
-	if(rev)
+
+	if(fbUseSGBuffers)
 		{
-			int er=errno;
-			PexorError("\nError %d Unmapping DMA buffer at  address %lx - %s\n", er,descriptor.addr, strerror(er));
+			// unmap and delete the user space bu
+		PexorInfo("Pexor::Delete_DMA_Buffer() is sg unmapping buffer %lx", descriptor.addr);
+		rev=::ioctl(fFileHandle, PEXOR_IOC_UNMAPBUFFER , &descriptor);
+		if(rev)
+			{
+				PexorError("\n\nError %d sg-unmapping buffer at  address %lx\n",rev,descriptor.addr);
+				return rev;
+			}
+		delete [] (int*) (descriptor.addr); // TODO: handle external buffer here without deleting
+
 		}
-	PexorDebug("Pexor::DeleteDMA_Buffer() deleting buffer at address %lx", descriptor.addr);
-	rev=::ioctl(fFileHandle, PEXOR_IOC_DELBUFFER , &descriptor);
-	if(rev)
+	else
 		{
-			PexorError("\n\nError %d deleting buffer at  address %lx\n",rev,descriptor.addr);
+				// unmap virtual address and let driver delete associated kernel buffer
+		rev= ::munmap((void*) descriptor.addr, descriptor.size);
+		if(rev)
+			{
+				int er=errno;
+				PexorError("\nError %d Unmapping DMA buffer at  address %lx - %s\n", er,descriptor.addr, strerror(er));
+			}
+		PexorDebug("Pexor::DeleteDMA_Buffer() deleting buffer at address %lx", descriptor.addr);
+		rev=::ioctl(fFileHandle, PEXOR_IOC_DELBUFFER , &descriptor);
+		if(rev)
+			{
+				PexorError("\n\nError %d deleting buffer at  address %lx\n",rev,descriptor.addr);
+			}
+
 		}
 	return rev;
 

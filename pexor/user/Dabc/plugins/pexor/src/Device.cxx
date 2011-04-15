@@ -44,6 +44,7 @@ const char* pexorplugin::xmlPexorSFPSlaves	= "PexorNumSlaves_"; // prefix for th
 const char* pexorplugin::xmlRawFile    = "PexorOutFile"; // name of output lmd file
 const char* pexorplugin::xmlDMABufLen	= "PexorDMALen"; // length of DMA buffers to allocate in driver
 const char* pexorplugin::xmlDMABufNum	= "PexorDMABuffers"; // number of DMA buffers to allocate in driver
+const char* pexorplugin::xmlDMAScatterGatherMode ="PexorDMAScatterGather"; // sg mode switch
 const char* pexorplugin::xmlFormatMbs	= "PexorFormatMbs"; // switch Mbs formating already in transport buffer
 const char* pexorplugin::xmlSyncRead	= "PexorSyncReadout"; // switch readout sync mode
 const char* pexorplugin::xmlParallelRead	= "PexorParallelReadout"; // switch readout parallel token mode
@@ -91,6 +92,9 @@ fInitDone(false),fNumEvents(0),fuSeed(0)
 				delete fBoard;
 				return;
 			}
+	bool sgmode=GetCfgBool(pexorplugin::xmlDMAScatterGatherMode,false, cmd);
+	fBoard->SetScatterGatherMode(sgmode);
+	DOUT1(("Setting scatter gather mode to %d\n", sgmode));
 	// initialize here the connected channels:
 
 	 for (int sfp=0; sfp<PEXORPLUGIN_NUMSFP; sfp++)
@@ -124,7 +128,7 @@ fInitDone(false),fNumEvents(0),fuSeed(0)
    fMbsFormat=GetCfgBool(pexorplugin::xmlFormatMbs,true, cmd);
 
 
-   DOUT1(("Created PEXOR device %d", fDeviceNum));
+   DOUT1(("Created PEXOR device %d\n", fDeviceNum));
    fTestData=true; // TODO: configure this from XML once we have read data to fetch
    //fTestData=GetCfgBool(pexorplugin::xml????,20, cmd);
    fSubmemSize=GetCfgInt(pexorplugin::xmlExploderSubmem,3600, cmd);

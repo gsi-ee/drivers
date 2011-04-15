@@ -42,7 +42,9 @@
 #define PEXOR_IOC_WAIT_TRIGGER    _IO(  PEXOR_IOC_MAGIC, 15)
 #define PEXOR_IOC_SET_TRIXOR    _IOR(  PEXOR_IOC_MAGIC, 16, struct pexor_trixor_set)
 #define PEXOR_IOC_TRBNET_REQUEST _IOWR(  PEXOR_IOC_MAGIC, 17, struct pexor_trbnet_io)
-#define PEXOR_IOC_MAXNR 18
+#define PEXOR_IOC_MAPBUFFER   _IOW(  PEXOR_IOC_MAGIC, 18, struct pexor_userbuf)
+#define PEXOR_IOC_UNMAPBUFFER   _IOW(  PEXOR_IOC_MAGIC, 19, struct pexor_userbuf)
+#define PEXOR_IOC_MAXNR 20
 
 /* the states:*/
 #define PEXOR_STATE_STOPPED 0 /* daq stopped*/

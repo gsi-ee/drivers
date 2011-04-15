@@ -272,7 +272,15 @@ int pexor_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsign
     return pexor_ioctl_usebuffer(privdata, arg);
     break;
 
+  case PEXOR_IOC_MAPBUFFER:
+	  pexor_dbg(KERN_NOTICE "** pexor_ioctl mapbuffer\n");
+	  return pexor_ioctl_mapbuffer(privdata, arg);
+	  break;
 
+  case PEXOR_IOC_UNMAPBUFFER:
+       pexor_dbg(KERN_NOTICE "** pexor_ioctl unmapbuffer\n");
+       return pexor_ioctl_unmapbuffer(privdata, arg);
+       break;
 
   case PEXOR_IOC_CLEAR_RCV_BUFFERS:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl clear receive buffers\n");
@@ -353,6 +361,146 @@ int pexor_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsign
   return -ENOTTY;
 }
 
+
+int pexor_ioctl_mapbuffer(struct pexor_privdata *priv, unsigned long arg)
+{
+	int i,res=0;
+	int nr_pages=0;
+	struct page **pages;
+	struct scatterlist *sg = NULL;
+	unsigned int nents;
+	unsigned long count,offset,length;
+    struct pexor_dmabuf* dmabuf=0;
+	struct pexor_userbuf bufdescriptor;
+	res=copy_from_user(&bufdescriptor, (void __user *) arg, sizeof(struct pexor_userbuf));
+	if(res) return res;
+	if (bufdescriptor.size == 0) return -EINVAL;
+
+	dmabuf= kmalloc(sizeof(struct pexor_dmabuf), GFP_KERNEL);
+	if(!dmabuf)
+	    {
+	      pexor_dbg(KERN_ERR "pexor_ioctl_mapbuffer: could not alloc dma buffer descriptor! \n");
+	      return -ENOMEM;
+	    }
+    memset(dmabuf, 0, sizeof(struct pexor_dmabuf));
+    dmabuf->virt_addr=bufdescriptor.addr;
+    dmabuf->size=bufdescriptor.size;
+
+    /* calculate the number of pages */
+   	nr_pages = ((dmabuf->virt_addr & ~PAGE_MASK) + dmabuf->size + ~PAGE_MASK) >> PAGE_SHIFT;
+  	pexor_dbg(KERN_NOTICE  "nr_pages computed: %u\n", nr_pages);
+
+   	/* Allocate space for the page information */
+   	if ((pages = vmalloc(nr_pages * sizeof(*pages))) == NULL)
+			goto mapbuffer_descriptor;
+   	/* Allocate space for the scatterlist */
+   	if ((sg = vmalloc(nr_pages * sizeof(*sg))) == NULL)
+    		goto mapbuffer_pages;
+
+   	sg_init_table(sg, nr_pages);
+
+
+	/* Get the page information */
+	down_read(&current->mm->mmap_sem);
+	res = get_user_pages(
+				current,
+				current->mm,
+				dmabuf->virt_addr,
+				nr_pages,
+				1,
+				0,
+				pages,
+				NULL );
+	up_read(&current->mm->mmap_sem);
+
+	/* Error, not all pages mapped */
+	if (res < (int) nr_pages) {
+		pexor_dbg(KERN_ERR "Could not map all user pages (%d of %d)\n", res, nr_pages);
+		/* If only some pages could be mapped, we release those. If a real
+		 * error occured, we set nr_pages to 0 */
+		nr_pages = (res > 0 ? res : 0);
+		goto mapbuffer_unmap;
+	}
+
+	pexor_dbg(KERN_NOTICE "Got the pages (%d).\n", res);
+
+
+
+
+
+    /* populate sg list:*/
+		/* page0 is different */
+		/*if ( !PageReserved(pages[0]) )
+			SetPageLocked(pages[0]);*/
+
+		/* for first chunk, we take into account that memory is possibly not starting at
+		 * page boundary:*/
+		offset = (dmabuf->virt_addr & ~PAGE_MASK);
+		length = (dmabuf->size > (PAGE_SIZE-offset) ? (PAGE_SIZE-offset) : dmabuf->size);
+		sg_set_page(&sg[0], pages[0], length, offset);
+
+		count = dmabuf->size - length;
+		for(i=1;i<nr_pages;i++) {
+		/*	if ( !PageReserved(pages[i]) )
+				SetPageLocked(pages[i]);*/
+
+			sg_set_page(&sg[i], pages[i], ((count > PAGE_SIZE) ? PAGE_SIZE : count), 0);
+			count -= sg[i].length;
+		}
+
+		/* Use the page list to populate the SG list */
+		/* SG entries may be merged, res is the number of used entries */
+		/* We have originally nr_pages entries in the sg list */
+		if ((nents = pci_map_sg(priv->pdev, sg, nr_pages, PCI_DMA_FROMDEVICE)) == 0)
+			goto mapbuffer_unmap;
+
+		pexor_dbg(KERN_NOTICE "Mapped SG list (%d entries).\n", nents);
+
+
+		dmabuf->num_pages = nr_pages;	/* Will be needed when unmapping */
+		dmabuf->pages = pages;
+		dmabuf->sg_ents = nents; /* number of coherent dma buffers to transfer*/
+		dmabuf->sg = sg;
+
+
+
+
+	    pexor_dbg(KERN_ERR "pexor_ioctl_mapbuffer mapped user buffer %lx, size %lx, pages %lx to %lx sg entries \n", buf->virt_addr, buf->size, nr_pages, nents);
+	    spin_lock( &(priv->buffers_lock) );
+	    /* this list contains only the unused (free) buffers: */
+	    list_add_tail( &(dmabuf->queue_list), &(priv->free_buffers));
+	    spin_unlock( &(priv->buffers_lock) );
+
+
+	    return 0;
+
+mapbuffer_unmap:
+	/* release pages */
+		for(i=0;i<nr_pages;i++) {
+			/*if (PageLocked(pages[i]))
+				ClearPageLocked(pages[i]);*/
+			if (!PageReserved(pages[i]))
+				SetPageDirty(pages[i]);
+			page_cache_release(pages[i]);
+		}
+	vfree(sg);
+ mapbuffer_pages:
+	vfree(pages);
+ mapbuffer_descriptor:
+	 kfree(dmabuf);
+
+	 return -ENOMEM;
+}
+
+int pexor_ioctl_unmapbuffer(struct pexor_privdata *priv, unsigned long arg)
+{
+	/* deletebuffer will check if we deal with kernel or sg-userbuffer*/
+	return (pexor_ioctl_deletebuffer(priv,arg));
+}
+
+
+
+
 int pexor_ioctl_freebuffer(struct pexor_privdata* priv, unsigned long arg)
 {
   struct pexor_dmabuf* cursor;
@@ -377,7 +525,10 @@ int pexor_ioctl_freebuffer(struct pexor_privdata* priv, unsigned long arg)
 	  list_move_tail(&(cursor->queue_list) , &(priv->free_buffers));
 	  spin_unlock( &(priv->buffers_lock) );
 	  /* ? need to sync buffer for next dma */
-	  pci_dma_sync_single_for_device( priv->pdev, cursor->dma_addr, cursor->size, PCI_DMA_FROMDEVICE );
+	  if(cursor->dma_addr!=0) /* kernel buffer*/
+		  pci_dma_sync_single_for_device( priv->pdev, cursor->dma_addr, cursor->size, PCI_DMA_FROMDEVICE );
+	  else /* sg buffer*/
+		  pci_dma_sync_sg_for_device( priv->pdev, cursor->sg, cursor->sg_ents,PCI_DMA_FROMDEVICE );
 
 	  /* trigger here again dma flow*/
 	  state=atomic_read(&(priv->state));
@@ -420,7 +571,11 @@ int pexor_ioctl_usebuffer(struct pexor_privdata* priv, unsigned long arg)
   dmabuf=list_first_entry(&(priv->free_buffers), struct pexor_dmabuf, queue_list);
   list_move_tail(&(dmabuf->queue_list) , &(priv->used_buffers));
   spin_unlock( &(priv->buffers_lock) );
-  pci_dma_sync_single_for_cpu( priv->pdev, dmabuf->dma_addr, dmabuf->size, PCI_DMA_FROMDEVICE );
+  if(dmabuf->dma_addr!=0) /* kernel buffer*/
+	  pci_dma_sync_single_for_cpu( priv->pdev, dmabuf->dma_addr, dmabuf->size, PCI_DMA_FROMDEVICE );
+  else /* sg buffer*/
+	  pci_dma_sync_sg_for_cpu( priv->pdev, dmabuf->sg, dmabuf->sg_ents,PCI_DMA_FROMDEVICE );
+
   userbuf.addr=dmabuf->virt_addr;
   userbuf.size=dmabuf->size;
   rev=copy_to_user((void __user *) arg, &userbuf, sizeof(struct pexor_userbuf));
@@ -929,6 +1084,12 @@ struct pexor_dmabuf* new_dmabuffer(struct pci_dev * pdev, size_t size)
 int delete_dmabuffer(struct pci_dev * pdev, struct pexor_dmabuf* buf)
 {
   /*int i=0; */
+  if(buf->kernel_addr==0)
+  {
+		  /* buffer with no kernel memory -> must be sglist userbuffer*/
+		  return (unmap_sg_dmabuffer(pdev,buf));
+  }
+
   pexor_dbg(KERN_NOTICE "**pexor_deleting dmabuffer, size=%ld, addr=%lx \n", buf->size, buf->kernel_addr);
  /* for (i=0;i<50;++i)
     {
@@ -947,6 +1108,28 @@ int delete_dmabuffer(struct pci_dev * pdev, struct pexor_dmabuf* buf)
   /* Release descriptor memory */
   kfree(buf);
   return 0;
+}
+
+
+int unmap_sg_dmabuffer(struct pci_dev *pdev, struct pexor_dmabuf *buf)
+{
+	int i=0;
+	pexor_dbg(KERN_NOTICE "**pexor unmapping sg dmabuffer, size=%ld, user address=%lx \n", buf->size, buf->virt_addr);
+	pci_unmap_sg( pdev, buf->sg, buf->num_pages, PCI_DMA_FROMDEVICE);
+	for(i=0;i<(buf->num_pages);i++)
+		{
+			if ( !PageReserved( buf->pages[i] ))
+				{
+				SetPageDirty( buf->pages[i] );
+				/*ClearPageLocked(buf->pages[i]);*/
+				}
+			page_cache_release( buf->pages[i] );
+		}
+	vfree(buf->pages);
+	vfree(buf->sg);
+	kfree(buf);
+
+	return 0;
 }
 
 
@@ -1354,9 +1537,11 @@ void pexor_irq_tasklet(unsigned long arg)
 int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, u32 dmasize)
 {
   struct pexor_dmabuf* nextbuf;
-  u32 enable=PEXOR_DMA_ENABLED_BIT;
 
-  int rev,rest;
+  int i,rev,rest;
+  struct scatterlist *sgentry;
+  dma_addr_t sgcursor;
+  unsigned int sglen, sglensum;
   if(source==0)
     {
       priv->pexor.ram_dma_cursor= (priv->pexor.ram_dma_base + roffset );
@@ -1378,48 +1563,105 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
     }
   nextbuf=list_first_entry(&(priv->free_buffers), struct pexor_dmabuf, queue_list);
   spin_unlock( &(priv->buffers_lock) );
-  if((dmasize==0) || (dmasize > nextbuf->size))
-    {
-      pexor_dbg(KERN_NOTICE "#### pexor_next_dma resetting old dma size %x to %lx\n",dmasize,nextbuf->size);
-      dmasize=nextbuf->size;
-    }
-  /*if(priv->pexor.ram_dma_cursor+dmasize > priv->pexor.ram_dma_base + PEXOR_RAMSIZE)
-    {
-    pexor_dbg(KERN_NOTICE "#### pexor_next_dma resetting old dma size %x...\n",dmasize);
-    dmasize=priv->pexor.ram_dma_base + PEXOR_RAMSIZE - priv->pexor.ram_dma_cursor;
-    }*/
 
-  /* check if size is multiple of burstsize and correct:*/
-  rest=dmasize % PEXOR_BURST;
-  if(rest)
-    {
-      dmasize= dmasize + PEXOR_BURST - rest;
-      if(dmasize > nextbuf->size) dmasize -= PEXOR_BURST;  /*avoid exceeding buf limits */
+  /* TODO: put here decision if sg dma or plain*/
 
-      pexor_dbg(KERN_NOTICE "#### pexor_next_dma correcting dmasize %x for rest:%x, burst:%x\n", dmasize, rest, PEXOR_BURST);
+  if(nextbuf->kernel_addr !=0)
+  {
+	  /* here we have coherent kernel buffer case*/
 
-      /*			if(dmasize==nextbuf->size)
-				{
-				pexor_dbg(KERN_NOTICE "#### pexor_next_dma substracting dmasize rest:%x\n",rest);
-				dmasize-=rest;
-				}
-				else
-				{
-				dmasize= dmasize + PEXOR_BURST - rest;  if not at buffer end, try to increase to next burst edge
-				if(dmasize > nextbuf->size) dmasize -= PEXOR_BURST;  avoid exceeding buf limits anyway
-				pexor_dbg(KERN_NOTICE "#### pexor_next_dma correcting dmasize %x for rest:%x, burst:%x\n", dmasize, rest, PEXOR_BURST);
-				}*/
-    }
-  pexor_dbg(KERN_NOTICE "#### pexor_next_dma will initiate dma from %p to %p, len=%x, burstsize=%x...\n",
+	  if((dmasize==0) || (dmasize > nextbuf->size))
+		{
+		  pexor_dbg(KERN_NOTICE "#### pexor_next_dma resetting old dma size %x to %lx\n",dmasize,nextbuf->size);
+		  dmasize=nextbuf->size;
+		}
+	  if(priv->pexor.ram_dma_cursor+dmasize > priv->pexor.ram_dma_base + PEXOR_RAMSIZE)
+		{
+		pexor_dbg(KERN_NOTICE "#### pexor_next_dma resetting old dma size %x...\n",dmasize);
+		dmasize=priv->pexor.ram_dma_base + PEXOR_RAMSIZE - priv->pexor.ram_dma_cursor;
+		}
+
+	   /* check if size is multiple of burstsize and correct:*/
+	  rest=dmasize % PEXOR_BURST;
+	  if(rest)
+		{
+		  dmasize= dmasize + PEXOR_BURST - rest;
+		  if(dmasize > nextbuf->size) dmasize -= PEXOR_BURST; /* avoid exceeding buf limits*/
+
+		  pexor_dbg(KERN_NOTICE "#### pexor_next_dma correcting dmasize %x for rest:%x, burst:%x\n", dmasize, rest, PEXOR_BURST);
+
+					/*if(dmasize==nextbuf->size)
+					{
+					pexor_dbg(KERN_NOTICE "#### pexor_next_dma substracting dmasize rest:%x\n",rest);
+					dmasize-=rest;
+					}
+					else
+					{
+					dmasize= dmasize + PEXOR_BURST - rest;  if not at buffer end, try to increase to next burst edge
+					if(dmasize > nextbuf->size) dmasize -= PEXOR_BURST;  avoid exceeding buf limits anyway
+					pexor_dbg(KERN_NOTICE "#### pexor_next_dma correcting dmasize %x for rest:%x, burst:%x\n", dmasize, rest, PEXOR_BURST);
+					}*/
+		}
+
+
+	  if(pexor_start_dma(priv, priv->pexor.ram_dma_cursor, nextbuf->dma_addr, dmasize)<0)
+		  return -EINVAL;
+
+  }
+
+  else
+  {
+	  /* put emulated sg dma here
+	   * since pexor gosip fpga code does not support sglist dma, we do it manually within the driver*/
+
+		  sgcursor= priv->pexor.ram_dma_cursor;
+		  sglensum=0;
+		  i=0;
+	      for_each_sg(nextbuf->sg,sgentry, nextbuf->sg_ents,i)
+	    	{
+	    	  sglen=sg_dma_len(sgentry);
+	    	  if(dmasize<=sglen) sglen= dmasize; /* source buffer fits into first sg page*/
+
+	    	  /* initiate dma to next sg part:*/
+	    	  if(pexor_start_dma(priv, sgcursor, sg_dma_address(sgentry), sglen)<0)
+	    	  		  return -EINVAL;
+
+	    	  if((rev=pexor_poll_dma_complete(priv))!=0)
+				  {
+	    		  pexor_dbg(KERN_ERR "#### pexor_next_dma error on polling for sg entry %d completion, \n",i);
+	    	      return rev;
+				  }
+	    	  sglensum+=sglen;
+	    	  if(sglensum>=dmasize)
+				  {
+					  pexor_dbg(KERN_NOTICE "#### pexor_next_dma has finished sg buffer dma after %d segments\n",i);
+					  break;
+				  }
+	    	  sgcursor+=sglen;
+
+
+
+	    	} // for each sg
+
+	      if(sglensum<dmasize)
+			  {
+				  pexor_dbg(KERN_ERR "#### pexor_next_dma could not write full size %x to sg buffer of len\n",dmasize,sglensum);
+				  return -EINVAL;
+			  }
+
+
+  }
+
+  /*pexor_dbg(KERN_NOTICE "#### pexor_next_dma will initiate dma from %p to %p, len=%x, burstsize=%x...\n",
 	    (void*) priv->pexor.ram_dma_cursor, (void*) nextbuf->dma_addr,  dmasize, PEXOR_BURST);
 
 
-  /* DEBUG TEST/
-     return 0; */
+   DEBUG TEST/
+     return 0;
   //spin_lock(&(priv->dma_lock));
   pexor_dma_lock((&(priv->dma_lock)));
 
-  /* TEST*/
+   TEST
   rev=pexor_poll_dma_complete(priv);
     if(rev)
       {
@@ -1427,7 +1669,7 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
         return rev;
       }
 
- /* */
+
 
   iowrite32(priv->pexor.ram_dma_cursor, priv->pexor.dma_source);
   mb();
@@ -1439,7 +1681,7 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
   mb();
   iowrite32(enable, priv->pexor.dma_control_stat);
   mb();
-  pexor_dbg(KERN_NOTICE "#### pexor_next_dma started dma \n");
+  pexor_dbg(KERN_NOTICE "#### pexor_next_dma started dma \n");*/
 
 
 #ifdef DMA_BOARD_IR
@@ -1478,6 +1720,34 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
   return 0;
 #endif
 }
+
+int pexor_start_dma(struct pexor_privdata *priv, dma_addr_t source, dma_addr_t dest, u32 dmasize)
+{
+	int rev;
+    u32 enable=PEXOR_DMA_ENABLED_BIT;
+	pexor_dbg(KERN_NOTICE "#### pexor_next_dma will initiate dma from %p to %p, len=%x, burstsize=%x...\n",
+		    (void*) source, (void*) dest,  dmasize, PEXOR_BURST);
+	  pexor_dma_lock((&(priv->dma_lock)));
+	  rev=pexor_poll_dma_complete(priv);
+      if(rev)
+	      {
+	        pexor_msg(KERN_NOTICE "**pexor_start_dma: dma was not finished, do not start new one!\n");
+	        return rev;
+	      }
+	  iowrite32(source, priv->pexor.dma_source);
+	  mb();
+	  iowrite32((u32) dest, priv->pexor.dma_dest);
+	  mb();
+	  iowrite32(PEXOR_BURST, priv->pexor.dma_burstsize);
+	  mb();
+	  iowrite32(dmasize, priv->pexor.dma_len);
+	  mb();
+	  iowrite32(enable, priv->pexor.dma_control_stat);
+	  mb();
+	  pexor_dbg(KERN_NOTICE "#### pexor_start_dma started dma \n");
+	  return 0;
+}
+
 
 
 int pexor_poll_dma_complete(struct pexor_privdata* priv)
@@ -1580,7 +1850,12 @@ int pexor_wait_dma_buffer(struct pexor_privdata* priv, struct pexor_dmabuf* resu
   dmabuf=list_first_entry(&(priv->received_buffers), struct pexor_dmabuf, queue_list);
   list_move_tail(&(dmabuf->queue_list) , &(priv->used_buffers));
   spin_unlock( &(priv->buffers_lock) );
-  pci_dma_sync_single_for_cpu( priv->pdev, dmabuf->dma_addr, dmabuf->size, PCI_DMA_FROMDEVICE );
+  if(dmabuf->dma_addr!=0) /* kernel buffer*/
+	  pci_dma_sync_single_for_cpu( priv->pdev, dmabuf->dma_addr, dmabuf->size, PCI_DMA_FROMDEVICE );
+  else /* sg buffer*/
+	  pci_dma_sync_sg_for_cpu( priv->pdev, dmabuf->sg, dmabuf->sg_ents,PCI_DMA_FROMDEVICE );
+
+
   *result=*dmabuf;
   //spin_unlock(&(priv->dma_lock));
   return 0;

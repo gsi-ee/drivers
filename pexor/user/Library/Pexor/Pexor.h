@@ -91,6 +91,11 @@ public:
    virtual int ReadRegister(const char bar, const unsigned int address, unsigned int& value);
 
 
+   void SetScatterGatherMode(bool on=true)
+	   {
+		   fbUseSGBuffers=on;
+	   }
+
 protected:
 
    /*
@@ -106,6 +111,12 @@ protected:
 	 * Return value gives error code from ioctl
 	 * Implementation here*/
    	virtual int Delete_DMA_Buffer(pexor::DMA_Buffer*);
+
+private:
+
+   	/* Switch between kernel dma buffer and user sg dma buffers*/
+   	bool fbUseSGBuffers;
+
 
 };
 

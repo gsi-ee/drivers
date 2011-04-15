@@ -146,10 +146,16 @@ struct dev_pexor
 struct pexor_dmabuf
 {
   struct list_head queue_list;  /* linked into free or receive queue list */
-  dma_addr_t dma_addr;          /* dma engine (pci) address */
-  unsigned long kernel_addr;    /* mapped kernel address */
-  unsigned long virt_addr;      /* user space virtual address (=buffer id) */
+   unsigned long virt_addr;      /* user space virtual address (=buffer id) */
   unsigned long size;           /* buffer size in bytes */
+  /* the following members are used for kernel buffers only:*/
+  dma_addr_t dma_addr;          /* dma engine (pci) address*/
+  unsigned long kernel_addr;    /* mapped kernel address  */
+  /* the following members are used for userspace  sg buffers only:*/
+  struct scatterlist* sg;				 /* optional for sg user buffer*/
+  unsigned int sg_ents;			/* actual entries in the scatter/gatter list (NOT nents for the map function, but the result) */
+  struct page **pages;		/* list of pointers to the pages */
+  int num_pages;				 /* number of pages for this user memory area*/
 };
 
 
@@ -202,6 +208,10 @@ struct pexor_dmabuf *new_dmabuffer(struct pci_dev *pdev, size_t size);
 /* remove dmabuffer from pci device */
 int delete_dmabuffer(struct pci_dev *pdev, struct pexor_dmabuf *buf);
 
+/* unmap the sglistst for dmabuffer*/
+int unmap_sg_dmabuffer(struct pci_dev *pdev, struct pexor_dmabuf *buf);
+
+
 /* print address and value of a register to dmesg debug output */
 void print_register(const char *description, u32 * address);
 
@@ -228,6 +238,14 @@ int pexor_ioctl(struct inode *inode, struct file *filp, unsigned int cmd,
 /* general reset function */
 int pexor_ioctl_reset(struct pexor_privdata *priv, unsigned long arg);
 
+
+
+/* map existing user buffer into sglist and register in driver pool*/
+int pexor_ioctl_mapbuffer(struct pexor_privdata *priv, unsigned long arg);
+
+
+/* unmap user buffer sglist and remove from driver pool*/
+int pexor_ioctl_unmapbuffer(struct pexor_privdata *priv, unsigned long arg);
 
 
 /* free dma buffer from usage (put back to free list) */
@@ -294,9 +312,14 @@ void pexor_irq_tasklet(unsigned long);
  * if source address is 0, we use pexor RAM area as start
  * roffset is dma startpoint relative to source
  * dmasize gives bytes to transfer by dma;
- * if 0, we use complete size of allocated dma buffer */
+ * if 0, we use complete size of allocated dma buffer
+ * Function may decide upon buffer type if we use plain dma or sg dma to user buffer*/
 int pexor_next_dma(struct pexor_privdata *priv, dma_addr_t source,
                    u32 roffset, u32 dmasize);
+
+/* start dma engine to transfer dmasize bytes from source to dest.
+ * Will not block until transfer is complete*/
+int pexor_start_dma(struct pexor_privdata *priv, dma_addr_t source, dma_addr_t dest, u32 dmasize);
 
 /* poll the dma register complete bit.
    returns error if loop exceeds certain cycle number */

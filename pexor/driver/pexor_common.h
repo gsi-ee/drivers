@@ -20,6 +20,9 @@
 #include <linux/fs.h>
 #include <linux/interrupt.h>
 #include <linux/delay.h>
+#include <linux/mm.h>
+#include <linux/pagemap.h>
+#include <linux/scatterlist.h>
 
 #include <linux/wait.h>
 #include <asm/uaccess.h>
@@ -38,9 +41,9 @@
 
 
 /* this define will switch at compiletime between trbnet and gosip protocols*/
-#define PEXOR_WITH_TRBNET
+//#define PEXOR_WITH_TRBNET
 
-/*#define PEXOR_ENABLE_IRQ 1*/
+#define PEXOR_ENABLE_IRQ 1*/
 
 #define PEXOR_SYSFS_ENABLE 1
 

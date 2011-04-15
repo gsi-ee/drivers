@@ -6,20 +6,22 @@
     <lib value="x86_64/lib/libDabcPexor.so"/>
     <lib value="libpexor.so"/>    
     <logfile value="ReadoutPexor.log"/>
+    <runtime value="20"/>
   </Run>
   <Application class="pexorplugin::ReadoutApplication">
     <PexorID value="0"/>
-    <PexorNumSlaves_0 value="4"/>
+    <PexorNumSlaves_0 value="1"/>
 	<PexorNumSlaves_1 value="0"/>
 	<PexorNumSlaves_2 value="0"/>
 	<PexorNumSlaves_3 value="0"/>
 	<PexorDMALen value="262144"/>
 	<PexorDMABuffers value="30"/>
-	<ExploderSubmemSize value="128"/>
+	<PexorDMAScatterGather value="true"/>
+	<ExploderSubmemSize value="4096"/>
 	<PexorFormatMbs value="true"/>
-	<PexorSyncReadout value="true"/>
+	<PexorSyncReadout value="false"/>
 	<PexorParallelReadout value="true"/>
-	<PexorUseTrigger value="true"/>
+	<PexorUseTrigger value="false"/>
 	<TrixorConversionTime value="50"/>
 	<TrixorFastClearTime  value="40"/>	
 	<PexorOutFile value=""/>
