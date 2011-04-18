@@ -388,7 +388,7 @@ int pexor_ioctl_mapbuffer(struct pexor_privdata *priv, unsigned long arg)
 
     /* calculate the number of pages */
    	nr_pages = ((dmabuf->virt_addr & ~PAGE_MASK) + dmabuf->size + ~PAGE_MASK) >> PAGE_SHIFT;
-  	pexor_dbg(KERN_NOTICE  "nr_pages computed: %u\n", nr_pages);
+  	pexor_dbg(KERN_NOTICE  "nr_pages computed: 0x%x\n", nr_pages);
 
    	/* Allocate space for the page information */
    	if ((pages = vmalloc(nr_pages * sizeof(*pages))) == NULL)
@@ -415,14 +415,14 @@ int pexor_ioctl_mapbuffer(struct pexor_privdata *priv, unsigned long arg)
 
 	/* Error, not all pages mapped */
 	if (res < (int) nr_pages) {
-		pexor_dbg(KERN_ERR "Could not map all user pages (%d of %d)\n", res, nr_pages);
+		pexor_dbg(KERN_ERR "Could not map all user pages (0x%x of 0x%x)\n", res, nr_pages);
 		/* If only some pages could be mapped, we release those. If a real
 		 * error occured, we set nr_pages to 0 */
 		nr_pages = (res > 0 ? res : 0);
 		goto mapbuffer_unmap;
 	}
 
-	pexor_dbg(KERN_NOTICE "Got the pages (%d).\n", res);
+	pexor_dbg(KERN_NOTICE "Got the pages (0x%x).\n", res);
 
 
 
@@ -430,8 +430,9 @@ int pexor_ioctl_mapbuffer(struct pexor_privdata *priv, unsigned long arg)
 
     /* populate sg list:*/
 		/* page0 is different */
-		/*if ( !PageReserved(pages[0]) )
-			SetPageLocked(pages[0]);*/
+		if ( !PageReserved(pages[0]) )
+				__set_page_locked(pages[0]);
+			//SetPageLocked(pages[0]);
 
 		/* for first chunk, we take into account that memory is possibly not starting at
 		 * page boundary:*/
@@ -441,8 +442,9 @@ int pexor_ioctl_mapbuffer(struct pexor_privdata *priv, unsigned long arg)
 
 		count = dmabuf->size - length;
 		for(i=1;i<nr_pages;i++) {
-		/*	if ( !PageReserved(pages[i]) )
-				SetPageLocked(pages[i]);*/
+			if ( !PageReserved(pages[i]) )
+				__set_page_locked(pages[i]);
+				//SetPageLocked(pages[i]);
 
 			sg_set_page(&sg[i], pages[i], ((count > PAGE_SIZE) ? PAGE_SIZE : count), 0);
 			count -= sg[i].length;
@@ -454,7 +456,7 @@ int pexor_ioctl_mapbuffer(struct pexor_privdata *priv, unsigned long arg)
 		if ((nents = pci_map_sg(priv->pdev, sg, nr_pages, PCI_DMA_FROMDEVICE)) == 0)
 			goto mapbuffer_unmap;
 
-		pexor_dbg(KERN_NOTICE "Mapped SG list (%d entries).\n", nents);
+		pexor_dbg(KERN_NOTICE "Mapped SG list (0x%x entries).\n", nents);
 
 
 		dmabuf->num_pages = nr_pages;	/* Will be needed when unmapping */
@@ -465,20 +467,27 @@ int pexor_ioctl_mapbuffer(struct pexor_privdata *priv, unsigned long arg)
 
 
 
-	    pexor_dbg(KERN_ERR "pexor_ioctl_mapbuffer mapped user buffer %lx, size %lx, pages %lx to %lx sg entries \n", buf->virt_addr, buf->size, nr_pages, nents);
+	    pexor_dbg(KERN_ERR "pexor_ioctl_mapbuffer mapped user buffer %lx, size %lx, pages %lx to %lx sg entries \n", dmabuf->virt_addr, dmabuf->size, nr_pages, nents);
 	    spin_lock( &(priv->buffers_lock) );
 	    /* this list contains only the unused (free) buffers: */
 	    list_add_tail( &(dmabuf->queue_list), &(priv->free_buffers));
 	    spin_unlock( &(priv->buffers_lock) );
 
+	    /* DEBUG ****************************************/
+	    for_each_sg(dmabuf->sg,sg, dmabuf->sg_ents,i)
+	   	    	{
+	   	    	  pexor_dbg(KERN_ERR "-- dump sg chunk %d: start 0x%x length 0x%x \n",i, sg_dma_address(sg), sg_dma_len(sg));
+	   	    	}
+	    /***************************************************/
 
 	    return 0;
 
 mapbuffer_unmap:
 	/* release pages */
 		for(i=0;i<nr_pages;i++) {
-			/*if (PageLocked(pages[i]))
-				ClearPageLocked(pages[i]);*/
+			if (PageLocked(pages[i]))
+				__clear_page_locked(pages[i]);
+				//ClearPageLocked(pages[i]);
 			if (!PageReserved(pages[i]))
 				SetPageDirty(pages[i]);
 			page_cache_release(pages[i]);
@@ -1121,7 +1130,8 @@ int unmap_sg_dmabuffer(struct pci_dev *pdev, struct pexor_dmabuf *buf)
 			if ( !PageReserved( buf->pages[i] ))
 				{
 				SetPageDirty( buf->pages[i] );
-				/*ClearPageLocked(buf->pages[i]);*/
+				__clear_page_locked(buf->pages[i]);
+				//ClearPageLocked(buf->pages[i]);
 				}
 			page_cache_release( buf->pages[i] );
 		}
@@ -1569,7 +1579,7 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
   if(nextbuf->kernel_addr !=0)
   {
 	  /* here we have coherent kernel buffer case*/
-
+	  pexor_dbg(KERN_ERR "#### pexor_next_dma in kernel buffer mode\n");
 	  if((dmasize==0) || (dmasize > nextbuf->size))
 		{
 		  pexor_dbg(KERN_NOTICE "#### pexor_next_dma resetting old dma size %x to %lx\n",dmasize,nextbuf->size);
@@ -1581,15 +1591,15 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 		dmasize=priv->pexor.ram_dma_base + PEXOR_RAMSIZE - priv->pexor.ram_dma_cursor;
 		}
 
+
 	   /* check if size is multiple of burstsize and correct:*/
 	  rest=dmasize % PEXOR_BURST;
 	  if(rest)
 		{
 		  dmasize= dmasize + PEXOR_BURST - rest;
-		  if(dmasize > nextbuf->size) dmasize -= PEXOR_BURST; /* avoid exceeding buf limits*/
+		  if(dmasize > nextbuf->size) dmasize -= PEXOR_BURST;  /*avoid exceeding buf limits*/
 
 		  pexor_dbg(KERN_NOTICE "#### pexor_next_dma correcting dmasize %x for rest:%x, burst:%x\n", dmasize, rest, PEXOR_BURST);
-
 					/*if(dmasize==nextbuf->size)
 					{
 					pexor_dbg(KERN_NOTICE "#### pexor_next_dma substracting dmasize rest:%x\n",rest);
@@ -1613,6 +1623,18 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
   {
 	  /* put emulated sg dma here
 	   * since pexor gosip fpga code does not support sglist dma, we do it manually within the driver*/
+	  pexor_dbg(KERN_ERR "#### pexor_next_dma in scatter-gather mode\n");
+	  /* test: align complete buffer to maximum burst?*/
+	  rest=dmasize % PEXOR_BURST;
+	  if(rest)
+		{
+		  dmasize= dmasize + PEXOR_BURST - rest;
+		  if(dmasize > nextbuf->size) dmasize -= PEXOR_BURST;  /*avoid exceeding buf limits*/
+
+		  pexor_dbg(KERN_NOTICE "#### pexor_next_dma correcting dmasize %x for rest:%x, burst:%x\n", dmasize, rest, PEXOR_BURST);
+		}
+
+
 
 		  sgcursor= priv->pexor.ram_dma_cursor;
 		  sglensum=0;
@@ -1620,11 +1642,17 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 	      for_each_sg(nextbuf->sg,sgentry, nextbuf->sg_ents,i)
 	    	{
 	    	  sglen=sg_dma_len(sgentry);
-	    	  if(dmasize<=sglen) sglen= dmasize; /* source buffer fits into first sg page*/
+	    	  if(dmasize<sglen) sglen= dmasize; /* source buffer fits into first sg page*/
 
+	    	  if(dmasize-sglensum < sglen) sglen=dmasize-sglensum; /* cut dma length for last sg page*/
+
+	    	  /* DEBUG: pretend to do dma, but do not issue it*/
+	    	  //pexor_dbg(KERN_ERR "#### pexor_next_dma would start dma from 0x%x to 0x%x of length 0x%x\n",sgcursor, sg_dma_address(sgentry), sglen);
+
+	    	  /**** END DEBUG*/
 	    	  /* initiate dma to next sg part:*/
 	    	  if(pexor_start_dma(priv, sgcursor, sg_dma_address(sgentry), sglen)<0)
-	    	  		  return -EINVAL;
+	    		  return -EINVAL;
 
 	    	  if((rev=pexor_poll_dma_complete(priv))!=0)
 				  {
@@ -1645,7 +1673,7 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 
 	      if(sglensum<dmasize)
 			  {
-				  pexor_dbg(KERN_ERR "#### pexor_next_dma could not write full size %x to sg buffer of len\n",dmasize,sglensum);
+				  pexor_dbg(KERN_ERR "#### pexor_next_dma could not write full size 0x%x to sg buffer of len 0x%x\n",dmasize,sglensum);
 				  return -EINVAL;
 			  }
 
@@ -1724,21 +1752,31 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 int pexor_start_dma(struct pexor_privdata *priv, dma_addr_t source, dma_addr_t dest, u32 dmasize)
 {
 	int rev;
+	u32 burstsize=PEXOR_BURST;
     u32 enable=PEXOR_DMA_ENABLED_BIT;
-	pexor_dbg(KERN_NOTICE "#### pexor_next_dma will initiate dma from %p to %p, len=%x, burstsize=%x...\n",
-		    (void*) source, (void*) dest,  dmasize, PEXOR_BURST);
-	  pexor_dma_lock((&(priv->dma_lock)));
+
+
 	  rev=pexor_poll_dma_complete(priv);
       if(rev)
 	      {
 	        pexor_msg(KERN_NOTICE "**pexor_start_dma: dma was not finished, do not start new one!\n");
 	        return rev;
 	      }
+      /* calculate maximum burstsize here:*/
+      while (dmasize % burstsize)
+    	 {
+			  burstsize = (burstsize >> 1);
+			  if(burstsize==8) break;
+    	 }
+      pexor_dbg(KERN_NOTICE "#### pexor_start_dma will initiate dma from %p to %p, len=%x, burstsize=%x...\n",
+		    (void*) source, (void*) dest,  dmasize, burstsize);
+
+      pexor_dma_lock((&(priv->dma_lock)));
 	  iowrite32(source, priv->pexor.dma_source);
 	  mb();
 	  iowrite32((u32) dest, priv->pexor.dma_dest);
 	  mb();
-	  iowrite32(PEXOR_BURST, priv->pexor.dma_burstsize);
+	  iowrite32(burstsize, priv->pexor.dma_burstsize);
 	  mb();
 	  iowrite32(dmasize, priv->pexor.dma_len);
 	  mb();
@@ -1761,7 +1799,7 @@ int pexor_poll_dma_complete(struct pexor_privdata* priv)
 
       enable=ioread32(priv->pexor.dma_control_stat);
       mb();
-    /*  pexor_dbg(KERN_ERR "pexor_poll_dma_complete sees dmactrl=: 0x%x , looking for %x\n",enable, PEXOR_DMA_ENABLED_BIT);*/
+   //   pexor_dbg(KERN_ERR "pexor_poll_dma_complete sees dmactrl=: 0x%x , looking for %x\n",enable, PEXOR_DMA_ENABLED_BIT);
       if((enable & PEXOR_DMA_ENABLED_BIT) == 0) break;
       /* poll until the dma bit is cleared => dma complete*/
 

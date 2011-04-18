@@ -43,7 +43,7 @@
 /* this define will switch at compiletime between trbnet and gosip protocols*/
 //#define PEXOR_WITH_TRBNET
 
-#define PEXOR_ENABLE_IRQ 1*/
+#define PEXOR_ENABLE_IRQ 1
 
 #define PEXOR_SYSFS_ENABLE 1
 
