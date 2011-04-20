@@ -17,12 +17,12 @@
 	<PexorNumSlaves_3 value="0"/>
 	<PexorDMALen value="65536"/>
 	<PexorDMABuffers value="30"/>
-	<PexorDMAScatterGather value="true"/>
+	<PexorDMAScatterGather value="false"/>
 	<PexorDMAZeroCopy value="false"/>
 	<ExploderSubmemSize value="4096"/>
 	<PexorFormatMbs value="true"/>
-	<PexorSyncReadout value="false"/>
-	<PexorParallelReadout value="true"/>
+	<PexorSyncReadout value="true"/>
+	<PexorParallelReadout value="false"/>
 	<PexorUseTrigger value="false"/>
 	<TrixorConversionTime value="50"/>
 	<TrixorFastClearTime  value="40"/>	

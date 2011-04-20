@@ -174,7 +174,8 @@ fInitDone(false),fNumEvents(0),fuSeed(0)
 
 pexorplugin::Device::~Device()
 {
-delete fBoard;
+    fBoard->Reset(); // throw away optionally user buffer mappings hee
+	delete fBoard;
 }
 
 
@@ -206,7 +207,7 @@ void pexorplugin::Device::MapDMAMemoryPool(dabc::MemoryPool* pool)
 					 }
 	        	 // then tell the driver it should not use this dma buffer until we give it back:
 	        	 pexor::DMA_Buffer* taken=0;
-	        	 if((taken=fBoard->Take_DMA_Buffer())==0)
+	        	 if((taken=fBoard->Take_DMA_Buffer(false))==0)
 					{
 						EOUT(("**** Could not take back DMA buffer %p for DABC!\n",addr));
 						continue;
@@ -214,9 +215,10 @@ void pexorplugin::Device::MapDMAMemoryPool(dabc::MemoryPool* pool)
 	        	 if(taken->Data() != (int*) addr)
 					 {
 						 EOUT(("**** Mismatch of mapped DMA buffer %p and reserved buffer %p !\n",taken->Data(),addr));
+						 delete taken;
 						 continue;
 					 }
-
+	        	 delete taken; // clean up wrapper for driver internal sg lists, we do not use Board class mempool!
 				 }
 	      }
 

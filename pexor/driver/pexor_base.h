@@ -318,7 +318,7 @@ void pexor_irq_tasklet(unsigned long);
  * if 0, we use complete size of allocated dma buffer
  * Function may decide upon buffer type if we use plain dma or sg dma to user buffer*/
 int pexor_next_dma(struct pexor_privdata *priv, dma_addr_t source,
-                   u32 roffset, u32 woffset, u32 dmasize, u32 bufid);
+                   u32 roffset, u32 woffset, u32 dmasize, unsigned long bufid);
 
 /* start dma engine to transfer dmasize bytes from source to dest.
  * Will not block until transfer is complete*/

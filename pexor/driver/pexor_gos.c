@@ -187,7 +187,8 @@ int pexor_ioctl_wait_token(struct pexor_privdata* priv, unsigned long arg)
   u32 rstat=0, radd=0, rdat=0;
   /*u32 tkreply=0, tkhead=0, tkfoot =0;*/
   u32 dmasize=0,oldsize=0;
-  u32 dmabufid,woffset;
+  u32 woffset;
+  unsigned long dmabufid=0;
   struct pexor_dmabuf dmabuf;
   struct pexor_token_io descriptor;
   struct pexor_sfp* sfp=&(priv->pexor.sfp);

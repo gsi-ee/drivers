@@ -530,7 +530,7 @@ int pexor_ioctl_freebuffer(struct pexor_privdata* priv, unsigned long arg)
     {
       if(cursor->virt_addr==bufdescriptor.addr)
 	{
-	  pexor_dbg(KERN_NOTICE "** pexor_ioctl_freebuffer freed buffer %p\n",(void*) cursor);
+	  pexor_dbg(KERN_NOTICE "** pexor_ioctl_freebuffer freed buffer %p\n",(void*) cursor->virt_addr);
 	  list_move_tail(&(cursor->queue_list) , &(priv->free_buffers));
 	  spin_unlock( &(priv->buffers_lock) );
 	  /* ? need to sync buffer for next dma */
@@ -1537,7 +1537,7 @@ void pexor_irq_tasklet(unsigned long arg)
 }
 
 
-int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, u32 woffset, u32 dmasize, u32 bufid)
+int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, u32 woffset, u32 dmasize, unsigned long bufid)
 {
   struct pexor_dmabuf* nextbuf;
   int i,rev,rest;
@@ -1581,7 +1581,7 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 	  {
 		  /* check again if we found the correct buffer in list...*/
 		  spin_unlock( &(priv->buffers_lock) );
-		  pexor_dbg(KERN_ERR "pexor_next_dma: buffer of desired id %p is not in free list! \n");
+		  pexor_dbg(KERN_ERR "pexor_next_dma: buffer of desired id %p is not in free list! \n",bufid);
           return -EINVAL;
 	  }
   }
