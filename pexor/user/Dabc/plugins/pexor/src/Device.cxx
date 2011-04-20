@@ -45,6 +45,7 @@ const char* pexorplugin::xmlRawFile    = "PexorOutFile"; // name of output lmd f
 const char* pexorplugin::xmlDMABufLen	= "PexorDMALen"; // length of DMA buffers to allocate in driver
 const char* pexorplugin::xmlDMABufNum	= "PexorDMABuffers"; // number of DMA buffers to allocate in driver
 const char* pexorplugin::xmlDMAScatterGatherMode ="PexorDMAScatterGather"; // sg mode switch
+const char* pexorplugin::xmlDMAZeroCopy ="PexorDMAZeroCopy"; // sg mode switch
 const char* pexorplugin::xmlFormatMbs	= "PexorFormatMbs"; // switch Mbs formating already in transport buffer
 const char* pexorplugin::xmlSyncRead	= "PexorSyncReadout"; // switch readout sync mode
 const char* pexorplugin::xmlParallelRead	= "PexorParallelReadout"; // switch readout parallel token mode
@@ -92,6 +93,8 @@ fInitDone(false),fNumEvents(0),fuSeed(0)
 				delete fBoard;
 				return;
 			}
+	fZeroCopyMode=GetCfgBool(pexorplugin::xmlDMAZeroCopy,false, cmd);
+	DOUT1(("Setting zero copy mode to %d\n", fZeroCopyMode));
 	bool sgmode=GetCfgBool(pexorplugin::xmlDMAScatterGatherMode,false, cmd);
 	fBoard->SetScatterGatherMode(sgmode);
 	DOUT1(("Setting scatter gather mode to %d\n", sgmode));
@@ -118,13 +121,22 @@ fInitDone(false),fNumEvents(0),fuSeed(0)
 	unsigned int size=GetCfgInt(pexorplugin::xmlDMABufLen,4096, cmd);
     fReadLength=size; // initial value is maximum length of dma buffer
 	//fReadLength=33000;
-	unsigned int numbufs=GetCfgInt(pexorplugin::xmlDMABufNum,20, cmd);
-	int rev=fBoard->Add_DMA_Buffers(size,numbufs);
-	if(rev)
-		{
-		 EOUT(("\n\nError %d on adding dma buffers\n",rev));
-			return;
-		}
+    if(fZeroCopyMode)
+    {
+    	// TODO: map here dabc memory pool completely to driver
+    	// we do nothing here, all is done when ProcessPoolChanged is invoked
+
+    }
+    else
+    {
+		unsigned int numbufs=GetCfgInt(pexorplugin::xmlDMABufNum,20, cmd);
+		int rev=fBoard->Add_DMA_Buffers(size,numbufs);
+		if(rev)
+			{
+			 EOUT(("\n\nError %d on adding dma buffers\n",rev));
+				return;
+			}
+    }
    fMbsFormat=GetCfgBool(pexorplugin::xmlFormatMbs,true, cmd);
 
 
@@ -164,6 +176,55 @@ pexorplugin::Device::~Device()
 {
 delete fBoard;
 }
+
+
+void pexorplugin::Device::MapDMAMemoryPool(dabc::MemoryPool* pool)
+{
+	if(!fZeroCopyMode) return;
+	if(!fInitDone) return;
+	 DOUT1(("SSSSSSS Starting MapDMAMemoryPool for pool:%s",pool->GetName()));
+	// first clean up all previos buffers
+	 fBoard->Reset(); // problematic when pool should change during DMA transfer?
+
+	// then map dabc buffers to driver list:
+	 dabc::BlockNum_t numblocks = pool ? pool->NumMemBlocks() : 0;
+	 DOUT3(("pexorplugin::Device::MapDMAMemoryPool transport map pools buffers blocks: %u", numblocks));
+	 for (dabc::BlockNum_t blockid=0; blockid<numblocks; blockid++)
+		 {
+	         if (!pool->IsMemoryBlock(blockid)) continue;
+	         dabc::BufferNum_t bufnum = pool->GetNumBuffersInBlock(blockid);
+	         for (dabc::BufferNum_t n=0; n < bufnum; n++)
+				 {
+	        	 dabc::BufferId_t bufid = dabc::CodeBufferId(blockid, n);
+	        	 dabc::BufferSize_t bufsize = pool->GetBufferSize(bufid);
+	        	 void* addr = pool->GetBufferLocation(bufid);
+	        	 // first we map the buffer for sglist and register to driver lists:
+	        	 if(fBoard->Register_DMA_Buffer((int*) addr, bufsize))
+					 {
+							 EOUT(("\n\nError registering buffer num:%d of pool:%s, block:%d addr:%p \n",n,pool->GetName(),blockid, addr));
+							 continue;
+					 }
+	        	 // then tell the driver it should not use this dma buffer until we give it back:
+	        	 pexor::DMA_Buffer* taken=0;
+	        	 if((taken=fBoard->Take_DMA_Buffer())==0)
+					{
+						EOUT(("**** Could not take back DMA buffer %p for DABC!\n",addr));
+						continue;
+					}
+	        	 if(taken->Data() != (int*) addr)
+					 {
+						 EOUT(("**** Mismatch of mapped DMA buffer %p and reserved buffer %p !\n",taken->Data(),addr));
+						 continue;
+					 }
+
+				 }
+	      }
+
+
+
+}
+
+
 
 
 void pexorplugin::Device::InitTrixor()
@@ -263,8 +324,28 @@ int  pexorplugin::Device::RequestToken(dabc::Buffer* buf, bool synchronous)
 
 	  }
 
+	// new: decide if we have regular dma or zero copy:
+	int* bptr=0;
+	unsigned int headeroffset=0;
+	if(fZeroCopyMode)
+	{
+		// get id and data offset
+		bptr=(int*) buf->GetDataLocation();
+		if(fMbsFormat)
+			headeroffset=sizeof(mbs::EventHeader) + sizeof(mbs::SubeventHeader);
+
+		// make buffer available for driver DMA:
+		pexor::DMA_Buffer wrapper(bptr,buf->GetDataSize());
+		if(fBoard->Free_DMA_Buffer(&wrapper))
+		{
+				EOUT(("**** Could not make buffer %p available for DMA!\n",bptr));
+				return dabc::di_Error;
+		}
+	}
+
+
 	// now request token from board at current sfp:
-	pexor::DMA_Buffer* tokbuf= fBoard->RequestToken(fCurrentSFP, fDoubleBufID[fCurrentSFP], synchronous); // synchronous dma mode here
+	pexor::DMA_Buffer* tokbuf= fBoard->RequestToken(fCurrentSFP, fDoubleBufID[fCurrentSFP], synchronous, bptr, headeroffset); // synchronous dma mode here
 	if((long int) tokbuf==-1) // TODO: handle error situations by exceptions later!
 		{
 			EOUT(("**** Error in PEXOR Token Request from sfp %d !\n",fCurrentSFP));
@@ -281,7 +362,16 @@ int  pexorplugin::Device::RequestToken(dabc::Buffer* buf, bool synchronous)
 
 int pexorplugin::Device::ReceiveTokenBuffer(dabc::Buffer* buf)
 {
-	pexor::DMA_Buffer* tokbuf= fBoard->WaitForToken(fCurrentSFP);
+	// for asynchronous request, we need to put here again the check for zero copy dma:
+	int* bptr=0;
+	unsigned int headeroffset=0;
+	if(fZeroCopyMode)
+		{
+			bptr=(int*) buf->GetDataLocation();
+			if(fMbsFormat)
+				headeroffset=sizeof(mbs::EventHeader) + sizeof(mbs::SubeventHeader);
+		}
+	pexor::DMA_Buffer* tokbuf= fBoard->WaitForToken(fCurrentSFP,bptr,headeroffset);
 	if(tokbuf==0)
 		{
 				EOUT(("**** Error in PEXOR ReceiveTokenBuffer from sfp %d !\n",fCurrentSFP));
@@ -408,11 +498,18 @@ int  pexorplugin::Device::CopyOutputBuffer(pexor::DMA_Buffer* tokbuf, dabc::Buff
       EOUT(("**** Error in PEXOR Token Request size, skip buffer!\n"));
       return dabc::di_SkipBuffer;
     }
-  ptr.copyfrom(tokbuf->Data(), tokbuf->UsedSize());
   used_size += tokbuf->UsedSize();
+  if(!fZeroCopyMode)
+	  {
+		  ptr.copyfrom(tokbuf->Data(), tokbuf->UsedSize());
+		  fBoard->Free_DMA_Buffer(tokbuf); // put dma buffer back to free lists
+	  }
+  else
+	  {
+		  delete tokbuf; // for zero copy mode, this is just a temporary wrapper. Will be freed before request
+	  }
   buf->SetDataSize(used_size);
   fNumEvents++;
-  fBoard->Free_DMA_Buffer(tokbuf);
   fReadLength = used_size; //adjust read length for next buffer to real token length
   return used_size;
 

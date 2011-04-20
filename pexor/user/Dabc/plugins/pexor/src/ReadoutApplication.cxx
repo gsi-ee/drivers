@@ -38,6 +38,7 @@ pexorplugin::ReadoutApplication::ReadoutApplication() :
    CreateParInt(xmlDMABufLen, 65536);
    CreateParInt(xmlDMABufNum, 20);
    CreateParBool(xmlDMAScatterGatherMode, false);
+   CreateParBool(xmlDMAZeroCopy, false);
    CreateParBool(xmlFormatMbs, true);
    CreateParBool(xmlSyncRead, true);
    CreateParBool(xmlParallelRead, true);
@@ -98,6 +99,7 @@ bool pexorplugin::ReadoutApplication::CreateAppModules()
    cmd->SetInt(xmlDMABufLen, GetParInt(xmlDMABufLen, 16384));
    cmd->SetInt(xmlDMABufNum, GetParInt(xmlDMABufNum, 50));
    cmd->SetBool(xmlDMAScatterGatherMode, GetParBool(xmlDMAScatterGatherMode, 0));
+   cmd->SetBool(xmlDMAZeroCopy, GetParBool(xmlDMAZeroCopy, 0));
    cmd->SetInt(xmlExploderSubmem, GetParInt(xmlExploderSubmem, 2048));
    cmd->SetBool(xmlFormatMbs, GetParBool(xmlFormatMbs, 0));
    cmd->SetBool(xmlSyncRead, GetParBool(xmlSyncRead, 0));

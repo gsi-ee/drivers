@@ -51,6 +51,7 @@ extern const char* xmlPexorID; // id number N of pexor device file /dev/pexor-N
   extern const char* xmlDMABufLen; // length of DMA buffers to allocate in driver
   extern const char* xmlDMABufNum; 	// number of DMA buffers
   extern const char* xmlDMAScatterGatherMode; // switch scatter gather dma on/off
+  extern const char* xmlDMAZeroCopy; // switch zero copy scatter gather dma on/off
   extern const char* xmlExploderSubmem; // exploder submem size for testbuffer
   extern const char* xmlFormatMbs; // enable mbs formating already in device transport
   extern const char* xmlSyncRead; // switch synchronous or asynchronous token dma
@@ -81,6 +82,8 @@ extern const char* xmlPexorID; // id number N of pexor device file /dev/pexor-N
          Device(Basic* parent, const char* name, dabc::Command* cmd);
          virtual ~Device();
 
+         /* for zero copy DMA: map complete dabc pool for sg DMA of driver*/
+         void MapDMAMemoryPool(dabc::MemoryPool* pool);
 
          /* Request token from current sfp. If synchronous is true, fill output buffer.
           * if mbs formating is enabled, put mbs headers into buffer
@@ -125,6 +128,8 @@ extern const char* xmlPexorID; // id number N of pexor device file /dev/pexor-N
          bool IsParallelRead(){return fParallelRead;}
 
          bool IsTriggeredRead(){return fTriggeredRead;}
+
+
 
          /* initialize trixor depending on the setup*/
          void InitTrixor();
@@ -196,6 +201,9 @@ extern const char* xmlPexorID; // id number N of pexor device file /dev/pexor-N
 
       /* switch to skip daq request*/
       bool fSkipRequest;
+
+      /* zero copy DMA into dabc buffers*/
+      bool fZeroCopyMode;
 
 
       /* array indicating which sfps are connected for readout*/

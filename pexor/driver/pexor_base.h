@@ -29,7 +29,8 @@
  * of the tasklet which is executed by ir. */
 #define DMA_WAITPOLLING 1
 
-/* test: use spinlock to protect dma engine vs buffers. do we need this?*/
+/* test: use spinlock to protect dma engine vs buffers. do we need this?
+ * rather bad idea*/
 /*#define DMA_SPINLOCK 1 */
 
 
@@ -310,12 +311,14 @@ void pexor_irq_tasklet(unsigned long);
 
 /* set next receive buffer and start dma engine.
  * if source address is 0, we use pexor RAM area as start
- * roffset is dma startpoint relative to source
+ * roffset is dma startpoint relative to source (read offset)
+ * woffset is optional write offset relative to target buffer
  * dmasize gives bytes to transfer by dma;
+ * bufid is optional buffer id (i.e. user virtual address pointer) of buffer to fill
  * if 0, we use complete size of allocated dma buffer
  * Function may decide upon buffer type if we use plain dma or sg dma to user buffer*/
 int pexor_next_dma(struct pexor_privdata *priv, dma_addr_t source,
-                   u32 roffset, u32 dmasize);
+                   u32 roffset, u32 woffset, u32 dmasize, u32 bufid);
 
 /* start dma engine to transfer dmasize bytes from source to dest.
  * Will not block until transfer is complete*/

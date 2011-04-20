@@ -546,7 +546,7 @@ int pexor_ioctl_freebuffer(struct pexor_privdata* priv, unsigned long arg)
 	      /* this state indicates that dma flow was running out of buffer. We enable it again and restart dma*/
 	      atomic_set(&(priv->state),PEXOR_STATE_DMA_FLOW);
 	      pexor_dbg(KERN_NOTICE "** pexor_ioctl_freebuffer restarts dma flow \n");
-	      retval=pexor_next_dma(priv, priv->pexor.ram_dma_cursor, 0 ,0); /* set previous dma source that was tried before suspend*/
+	      retval=pexor_next_dma(priv, priv->pexor.ram_dma_cursor, 0, 0 ,0 ,0); /* set previous dma source that was tried before suspend*/
 	      if(retval)
 		{
 		  atomic_set(&(priv->state),PEXOR_STATE_STOPPED);
@@ -610,7 +610,6 @@ int pexor_ioctl_deletebuffer(struct pexor_privdata* priv, unsigned long arg)
     }
 
   pexor_dma_lock((&(priv->dma_lock)));
-  //spin_lock(&(priv->dma_lock));
   spin_lock( &(priv->buffers_lock) );
   if(!list_empty(&(priv->used_buffers)))
     {
@@ -623,7 +622,6 @@ int pexor_ioctl_deletebuffer(struct pexor_privdata* priv, unsigned long arg)
 	      delete_dmabuffer(priv->pdev, cursor);
 	      spin_unlock( &(priv->buffers_lock) );
 	      pexor_dma_unlock((&(priv->dma_lock)));
-	      //spin_unlock(&(priv->dma_lock));
 	      return 0;
 	    }
 	}
@@ -641,7 +639,6 @@ int pexor_ioctl_deletebuffer(struct pexor_privdata* priv, unsigned long arg)
 	      delete_dmabuffer(priv->pdev, cursor);
 	      spin_unlock( &(priv->buffers_lock) );
 	      pexor_dma_unlock((&(priv->dma_lock)));
-	      //spin_unlock(&(priv->dma_lock));
 	      return 0;
 	    }
 	}
@@ -657,14 +654,12 @@ int pexor_ioctl_deletebuffer(struct pexor_privdata* priv, unsigned long arg)
 	      delete_dmabuffer(priv->pdev, cursor);
 	      spin_unlock( &(priv->buffers_lock) );
 	      pexor_dma_unlock((&(priv->dma_lock)));
-	      //spin_unlock(&(priv->dma_lock));
 	      return 0;
 	    }
 	}
     }
   spin_unlock( &(priv->buffers_lock) );
   pexor_dma_unlock((&(priv->dma_lock)));
-  //spin_unlock(&(priv->dma_lock));
   pexor_dbg(KERN_NOTICE "** pexor_ioctl_freebuffer could not find buffer for address %lx\n", bufdescriptor.addr);
   return -EFAULT;
 }
@@ -704,7 +699,7 @@ int pexor_ioctl_setrunstate(struct pexor_privdata* priv, unsigned long arg)
       break;
     case PEXOR_STATE_DMA_FLOW:
     case PEXOR_STATE_DMA_SINGLE:
-      retval=pexor_next_dma(priv, 0 , 0 , 0 ); /* TODO: set source address cursor?*/
+      retval=pexor_next_dma(priv, 0 , 0, 0, 0 , 0 ); /* TODO: set source address cursor?*/
       if(retval)
 	{
 	  /* error handling, e.g. no more dma buffer available*/
@@ -1155,8 +1150,7 @@ void cleanup_buffers(struct pexor_privdata* priv)
                return;
    	  }
 
-   	pexor_dma_lock((&(priv->dma_lock)));
-  //spin_lock(&(priv->dma_lock));
+  pexor_dma_lock((&(priv->dma_lock)));
   spin_lock( &(priv->buffers_lock) );
   /* remove reference in receive queue (discard contents):*/
   list_for_each_entry_safe(cursor, next, &(priv->received_buffers),
@@ -1183,7 +1177,6 @@ void cleanup_buffers(struct pexor_privdata* priv)
     }
   spin_unlock( &(priv->buffers_lock) );
   pexor_dma_unlock((&(priv->dma_lock)));
-  //spin_unlock(&(priv->dma_lock));
   pexor_dbg(KERN_NOTICE "**pexor_cleanup_buffers...done\n");
 }
 
@@ -1522,7 +1515,7 @@ void pexor_irq_tasklet(unsigned long arg)
 	atomic_set(&(privdata->state),PEXOR_STATE_DMA_SUSPENDED);
 	break;
 	}*/
-      rev=pexor_next_dma(privdata, 0, 0, 0); /* TODO: inc source address cursor? Handle sfp double buffering?*/
+      rev=pexor_next_dma(privdata, 0, 0,0 , 0, 0); /* TODO: inc source address cursor? Handle sfp double buffering?*/
       if(rev)
 	{
 	  /* no more dma buffers at the moment: suspend flow?*/
@@ -1544,10 +1537,9 @@ void pexor_irq_tasklet(unsigned long arg)
 }
 
 
-int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, u32 dmasize)
+int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, u32 woffset, u32 dmasize, u32 bufid)
 {
   struct pexor_dmabuf* nextbuf;
-
   int i,rev,rest;
   struct scatterlist *sgentry;
   dma_addr_t sgcursor;
@@ -1571,19 +1563,51 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
       return -EINVAL;
       /* TODO: handle dynamically what to do when running out of dma buffers*/
     }
-  nextbuf=list_first_entry(&(priv->free_buffers), struct pexor_dmabuf, queue_list);
+  /* put here search for dedicated buffer in free list:*/
+  if(bufid!=0)
+  {
+	  /* we want to fill a special buffer, find it in free list:*/
+	  list_for_each_entry(nextbuf, &(priv->free_buffers), queue_list)
+	  	{
+	  	  if(nextbuf->virt_addr==bufid)
+	  	    {
+	  	      pexor_dbg(KERN_NOTICE "** pexor_next_dma is using buffer of id %p\n",bufid);
+	  	      /* put desired buffer to the begin of the free list, this will be treated subsequently*/
+	  	      list_move(&(nextbuf->queue_list) , &(priv->free_buffers));
+	  	      break;
+	  	    }
+	  	}
+	  if(nextbuf->virt_addr!=bufid)
+	  {
+		  /* check again if we found the correct buffer in list...*/
+		  spin_unlock( &(priv->buffers_lock) );
+		  pexor_dbg(KERN_ERR "pexor_next_dma: buffer of desired id %p is not in free list! \n");
+          return -EINVAL;
+	  }
+  }
+  else
+  {
+	  /* just take next available buffer to fill by DMA:*/
+	  nextbuf=list_first_entry(&(priv->free_buffers), struct pexor_dmabuf, queue_list);
+  }
   spin_unlock( &(priv->buffers_lock) );
 
-  /* TODO: put here decision if sg dma or plain*/
+  if(woffset >nextbuf->size - 8)
+  {
+	  pexor_dbg(KERN_NOTICE "#### pexor_next_dma illlegal write offset 0x%x for target buffer size 0x%x\n",woffset,nextbuf->size);
+	  return -EINVAL;
+  }
+
+  /* here decision if sg dma or plain*/
 
   if(nextbuf->kernel_addr !=0)
   {
 	  /* here we have coherent kernel buffer case*/
 	  pexor_dbg(KERN_ERR "#### pexor_next_dma in kernel buffer mode\n");
-	  if((dmasize==0) || (dmasize > nextbuf->size))
+	  if((dmasize==0) || (dmasize > nextbuf->size - woffset))
 		{
 		  pexor_dbg(KERN_NOTICE "#### pexor_next_dma resetting old dma size %x to %lx\n",dmasize,nextbuf->size);
-		  dmasize=nextbuf->size;
+		  dmasize=nextbuf->size - woffset;
 		}
 	  if(priv->pexor.ram_dma_cursor+dmasize > priv->pexor.ram_dma_base + PEXOR_RAMSIZE)
 		{
@@ -1614,7 +1638,7 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 		}
 
 
-	  if(pexor_start_dma(priv, priv->pexor.ram_dma_cursor, nextbuf->dma_addr, dmasize)<0)
+	  if(pexor_start_dma(priv, priv->pexor.ram_dma_cursor, nextbuf->dma_addr + woffset, dmasize)<0)
 		  return -EINVAL;
 
   }
@@ -1642,8 +1666,15 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 	      for_each_sg(nextbuf->sg,sgentry, nextbuf->sg_ents,i)
 	    	{
 	    	  sglen=sg_dma_len(sgentry);
-	    	  if(dmasize<sglen) sglen= dmasize; /* source buffer fits into first sg page*/
+	    	  if(woffset>=sglen)
+				  {
+					  /* find start segment from write offset*/
+					  woffset-=sglen;
+					  continue;
+				  }
+	    	  sglen-=woffset; /* reduce transfer length from offset to end of first used segment*/
 
+	    	  if(dmasize< sglen) sglen= dmasize; /* source buffer fits into first sg page*/
 	    	  if(dmasize-sglensum < sglen) sglen=dmasize-sglensum; /* cut dma length for last sg page*/
 
 	    	  /* DEBUG: pretend to do dma, but do not issue it*/
@@ -1651,8 +1682,9 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 
 	    	  /**** END DEBUG*/
 	    	  /* initiate dma to next sg part:*/
-	    	  if(pexor_start_dma(priv, sgcursor, sg_dma_address(sgentry), sglen)<0)
+	    	  if(pexor_start_dma(priv, sgcursor, sg_dma_address(sgentry)+woffset, sglen)<0)
 	    		  return -EINVAL;
+	    	  if(woffset>0) woffset=0; /* reset write offset, once it was applied to first sg segment*/
 
 	    	  if((rev=pexor_poll_dma_complete(priv))!=0)
 				  {
@@ -1806,9 +1838,8 @@ int pexor_poll_dma_complete(struct pexor_privdata* priv)
       //pexor_dbg(KERN_NOTICE "#### pexor_poll_dma_complete wait for dma completion #%d\n",loops);
       if(loops++ > PEXOR_DMA_MAXPOLLS)
 	{
+      pexor_dma_unlock((&(priv->dma_lock)));
 	  pexor_msg(KERN_ERR "pexor_poll_dma_complete: polling longer than %d cycles (delay %d ns) for dma complete!!!\n",PEXOR_DMA_MAXPOLLS, PEXOR_DMA_POLLDELAY );
-	  pexor_dma_unlock((&(priv->dma_lock)));
-	  //spin_unlock(&(priv->dma_lock));
 	  return -EFAULT;
 	}
       if(PEXOR_DMA_POLLDELAY) ndelay(PEXOR_DMA_POLLDELAY);

@@ -187,6 +187,7 @@ int pexor_ioctl_wait_token(struct pexor_privdata* priv, unsigned long arg)
   u32 rstat=0, radd=0, rdat=0;
   /*u32 tkreply=0, tkhead=0, tkfoot =0;*/
   u32 dmasize=0,oldsize=0;
+  u32 dmabufid,woffset;
   struct pexor_dmabuf dmabuf;
   struct pexor_token_io descriptor;
   struct pexor_sfp* sfp=&(priv->pexor.sfp);
@@ -242,8 +243,14 @@ int pexor_ioctl_wait_token(struct pexor_privdata* priv, unsigned long arg)
   print_register("DUMP token memory first content", sfp->tk_mem[chan]);
   print_register("DUMP token memory second content", (sfp->tk_mem[chan]+1));
 
+  /* now handle dma buffer id and user write offset:*/
+  dmabufid=descriptor.tkbuf.addr;
+  woffset=descriptor.offset;
+  pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_token uses dma buffer 0x%x with write offset  0x%x\n",dmabufid,woffset);
+
+
   atomic_set(&(priv->state),PEXOR_STATE_DMA_SINGLE);
-  retval=pexor_next_dma( priv, sfp->tk_mem_dma[chan], 0 , dmasize);
+  retval=pexor_next_dma( priv, sfp->tk_mem_dma[chan], 0 , woffset, dmasize, dmabufid);
   if(retval)
     {
       /* error handling, e.g. no more dma buffer available*/
@@ -258,7 +265,7 @@ int pexor_ioctl_wait_token(struct pexor_privdata* priv, unsigned long arg)
       return retval;
     }
   descriptor.tkbuf.addr=dmabuf.virt_addr;
-  descriptor.tkbuf.size=dmasize; /* this we will use also for asynch mode!*/
+  descriptor.tkbuf.size=dmasize; /* account used payload size disregarding offset.*/
   retval=copy_to_user((void __user *) arg, &descriptor, sizeof(struct pexor_token_io));
 
   return retval;

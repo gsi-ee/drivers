@@ -18,6 +18,7 @@
 	<PexorDMALen value="65536"/>
 	<PexorDMABuffers value="30"/>
 	<PexorDMAScatterGather value="true"/>
+	<PexorDMAZeroCopy value="false"/>
 	<ExploderSubmemSize value="4096"/>
 	<PexorFormatMbs value="true"/>
 	<PexorSyncReadout value="false"/>
@@ -28,7 +29,9 @@
 	<PexorOutFile value=""/>
 	<MbsServerKind value="Stream"/>
 	<MbsFileSizeLimit value="110"/>
-    <BufferSize value="262144"/>
+	<InputPoolName value="PexorPool"/>
+	<OutputPoolName value="PexorPool"/>
+    <BufferSize value="65536"/>
     <NumBuffers value="100"/>    
     <PexorModuleName value="PexorReadout"/>
     <PexorModuleThread value="ReadoutThread"/>

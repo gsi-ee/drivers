@@ -86,7 +86,9 @@ struct pexor_token_io {
 	unsigned char sync;		/* 1:synchronous mode, 0: asynchronous mode*/
 	unsigned long sfp;		/* sfp link id 0..3 */
 	unsigned long bufid;	/* switch double buffer id on slave (1 or 0)*/
-	struct pexor_userbuf tkbuf; /* dma buffer with received token data (on synchronous reply)*/
+	struct pexor_userbuf tkbuf; /* dma buffer with received token data (on synchronous reply);
+								    on token request, may specify id of dma buffer to fill*/
+	unsigned long offset;		/* offset of token payload relative to tkbuf start. To skip user header for zero-copy mode*/
 };
 
 

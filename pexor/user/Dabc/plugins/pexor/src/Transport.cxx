@@ -151,8 +151,8 @@ unsigned pexorplugin::Transport::Read_Complete(dabc::Buffer* buf)
 
 void pexorplugin::Transport::ProcessPoolChanged(dabc::MemoryPool* pool)
 {
-DOUT1(("############## pexorplugin::Transport::ProcessPoolChanged for memory pool %x",pool));
-//fPCIDevice->MapDMABuffers(pool);
+	DOUT1(("############## pexorplugin::Transport::ProcessPoolChanged for memory pool %x",pool));
+	fPexorDevice->MapDMAMemoryPool(pool);
 
 }
 
