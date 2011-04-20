@@ -321,8 +321,10 @@ int pexor_next_dma(struct pexor_privdata *priv, dma_addr_t source,
                    u32 roffset, u32 woffset, u32 dmasize, unsigned long bufid);
 
 /* start dma engine to transfer dmasize bytes from source to dest.
- * Will not block until transfer is complete*/
-int pexor_start_dma(struct pexor_privdata *priv, dma_addr_t source, dma_addr_t dest, u32 dmasize);
+ * Will not block until transfer is complete
+ * if firstchunk is true, we may correct parameters internally to match burstsize>=8  modulos */
+int pexor_start_dma(struct pexor_privdata *priv, dma_addr_t source, dma_addr_t dest,
+					u32 dmasize, int firstchunk);
 
 /* poll the dma register complete bit.
    returns error if loop exceeds certain cycle number */

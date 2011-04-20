@@ -1638,7 +1638,7 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 		}
 
 
-	  if(pexor_start_dma(priv, priv->pexor.ram_dma_cursor, nextbuf->dma_addr + woffset, dmasize)<0)
+	  if(pexor_start_dma(priv, priv->pexor.ram_dma_cursor, nextbuf->dma_addr + woffset, dmasize,0)<0)
 		  return -EINVAL;
 
   }
@@ -1678,11 +1678,11 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 	    	  if(dmasize-sglensum < sglen) sglen=dmasize-sglensum; /* cut dma length for last sg page*/
 
 	    	  /* DEBUG: pretend to do dma, but do not issue it*/
-	    	  //pexor_dbg(KERN_ERR "#### pexor_next_dma would start dma from 0x%x to 0x%x of length 0x%x\n",sgcursor, sg_dma_address(sgentry), sglen);
+	    	  pexor_dbg(KERN_ERR "#### pexor_next_dma would start dma from 0x%x to 0x%x of length 0x%x, offset 0x%x, complete chunk length: 0x%x\n",sgcursor, sg_dma_address(sgentry), sglen, woffset,sg_dma_len(sgentry));
 
 	    	  /**** END DEBUG*/
 	    	  /* initiate dma to next sg part:*/
-	    	  if(pexor_start_dma(priv, sgcursor, sg_dma_address(sgentry)+woffset, sglen)<0)
+	    	  if(pexor_start_dma(priv, sgcursor, sg_dma_address(sgentry)+woffset, sglen, (woffset>0)) < 0)
 	    		  return -EINVAL;
 	    	  if(woffset>0) woffset=0; /* reset write offset, once it was applied to first sg segment*/
 
@@ -1781,7 +1781,7 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 #endif
 }
 
-int pexor_start_dma(struct pexor_privdata *priv, dma_addr_t source, dma_addr_t dest, u32 dmasize)
+int pexor_start_dma(struct pexor_privdata *priv, dma_addr_t source, dma_addr_t dest, u32 dmasize, int firstchunk)
 {
 	int rev;
 	u32 burstsize=PEXOR_BURST;
@@ -1798,8 +1798,29 @@ int pexor_start_dma(struct pexor_privdata *priv, dma_addr_t source, dma_addr_t d
       while (dmasize % burstsize)
     	 {
 			  burstsize = (burstsize >> 1);
-			  if(burstsize==8) break;
     	 }
+      if(burstsize<8)
+		  {
+			  pexor_dbg(KERN_NOTICE "**pexor_start_dma: correcting for too small burstsize %x\n",burstsize);
+			  burstsize=8;
+			  while (dmasize % burstsize)
+			     	 {
+						  if(firstchunk)
+							  {
+								  /* We assume this only happens in sg mode for the first chunk when applying header offset which is word aligned
+								  * In this case we just start a little bit before the payload and overwrite some bytes of the header part
+								  * We also assume that complete PCIe bar of pexor is dma mapped, so it doesnt hurt for the source!*/
+								  source-=2;
+								  dest-=2;
+							  }
+						  dmasize+=2;
+						  /* otherwise this can only happen in the last chunk of sg dma.
+						   * here it should be no deal to transfer a little bit more...*/
+			     	 }
+			  pexor_dbg(KERN_NOTICE "**changed source address to 0x%x, dest:0x%x, dmasize to 0x%x, burstsize:0x%x\n",source,dest,dmasize, burstsize)
+		  }
+
+
       pexor_dbg(KERN_NOTICE "#### pexor_start_dma will initiate dma from %p to %p, len=%x, burstsize=%x...\n",
 		    (void*) source, (void*) dest,  dmasize, burstsize);
 
