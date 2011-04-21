@@ -35,14 +35,24 @@ public:
 	int Test_IRQ();
 
 
+	/* Register existing userspace buffer buf of size as sg DMA buffer for driver.
+	 * Note: buffer is not managed by MemoryPool class, but only by internal driver lists.
+	 * Return value is ioctl error code.*/
+   	virtual int Register_DMA_Buffer(int* buf, size_t size);
+
+   	/* Remove and unmap buffer buf from driver DMA buffer lists*/
+ 	virtual int Unregister_DMA_Buffer(int* buf);
+
+
 	/* Frees DMA buffer taken from this board and put back to device memory pool.
 	 * Return value gives error code from ioctl*/
 	virtual int Free_DMA_Buffer(pexor::DMA_Buffer*);
 
 	/* Take (reserve) a DMA buffer for usage in application and returns pointer
 	 * will prevent this buffer from filling at dma receive until released by FreeDMA_Buffer.
+	 * May check consistency with board class memory pool
 	 * Returns 0 in case of error*/
-	virtual pexor::DMA_Buffer* Take_DMA_Buffer();
+	virtual pexor::DMA_Buffer* Take_DMA_Buffer(bool checkpool=true);
 
 
 	/* switches board into the dma operation mode.

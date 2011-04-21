@@ -334,8 +334,10 @@ int  pexorplugin::Device::RequestToken(dabc::Buffer* buf, bool synchronous)
 		// get id and data offset
 		bptr=(int*) buf->GetDataLocation();
 		if(fMbsFormat)
-			headeroffset=sizeof(mbs::EventHeader) + sizeof(mbs::SubeventHeader);
+			headeroffset=sizeof(mbs::EventHeader) + sizeof(mbs::SubeventHeader) + sizeof(int);
 
+		DOUT3(("Device RequestToken uses headeroffset :%x, mbs event:0x%x, subevent:0x%x",headeroffset, sizeof(mbs::EventHeader), sizeof(mbs::SubeventHeader)));
+		//
 		// make buffer available for driver DMA:
 		pexor::DMA_Buffer wrapper(bptr,buf->GetDataSize());
 		if(fBoard->Free_DMA_Buffer(&wrapper))
@@ -371,7 +373,7 @@ int pexorplugin::Device::ReceiveTokenBuffer(dabc::Buffer* buf)
 		{
 			bptr=(int*) buf->GetDataLocation();
 			if(fMbsFormat)
-				headeroffset=sizeof(mbs::EventHeader) + sizeof(mbs::SubeventHeader);
+				headeroffset=sizeof(mbs::EventHeader) + sizeof(mbs::SubeventHeader)+ sizeof(int);
 		}
 	pexor::DMA_Buffer* tokbuf= fBoard->WaitForToken(fCurrentSFP,bptr,headeroffset);
 	if(tokbuf==0)
@@ -484,15 +486,23 @@ int  pexorplugin::Device::CopyOutputBuffer(pexor::DMA_Buffer* tokbuf, dabc::Buff
       ptr.shift(sizeof(mbs::SubeventHeader));
       filled_size += sizeof(mbs::SubeventHeader);
       used_size += sizeof(mbs::SubeventHeader);
-      // TODO:  for now, we take full dma buffer size as subevent payload.
-      // later need to figure out the real received token data length?
-      subhdr->SetRawDataSize(tokbuf->UsedSize());
+
+       // here account for zero copy alignment: headers+int give 32 bytes before payload
+        ptr.shift(sizeof(int));
+        filled_size += sizeof(int);
+        used_size += sizeof(int);
+      // UsedSize contains the real received token data length, as set by driver
+      subhdr->SetRawDataSize(tokbuf->UsedSize()+sizeof(int));
       filled_size += tokbuf->UsedSize();
       evhdr->SetSubEventsSize(filled_size);
       buf->SetTypeId(mbs::mbt_MbsEvents);
     }
    DOUT3(("Token buffer size:%d, used size%d, target buffer size:%d\n", tokbuf->Size(),tokbuf->UsedSize(), buf->GetTotalSize()));
-  if (tokbuf->UsedSize() + used_size > buf->GetTotalSize())
+
+
+
+
+   if (tokbuf->UsedSize() + used_size > buf->GetTotalSize())
     {
       EOUT(("Token buffer used size %d + header sizes %d exceed available target buffer length %d \n", tokbuf->UsedSize(),used_size, buf->GetTotalSize()));
       EOUT(("Mbs Event header size is %d;  Mbs subevent header sizes: %d \n", sizeof(mbs::EventHeader), sizeof(mbs::SubeventHeader)));
@@ -500,7 +510,12 @@ int  pexorplugin::Device::CopyOutputBuffer(pexor::DMA_Buffer* tokbuf, dabc::Buff
       EOUT(("**** Error in PEXOR Token Request size, skip buffer!\n"));
       return dabc::di_SkipBuffer;
     }
+
   used_size += tokbuf->UsedSize();
+
+
+
+
   if(!fZeroCopyMode)
 	  {
 		  ptr.copyfrom(tokbuf->Data(), tokbuf->UsedSize());
@@ -571,7 +586,10 @@ int  pexorplugin::Device::CopySubevent(pexor::DMA_Buffer* tokbuf, dabc::Pointer&
                   subhdr->iControl = 0;
                   cursor.shift(sizeof(mbs::SubeventHeader));
                   filled_size+=sizeof(mbs::SubeventHeader);
-                  subhdr->SetRawDataSize(tokbuf->UsedSize());
+                  // here account for zero copy alignment: headers+int give 32 bytes before payload
+                  cursor.shift(sizeof(int));
+                  filled_size += sizeof(int);
+                  subhdr->SetRawDataSize(tokbuf->UsedSize()+sizeof(int));
           }
 	cursor.copyfrom(tokbuf->Data(),tokbuf->UsedSize());
 	cursor.shift(tokbuf->UsedSize()); // NOTE: you have to shift current pointer yourself after copyfrom!!

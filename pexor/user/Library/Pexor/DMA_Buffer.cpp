@@ -18,10 +18,19 @@ DMA_Buffer::DMA_Buffer(pexor::Board* device, size_t len) :
 
 }
 
+DMA_Buffer::DMA_Buffer(int* ptr, size_t len) :
+		pexor::Buffer(len), fBoard(0)
+
+{
+	fData=ptr;
+	fSize=len;
+}
+
 DMA_Buffer::~DMA_Buffer()
 
 {
-	fBoard->Delete_DMA_Buffer(this);
+	if(fBoard)
+		fBoard->Delete_DMA_Buffer(this);
 }
 
 } // namespace

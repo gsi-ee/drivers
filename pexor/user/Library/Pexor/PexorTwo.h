@@ -32,13 +32,17 @@ public:
 	 * bufid (0,1) will switch the double buffer id on frontends
 	 * if sync is true, method blocks until dma is complete and returns filled dma buffer
 	 * if sync is false, method returns before buffer is complete
-	 * and user must call WaitForToken() subsequently to get token buffer*/
-   pexor::DMA_Buffer* RequestToken(const unsigned long channel, const int bufid, bool sync=0);
+	 * and user must call WaitForToken() subsequently to get token buffer
+	 * For sg DMA, optionally we can specify pointer to desired receive buffer and a write offset within
+	 * this buffer to skip the mbs event headers in the DMA*/
+   pexor::DMA_Buffer* RequestToken(const unsigned long channel, const int bufid, bool sync=0, int* dmabuf=0, unsigned int woffset=0);
 
 
    /* Wait until next token buffer has arrived for sfp channel
-    * needs a previous RequestToken in async mode*/
-   pexor::DMA_Buffer* WaitForToken(const unsigned long channel);
+    * needs a previous RequestToken in async mode
+    * For sg DMA, optionally we can specify pointer to desired receive buffer and a write offset within
+	 * this buffer to skip the mbs event headers in the DMA*/
+   pexor::DMA_Buffer* WaitForToken(const unsigned long channel, int* dmabuf=0, unsigned int woffset=0);
 
 
 
@@ -61,6 +65,11 @@ public:
      * fast clear time, conversion time, see Trixor manual*/
     bool SetTriggerTimes(unsigned short fctime, unsigned short cvtime);
 
+
+protected:
+
+    /* utility to convert driver descriptor to matching pexor dma buffer container*/
+    pexor::DMA_Buffer* PrepareReceivedBuffer(struct pexor_token_io & descriptor, int* dmabuf=0);
 
 
 };

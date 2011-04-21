@@ -22,12 +22,16 @@ public:
 	/* need reference to device that maps the buffers*/
 	DMA_Buffer(pexor::Board* device, size_t length);
 
+	/* construct just a wrapper for already dma mapped sg buffer.
+	 * Avoid managing everything with pexor pools by this*/
+	DMA_Buffer(int* ptr, size_t length);
 
 	virtual ~DMA_Buffer();
 
 private:
 
 	pexor::Board* fBoard;
+
 
 };
 

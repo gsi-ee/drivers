@@ -23,7 +23,8 @@
 #define PEXOR_RAMSIZE   0xFFFC  /* test covers first sfp port range here*/
 
 
-#define PEXOR_BURST		0x80
+#define PEXOR_BURST			0x80
+#define PEXOR_BURST_MIN		0x10
 
 /* DMA registers and commands:*/
 #define PEXOR_DMA_BASE      	0x20000

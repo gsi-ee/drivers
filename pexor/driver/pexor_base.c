@@ -1668,12 +1668,11 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 	    	  sglen=sg_dma_len(sgentry);
 	    	  if(woffset>=sglen)
 				  {
-					  /* find start segment from write offset*/
+					  /* find out start segment for offset and adjust local offset*/
 					  woffset-=sglen;
 					  continue;
 				  }
 	    	  sglen-=woffset; /* reduce transfer length from offset to end of first used segment*/
-
 	    	  if(dmasize< sglen) sglen= dmasize; /* source buffer fits into first sg page*/
 	    	  if(dmasize-sglensum < sglen) sglen=dmasize-sglensum; /* cut dma length for last sg page*/
 
@@ -1799,10 +1798,10 @@ int pexor_start_dma(struct pexor_privdata *priv, dma_addr_t source, dma_addr_t d
     	 {
 			  burstsize = (burstsize >> 1);
     	 }
-      if(burstsize<8)
+      if(burstsize<PEXOR_BURST_MIN)
 		  {
 			  pexor_dbg(KERN_NOTICE "**pexor_start_dma: correcting for too small burstsize %x\n",burstsize);
-			  burstsize=8;
+			  burstsize=PEXOR_BURST_MIN;
 			  while (dmasize % burstsize)
 			     	 {
 						  if(firstchunk)

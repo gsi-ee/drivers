@@ -54,21 +54,58 @@ int Pexor::Reset()
 }
 
 
+int Pexor::Register_DMA_Buffer(int* buf, size_t size)
+{
+	struct pexor_userbuf descriptor;
+	descriptor.addr= (unsigned long) buf;
+	descriptor.size = size;
+	PexorInfo("Pexor::Register_DMA_Buffer() is sg mapping buffer %lx", descriptor.addr);
+	int rev=::ioctl(fFileHandle, PEXOR_IOC_MAPBUFFER , &descriptor);
+	if(rev)
+		{
+			PexorError("\n\nError %d sg-mapping buffer at  address %lx\n",rev,descriptor.addr);
+			//delete buffer;
+			return rev;
+		}
+	return 0;
+}
+
+int Pexor::Unregister_DMA_Buffer(int* buf)
+{
+	int rev=0;
+	struct pexor_userbuf descriptor;
+	descriptor.addr= (unsigned long) buf;
+
+	PexorInfo("Pexor::Unregister_DMA_Buffer() is sg unmapping buffer %lx", descriptor.addr);
+	rev=::ioctl(fFileHandle, PEXOR_IOC_UNMAPBUFFER , &descriptor);
+	if(rev)
+		{
+			PexorError("\n\nError %d sg-unmapping buffer at  address %lx\n",rev,descriptor.addr);
+			return rev;
+		}
+	return 0;
+}
+
 
 int* Pexor::Map_DMA_Buffer(size_t size)
 {
 	if(fbUseSGBuffers)
 		{
 			// create or use user space buffer and do sg mapping in driver
-			int* buffer = new int[size/sizeof(int)]; // TODO: how to use external buffer here
-			struct pexor_userbuf descriptor;
-			descriptor.addr= (unsigned long) buffer;
-			descriptor.size = size;
-			PexorInfo("Pexor::Map_DMA_Buffer() is sg mapping buffer %lx", descriptor.addr);
-			int rev=::ioctl(fFileHandle, PEXOR_IOC_MAPBUFFER , &descriptor);
-			if(rev)
+			int* buffer = new int[size/sizeof(int)];
+//			struct pexor_userbuf descriptor;
+//			descriptor.addr= (unsigned long) buffer;
+//			descriptor.size = size;
+//			PexorInfo("Pexor::Map_DMA_Buffer() is sg mapping buffer %lx", descriptor.addr);
+//			int rev=::ioctl(fFileHandle, PEXOR_IOC_MAPBUFFER , &descriptor);
+//			if(rev)
+//				{
+//					PexorError("\n\nError %d sg-mapping buffer at  address %lx\n",rev,descriptor.addr);
+//					delete buffer;
+//					return 0;
+//				}
+			if(Register_DMA_Buffer(buffer, size))
 				{
-					PexorError("\n\nError %d sg-mapping buffer at  address %lx\n",rev,descriptor.addr);
 					delete buffer;
 					return 0;
 				}
@@ -100,14 +137,20 @@ int Pexor::Delete_DMA_Buffer(pexor::DMA_Buffer *buffer)
 	if(fbUseSGBuffers)
 		{
 			// unmap and delete the user space bu
-		PexorInfo("Pexor::Delete_DMA_Buffer() is sg unmapping buffer %lx", descriptor.addr);
-		rev=::ioctl(fFileHandle, PEXOR_IOC_UNMAPBUFFER , &descriptor);
+//		PexorInfo("Pexor::Delete_DMA_Buffer() is sg unmapping buffer %lx", descriptor.addr);
+//		rev=::ioctl(fFileHandle, PEXOR_IOC_UNMAPBUFFER , &descriptor);
+//		if(rev)
+//			{
+//				PexorError("\n\nError %d sg-unmapping buffer at  address %lx\n",rev,descriptor.addr);
+//				return rev;
+//			}
+		int* bufptr=(int*) (descriptor.addr);
+		rev=Unregister_DMA_Buffer(bufptr);
 		if(rev)
-			{
-				PexorError("\n\nError %d sg-unmapping buffer at  address %lx\n",rev,descriptor.addr);
-				return rev;
-			}
-		delete [] (int*) (descriptor.addr); // TODO: handle external buffer here without deleting
+		{
+			return rev;
+		}
+		delete [] bufptr;
 
 		}
 	else
@@ -148,26 +191,38 @@ int Pexor::Free_DMA_Buffer(pexor::DMA_Buffer* buf)
 }
 
 
-pexor::DMA_Buffer* Pexor::Take_DMA_Buffer()
+pexor::DMA_Buffer* Pexor::Take_DMA_Buffer(bool checkpool)
 {
 	struct pexor_userbuf descriptor;
+	pexor::DMA_Buffer* result;
 	int rev=ioctl(fFileHandle, PEXOR_IOC_USEBUFFER, &descriptor);
 	if(rev)
 		{
 			PexorError("Take_DMA_Buffer: Error %d from driver \n",rev);
 			return 0;
 		}
+
+
+
 	int* rcvbuffer=(int*) descriptor.addr;
-	pexor::DMA_Buffer* result=Find_DMA_Buffer(rcvbuffer);
-	if(result==0)
+
+	if(checkpool)
+	{
+		result=Find_DMA_Buffer(rcvbuffer);
+		if(result==0)
+			{
+				PexorError("Take_DMA_Buffer: address %x not mapped in board DMA pools (N.C.H.)\n",rcvbuffer);
+			}
+		else if(descriptor.size!=result->Size())
+			{
+				PexorWarning("Take_DMA_Buffer: descriptor size %d mismatch with corresponding DMA buffer size %d \n",descriptor.size, result->Size());
+			}
+		else{}
+	}
+	else
 		{
-			PexorError("Take_DMA_Buffer: address %x not mapped in board DMA pools (N.C.H.)\n",rcvbuffer);
+			result=new pexor::DMA_Buffer(rcvbuffer, descriptor.size);
 		}
-	else if(descriptor.size!=result->Size())
-		{
-			PexorWarning("Take_DMA_Buffer: descriptor size %d mismatch with corresponding DMA buffer size %d \n",descriptor.size, result->Size());
-		}
-	else{}
 	return result;
 }
 

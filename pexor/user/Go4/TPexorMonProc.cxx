@@ -30,7 +30,7 @@
 #include "TGo4Analysis.h"
 #include "TGo4Version.h"
 
-unsigned int       TPexorMonProc::fNumSlavesSFP[]={4,2,2,2};
+unsigned int       TPexorMonProc::fNumSlavesSFP[]={1,0,0,0};
 
 
 //***********************************************************
@@ -125,6 +125,7 @@ Bool_t TPexorMonProc::BuildEvent(TGo4EventElement* target)
       Int_t datasize=0,datawordsize=0;;
       Int_t submem=0;
       Int_t datacount=0;
+      pdata++;lwords--; // skip first subevent word which is empty due to zero copy alignment
       for( Int_t i=0; i<lwords; ++i)
       {
     	  Int_t currentdata=*(pdata++);

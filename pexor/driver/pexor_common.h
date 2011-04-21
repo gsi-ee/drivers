@@ -37,7 +37,7 @@
 #define MY_VENDOR_ID 0x1204
 #define MY_DEVICE_ID 0x5303
 
-#define PEXOR_DEBUGPRINT 1
+/*#define PEXOR_DEBUGPRINT 1 */
 
 
 /* this define will switch at compiletime between trbnet and gosip protocols*/
