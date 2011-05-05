@@ -6,7 +6,7 @@
 	export PEXORSYS	
 
 
-VERSION = 0.991
+VERSION = 0.992
 
 PEXORMODULE = pexor.ko
 PEXORHEADER = pexor_user.h

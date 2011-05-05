@@ -233,8 +233,11 @@ ssize_t pexor_write(struct file *filp, const char __user * buf, size_t count,
 int pexor_mmap(struct file *filp, struct vm_area_struct *vma);
 
 /* the general fops ioctl */
-int pexor_ioctl(struct inode *inode, struct file *filp, unsigned int cmd,
-                unsigned long arg);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
+int pexor_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
+#else
+long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
+#endif
 
 /* general reset function */
 int pexor_ioctl_reset(struct pexor_privdata *priv, unsigned long arg);

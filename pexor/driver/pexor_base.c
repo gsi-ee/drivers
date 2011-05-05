@@ -38,7 +38,11 @@ static struct file_operations pexor_fops = {
   .llseek =   pexor_llseek,
   .read =       	pexor_read,
   .write =      	pexor_write,
-  .ioctl =      	pexor_ioctl,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
+   .ioctl        = pexor_ioctl,
+#else
+    .unlocked_ioctl    = pexor_ioctl,
+#endif
   .mmap  = 		pexor_mmap,
   .open =       	pexor_open,
   .release =    	pexor_release,
@@ -234,7 +238,11 @@ ssize_t pexor_write(struct file *filp, const char __user *buf, size_t count,
 }
 
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 int pexor_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg)
+#else
+long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+#endif
 {
   struct pexor_privdata *privdata;
   /* here validity check for magic number etc.*/
@@ -2343,7 +2351,12 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
 
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 37)
   init_MUTEX(&(privdata->ramsem));
+#else
+  sema_init(&(privdata->ramsem),1);
+#endif
+
   /* TODO may use rw semaphore instead? init_rwsem(struct rw_semaphore *sem); */
 
   spin_lock_init(&(privdata->buffers_lock));

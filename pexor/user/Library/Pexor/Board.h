@@ -73,9 +73,10 @@ public:
 
 	/* Take (reserve) a DMA buffer for usage in application and returns pointer
 	 * will prevent this buffer from filling at dma receive until released by FreeDMA_Buffer.
+	 * boolean may checking mode of driver buffer agains Board internal mempool
 	 * Returns 0 in case of error
 	 * Implemented in subclass*/
-	virtual pexor::DMA_Buffer* Take_DMA_Buffer()=0;
+	virtual pexor::DMA_Buffer* Take_DMA_Buffer(bool check=true)=0;
 
 
 	/* Read length integers via PIO from board RAM offset position into user space buffer buf, starting at

@@ -17,9 +17,9 @@
 	<PexorNumSlaves_3 value="0"/>
 	<PexorDMALen value="65536"/>
 	<PexorDMABuffers value="30"/>
-	<PexorDMAScatterGather value="false"/>
-	<PexorDMAZeroCopy value="true"/>
-	<ExploderSubmemSize value="4096"/>
+	<PexorDMAScatterGather value="true"/>
+	<PexorDMAZeroCopy value="false"/>
+	<ExploderSubmemSize value="2048"/>
 	<PexorFormatMbs value="true"/>
 	<PexorSyncReadout value="true"/>
 	<PexorParallelReadout value="false"/>
