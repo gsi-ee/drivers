@@ -3,7 +3,7 @@ include $(DABCSYS)/config/Makefile.config
 ## normally should be like this for every module, but can be specific
 
 ifndef PEXORSYS
-PEXORSYS=../..
+PEXORSYS=../../../../..
 endif
 
 ifdef DABCMAINMAKE
