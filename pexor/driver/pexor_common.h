@@ -24,12 +24,20 @@
 #include <linux/pagemap.h>
 #include <linux/scatterlist.h>
 
+#include <linux/sched.h>
+
 #include <linux/wait.h>
+
+/*
 #include <asm/uaccess.h>
 #include <asm/atomic.h>
 #include <asm/io.h>
-#include <asm/system.h>
 
+*/
+
+/*
+#include <asm/system.h>
+*/
 
 #include "pexor_user.h"
 
