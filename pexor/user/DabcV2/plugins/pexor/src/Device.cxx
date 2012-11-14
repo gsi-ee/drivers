@@ -361,6 +361,9 @@ int  pexorplugin::Device::RequestToken(dabc::Buffer& buf, bool synchronous)
 		}
 	fDoubleBufID[fCurrentSFP]= fDoubleBufID[fCurrentSFP]==0 ? 1 : 0;
 	if(!synchronous) return dabc::di_Ok;
+	
+	if(fTriggeredRead)
+	  fBoard->ResetTrigger();
 	return (CopyOutputBuffer(tokbuf,buf));
 
 
@@ -541,7 +544,7 @@ int  pexorplugin::Device::CombineTokenBuffers(pexor::DMA_Buffer** src, dabc::Buf
 {
 
   dabc::Pointer ptr(buf);
-  DOUT1(("pexorplugin::Device::CombineTokenBuffers initial pointer is 0x%x", ptr.ptr()));
+  DOUT3(("pexorplugin::Device::CombineTokenBuffers initial pointer is 0x%x", ptr.ptr()));
   unsigned int filled_size = 0, used_size = 0;
   mbs::EventHeader* evhdr=0;
   if (fMbsFormat)
@@ -551,7 +554,7 @@ int  pexorplugin::Device::CombineTokenBuffers(pexor::DMA_Buffer** src, dabc::Buf
       ptr.shift(sizeof(mbs::EventHeader));
       used_size += sizeof(mbs::EventHeader);
     }
-  DOUT1(("pexorplugin::Device::CombineTokenBuffers output pointer after mbs header is 0x%x", ptr.ptr()));
+  DOUT3(("pexorplugin::Device::CombineTokenBuffers output pointer after mbs header is 0x%x", ptr.ptr()));
   for (int sfp = 0; sfp < PEXORPLUGIN_NUMSFP; ++sfp)
         {
           if (src[sfp] == 0)
@@ -580,7 +583,7 @@ int  pexorplugin::Device::CombineTokenBuffers(pexor::DMA_Buffer** src, dabc::Buf
 int  pexorplugin::Device::CopySubevent(pexor::DMA_Buffer* tokbuf, dabc::Pointer& cursor, char sfpnum)
 {
 	unsigned int filled_size=0;
-	DOUT1(("pexorplugin::Device::CopySubevent has dma buffer 0x%x for sfp %d, output cursor pointer :0x%x", tokbuf, (int) sfpnum, cursor.ptr()));
+	DOUT3(("pexorplugin::Device::CopySubevent has dma buffer 0x%x for sfp %d, output cursor pointer :0x%x", tokbuf, (int) sfpnum, cursor.ptr()));
 	if(fMbsFormat)
           {
                   mbs::SubeventHeader* subhdr = (mbs::SubeventHeader*) cursor();

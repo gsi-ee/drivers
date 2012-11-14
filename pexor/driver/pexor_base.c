@@ -2596,14 +2596,15 @@ static void __exit pexor_exit(void)
 {
   pexor_msg(KERN_NOTICE "pexor driver exit...\n");
 
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
-  class_destroy(pexor_class);
-#endif
-
-
   unregister_chrdev_region(pexor_devt, PEXOR_MAXDEVS);
   pci_unregister_driver(&pci_driver);
+
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
+if (pexor_class != NULL)
+	  class_destroy(pexor_class);
+#endif
+
   pexor_msg(KERN_NOTICE "\t\tdriver exit done.\n");
 }
 
