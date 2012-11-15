@@ -1,0 +1,3 @@
+# this allows to use Pci EXpress Optical Reciever (PEXOR) for all users
+# J.Adamczewski-Musch, GSI Darmstadt
+KERNEL=="pexor-*",  GROUP="users", MODE="0775"
