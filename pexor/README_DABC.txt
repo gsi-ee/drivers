@@ -1,7 +1,7 @@
 ----------------------------------------------------------------
 PCI Express Optical Receiver (PEXOR) 
 Data Acquisition Backbone Core Plug-in with Go4 monitor
-Version 0.97 - 03-Aug-2010 JAM
+Version 1.01 - 14-Nov-2012 JAM
 ----------------------------------------------------------------
 Copyright (C) 2010- Gesellschaft f. Schwerionenforschung, GSI
                     Planckstr. 1, 64291 Darmstadt, Germany
@@ -21,13 +21,14 @@ GNU General Public License for more details (http://www.gnu.org).
 
 
 1) Contents
-- the DABC plugin in subfolder user/Dabc/plugins/pexor
+- the DABC plugin for DABC version < 1.9 in subfolder user/Dabc/plugins/pexor
+- the DABC plugin for DABC version 2 (>=1.9) in subfolder user/DabcV2/plugins/pexor
 - the Go4 online analysis for pexor test in subfolder user/Go4
 
 2) Requirements
 - the pexor kernel driver pexor.ko and the application library libpexor.so
-as distributed in package PexorDriver.tar.gz!
-- the installed DABC data acquisition framework as available at http://dabc.gsi.de
+as distributed in package PexorDriver.tar.gz.
+- the installed DABC data acquisition framework as available at https://subversion.gsi.de/dabc/trunk
 - the installed Go4 data analysis and online monitoring framework as available at http://go4.gsi.de. 
    This also requires installed ROOT and Qt libraries. 
 
@@ -70,6 +71,6 @@ Run the analysis. The corresponding spectra should be filled with random data fr
 NEW: optionally can produce root tree with output event containing the submemory data
 
 
-README updated 03-Aug-2010 by JAM
+README updated 14-Nov-2012 by JAM
 ----------------------------------------------------------------
 

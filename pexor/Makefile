@@ -6,7 +6,7 @@
 	export PEXORSYS	
 
 
-VERSION = 0.992
+VERSION = 1.01
 
 PEXORMODULE = pexor.ko
 PEXORHEADER = pexor_user.h
@@ -30,7 +30,7 @@ DABCFILES = $(PACKDIR)/user/Dabc/plugins/pexor $(PACKDIR)/user/Go4 $(PACKDIR)/RE
 
 INSTALLDIR ?= /lib/modules/$(shell uname -r)/extra
 
-LIBINSTALLDIR ?= /usr/lib
+LIBINSTALLDIR ?= /usr/lib64
 
 
 .PHONY: all clean driver lib examples install uninstall driver-install driver-uninstall lib-install lib-uninstall pack

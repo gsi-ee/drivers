@@ -1,7 +1,7 @@
 ----------------------------------------------------------------
 PCI Express Optical Receiver (PEXOR) 
 Linux driver and library package
-Version 0.992 - 05-May-2011 JAM
+Version 1.01 - 14-Nov-2012 JAM
 ----------------------------------------------------------------
 Copyright (C) 2011- Gesellschaft f. Schwerionenforschung, GSI
                     Planckstr. 1, 64291 Darmstadt, Germany
@@ -29,7 +29,7 @@ GNU General Public License for more details (http://www.gnu.org).
                         
 2) How to build 
 - Unpack the released tarball: tar zxvf PexorDriver.tar.gz
-- change to distribution dir: cd pexor_0.992
+- change to distribution dir: cd pexor_1.01
 - start build: make all
 
 This should compile kernel module, library and all test examples.
@@ -151,6 +151,6 @@ make uninstall - uninstalls all.
 NOTE that you need root priviliges for these make targets!
 
 
-README updated 05-May-2011 by JAM
+README updated 14-Nov-2012 by JAM
 ----------------------------------------------------------------
                       
