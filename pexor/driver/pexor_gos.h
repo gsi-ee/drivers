@@ -280,10 +280,13 @@ int pexor_ioctl_wait_token(struct pexor_privdata *priv, unsigned long arg);
  * and routed to pci throug pexor driver. */
 int pexor_ioctl_wait_trigger(struct pexor_privdata *priv, unsigned long arg);
 
+
+
+#ifdef PEXOR_WITH_TRIXOR
 /* set acquisition state of trixor trigger module extension.
  * used to clear deadtime flag from user program and start/stop acquisition mode, etc.*/
 int pexor_ioctl_set_trixor(struct pexor_privdata* priv, unsigned long arg);
-
+#endif
 
 #ifdef PEXOR_SYSFS_ENABLE
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)

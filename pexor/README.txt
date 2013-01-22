@@ -1,7 +1,7 @@
 ----------------------------------------------------------------
 PCI Express Optical Receiver (PEXOR) 
 Linux driver and library package
-Version 1.01 - 14-Nov-2012 JAM
+Version 1.02 - 22-Jan-2013 JAM
 ----------------------------------------------------------------
 Copyright (C) 2011- Gesellschaft f. Schwerionenforschung, GSI
                     Planckstr. 1, 64291 Darmstadt, Germany
@@ -100,7 +100,27 @@ are invoked by ioctl.
 
 -test_pexor_1 : Offers almost same functionality as pexortest_simple, but uses C++ library libpexor.so.
 Demonstration how the classes of the library are intended to be used. "test_pexor_1 -h" again gives help on
-command line parameters.
+command line parameters:
+
+**** test_pexor_1 arguments:
+         test_pexor_1 [mem] [bufs] [pool] [Debugmode] 
+                 mem - transferbuffer length (integer len) [1024]
+                 bufs - number of buffers for test transfer  [500]
+                 poolsize - number of allocated dma buffers [7]
+                 Debugmode - 
+                         0: minimum 
+                         1: more, check buffers 
+                         2: print buf contents and lib debug output
+                         3: do IRQ test 
+                         4: bus io test 
+                         5: register io test 
+                         6: DMA to /dev/mem test
+                         7: DMA to pexor mapped physmem test [0] 
+**********************************
+
+NEW: added possibility to register dma buffers located in physical memory outside the linux region.
+For bigphys mbs pipe testing.
+
 
 
 
@@ -151,6 +171,6 @@ make uninstall - uninstalls all.
 NOTE that you need root priviliges for these make targets!
 
 
-README updated 14-Nov-2012 by JAM
+README updated 22-Jan-2013 by JAM
 ----------------------------------------------------------------
                       

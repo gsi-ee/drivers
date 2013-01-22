@@ -86,8 +86,39 @@ int Pexor::Unregister_DMA_Buffer(int* buf)
 	return 0;
 }
 
+pexor::DMA_Buffer* Pexor::Map_Physical_DMA_Buffer(unsigned long physaddr, size_t size)
+{
+	/* Note that we do not need Unmap_Physical_DMA_Buffer, since this is handled also with Delete_DMA_Buffer*/
 
-int* Pexor::Map_DMA_Buffer(size_t size)
+
+	/* TODO: replace this method by extension of New_DMA_Buffer and DMA_Buffer arguments by physaddr.
+	 * In this case fully transparent with or without memory pool*/
+	int pagesize=sysconf( _SC_PAGE_SIZE );
+	unsigned long rest= (physaddr % pagesize);
+	if(rest)
+		physaddr=physaddr-rest +pagesize;
+	PexorInfo("Pexor::Map_Physical_DMA_Buffer is mapping buffer at %lx for size %d, pagesize:%d, rest:%d ",
+			physaddr, size, pagesize, rest);
+
+	int* userptr=Map_DMA_Buffer(size, physaddr);
+	if(userptr==0)
+		{
+			PexorError("\n\nError mapping physical dma buffer at  address %lx\n",physaddr);
+			return 0;
+		}
+	return new pexor::DMA_Buffer(userptr, size);
+}
+
+int  Pexor::Unmap_Physical_DMA_Buffer(pexor::DMA_Buffer* dbuf)
+{
+	int rev=Delete_DMA_Buffer(dbuf);
+	if(rev==0) delete dbuf;
+	return rev;
+}
+
+
+
+int* Pexor::Map_DMA_Buffer(size_t size, unsigned long physaddr)
 {
 	if(fbUseSGBuffers)
 		{
@@ -115,7 +146,7 @@ int* Pexor::Map_DMA_Buffer(size_t size)
 		{
 		// get buffer from driver and map it to user space
 		PexorDebug("Pexor::Map_DMA_Buffer()");
-		void* ptr= mmap(0,size, PROT_READ | PROT_WRITE , MAP_SHARED | MAP_LOCKED , fFileHandle, 0); /* | PROT_WRITE , | MAP_LOCKED*/
+		void* ptr= mmap(0,size, PROT_READ | PROT_WRITE , MAP_SHARED | MAP_LOCKED , fFileHandle, (off_t) physaddr); /* | PROT_WRITE , | MAP_LOCKED*/
 		if(ptr==MAP_FAILED)
 			{
 				int er=errno;
@@ -270,7 +301,7 @@ int Pexor::WriteDMA(pexor::DMA_Buffer *buf, int length, int bufcursor, int board
 
 
 
-pexor::DMA_Buffer* Pexor::ReceiveDMA()
+pexor::DMA_Buffer* Pexor::ReceiveDMA(bool checkmempool)
 {
 
 	int rev=0;
@@ -284,6 +315,12 @@ pexor::DMA_Buffer* Pexor::ReceiveDMA()
 				return 0;
 			}
 	rcvbuffer=(int*) descriptor.addr;
+	if(!checkmempool)
+	{
+		return new pexor::DMA_Buffer (rcvbuffer,descriptor.size);
+	}
+
+
 	pexor::DMA_Buffer* result=Find_DMA_Buffer(rcvbuffer);
 	if(result==0)
 		{

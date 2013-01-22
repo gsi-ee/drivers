@@ -356,10 +356,12 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
      return pexor_ioctl_wait_trigger(privdata, arg);
      break;
 
+#ifdef PEXOR_WITH_TRIXOR
    case	PEXOR_IOC_SET_TRIXOR:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl set trixor\n");
     return pexor_ioctl_set_trixor(privdata, arg);
     break;
+#endif
 
 #endif /* #ifdef PEXOR_WITH_TRBNET */
 
@@ -439,8 +441,8 @@ int pexor_ioctl_mapbuffer(struct pexor_privdata *priv, unsigned long arg)
     /* populate sg list:*/
 		/* page0 is different */
 		if ( !PageReserved(pages[0]) )
-				__set_page_locked(pages[0]);
-			//SetPageLocked(pages[0]);
+			//	__set_page_locked(pages[0]);
+			SetPageLocked(pages[0]);
 
 		/* for first chunk, we take into account that memory is possibly not starting at
 		 * page boundary:*/
@@ -451,8 +453,8 @@ int pexor_ioctl_mapbuffer(struct pexor_privdata *priv, unsigned long arg)
 		count = dmabuf->size - length;
 		for(i=1;i<nr_pages;i++) {
 			if ( !PageReserved(pages[i]) )
-				__set_page_locked(pages[i]);
-				//SetPageLocked(pages[i]);
+				//__set_page_locked(pages[i]);
+				SetPageLocked(pages[i]);
 
 			sg_set_page(&sg[i], pages[i], ((count > PAGE_SIZE) ? PAGE_SIZE : count), 0);
 			count -= sg[i].length;
@@ -494,8 +496,8 @@ mapbuffer_unmap:
 	/* release pages */
 		for(i=0;i<nr_pages;i++) {
 			if (PageLocked(pages[i]))
-				__clear_page_locked(pages[i]);
-				//ClearPageLocked(pages[i]);
+				//__clear_page_locked(pages[i]);
+				ClearPageLocked(pages[i]);
 			if (!PageReserved(pages[i]))
 				SetPageDirty(pages[i]);
 			page_cache_release(pages[i]);
@@ -1008,8 +1010,13 @@ int pexor_mmap(struct file *filp, struct vm_area_struct *vma)
   bufsize=(vma->vm_end - vma->vm_start);
   pexor_dbg(KERN_NOTICE "** starting pexor_mmap for size=%ld \n", bufsize);
   /* create new dma buffer for pci and put it into free list*/
-  buf=new_dmabuffer(privdata->pdev,bufsize);
+  buf=new_dmabuffer(privdata->pdev,bufsize, vma->vm_pgoff); /* todo: add physmem adress parameter if we have  vma->vm_pgoff
+  */
   if(!buf) return -EFAULT;
+
+  if(vma->vm_pgoff==0)
+  {
+	/* user does not specify external physical address, memory is available in kernelspace:*/
 
   /* map kernel addresses to vma*/
   pexor_dbg(KERN_NOTICE "Mapping address %p / PFN %lx\n",
@@ -1023,9 +1030,25 @@ int pexor_mmap(struct file *filp, struct vm_area_struct *vma)
 			page_to_pfn(virt_to_page((void*)buf->kernel_addr)),
 			buf->size,
 			vma->vm_page_prot );
+  }
+  else
+  {
+/* for external phys memory, use directly pfn*/
+	  pexor_dbg(KERN_NOTICE "Using external address %p / PFN %lx\n",
+	 	    (void*) (vma->vm_pgoff << PAGE_SHIFT ),vma->vm_pgoff);
+
+	   vma->vm_flags |= (VM_RESERVED); /* TODO: do we need this?*/
+	   ret = remap_pfn_range(
+	 			vma,
+	 			vma->vm_start,
+	 			vma->vm_pgoff,
+	 			buf->size,
+	 			vma->vm_page_prot );
+
+  }
 
   if (ret) {
-    pexor_dbg(KERN_ERR "kmem remap failed: %d (%lx)\n", ret,buf->kernel_addr);
+    pexor_dbg(KERN_ERR "remap_pfn_range failed: %d (%lx)\n", ret,buf->kernel_addr);
     delete_dmabuffer(privdata->pdev, buf);
     return -EFAULT;
   }
@@ -1041,7 +1064,7 @@ int pexor_mmap(struct file *filp, struct vm_area_struct *vma)
   return ret;
 }
 
-struct pexor_dmabuf* new_dmabuffer(struct pci_dev * pdev, size_t size)
+struct pexor_dmabuf* new_dmabuffer(struct pci_dev * pdev, size_t size, unsigned long pgoff)
 {
   struct pexor_dmabuf* descriptor;
   descriptor= kmalloc(sizeof(struct pexor_dmabuf), GFP_KERNEL);
@@ -1052,6 +1075,11 @@ struct pexor_dmabuf* new_dmabuffer(struct pci_dev * pdev, size_t size)
     }
   memset(descriptor, 0, sizeof(struct pexor_dmabuf));
   descriptor->size=size;
+
+  if(pgoff==0)
+  {
+	/* no external target address specified, we create internal buffers  */
+
 #ifdef	DMA_MAPPING_STREAMING
   /* here we use plain kernel memory which we explicitly map for dma*/
   descriptor->kernel_addr=(unsigned long) kmalloc(size, GFP_KERNEL);
@@ -1073,7 +1101,7 @@ struct pexor_dmabuf* new_dmabuffer(struct pci_dev * pdev, size_t size)
   pexor_dbg(KERN_ERR "new_dmabuffer created streaming kernel buffer with dma address %lx\n", descriptor->dma_addr);
 
 #else
-  /* here we get readily mapped dma memory which was preallocated for the device*/
+  /* here we get readily mapped dma memory which was preallocated for the device */
   descriptor->kernel_addr= (unsigned long) pci_alloc_consistent(pdev, size, &(descriptor->dma_addr));
   if(!descriptor->kernel_addr)
     {
@@ -1087,6 +1115,18 @@ struct pexor_dmabuf* new_dmabuffer(struct pci_dev * pdev, size_t size)
 
 #endif
 
+
+  }
+  else
+  {
+	  /* set dma buffer for external physical dma address*/
+	  descriptor->kernel_addr=0; /* can not map external RAM into linux kernel space*/
+	  descriptor->dma_addr=pgoff << PAGE_SHIFT;
+	  pci_dma_sync_single_for_device(pdev, descriptor->dma_addr, descriptor->size, PCI_DMA_FROMDEVICE );
+	  pexor_dbg(KERN_ERR "new_dmabuffer created dma buffer for external dma address %p\n", (void*) descriptor->dma_addr);
+  }
+
+
   INIT_LIST_HEAD(&(descriptor->queue_list));
   pexor_dbg(KERN_NOTICE "**pexor_created new_dmabuffer, size=%d, addr=%lx \n", (int) size, descriptor->kernel_addr);
 
@@ -1096,11 +1136,24 @@ struct pexor_dmabuf* new_dmabuffer(struct pci_dev * pdev, size_t size)
 int delete_dmabuffer(struct pci_dev * pdev, struct pexor_dmabuf* buf)
 {
   /*int i=0; */
-  if(buf->kernel_addr==0)
-  {
-		  /* buffer with no kernel memory -> must be sglist userbuffer*/
-		  return (unmap_sg_dmabuffer(pdev,buf));
-  }
+if (buf->kernel_addr == 0)
+{
+	if (buf->sg != 0)
+	{
+		/* buffer with no kernel memory but sg list -> must be sglist userbuffer*/
+		return (unmap_sg_dmabuffer(pdev, buf));
+	}
+	else
+	{
+		/* neither kernel address nor sg list -> external phys memory*/
+		 pexor_dbg(KERN_NOTICE "**pexor_delete_dmabuffer of size=%ld, unregistering external physaddr=%lx \n", buf->size, buf->dma_addr);
+		 pci_dma_sync_single_for_cpu(pdev, buf->dma_addr, buf->size, PCI_DMA_FROMDEVICE );
+		 /* Release descriptor memory */
+		 kfree(buf);
+		 return 0;
+	}
+
+}
 
   pexor_dbg(KERN_NOTICE "**pexor_deleting dmabuffer, size=%ld, addr=%lx \n", buf->size, buf->kernel_addr);
  /* for (i=0;i<50;++i)
@@ -1133,8 +1186,8 @@ int unmap_sg_dmabuffer(struct pci_dev *pdev, struct pexor_dmabuf *buf)
 			if ( !PageReserved( buf->pages[i] ))
 				{
 				SetPageDirty( buf->pages[i] );
-				__clear_page_locked(buf->pages[i]);
-				//ClearPageLocked(buf->pages[i]);
+				//__clear_page_locked(buf->pages[i]);
+				ClearPageLocked(buf->pages[i]);
 				}
 			page_cache_release( buf->pages[i] );
 		}
@@ -1608,7 +1661,8 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 
   /* here decision if sg dma or plain*/
 
-  if(nextbuf->kernel_addr !=0)
+  //if((nextbuf->kernel_addr !=0)
+  if(nextbuf->sg==0) /* this check is better, since dma to external phys also has no kernel adress!*/
   {
 	  /* here we have coherent kernel buffer case*/
 	  pexor_dbg(KERN_ERR "#### pexor_next_dma in kernel buffer mode\n");
@@ -2229,7 +2283,9 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
   int err = 0, ix = 0;
 #ifdef PEXOR_ENABLE_IRQ
   unsigned char irpin = 0, irline = 0, irnumbercount = 0;
+#ifdef PEXOR_WITH_TRIXOR
   int irtype=0;
+#endif
 #endif
   struct pexor_privdata *privdata;
   pexor_msg(KERN_NOTICE "PEXOR pci driver starts probe...\n");
@@ -2303,10 +2359,10 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
 
           pexor_dbg(KERN_NOTICE " - Requesting io ports for bar %d\n",ix);
           if (request_region(privdata->bases[ix], privdata->reglen[ix],
-			     dev->dev.kobj.name) == NULL)
+			     kobject_name(&dev->dev.kobj)) == NULL)
             {
               pexor_dbg(KERN_ERR "I/O address conflict at bar %d for device \"%s\"\n",
-			ix, dev->dev.kobj.name);
+			ix, kobject_name(&dev->dev.kobj));
               cleanup_device(privdata);
               return -EIO;
             }pexor_dbg("requested ioport at %lx with length %lx\n", privdata->bases[ix], privdata->reglen[ix]);
@@ -2315,10 +2371,10 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
         {
           pexor_dbg(KERN_NOTICE " - Requesting memory region for bar %d\n",ix);
           if (request_mem_region(privdata->bases[ix], privdata->reglen[ix],
-				 dev->dev.kobj.name) == NULL)
+				 kobject_name(&dev->dev.kobj)) == NULL)
             {
               pexor_dbg(KERN_ERR "Memory address conflict at bar %d for device \"%s\"\n",
-			ix, dev->dev.kobj.name);
+			ix, kobject_name(&dev->dev.kobj));
               cleanup_device(privdata);
               return -EIO;
             }pexor_dbg("requested memory at %lx with length %lx\n", privdata->bases[ix], privdata->reglen[ix]);
@@ -2327,7 +2383,7 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
           if (privdata->iomem[ix] == NULL)
             {
               pexor_dbg(KERN_ERR "Could not remap memory  at bar %d for device \"%s\"\n",
-			ix, dev->dev.kobj.name);
+			ix, kobject_name(&dev->dev.kobj));
               cleanup_device(privdata);
               return -EIO;
             }pexor_dbg("remapped memory to %lx with length %lx\n", (unsigned long) privdata->iomem[ix], privdata->reglen[ix]);

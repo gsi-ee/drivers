@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sys/mman.h>
+
 #include "pexor/PexorOne.h"
 #include "pexor/Benchmark.h"
 #include "pexor/DMA_Buffer.h"
@@ -27,6 +29,8 @@
 #define DMABUFNUM 7
 #define FLOWSIZE 500
 
+// this specifies the physical address for mapping dma target buffer from /dev/mem
+#define DEVMEMTEST_BASE 0x40000000
 
 
 
@@ -52,7 +56,7 @@ void usage()
 	printf("\t\t bufs - number of buffers for test transfer  [%d]\n",Flownum);
 	printf("\t\t poolsize - number of allocated dma buffers [%d]\n",Bufnum);
 	printf("\t\t Debugmode - \n\t\t\t 0: minimum \n\t\t\t 1: more, check buffers \n\t\t\t 2: print buf contents and lib debug output\n");
-	printf("\t\t\t 3: do IRQ test \n\t\t\t 4: bus io test \n\t\t\t 5: register io test [%d] \n",Debugmode);
+	printf("\t\t\t 3: do IRQ test \n\t\t\t 4: bus io test \n\t\t\t 5: register io test \n\t\t\t 6: DMA to /dev/mem test\n\t\t\t 7: DMA to pexor mapped physmem test [%d] \n",Debugmode);
 	printf("**********************************\n");
 	exit(0);
 }
@@ -223,6 +227,188 @@ int main(int argc, char **argv)
 
 	}
 
+
+	//////////////
+	// NEW: special mode to test DMA into user space buffer mapped via /dev/mem
+	// this would be mbs pipe use case
+	if(Debugmode==6)
+	{
+		// map external physical buffer to user space
+		int fd=0;
+		int* mybuf=0;
+		size_t mysize=Bufsize*sizeof(int);
+
+
+		if ((fd = open ("/dev/mem", O_RDWR)) < 0)
+		  {
+		    printf ("PEXOR Test  failed to open /dev/mem, return:%d\n", fd);
+		    return fd;
+		  }
+
+		  int len   = mysize;
+		  int flags = MAP_SHARED;
+		  off_t off   = (off_t) DEVMEMTEST_BASE;
+		  int prot = PROT_READ | PROT_WRITE;
+		  if ((mybuf = (int*) mmap (NULL, mysize, prot, flags, fd, off)) < 0)
+		  {
+		    printf("!!!! PEXOR Test failed to mmap dma target memory at %x, return value:%d \n", off,mybuf);
+		    return fd;
+		  }
+		  else
+		  {
+			  printf("PEXOR Test mmapped dma target memory, phys: 0x%x, user: 0x%d , size:0x%x\n", off, mybuf, mysize);
+		  }
+
+
+		  // test: can we access this memory?
+		  int* ptr= (int*) mybuf;
+		  int ptsize=mysize/sizeof(int);
+		  printf("*** Writing %d values to %x\n", ptsize,ptr);
+		  for (int i=0; i < mysize/sizeof(int); ++i)
+		  		{
+			  	    *(ptr+i)=i;
+		  		}
+		  printf("*** Reading back %d values from %x\n", ptsize,ptr);
+		  for (int i=0; i < mysize/sizeof(int); ++i)
+		  	  {
+			  	  if(*(ptr+i)!=i)
+			  		  printf("*** Read ERROR at%x: %d != %d\n", ptr+i,*(ptr+i),i);
+		  	  }
+
+
+		// register user space buffer pointer as only dma buffer into driver
+		int rev=board.Register_DMA_Buffer(mybuf, mysize);
+		if(rev)
+			{
+				printf("\n\nError %d on registering userspace dma buffer 0x%x of size 0x%x:\n",rev,mybuf,mysize);
+				return rev;
+			}
+
+		// perform single dma test
+		printf("PEXOR Test single DMA to user memory...\n");
+			bench.ClockStart();
+			bench.TimerStart();
+			board.SetDMA(pexor::DMA_SINGLE); // start the DMA by this
+			pexor::DMA_Buffer* rcv=board.ReceiveDMA();
+			if(!rcv)
+				{
+					printf("\n\nError receiving DMA buffer \n");
+					return -1;
+				}
+			// check here if userspace pointers still match:
+			if(mybuf!=rcv->Data())
+				{
+					printf("\n\nError:  received DMA buffer pointer 0x%p not consistent with original user pointer 0x%p \n",
+							rcv->Data(),mybuf);
+				}
+			if(mysize!=rcv->Size())
+			{
+				printf("\n\nError:  received DMA buffer size 0x%x not consistent with original size 0x%x \n",
+						rcv->Size(),mysize);
+			}
+
+
+			cycledelta=bench.TimerDelta();
+			clockdelta=bench.ClockDelta();
+			bench.ShowRate("Clock:  Single DMA read", rcv->Size(), clockdelta);
+			bench.ShowRate("Cycles: Single DMA read", rcv->Size(), cycledelta);
+			if(*rcv != writebuffer) // will use equal operator== checking for errors
+				rcv->ShowCompareErrors();
+			else
+				printf("No errors!\n");
+
+			// clean up
+			rev=board.Unregister_DMA_Buffer(mybuf);
+			if(rev)
+				{
+					printf("\nError %d on Unregister DMA buffer\n", rev);
+					return rev;
+				}
+			rev=munmap(mybuf,mysize);
+			if(rev)
+				{
+				printf("\nError %d on munmap buffer 0x%x, size :0x%x\n", rev,mybuf,mysize);
+				return rev;
+				}
+
+		return 0;
+
+	}
+	if(Debugmode==7)
+		{
+			// map external physical buffer to user space, but this time we do all in pexor driver
+		    // do not use /dev/mem here
+			// register user space buffer pointer as only dma buffer into driver
+			size_t mysize=Bufsize*sizeof(int);
+			pexor::DMA_Buffer* mapbuf= board.Map_Physical_DMA_Buffer(DEVMEMTEST_BASE, mysize);
+			if(mapbuf==0)
+				{
+					printf("\n\nError %d on mapping physical dma buffer 0x%x of size 0x%x:\n",DEVMEMTEST_BASE,mysize);
+					return -1;
+				}
+
+			// first test: can we access this memory?
+			int ptsize=mysize/sizeof(int);
+			printf("*** Writing %d values to %x\n", ptsize,mapbuf->Data());
+			for (int i=0; i < mysize/sizeof(int); ++i)
+			{
+				*(mapbuf->Cursor(i))=i;
+					  		}
+			printf("*** Reading back %d values from %x\n", ptsize,mapbuf->Data());
+			for (int i=0; i < mysize/sizeof(int); ++i)
+			{
+				if(*(mapbuf->Cursor(i))!=i)
+					printf("*** Read ERROR at%x: %d != %d\n", mapbuf->Cursor(i),*(mapbuf->Cursor(i)),i);
+			}
+
+
+			// now dma test:
+			printf("PEXOR Test single DMA to mapped physical memory...\n");
+			bench.ClockStart();
+			bench.TimerStart();
+			board.SetDMA(pexor::DMA_SINGLE); // start the DMA by this
+			pexor::DMA_Buffer* rcv=board.ReceiveDMA(false); // do not use internal lib dma pool
+			if(!rcv)
+				{
+					printf("\n\nError receiving DMA buffer \n");
+					return -1;
+				}
+			// check here if userspace pointers still match:
+			if(mapbuf->Data() !=rcv->Data())
+				{
+					printf("\n\nError:  received DMA buffer pointer 0x%p not consistent with original user pointer 0x%p \n",
+							rcv->Data(),mapbuf->Data());
+				}
+			if(mapbuf->Size()!=rcv->Size())
+			{
+				printf("\n\nError:  received DMA buffer size 0x%x not consistent with original size 0x%x \n",
+						rcv->Size(),mapbuf->Size());
+			}
+
+
+			cycledelta=bench.TimerDelta();
+			clockdelta=bench.ClockDelta();
+			bench.ShowRate("Clock:  Single DMA read", rcv->Size(), clockdelta);
+			bench.ShowRate("Cycles: Single DMA read", rcv->Size(), cycledelta);
+			if(*rcv != writebuffer) // will use equal operator== checking for errors
+				rcv->ShowCompareErrors();
+			else
+				printf("No errors!\n");
+
+					// clean up
+			delete rcv; // just remove receive handle, will not remove driver mapping since we do not belong to board pool
+
+			int rev=board.Unmap_Physical_DMA_Buffer(mapbuf); // this one cleans up driver lists
+			if(rev)
+				{
+					printf("\nError %d on unmapping DMA buffer\n", rev);
+					return rev;
+				}
+			return rev;
+
+
+		}
+	// END NEW
 
 	////////////////////////////////////////////////////////
 	// map DMA buffers here:

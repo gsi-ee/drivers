@@ -105,11 +105,12 @@ public:
 	virtual int SetDMA(pexor::DmaMode mode);
 
 	/* Get next filled DMA buffer; optionally wait until DMA is completed here.
-	 * Returns 0 buffer in case of error
+	 * Returns 0 buffer in case of error*
+	 * if checkmempool is false, we do not look up if the received buffer belongs to our user memory pool
 	 * Implemented in board subclass, since it may depend on specific ioctl calls
 	 * TODO: specify timeout here? may define special ioctl to set driver timeout!
 	 * TODO: error handling via exceptions? */
-	virtual pexor::DMA_Buffer* ReceiveDMA()=0;
+	virtual pexor::DMA_Buffer* ReceiveDMA(bool checkmempool=true)=0;
 
 	/* TODO: single DMA write content of DMAbuffer from bufcursor with length to board RAM at boardoffset.*/
 	virtual int WriteDMA(pexor::DMA_Buffer* buf, int length, int bufcursor=0, int boardoffset=0)=0;
@@ -165,9 +166,11 @@ protected:
 
 
 
-	/* Allocate and map a DMA kernel buffer from driver. Implemented in subclass
+	/* Allocate and map a DMA kernel buffer from driver.
+	 * Optionally physical address of external user memory may be defined.
+	 * Implemented in subclass
 	 * */
-	virtual int* Map_DMA_Buffer(size_t size)=0;
+	virtual int* Map_DMA_Buffer(size_t size, unsigned long physaddr=0)=0;
 
 
 

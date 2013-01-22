@@ -202,8 +202,9 @@ struct pexor_privdata
 struct pexor_privdata *get_privdata(struct file *fil);
 
 /* create dma buffer of size, allocate it for pci device pdev,
- * returns buffer descriptor structure */
-struct pexor_dmabuf *new_dmabuffer(struct pci_dev *pdev, size_t size);
+ * returns buffer descriptor structure
+ * Optionally, we may use external physical memory as pointed by pgoff*/
+struct pexor_dmabuf *new_dmabuffer(struct pci_dev *pdev, size_t size, unsigned long pgoff);
 
 
 /* remove dmabuffer from pci device */

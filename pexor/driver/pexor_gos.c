@@ -3,7 +3,7 @@
 #ifndef PEXOR_WITH_TRBNET
 
 
-
+ #ifdef PEXOR_WITH_TRIXOR
 int pexor_ioctl_set_trixor(struct pexor_privdata* priv, unsigned long arg)
 {
   int command,retval;
@@ -50,7 +50,7 @@ int pexor_ioctl_set_trixor(struct pexor_privdata* priv, unsigned long arg)
 
   return 0;
 }
-
+#endif
 
 int pexor_ioctl_init_bus(struct pexor_privdata* priv, unsigned long arg)
 {
