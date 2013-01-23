@@ -1,0 +1,11 @@
+#!/bin/sh
+module="pexor"
+device="pexor"
+
+# invoke rmmod with all arguments we got
+/sbin/rmmod $module
+
+# Remove stale nodes
+
+rm -f /dev/${device} /dev/${device}0
+ls -l /dev | grep pexor
