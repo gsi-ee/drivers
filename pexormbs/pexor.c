@@ -1,13 +1,14 @@
 // N.Kurz, EE, GSI, 8-Apr-2010
+// J.Adamczewski-Musch, EE, GSI, added mmap and some small fixes 24-Jan-2013
 //-----------------------------------------------------------------------------
 
 //#define DEBUG
 
 #ifdef DEBUG
  #define debug(x)        printk x
-#else DEBUG
+#else
  #define debug(x)
-#endif DEBUG
+#endif /* DEBUG */
 
 //#define INTERNAL_TRIG_TEST 1
 //-----------------------------------------------------------------------------
@@ -36,6 +37,7 @@
 #define BUS_ENABLE 0x00000800
 //-----------------------------------------------------------------------------
 #include <linux/kernel.h>
+#include <linux/version.h>
 #include <linux/pci.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
@@ -89,10 +91,10 @@ static unsigned int *pl_ctrl;
 static unsigned int *pl_fcti;
 static unsigned int *pl_cvti;
 
-static long  l_irq_ct=0;
+//static long  l_irq_ct=0;
 //static long  l_stat;
 
-static unsigned long *l_addr;
+//static unsigned long *l_addr;
 
 #ifndef PEXOR_MAJOR
 #define PEXOR_MAJOR 0     // dynamic major by default
@@ -115,7 +117,7 @@ int pexor_major =   PEXOR_MAJOR;
 int pexor_minor =   0;
 int pexor_nr_devs = PEXOR_NR_DEVS;	// number of bare pexor devices
 
-MODULE_AUTHOR ("Nikolaus Kurz, EE, GSI, 30-Mar-2010");
+MODULE_AUTHOR ("Nikolaus Kurz, Joern Adamczewski-Musch, EE, GSI, 24-Jan-2013");
 MODULE_LICENSE("Dual BSD/GPL");
 
 struct pexor_dev *pexor_devices;	// allocated in pexor_init_module
@@ -137,6 +139,63 @@ int pexor_release(struct inode *inode, struct file *filp)
   printk (KERN_INFO "END   pexor_release \n");
 	return 0;
 }
+
+
+
+//--------------------------
+
+int pexor_mmap(struct file *filp, struct vm_area_struct *vma)
+{
+    //struct pexor_privdata *privdata;
+    //struct pexor_dmabuf* buf;
+    int ret = 0;
+    unsigned long bufsize, barsize;
+    //privdata= get_privdata(filp);
+    printk(KERN_NOTICE "** starting pexor_mmap...\n");
+
+    //if(!privdata) return -EFAULT;
+
+    bufsize = (vma->vm_end - vma->vm_start);
+    printk(KERN_NOTICE "** starting pexor_mmap for size=%ld \n", bufsize);
+
+    if (vma->vm_pgoff == 0)
+        {
+            /* user does not specify external physical address, we deliver mapping of bar 0:*/
+            printk(KERN_NOTICE "Pexor is Mapping bar0 base address %x / PFN %x\n",
+                    l_bar0_base, l_bar0_base >> PAGE_SHIFT);
+            barsize = l_bar0_end - l_bar0_base;
+            if (bufsize > barsize)
+                {
+                    printk(KERN_WARNING "Requested length %ld exceeds bar0 size, shrinking to %ld bytes\n",bufsize,barsize);
+                    bufsize = barsize;
+                }
+
+            vma->vm_flags |= (VM_RESERVED); /* TODO: do we need this?*/
+            ret = remap_pfn_range(vma, vma->vm_start, l_bar0_base >> PAGE_SHIFT,
+                    bufsize, vma->vm_page_prot);
+        }
+    else
+        {
+            /* for external phys memory, use directly pfn*/
+            printk(KERN_NOTICE "Pexor is Mapping external address %lx / PFN %lx\n",
+                    (vma->vm_pgoff << PAGE_SHIFT ),vma->vm_pgoff);
+
+            vma->vm_flags |= (VM_RESERVED); /* TODO: do we need this?*/
+            ret = remap_pfn_range(vma, vma->vm_start, vma->vm_pgoff, bufsize,
+                    vma->vm_page_prot);
+
+        }
+
+    if (ret)
+        {
+            printk(KERN_ERR "Pexor mmap: remap_pfn_range failed with %d\n", ret);
+            //delete_dmabuffer(privdata->pdev, buf);
+            return -EFAULT;
+        }
+    return ret;
+}
+
+
 
 //-----------------------------------------------------------------------------
 int pexor_ioctl(struct inode *inode, struct file *filp,
@@ -193,7 +252,12 @@ int pexor_ioctl(struct inode *inode, struct file *filp,
 //-----------------------------------------------------------------------------
 struct file_operations pexor_fops = {
 	.owner =    THIS_MODULE,
-	.ioctl =    pexor_ioctl,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
+	.ioctl        = pexor_ioctl,
+#else
+    .unlocked_ioctl    = pexor_ioctl,
+#endif
+    .mmap  = 		pexor_mmap,
 	.open =     pexor_open,
 	.release =  pexor_release,
 };
@@ -233,8 +297,8 @@ static unsigned char pexor_get_pci_config(struct pci_dev *pdev)
 	return revision;
 }
 //-----------------------------------------------------------------------------
-
-irqreturn_t irq_hand (int irq, void *dev_id, struct pt_regs *regs)
+irqreturn_t irq_hand( int irq, void *dev_id)
+/*irqreturn_t irq_hand (int irq, void *dev_id, struct pt_regs *regs) OLD JAM*/
 {
   debug ((KERN_INFO "BEGIN irq_hand \n"));
   //printk (KERN_INFO "BEGIN irq_hand \n");
@@ -272,113 +336,130 @@ irqreturn_t irq_hand (int irq, void *dev_id, struct pt_regs *regs)
 //-----------------------------------------------------------------------------
 static int probe(struct pci_dev *pdev, const struct pci_device_id *id)
 {
-  printk (KERN_INFO "BEGIN probe function \n");
+    int err = 0;
+    printk (KERN_INFO "BEGIN probe function \n");
 
-  printk (KERN_INFO " IRQ: %d\n", pdev->irq);
+    printk (KERN_INFO " IRQ: %d\n", pdev->irq);
+    if ((err = pci_enable_device(pdev)) != 0)
+        {
+            printk(KERN_ERR "PEXOR pci driver probe: Error %d enabling PCI device! \n",err);
+            return -ENODEV;
+        }
+    printk (KERN_INFO "PEXOR Device is enabled.\n");
 
-	pci_enable_device(pdev);
-	if (pexor_get_pci_config(pdev) == 0x42)
-		return -ENODEV;
+    //pci_enable_device(pdev);
+    if (pexor_get_pci_config(pdev) == 0x42) return -ENODEV;
 
-  printk (KERN_INFO " check bar0 resources \n");
-  l_bar0_base = pci_resource_start (pdev, 0);
-  printk (KERN_INFO " l_bar0_base:  0x%x \n", l_bar0_base);
-  l_bar0_end  = pci_resource_end (pdev, 0);
-  printk (KERN_INFO " l_bar0_end:   0x%x \n", l_bar0_end);
-  l_bar0_flags  = pci_resource_flags (pdev, 0);
-  printk (KERN_INFO " l_bar0_flags: 0x%x \n", l_bar0_flags);
+    printk (KERN_INFO " check bar0 resources \n");
+    l_bar0_base = pci_resource_start(pdev, 0);
+    printk (KERN_INFO " l_bar0_base:  0x%x \n", l_bar0_base);
+    l_bar0_end = pci_resource_end(pdev, 0);
+    printk (KERN_INFO " l_bar0_end:   0x%x \n", l_bar0_end);
+    l_bar0_flags = pci_resource_flags(pdev, 0);
+    printk (KERN_INFO " l_bar0_flags: 0x%x \n", l_bar0_flags);
 
-  printk (KERN_INFO " map TRIXOR registers \n");
+    printk (KERN_INFO " map TRIXOR registers \n");
 
-	if (! request_mem_region(l_bar0_trix_base, 16, "pexor"))
-  {
-		printk(KERN_INFO "ERROR>> requesting TRIXOR 0x%x\n", l_bar0_trix_base);
-		return -ENODEV;
-	}
-	l_map_bar0_trix_base = (unsigned long) ioremap_nocache (l_bar0_trix_base, 16);
-  printk (KERN_INFO " l_map_bar0_base:  0x%x \n", l_map_bar0_trix_base);
+    if (!request_mem_region(l_bar0_trix_base, 16, "pexor"))
+        {
+            printk(KERN_INFO "ERROR>> requesting TRIXOR 0x%x\n", l_bar0_trix_base);
+            return -ENODEV;
+        }
+    l_map_bar0_trix_base = (unsigned long) ioremap_nocache(l_bar0_trix_base,
+            16);
+    printk (KERN_INFO " l_map_bar0_base:  0x%x \n", l_map_bar0_trix_base);
 
-  printk (KERN_INFO " map TRIXOR registers \n");
-  // map TRIXOR register 
-  pl_stat = (unsigned int*) ((long)l_map_bar0_trix_base + 0x0);
-  pl_ctrl = (unsigned int*) ((long)l_map_bar0_trix_base + 0x4);
-  pl_fcti = (unsigned int*) ((long)l_map_bar0_trix_base + 0x8);
-  pl_cvti = (unsigned int*) ((long)l_map_bar0_trix_base + 0xc);
+    printk (KERN_INFO " map TRIXOR registers \n");
+    // map TRIXOR register
+    pl_stat = (unsigned int*) ((long) l_map_bar0_trix_base + 0x0);
+    pl_ctrl = (unsigned int*) ((long) l_map_bar0_trix_base + 0x4);
+    pl_fcti = (unsigned int*) ((long) l_map_bar0_trix_base + 0x8);
+    pl_cvti = (unsigned int*) ((long) l_map_bar0_trix_base + 0xc);
 
-  printk (KERN_INFO " Ptr. TRIXOR stat: 0x%x \n", (unsigned int)pl_stat);
-  printk (KERN_INFO " Ptr. TRIXOR ctrl: 0x%x \n", (unsigned int)pl_ctrl);
-  printk (KERN_INFO " Ptr. TRIXOR fcti: 0x%x \n", (unsigned int)pl_fcti);
-  printk (KERN_INFO " Ptr. TRIXOR cvti: 0x%x \n", (unsigned int)pl_cvti);
+    printk (KERN_INFO " Ptr. TRIXOR stat: 0x%x \n", (unsigned int)pl_stat);
+    printk (KERN_INFO " Ptr. TRIXOR ctrl: 0x%x \n", (unsigned int)pl_ctrl);
+    printk (KERN_INFO " Ptr. TRIXOR fcti: 0x%x \n", (unsigned int)pl_fcti);
+    printk (KERN_INFO " Ptr. TRIXOR cvti: 0x%x \n", (unsigned int)pl_cvti);
 
-  printk (KERN_INFO " TRIXOR registers content \n");
-  printk (KERN_INFO " TRIXOR stat: .... 0x%x \n", ioread32(pl_stat));
-  printk (KERN_INFO " TRIXOR ctrl: .... 0x%x \n", ioread32(pl_ctrl));
-  printk (KERN_INFO " TRIXOR fcti: .... 0x%x \n", 0x10000 - ioread32(pl_fcti));
-  printk (KERN_INFO " TRIXOR cvti: .... 0x%x \n", 0x10000 - ioread32(pl_cvti));
+    printk (KERN_INFO " TRIXOR registers content \n");
+    printk (KERN_INFO " TRIXOR stat: .... 0x%x \n", ioread32(pl_stat));
+    printk (KERN_INFO " TRIXOR ctrl: .... 0x%x \n", ioread32(pl_ctrl));
+    printk (KERN_INFO " TRIXOR fcti: .... 0x%x \n", 0x10000 - ioread32(pl_fcti));
+    printk (KERN_INFO " TRIXOR cvti: .... 0x%x \n", 0x10000 - ioread32(pl_cvti));
 
-  printk (KERN_INFO " Initialize mutex in locked state \n");
-  //sema_init (&trix_sem, 0); 
-  init_MUTEX_LOCKED (&trix_sem);
-  trix_val = 0;
+    printk (KERN_INFO " Initialize mutex in locked state \n");
+    //sema_init (&trix_sem, 0);
+    init_MUTEX_LOCKED(&trix_sem);
+    trix_val = 0;
 
-	/*
-  // tests not necessary fo functionality
-	l_addr = ioremap (0x90000000, 0x2000);
-  printk (KERN_INFO "ioreamp addr:     0x%x \n", l_addr);
-  l_addr = virt_to_phys (l_addr);
-  printk (KERN_INFO "ioreamp bus addr: 0x%x \n", l_addr); 
+    /*
+     // tests not necessary fo functionality
+     l_addr = ioremap (0x90000000, 0x2000);
+     printk (KERN_INFO "ioreamp addr:     0x%x \n", l_addr);
+     l_addr = virt_to_phys (l_addr);
+     printk (KERN_INFO "ioreamp bus addr: 0x%x \n", l_addr);
 
-  l_addr = kmalloc (0x2000, GFP_KERNEL);
-  printk (KERN_INFO "kmalloc addr:     0x%x \n", l_addr);
-  l_addr = virt_to_phys (l_addr);
-  printk (KERN_INFO "kmalloc bus addr: 0x%x \n", l_addr); 
+     l_addr = kmalloc (0x2000, GFP_KERNEL);
+     printk (KERN_INFO "kmalloc addr:     0x%x \n", l_addr);
+     l_addr = virt_to_phys (l_addr);
+     printk (KERN_INFO "kmalloc bus addr: 0x%x \n", l_addr);
 
-  l_addr = vmalloc (0x2000);
-  printk (KERN_INFO "vmalloc addr:     0x%x \n", l_addr);
-  l_addr = virt_to_phys (l_addr);
-  printk (KERN_INFO "vmalloc bus addr: 0x%x \n", l_addr); 
-	*/
+     l_addr = vmalloc (0x2000);
+     printk (KERN_INFO "vmalloc addr:     0x%x \n", l_addr);
+     l_addr = virt_to_phys (l_addr);
+     printk (KERN_INFO "vmalloc bus addr: 0x%x \n", l_addr);
+     */
 
-  //if ((request_irq (pdev->irq, irq_hand, SA_INTERRUPT, "pexor", irq_hand)) == 0)
-  if ((request_irq (pdev->irq, irq_hand, 0, "pexor", irq_hand)) == 0)
-  {
-		printk (KERN_INFO " IRQ %d request accepted \n", pdev->irq);
-  }
-  else
-  {
-		printk (KERN_INFO " ERROR>> IRQ %d request refused \n", l_irq_line);
-  }
+    //if ((request_irq (pdev->irq, irq_hand, SA_INTERRUPT, "pexor", irq_hand)) == 0)
+//	  if(request_irq(dev->irq, pexor_isr , IRQF_SHARED, privdata->irqname, privdata))
+//	     {
+//	       pexor_msg( KERN_ERR "PEXOR pci_drv: IRQ %d not free.\n", dev->irq );
+//	       return -EIO;
+//	     }
+//
 
-  #ifdef INTERNAL_TRIG_TEST
+    if (request_irq(pdev->irq, irq_hand, IRQF_SHARED, "pexor", irq_hand) == 0)
+        {
+            //printk (KERN_INFO " IRQ %d request accepted \n", pdev->irq);
+            printk(
+                    KERN_NOTICE " assigned IRQ %d for name %s, pin:%d, line:%d \n",
+                    pdev->irq, "pexor", l_irq_pin, l_irq_line);
+        }
+    else
+        {
+            printk(KERN_INFO " ERROR>> IRQ %d request refused \n", l_irq_line);
+        }
+
+
+#ifdef INTERNAL_TRIG_TEST
   // initalize TRIXOR only for internal tests
-  printk (KERN_INFO "\n");
-  printk (KERN_INFO " Initalize TRIXOR \n");
+printk (KERN_INFO "\n");
+printk (KERN_INFO " Initalize TRIXOR \n");
 
-  iowrite32 (0x1000,        pl_ctrl);
-  iowrite32 (HALT,          pl_ctrl);
-  iowrite32 (MASTER,        pl_ctrl);
-  iowrite32 (CLEAR,         pl_ctrl);
+iowrite32 (0x1000, pl_ctrl);
+iowrite32 (HALT, pl_ctrl);
+iowrite32 (MASTER, pl_ctrl);
+iowrite32 (CLEAR, pl_ctrl);
 
-  iowrite32 (BUS_ENABLE,    pl_ctrl);
-  iowrite32 (CLEAR,         pl_ctrl);
-  iowrite32 (EV_IRQ_CLEAR,  pl_stat);
-  iowrite32 (0x10000 - 14,  pl_fcti);
-  iowrite32 (0x10000 - 22,  pl_cvti);
+iowrite32 (BUS_ENABLE, pl_ctrl);
+iowrite32 (CLEAR, pl_ctrl);
+iowrite32 (EV_IRQ_CLEAR, pl_stat);
+iowrite32 (0x10000 - 14, pl_fcti);
+iowrite32 (0x10000 - 22, pl_cvti);
 
-  iowrite32 (HALT,          pl_ctrl);
-  iowrite32 (CLEAR,         pl_ctrl);
-  iowrite32 (14,            pl_stat);
-  iowrite32 ((EN_IRQ | GO), pl_ctrl);
+iowrite32 (HALT, pl_ctrl);
+iowrite32 (CLEAR, pl_ctrl);
+iowrite32 (14, pl_stat);
+iowrite32 ((EN_IRQ | GO), pl_ctrl);
 
-  printk (KERN_INFO " TRIXOR registers content \n");
-  printk (KERN_INFO " TRIXOR stat: .... 0x%x \n", ioread32(pl_stat));
-  printk (KERN_INFO " TRIXOR ctrl: .... 0x%x \n", ioread32(pl_ctrl));
-  printk (KERN_INFO " TRIXOR fcti: .... 0x%x \n", 0x10000 - ioread32(pl_fcti));
-  printk (KERN_INFO " TRIXOR cvti: .... 0x%x \n", 0x10000 - ioread32(pl_cvti));
-  #endif // INTERNAL_TRIG_TEST 
-
-  printk (KERN_INFO "END   probe function \n");
-	return 0;
+printk (KERN_INFO " TRIXOR registers content \n");
+printk (KERN_INFO " TRIXOR stat: .... 0x%x \n", ioread32(pl_stat));
+printk (KERN_INFO " TRIXOR ctrl: .... 0x%x \n", ioread32(pl_ctrl));
+printk (KERN_INFO " TRIXOR fcti: .... 0x%x \n", 0x10000 - ioread32(pl_fcti));
+printk (KERN_INFO " TRIXOR cvti: .... 0x%x \n", 0x10000 - ioread32(pl_cvti));
+#endif // INTERNAL_TRIG_TEST
+printk (KERN_INFO "END   probe function \n");
+return 0;
 }
 //-----------------------------------------------------------------------------
 static void remove(struct pci_dev *pdev)
@@ -386,7 +467,7 @@ static void remove(struct pci_dev *pdev)
   printk (KERN_INFO " BEGIN remove function \n");
 
   free_irq (pdev->irq, irq_hand);
-  iounmap (l_map_bar0_trix_base);
+  iounmap ((void*) l_map_bar0_trix_base);
 	release_mem_region (l_bar0_trix_base, 16);
 
   printk (KERN_INFO " END   remove function \n");
@@ -402,9 +483,11 @@ static struct pci_driver pci_driver = {
 // Set up the char_dev structure for this device.
 static void pexor_setup_cdev(struct pexor_dev *dev, int index)
 {
-  printk (KERN_INFO " BEGIN pexor_setup_cdev function \n");
+	int err=0;
+	dev_t devno=0;
+	 printk (KERN_INFO " BEGIN pexor_setup_cdev function \n");
 
-	int err,  devno = MKDEV(pexor_major, pexor_minor + index);
+	devno = MKDEV(pexor_major, pexor_minor + index);
     
 	cdev_init(&dev->cdev, &pexor_fops);
 	dev->cdev.owner = THIS_MODULE;
@@ -415,31 +498,39 @@ static void pexor_setup_cdev(struct pexor_dev *dev, int index)
 		printk(KERN_INFO "Error %d adding pexor%d", err, index);
   printk (KERN_INFO " END   pexor_setup_cdev function \n");  
 }
+
+
+
 //-----------------------------------------------------------------------------
-static void __exit pexor_exit(void)
+static void do_pexor_exit(void) /* need this helper to avoid section mismatch warning JAM*/
 {
-  printk (KERN_INFO "\nBEGIN pexor_exit\n");
+int i = 0;
+dev_t devno = 0;
+devno = MKDEV(pexor_major, pexor_minor);
 
-	int i;
-	dev_t devno = MKDEV(pexor_major, pexor_minor);
-  
-	// Get rid of our char dev entries
-	if (pexor_devices)
-  {
-		for (i = 0; i < pexor_nr_devs; i++)
+  // Get rid of our char dev entries
+if (pexor_devices)
     {
-			cdev_del(&pexor_devices[i].cdev);
-		}
-		kfree(pexor_devices);
-  }
+for (i = 0; i < pexor_nr_devs; i++)
+{
+cdev_del(&pexor_devices[i].cdev);
+}
+    kfree(pexor_devices);
+}
 
-	// cleanup_module is never called if registering failed
-	unregister_chrdev_region(devno, pexor_nr_devs);
-
-	pci_unregister_driver(&pci_driver);
-  printk (KERN_INFO "END   pexor_exit\n");
+  // cleanup_module is never called if registering failed
+unregister_chrdev_region(devno, pexor_nr_devs);
+pci_unregister_driver(&pci_driver);
 }
 //-----------------------------------------------------------------------------
+
+static void __exit pexor_exit(void)
+{
+	 printk (KERN_INFO "\nBEGIN pexor_exit\n");
+	 do_pexor_exit();
+	 printk (KERN_INFO "END   pexor_exit\n");
+}
+
 static int __init pexor_init(void)
 {
 	int result, i;
@@ -494,7 +585,7 @@ static int __init pexor_init(void)
 	return pci_register_driver(&pci_driver); // succeed
 
   fail:
-	pexor_exit();
+	do_pexor_exit();
   return (result);
 }
 //-----------------------------------------------------------------------------
