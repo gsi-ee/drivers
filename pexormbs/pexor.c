@@ -55,6 +55,12 @@
 //#include <asm/signal.h>
 #include <asm/uaccess.h>
 #include <asm/io.h>
+#include <asm/bootparam.h> /* check pyhsical memory regions from bios setup*/
+
+
+
+
+
 //-----------------------------------------------------------------------------
 #define PEXOR_VENDOR_ID     0x1204
 #define PEXOR_DEVICE_ID     0x5303
@@ -142,12 +148,19 @@ int pexor_release(struct inode *inode, struct file *filp)
 
 
 
+
+
+
+
+
 //--------------------------
 
 int pexor_mmap(struct file *filp, struct vm_area_struct *vma)
 {
     //struct pexor_privdata *privdata;
     //struct pexor_dmabuf* buf;
+//    u64 phstart, phend;
+//    unsigned phtype;
     int ret = 0;
     unsigned long bufsize, barsize;
     //privdata= get_privdata(filp);
@@ -179,6 +192,22 @@ int pexor_mmap(struct file *filp, struct vm_area_struct *vma)
             /* for external phys memory, use directly pfn*/
             printk(KERN_NOTICE "Pexor is Mapping external address %lx / PFN %lx\n",
                     (vma->vm_pgoff << PAGE_SHIFT ),vma->vm_pgoff);
+
+            /* tried to check via bios map if the requested region is usable or reserved
+             * This will not work, since the e820map as present in Linux kernel was already cut above mem=1024M
+             * So we would need to rescan the original bios entries, probably too much effort if standard MBS hardware is known
+             * */
+           /* phstart=  (u64) vma->vm_pgoff << PAGE_SHIFT;
+            phend = phstart +  (u64) bufsize;
+            phtype = E820_RAM;
+            if(e820_any_mapped(phstart, phend, phtype)==0)
+                {
+                    printk(KERN_ERR "Pexor mmap: requested physical memory region  from %lx to %lx is not completely usable!\n", (long) phstart, (long) phend);
+                    return -EFAULT;
+                }
+                NOTE that e820_any_mapped only checks if _any_ memory inside region is mapped
+                So it is the wrong method anyway*/
+
 
             vma->vm_flags |= (VM_RESERVED); /* TODO: do we need this?*/
             ret = remap_pfn_range(vma, vma->vm_start, vma->vm_pgoff, bufsize,

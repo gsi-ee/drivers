@@ -45,7 +45,7 @@ main (int argc, char *argv[])
 
 
   // this one for pipe memory:
-  size_t         len   = 0x50000000;//0x80000000; crashes
+  size_t         len   = 0x6c784000;//the limit is 0x6d800000 on lx86l-10 (DELL p3600)<- reserved area starts at 0xad800000
   off_t          off   = (off_t)0x40000000;
   int            prot  = PROT_WRITE | PROT_READ;
   int            flags = MAP_SHARED | MAP_LOCKED;
