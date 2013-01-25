@@ -7,5 +7,5 @@ device="pexor"
 
 # Remove stale nodes
 
-rm -f /dev/${device} /dev/${device}0
-ls -l /dev | grep pexor
+#rm -f /dev/${device} /dev/${device}0
+#ls -l /dev | grep pexor
