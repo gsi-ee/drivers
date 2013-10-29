@@ -1,23 +1,21 @@
 #!/bin/sh
-module="pexor"
+# N.Kurz, EE, GSI, 4-Sep2-13: modified for diefferent kernel versions
+# JAM, EE, GSI, 29-Oct-2013: provided different devicenames for kinpex, pexaria
+#            usage "load kinpex"
+
+KV=`uname -r`
+module="pexor_$KV"
+class="pexor"
 device="pexor"
+#device="kinpex"
+if [ $# -gt 0 ];then
+  device=$1
+  shift
+fi
 mode="664"
-
-# Group: since distributions do it differently, look for wheel or use staff
-#if grep -q '^staff:' /etc/group; then
-#    group="staff"
-#else
-#    group="wheel"
-#fi
-
+echo "module: $module.ko"
 /sbin/insmod ./$module.ko
-
-# retrieve major number
-#major=$(awk "\$2==\"$module\" {print \$1}" /proc/devices)
-#echo "PEXOR Major: $major"
-
-#rm -f /dev/${device}0
-#mknod /dev/${device}0 c $major 0
 chmod a+rw /dev/${device}0
-ln -sf ${device}0 /dev/${device}
-ls -l /dev/pexor*
+ln -sf ${device}0 /dev/${class}
+ls -l /dev/*pex*
+

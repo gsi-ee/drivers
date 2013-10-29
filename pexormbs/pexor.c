@@ -17,9 +17,19 @@
 
 //#define INTERNAL_TRIG_TEST 1
 
-#define PEXORVERSION     "1.1"
+#define BOARDTYPE_PEXOR 0
+#define BOARDTYPE_PEXARIA 1
+#define BOARDTYPE_KINPEX 2
+
+
+#define PEXORVERSION     "1.2"
 #define PEXORNAME       "pexor"
 #define PEXORNAMEFMT    "pexor%d"
+#define PEXARIANAMEFMT  "pexaria%d"
+#define KINPEXNAMEFMT   "kinpex%d"
+
+
+
 /* maximum number of devices controlled by this driver*/
 #define PEXOR_MAXDEVS 4
 
@@ -57,7 +67,7 @@
 #include <linux/init.h>
 #include <linux/interrupt.h>
 //#include <linux/config.h>
-//#include <linux/module.h>
+#include <linux/module.h>
 //#include <linux/moduleparam.h>
 #include <linux/slab.h>		/* kmalloc() */
 #include <linux/fs.h>		/* everything... */
@@ -72,10 +82,20 @@
 #include <asm/uaccess.h>
 #include <asm/io.h>
 //#include <asm/bootparam.h> /* check pyhsical memory regions from bios setup*/
+#include <linux/delay.h>
 
 //-----------------------------------------------------------------------------
 #define PEXOR_VENDOR_ID     0x1204
 #define PEXOR_DEVICE_ID     0x5303
+
+
+#define PEXARIA_VENDOR_ID     0x1172
+#define PEXARIA_DEVICE_ID     0x1111
+
+#define KINPEX_VENDOR_ID     0x10EE
+#define KINPEX_DEVICE_ID     0x1111
+
+
 
 #define BAR0_REG_OFF        0x20000  // register base offset with resp. to BAR0
 #define BAR0_TRIX_OFF       0x40000  // TRIXOR base offset with resp. to BAR0
@@ -101,6 +121,7 @@ struct pexor_privdata
     u8 irqpin; /* hardware irq pin */
     u8 irqline; /* default irq line */
     // here the special variables as used for pexor with mbs:
+    u8 board_type; /* pexor, pexaria, kinpex, ...*/
     u32 l_bar0_base;
     u32 l_bar0_end;
     u32 l_bar0_trix_base;
@@ -139,14 +160,14 @@ static DEVICE_ATTR(trixorbase, S_IRUGO, pexor_sysfs_trixorbase_show, NULL);
 
 static int my_major_nr = 0;
 
-MODULE_AUTHOR("Nikolaus Kurz, Joern Adamczewski-Musch, EE, GSI, 24-Jan-2013");
+MODULE_AUTHOR("Nikolaus Kurz, Joern Adamczewski-Musch, EE, GSI, 29-Oct-2013");
 MODULE_LICENSE("Dual BSD/GPL");
 
 void pexor_show_version(struct pexor_privdata *privdata, char* buf)
 {
     /* stolen from pexor_gosip.h*/
     u32 tmp, year, month, day, version[2];
-    char txt[1024];
+    char txt[512];
     u32* ptversion = (u32*) (privdata->iomem[0] + PEXOR_SFP_BASE
             + PEXOR_SFP_VERSION);
     tmp = ioread32(ptversion);
@@ -157,22 +178,22 @@ void pexor_show_version(struct pexor_privdata *privdata, char* buf)
     day = (tmp & 0xff00) >> 8;
     version[0] = (tmp & 0xf0) >> 4;
     version[1] = (tmp & 0xf);
-    snprintf(txt, 1024,
+    snprintf(txt, 512,
             "PEXOR FPGA code compiled at Year=%x Month=%x Date=%x Version=%x.%x \n",
             year, month, day, version[0], version[1]);
     pexor_dbg(KERN_NOTICE "%s", txt);
-    if (buf) snprintf(buf, 1024, "%s", txt);
+    if (buf) snprintf(buf, 512, "%s", txt);
 }
 
 ssize_t pexor_sysfs_codeversion_show(struct device *dev,
         struct device_attribute *attr, char *buf)
 {
-    char vstring[1024];
+    char vstring[512];
     ssize_t curs = 0;
     struct pexor_privdata *privdata;
     privdata = (struct pexor_privdata*) dev_get_drvdata(dev);
     curs =
-            snprintf(vstring, 1024,
+            snprintf(vstring, 512,
                     "*** This is PEXOR driver for MBS, Version %s build on %s at %s \n\t",
                     PEXORVERSION, __DATE__, __TIME__);
     pexor_show_version(privdata, vstring + curs);
@@ -411,9 +432,13 @@ int pexor_mmap(struct file *filp, struct vm_area_struct *vma)
     return ret;
 }
 
-//-----------------------------------------------------------------------------
-int pexor_ioctl(struct inode *inode, struct file *filp, unsigned int cmd,
-        unsigned long arg)
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
+int pexor_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg)
+#else
+long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+#endif
+
 {
     int retval = 0;
     struct pexor_privdata *privdata;
@@ -453,7 +478,12 @@ int pexor_ioctl(struct inode *inode, struct file *filp, unsigned int cmd,
             pexor_dbg(KERN_INFO " before RESET_SEM \n");
             privdata->trix_val = 0;
             //sema_init (&trix_sem, 0);
-            init_MUTEX_LOCKED(&(privdata->trix_sem));
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 37)
+    init_MUTEX_LOCKED(&(privdata->trix_sem));
+#else
+    sema_init (&(privdata->trix_sem), 0);
+#endif
+            //init_MUTEX_LOCKED(&(privdata->trix_sem));
             retval = __put_user(0, (int __user *)arg);
             pexor_dbg(KERN_INFO " after  RESET_SEM \n");
             break;
@@ -473,8 +503,10 @@ struct file_operations pexor_fops = { .owner = THIS_MODULE,
 #endif
         .mmap = pexor_mmap, .open = pexor_open, .release = pexor_release, };
 //-----------------------------------------------------------------------------
-static struct pci_device_id ids[] = { {
-        PCI_DEVICE(PEXOR_VENDOR_ID, PEXOR_DEVICE_ID), },  // PEXOR
+static struct pci_device_id ids[] = {
+      { PCI_DEVICE(PEXOR_VENDOR_ID, PEXOR_DEVICE_ID), },  // PEXOR
+      { PCI_DEVICE(PEXARIA_VENDOR_ID, PEXARIA_DEVICE_ID), }, //pexaria
+      { PCI_DEVICE(KINPEX_VENDOR_ID, KINPEX_DEVICE_ID), }, // kinpex
         { 0, } };
 //-----------------------------------------------------------------------------
 MODULE_DEVICE_TABLE(pci, ids);
@@ -568,6 +600,9 @@ void cleanup_device(struct pexor_privdata* priv)
 static int probe(struct pci_dev *dev, const struct pci_device_id *id)
 {
     int err = 0, ix = 0;
+    u16 vid = 0; u16 did = 0;
+    char devnameformat[64];
+    char devname[64];
     struct pexor_privdata *privdata;
     pexor_msg(KERN_NOTICE "PEXOR pci driver starts probe...\n");
     if ((err = pci_enable_device(dev)) != 0)
@@ -600,6 +635,35 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
     memset(privdata, 0, sizeof(struct pexor_privdata));
     pci_set_drvdata(dev, privdata);
     privdata->pdev = dev;
+
+    // here check which board we have: pexor, pexaria, kinpex
+    pci_read_config_word(dev, PCI_VENDOR_ID, &vid);
+    pexor_dbg(KERN_NOTICE "  vendor id:........0x%x \n", vid);
+    pci_read_config_word(dev, PCI_DEVICE_ID, &did);
+    pexor_dbg(KERN_NOTICE "  device id:........0x%x \n", did);
+    if(vid==PEXOR_VENDOR_ID && did==PEXOR_DEVICE_ID){
+      privdata->board_type=BOARDTYPE_PEXOR;
+      strncpy(devnameformat,PEXORNAMEFMT,32);
+      pexor_msg(KERN_NOTICE "  Found board type PEXOR, vendor id: 0x%x, device id:0x%x\n",vid,did);
+    }
+    else if(vid==PEXARIA_VENDOR_ID && did==PEXARIA_DEVICE_ID){
+      privdata->board_type=BOARDTYPE_PEXARIA;
+      strncpy(devnameformat,PEXARIANAMEFMT,32);
+      pexor_msg(KERN_NOTICE "  Found board type PEXARIA, vendor id: 0x%x, device id:0x%x\n",vid,did);
+
+    }
+    else if(vid==KINPEX_VENDOR_ID && did==KINPEX_DEVICE_ID){
+         privdata->board_type=BOARDTYPE_KINPEX;
+         strncpy(devnameformat,KINPEXNAMEFMT,32);
+         pexor_msg(KERN_NOTICE "  Found board type KINPEX, vendor id: 0x%x, device id:0x%x\n",vid,did);
+       }
+    else
+    {
+        privdata->board_type=BOARDTYPE_PEXOR;
+        strncpy(devnameformat,PEXORNAMEFMT,32);
+        pexor_msg(KERN_NOTICE "  Unknown board type, vendor id: 0x%x, device id:0x%x. Assuming pexor mode...\n",vid,did);
+    }
+
 
     for (ix = 0; ix < 6; ++ix)
         {
@@ -695,7 +759,7 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
             pexor_msg(
                     KERN_ERR "PEXOR pci driver probe: Error %d getting the PCI interrupt line.\n", err);
         }
-    snprintf(privdata->irqname, 64, PEXORNAMEFMT, atomic_read(&pexor_numdevs));
+    snprintf(privdata->irqname, 64, devnameformat, atomic_read(&pexor_numdevs));
     if (request_irq(dev->irq, irq_hand, IRQF_SHARED, privdata->irqname,
             privdata))
         {
@@ -736,18 +800,16 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
     if (!IS_ERR(pexor_class))
         {
             /* driver init had successfully created class, now we create device:*/
+        snprintf(devname,64, devnameformat, MINOR(pexor_devt) + privdata->devid);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,27)
             privdata->class_dev = device_create(pexor_class, NULL, privdata->devno,
-                    privdata, PEXORNAMEFMT, MINOR(pexor_devt) + privdata->devid);
+                    privdata, devname);
 #else
             privdata->class_dev = device_create(pexor_class, NULL,
-                    privdata->devno, PEXORNAMEFMT,
-                    MINOR(pexor_devt) + privdata->devid);
+                    privdata->devno, devname);
 #endif
             dev_set_drvdata(privdata->class_dev, privdata);
-            pexor_msg(KERN_NOTICE "Added PEXOR device: ");
-            pexor_msg(
-                    KERN_NOTICE PEXORNAMEFMT, MINOR(pexor_devt) + privdata->devid);
+            pexor_msg(KERN_NOTICE "Added PEXOR device: %s",devname);
 
             if (device_create_file(privdata->class_dev, &dev_attr_codeversion)
                     != 0)
