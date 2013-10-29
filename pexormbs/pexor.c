@@ -448,21 +448,16 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         {
         case WAIT_SEM:
             pexor_dbg(KERN_INFO " before WAIT_SEM \n");
-            //printk (KERN_INFO " before WAIT_SEM \n");
-            down(&(privdata->trix_sem));
+            if (down_interruptible(&(privdata->trix_sem)))
+              return -ERESTARTSYS; /* JAM avoid possible hangup of m_read_meb when killed by resl*/
             privdata->trix_val = 0;
-            //sema_init (&(privdata->trix_sem), 0);
-            //init_MUTEX_LOCKED (&(privdata->trix_sem));
             pexor_dbg((KERN_INFO " after  WAIT_SEM \n"));
-            //printk (KERN_INFO " after  WAIT_SEM \n");
             break;
         case POLL_SEM:
             pexor_dbg(
                     KERN_INFO " before POLL_SEM, trix_val: %ld \n", privdata->trix_val);
-            //printk (KERN_INFO " before POLL_SEM, trix_val: %d \n", privdata->trix_val);
             retval = __put_user(privdata->trix_val, (int __user *)arg);
             pexor_dbg((KERN_INFO " after POLL_SEM \n"));
-            //printk (KERN_INFO " after POLL_SEM \n");
             break;
         case GET_BAR0_BASE:
             pexor_dbg(KERN_INFO " before GET_BAR0_BASE \n");
@@ -477,13 +472,11 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         case RESET_SEM:
             pexor_dbg(KERN_INFO " before RESET_SEM \n");
             privdata->trix_val = 0;
-            //sema_init (&trix_sem, 0);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 37)
     init_MUTEX_LOCKED(&(privdata->trix_sem));
 #else
     sema_init (&(privdata->trix_sem), 0);
 #endif
-            //init_MUTEX_LOCKED(&(privdata->trix_sem));
             retval = __put_user(0, (int __user *)arg);
             pexor_dbg(KERN_INFO " after  RESET_SEM \n");
             break;
@@ -491,7 +484,6 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
             break;
         }
     pexor_dbg((KERN_INFO "END   pexor_ioctl \n"));
-    //printk (KERN_INFO "END   pexor_ioctl \n");
     return retval;
 }
 //-----------------------------------------------------------------------------
