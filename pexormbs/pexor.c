@@ -3,7 +3,7 @@
 // JAM added generic probe/cleanup, privdata structure, sysfs, etc.  28-Jan-2013
 //-----------------------------------------------------------------------------
 
-//#define DEBUG
+/*#define DEBUG*/
 
 #ifdef DEBUG
 #define pexor_dbg( args... )                    \
@@ -22,7 +22,7 @@
 #define BOARDTYPE_KINPEX 2
 
 
-#define PEXORVERSION     "1.2"
+#define PEXORVERSION     "1.3"
 #define PEXORNAME       "pexor"
 #define PEXORNAMEFMT    "pexor%d"
 #define PEXARIANAMEFMT  "pexaria%d"
@@ -32,6 +32,9 @@
 
 /* maximum number of devices controlled by this driver*/
 #define PEXOR_MAXDEVS 4
+
+/* workaround: kinpex does show too big bar0 size, use this instead*/
+#define PEXOR_KINPEX_BARSIZE 0x200000
 
 // some register offsets to read out version info:
 #define PEXOR_SFP_BASE 0x21000
@@ -563,7 +566,8 @@ void cleanup_device(struct pexor_privdata* priv)
     if (priv->devid) atomic_dec(&pexor_numdevs);
     pcidev = priv->pdev;
     if (!pcidev) return;
-    free_irq(pcidev->irq, priv);
+    if(priv->devno) /* misuse devno as flag if we already had successfully requested irq JAM*/
+      free_irq(pcidev->irq, priv);
     for (j = 0; j < 6; ++j)
         {
             if (priv->bases[j] == 0) continue;
@@ -663,6 +667,15 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
             privdata->reglen[ix] = pci_resource_len(dev, ix);
             if (privdata->bases[ix] == 0)
             continue;
+            /* JAM here workaround for wrong reglen from kinpex baro*/
+            if(privdata->board_type==BOARDTYPE_KINPEX)
+            {
+              if( privdata->reglen[ix]>PEXOR_KINPEX_BARSIZE)
+                {
+                    pexor_dbg(KERN_NOTICE " KINPEX- Reducing exported barsize 0x%x to 0x%x\n",privdata->reglen[ix],PEXOR_KINPEX_BARSIZE);
+                    privdata->reglen[ix]=PEXOR_KINPEX_BARSIZE;
+                }
+            }
             if (pci_resource_flags(dev, ix) & IORESOURCE_IO)
                 {
                     pexor_dbg(KERN_NOTICE " - Requesting io ports for bar %d\n",ix);
