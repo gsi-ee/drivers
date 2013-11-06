@@ -34,7 +34,7 @@
 #define PEXOR_MAXDEVS 4
 
 /* workaround: kinpex does show too big bar0 size, use this instead*/
-#define PEXOR_KINPEX_BARSIZE 0x200000
+#define PEXOR_KINPEX_BARSIZE 0x400000
 
 // some register offsets to read out version info:
 #define PEXOR_SFP_BASE 0x21000
@@ -667,7 +667,7 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
             privdata->reglen[ix] = pci_resource_len(dev, ix);
             if (privdata->bases[ix] == 0)
             continue;
-            /* JAM here workaround for wrong reglen from kinpex baro*/
+            /* JAM here workaround for wrong reglen from kinpex baro (old fpga code only!)*/
             if(privdata->board_type==BOARDTYPE_KINPEX)
             {
               if( privdata->reglen[ix]>PEXOR_KINPEX_BARSIZE)
