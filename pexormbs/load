@@ -2,20 +2,43 @@
 # N.Kurz, EE, GSI, 4-Sep2-13: modified for diefferent kernel versions
 # JAM, EE, GSI, 29-Oct-2013: provided different devicenames for kinpex, pexaria
 #            usage "load kinpex"
+# JAM EE, GSI, 6-Nov-2013: automatic check which device is present. always set /dev/pexor link
 
 KV=`uname -r`
 module="pexor_$KV"
 class="pexor"
-device="pexor"
-#device="kinpex"
+device="pexor0"
 if [ $# -gt 0 ];then
   device=$1
   shift
 fi
-mode="664"
-echo "module: $module.ko"
+pexorname="pexor"    
+kinpexname="kinpex"
+pexarianame="pexaria"
+#mode="664"
+echo "Installing module: $module.ko"
 /sbin/insmod ./$module.ko
-chmod a+rw /dev/${device}0
-ln -sf ${device}0 /dev/${class}
+echo "sleep before we check device nodes..."
+sleep 3 
+# now look what we got
+if  [ -e "/dev/${device}" ]
+	then
+	echo "PEXOR LOAD: use device name from command line /dev/${device}" 	
+elif [ -e "/dev/${pexorname}0" ]
+	then
+	device=${pexorname}0
+elif [ -e "/dev/${kinpexname}0" ] 
+	then
+	device=${kinpexname}0
+elif [ -e "/dev/${pexarianame}0"] 
+ 	then
+ 	device=${pexarianame}0
+else
+ 	echo "PEXOR LOAD: could not find device of pexor family at /dev Exiting!"
+ 	exit
+fi
+echo "found device /dev/${device}"
+chmod a+rw /dev/${device}
+ln -sf /dev/${device} /dev/${class}
 ls -l /dev/*pex*
 
