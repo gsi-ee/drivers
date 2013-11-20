@@ -103,7 +103,11 @@ static void vetar_cleanup_dev(struct vetar_privdata *privdata) {
 
   if(privdata==0) return;
   if(privdata->registers)
-    iounmap(privdata->registers);
+    {
+      iounmap(privdata->registers);
+      vetar_dbg(KERN_NOTICE "** vetar_cleanup_dev iounmapped registers 0x%x !\n",
+                    (unsigned int) privdata->registers);
+    }
   if(privdata->regs_phys)
   {
 #ifdef VETAR_NEW_XPCLIB
@@ -111,10 +115,17 @@ static void vetar_cleanup_dev(struct vetar_privdata *privdata) {
 #else  
 	xpc_vme_master_unmap(privdata->regs_phys, privdata->reglen);
 #endif
+	  vetar_dbg(KERN_NOTICE "** vetar_cleanup_dev unmapped phys registers 0x%x with length 0x%lx !\n",
+	      (unsigned int) privdata->regs_phys, privdata->reglen);
+
   }
 
   if(privdata->cr_csr)
+  {
       iounmap(privdata->cr_csr);
+      vetar_dbg(KERN_NOTICE "** vetar_cleanup_dev iounmapped configspace  0x%x !\n",
+            (unsigned int) privdata->cr_csr);
+  }
   if(privdata->cr_csr_phys)
     {
   #ifdef VETAR_NEW_XPCLIB
@@ -122,7 +133,10 @@ static void vetar_cleanup_dev(struct vetar_privdata *privdata) {
   #else
       xpc_vme_master_unmap(privdata->cr_csr_phys, privdata->configlen);
   #endif
+      vetar_dbg(KERN_NOTICE "** vetar_cleanup_dev unmapped phys config registers 0x%x with length 0x%lx !\n",
+          (unsigned int) privdata->cr_csr_phys, (unsigned long) privdata->configlen);
     }
+
 
 #ifdef VETAR_ENABLE_IRQ
   xpc_vme_free_irq(privdata->vector);
@@ -279,7 +293,12 @@ ssize_t vetar_read(struct file *filp, char __user *buf, size_t count,
   vetar_dbg(KERN_NOTICE "** starting vetar_read for f_pos=%d count=%d\n", (int) *f_pos, (int) count);
   privdata= get_privdata(filp);
   if(!privdata) return -EFAULT;
-
+  /* this is to debug access to trigger module*/
+  vetar_dump_trigmod(privdata);
+  /* this is to debug the config spaced setup*/
+  vetar_is_present(privdata);
+  return -EFAULT;
+  /* end debug cscsr*/
   if (down_interruptible(&privdata->ramsem))
     return -ERESTARTSYS;
   if (*f_pos >= privdata->reglen)
@@ -421,9 +440,54 @@ static struct file_operations vetar_fops = {
 	#endif
 };
 
+
+#ifdef VETAR_TRIGMOD_TEST
+int vetar_dump_trigmod(struct vetar_privdata *privdata)
+{
+  // trigger module register
+ unsigned int *pl_stat;
+ unsigned int *pl_ctrl;
+ unsigned int *pl_fcti;
+ unsigned int *pl_cvti;
+ void* addr_stat;
+ void* addr_ctrl;
+
+
+  vetar_msg(KERN_NOTICE "Check trigmod registers at base address 0x%x\n",privdata->vmebase);
+  // map TRIVA register
+      pl_stat = (unsigned int*) ((long)privdata->registers + 0x0);
+      pl_ctrl = (unsigned int*) ((long)privdata->registers + 0x4);
+      pl_fcti = (unsigned int*) ((long)privdata->registers + 0x8);
+      pl_cvti = (unsigned int*) ((long)privdata->registers + 0xc);
+
+      printk (KERN_INFO " Ptr. TRIVA stat: 0x%x \n", (unsigned int)pl_stat);
+      printk (KERN_INFO " Ptr. TRIVA ctrl: 0x%x \n", (unsigned int)pl_ctrl);
+      printk (KERN_INFO " Ptr. TRIVA fcti: 0x%x \n", (unsigned int)pl_fcti);
+      printk (KERN_INFO " Ptr. TRIVA cvti: 0x%x \n", (unsigned int)pl_cvti);
+
+      //out_be32 (pl_cvti, 0x50);
+
+      printk (KERN_INFO " TRIVA registers content \n");
+      printk (KERN_INFO " TRIVA stat: .... 0x%x \n", in_be32(pl_stat));
+      printk (KERN_INFO " TRIVA ctrl: .... 0x%x \n", in_be32(pl_ctrl));
+      printk (KERN_INFO " TRIVA fcti: .... 0x%x \n", 0x10000 - in_be32(pl_fcti));
+      printk (KERN_INFO " TRIVA cvti: .... 0x%x \n", 0x10000 - in_be32(pl_cvti));
+
+      /* above is same as in vmetrigmod.c, below use other read function:*/
+
+      addr_stat=privdata->registers;
+      addr_ctrl=privdata->registers + 0x04;
+
+      printk (KERN_INFO " ioread32be -      TRIVA stat: .... 0x%x \n", ioread32be(addr_stat));
+      printk (KERN_INFO " ioread32be -      TRIVA ctrl: .... 0x%x \n",  ioread32be(addr_ctrl));
+return 0;
+}
+#endif
+
+
 int vetar_is_present(struct vetar_privdata *privdata)
 {
-  return 1;
+
   //struct device *dev = vetar->dev;
     uint32_t idc;
     void* addr;
@@ -435,11 +499,18 @@ int vetar_is_present(struct vetar_privdata *privdata)
 
     /* Ok, maybe there is a vetar, but bootloader is not active.
     In such case, a CR/CSR with a valid manufacturer ID should exist*/
+    vetar_msg(KERN_ERR "Check if VETAR is present at slot %d, config base address 0x%x\n", privdata->slot, privdata->configbase);
+
+//    addr = privdata->cr_csr;
+//    vetar_msg(KERN_NOTICE "Reading from address 0x%x ...", addr);
+//    idc = ioread32(addr);
+//    vetar_msg(KERN_NOTICE "---got 0x%x ...\n", idc);
 
     addr = privdata->cr_csr + VME_VENDOR_ID_OFFSET;
-//    mb();
-//    idc = ioread32be(addr);
-mb();
+    vetar_msg(KERN_NOTICE "Reading Vendor id from address 0x%x ...\n", addr);
+    mb();
+//    idc = ioread32(addr);
+//mb();
     idc = be32_to_cpu(ioread32be(addr)) << 16;
     mb();ndelay(100);
     idc += be32_to_cpu(ioread32be(addr + 4))  << 8;
@@ -461,6 +532,8 @@ void vetar_csr_write(u8 value, void *base, u32 offset)
 {
     offset -= offset % 4;
     iowrite32be(value, base + offset);
+    vetar_dbg(KERN_NOTICE "vetar_csr_write value 0x%x to base 0x%x + offset 0x%x \n",
+        value, (unsigned) base, offset);
 }
 
 void vetar_setup_csr_fa0(struct vetar_privdata *privdata)
@@ -507,9 +580,11 @@ static int vetar_probe_vme(unsigned int index)
 {
   int result=0;
   int err = 0;
+  xpc_vme_type_e am=0;
   struct vetar_privdata *privdata;
-  vetar_msg(KERN_NOTICE "VETAR vmd driver starts probe for index %d\n",index);
-
+  vetar_msg(KERN_NOTICE "VETAR vme driver starts probe for index %d\n",index);
+  vetar_msg(KERN_NOTICE "Use parameters address 0x%x, slot number 0x%x, lun 0x%x vector 0x%x\n",
+                     vmebase[index],slot[index], lun[index],vector[index]);
   /* Allocate and initialize the private data for this device */
     privdata = kzalloc(sizeof(struct vetar_privdata), GFP_KERNEL);
     if (privdata == NULL)
@@ -531,8 +606,12 @@ static int vetar_probe_vme(unsigned int index)
   // first try to map and look up configuration space if any....
   privdata->configbase = privdata->slot * VETAR_CONFIGSIZE;
   privdata->configlen=VETAR_CONFIGSIZE;
+  am=XPC_VME_ATYPE_CRCSR;
+      /*JAM: Important: we _must_ use this address modifier from CES xpc lib ( defined as 0x0 !)
+       * it will be translated on accessing the vmebus to the correct CS_CSR modifier 0x2f */
+    /*am=VME_CR_CSR; this one will not work for xpc*/
 #ifdef VETAR_NEW_XPCLIB
-    privdata->cr_csr_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->configbase, privdata->configlen, VME_CR_CSR | XPC_VME_A32_STD_USER);
+    privdata->cr_csr_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->configbase, privdata->configlen, am);
     if (privdata->cr_csr_phys == 0xffffffffffffffffULL) {
       vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at configbase 0x%x with length 0x%x !\n",
                privdata->configbase, privdata->configlen);
@@ -540,8 +619,9 @@ static int vetar_probe_vme(unsigned int index)
         return -ENOMEM;
     }
 #else
-    privdata->cr_csr_phys = xpc_vme_master_map(privdata->configbase, 0, privdata->configlen, XPC_VME_ATYPE_CRCSR , 0);
-    if (privdata->regs_phys == 0xffffffffULL) {
+
+    privdata->cr_csr_phys = xpc_vme_master_map(privdata->configbase, 0, privdata->configlen, am , 0);
+    if (privdata->cr_csr_phys == 0xffffffffULL) {
       vetar_msg(KERN_ERR "** vetar_probe_vme could not xpc_vme_master_map at configbase 0x%x with length 0x%lx !\n",
           privdata->configbase, privdata->configlen);
         vetar_cleanup_dev(privdata);
@@ -549,8 +629,8 @@ static int vetar_probe_vme(unsigned int index)
     }
 #endif
     mb();
-    vetar_dbg(KERN_NOTICE "** vetar_probe_vme mapped configbase 0x%x with length 0x%lx to physical address 0x%x!\n",
-            privdata->configbase, privdata->configlen, (unsigned int) privdata->cr_csr_phys);
+    vetar_dbg(KERN_NOTICE "** vetar_probe_vme mapped configbase 0x%x with length 0x%lx to physical address 0x%x, am=0x%x!\n",
+            privdata->configbase, privdata->configlen, (unsigned int) privdata->cr_csr_phys,am);
     privdata->cr_csr = ioremap_nocache(privdata->cr_csr_phys, privdata->configlen);
     if (!privdata->cr_csr) {
       vetar_msg(KERN_ERR "** vetar_probe_vme could not ioremap_nocache at config physical address 0x%x with length 0x%lx !\n",
@@ -564,13 +644,12 @@ static int vetar_probe_vme(unsigned int index)
              (unsigned int) privdata->cr_csr_phys,  (unsigned long) privdata->cr_csr);
 
   //  may check for vendor id etc...
-if(!vetar_is_present(privdata))
-  {
-    vetar_cleanup_dev(privdata);
-    return -EFAULT;
-  }
+//if(!vetar_is_present(privdata))
+//  {
+//    vetar_cleanup_dev(privdata);
+//    return -EFAULT;
+//  }
 
-vetar_setup_csr_fa0(privdata);
 
 
   // setup interrupts:
@@ -582,6 +661,51 @@ snprintf(privdata->irqname, 64, VETARNAMEFMT,privdata->lun);
     }
 #endif
 
+
+#ifdef VETAR_TRIGMOD_TEST
+
+    privdata->vmebase=TRIGMOD_REGS_ADDR;
+    privdata->reglen=TRIGMOD_REGS_SIZE;
+    vetar_msg(KERN_ERR "** vetar_probe_vme TEST: mapping triva vmebase 0x%x with length 0x%lx !\n",
+                privdata->vmebase, privdata->reglen);
+
+#ifdef VETAR_NEW_XPCLIB
+        privdata->regs_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->vmebase, privdata->reglen, XPC_VME_A32_STD_USER);
+        if (privdata->regs_phys == 0xffffffffffffffffULL) {
+          vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at vmebase 0x%x with length 0x%x !\n",
+                   privdata->vmebase, privdata->reglen);
+            vetar_cleanup_dev(privdata);
+            return -ENOMEM;
+        }
+    #else
+        privdata->regs_phys = xpc_vme_master_map(privdata->vmebase, 0, privdata->reglen, XPC_VME_A32_STD_USER, 0);
+        if (privdata->regs_phys == 0xffffffffULL) {
+          vetar_msg(KERN_ERR "** vetar_probe_vme could not xpc_vme_master_map at vmebase 0x%x with length 0x%lx !\n",
+              privdata->vmebase, privdata->reglen);
+            vetar_cleanup_dev(privdata);
+            return -ENOMEM;
+        }
+    #endif
+        mb();
+        vetar_dbg(KERN_NOTICE "** vetar_probe_vme mapped vmebase 0x%x with length 0x%lx to physical address 0x%x!\n",
+                privdata->vmebase, privdata->reglen, (unsigned int) privdata->regs_phys);
+        privdata->registers = ioremap_nocache(privdata->regs_phys, privdata->reglen);
+        if (!privdata->registers) {
+          vetar_msg(KERN_ERR "** vetar_probe_vme could not ioremap_nocache at physical address 0x%x with length 0x%lx !\n",
+              (unsigned int) privdata->regs_phys, privdata->reglen);
+            vetar_cleanup_dev(privdata);
+            return -ENOMEM;
+         }
+        mb();
+        vetar_dbg(KERN_NOTICE "** vetar_probe_vme remapped physical address 0x%x to kernel address 0x%lx\n",
+              (unsigned int) privdata->regs_phys,  (unsigned long) privdata->registers);
+#endif
+/********** END access to triggermodule test */
+
+
+#ifdef VETAR_MAP_REGISTERS
+
+vetar_setup_csr_fa0(privdata);
 
 
     // map register space:
@@ -616,6 +740,7 @@ snprintf(privdata->irqname, 64, VETARNAMEFMT,privdata->lun);
     vetar_dbg(KERN_NOTICE "** vetar_probe_vme remapped physical address 0x%x to kernel address 0x%lx\n",
           (unsigned int) privdata->regs_phys,  (unsigned long) privdata->registers);
 
+#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 37)
   init_MUTEX(&(privdata->ramsem));
@@ -705,7 +830,9 @@ int __init vetar_init(void)
 	      vmebase[0]=VETAR_REGS_ADDR;
 	      lun[0]=0;
 	      slot[0]=8; /* first test case*/
-	      vetar_msg(KERN_NOTICE "No module parameters - use default address 0x%x, slot number 0x%x\n",vmebase[0],slot[0]);
+	      vector[0]=0x60;
+	      vetar_msg(KERN_NOTICE "No module parameters - use default address 0x%x, slot number 0x%x, lun 0x%x vector 0x%x\n",
+	            vmebase[0],slot[0], lun[0],vector[0]);
 	    }
 
 /*  JAM: here we need to probe all vetar devices in bus that are specified by module parameters

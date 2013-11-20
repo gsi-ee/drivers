@@ -4,8 +4,9 @@ modulex="vetar"
 device="vetar"
 
 
-/sbin/insmod ./$module.ko
-
+# /sbin/insmod ./$module.ko
+/sbin/insmod $module.ko slot=0x1 vmebase=0x1000000 vector=0x60 lun=0
+ 
 # retrieve major number
 major=$(awk "\$2==\"$modulex\" {print \$1}" /proc/devices)
 echo "${device} Major: $major"
