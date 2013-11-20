@@ -4,9 +4,11 @@ endif
 
 ifneq ("$(SUBDIRS)", "")
 
-#vetar-objs := vetar.o
+obj-m := vetar.o wishbone.o
 
-obj-m := vetar.o
+#vetar-objs := vetar.o wishbone.o
+
+
 
 EXTRA_CFLAGS += -I$(SHL_ROOTDIR)/usr/include/ces
 EXTRA_CFLAGS +=  -I$(SHL_ROOTDIR)/usr/include/ces/cesXpcLib
@@ -20,16 +22,16 @@ ifneq ($(UTSFILE),)
 KVER := $(shell cat $(UTSFILE) | grep UTS_RELEASE | awk '{ print $$3 }' | sed 's/\"//g')
 endif
 
-all: vetar.ko
+#all: vetar.ko wishbone.ko
 
-.PHONY: install clean vetar.ko
+.PHONY: clean all
 
-vetar.ko:
+all:
 	make -C $(TOPDIR) SUBDIRS=$(PWD) modules
 
 
-install:
-	install -D -m 644 vetar.ko $(SHL_ROOTDIR)/lib/modules/$(KVER)/ces/vetar.ko
+#install:
+#	install -D -m 644 vetar_wb.ko $(SHL_ROOTDIR)/lib/modules/$(KVER)/ces/vetar_wb.ko
 
 clean:
 	rm -f *.o *.ko *.mod.c .*.cmd .*.cmd modules.order Module.symvers
