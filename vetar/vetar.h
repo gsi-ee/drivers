@@ -31,7 +31,7 @@
 
 
 
-#define DEBUG 1
+//#define DEBUG 1
 #define VETAR_SYSFS_ENABLE 1
 //#define VETAR_ENABLE_IRQ 1
 
@@ -51,7 +51,7 @@
 #define CONTROL_REGISTER 0
 #define ERROR_FLAG    0
 #define SDWB_ADDRESS  8
-
+#define VME_A24_USER_MBLT 0x38
 
 #define VETARVERSION     "1.0"
 #define VETARNAME       "vetar"

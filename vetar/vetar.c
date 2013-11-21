@@ -82,7 +82,8 @@ static wb_data_t vetar_wb_read_cfg(struct wishbone *wb, wb_addr_t addr)
 
    switch (addr) {
    case 0:  out = 0; break;
-   case 4:  out = be32_to_cpu(ioread32be(privdata->ctrl_registers + ERROR_FLAG));
+   case 4:  out =0;
+   //case 4:  out = be32_to_cpu(ioread32be(privdata->ctrl_registers + ERROR_FLAG));
     break;
    case 8:  out = 0; break;
    case 12: out = 0x30000;
@@ -249,6 +250,10 @@ static void vetar_cleanup_dev(struct vetar_privdata *privdata) {
 
   if(privdata==0) return;
 
+
+   wishbone_unregister(&privdata->wb);
+
+#ifdef VETAR_MAP_CONTROLSPACE
   if(privdata->ctrl_registers)
     {
       iounmap(privdata->ctrl_registers);
@@ -265,7 +270,7 @@ static void vetar_cleanup_dev(struct vetar_privdata *privdata) {
       vetar_dbg(KERN_NOTICE "** vetar_cleanup_dev unmapped phys control registers 0x%x with length 0x%lx !\n",
           (unsigned int) privdata->ctrl_regs_phys, privdata->ctrl_reglen);
   }
-
+#endif
 
 
   if(privdata->registers)
@@ -903,8 +908,11 @@ vetar_setup_csr_fa0(privdata);
 //            map_type_c = "WB MAP CTRL";
 //
     privdata->ctrl_reglen=VETAR_CTRLREGS_SIZE;
+    //am= (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_MBLT | XPC_VME_PTYPE_USER); /* 0x44*/
+    am= (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_BLT | XPC_VME_PTYPE_USER); /* 0x42*/
+    //am= VME_A24_USER_MBLT;
  #ifdef VETAR_NEW_XPCLIB
-     privdata->ctrl_regs_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->vmebase, privdata->reglen, (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_MBLT | XPC_VME_PTYPE_USER ));
+     privdata->ctrl_regs_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->vmebase, privdata->reglen, am);
      if (privdata->regs_phys == 0xffffffffffffffffULL) {
        vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at vmebase 0x%x with length 0x%x !\n",
                 privdata->vmebase, privdata->reglen);
@@ -912,7 +920,7 @@ vetar_setup_csr_fa0(privdata);
          return -ENOMEM;
      }
  #else
-     privdata->ctrl_regs_phys = xpc_vme_master_map(privdata->vmebase, 0, privdata->ctrl_reglen, (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_MBLT | XPC_VME_PTYPE_USER) , 0);
+     privdata->ctrl_regs_phys = xpc_vme_master_map(privdata->vmebase, 0, privdata->ctrl_reglen, am , 0);
      if (privdata->ctrl_regs_phys == 0xffffffffULL) {
        vetar_msg(KERN_ERR "** vetar_probe_vme could not xpc_vme_master_map at vmebase 0x%x with length 0x%lx !\n",
            privdata->vmebase, privdata->reglen);
@@ -921,8 +929,8 @@ vetar_setup_csr_fa0(privdata);
      }
  #endif
      mb();
-     vetar_dbg(KERN_NOTICE "** vetar_probe_vme mapped control register vmebase 0x%x with length 0x%lx to physical address 0x%x!\n",
-             privdata->vmebase, privdata->ctrl_reglen, (unsigned int) privdata->ctrl_regs_phys);
+     vetar_dbg(KERN_NOTICE "** vetar_probe_vme mapped control register vmebase 0x%x with length 0x%lx to physical address 0x%x, am:0x%x!\n",
+             privdata->vmebase, privdata->ctrl_reglen, (unsigned int) privdata->ctrl_regs_phys,(unsigned) am);
      privdata->ctrl_registers = ioremap_nocache(privdata->ctrl_regs_phys, privdata->reglen);
      if (!privdata->registers) {
        vetar_msg(KERN_ERR "** vetar_probe_vme could not ioremap_nocache at physical address 0x%x with length 0x%lx !\n",

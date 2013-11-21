@@ -1,0 +1,11 @@
+#!/bin/sh
+module="vetar"
+modulex="vetar"
+device="vetar"
+wishmodule="wishbone"
+wishbone="wbm"
+
+/sbin/rmmod $module.ko 
+/sbin/rmmod $wishmodule.ko
+ 
+
