@@ -29,20 +29,21 @@
 
 
 
-
-
 //#define DEBUG 1
 #define VETAR_SYSFS_ENABLE 1
 //#define VETAR_ENABLE_IRQ 1
 
 //#define VETAR_TRIGMOD_TEST 1
+#define VETAR_CTRL_TEST 1
 #define VETAR_MAP_REGISTERS 1
 #define VETAR_MAP_CONTROLSPACE 1
 
 //#define VETAR_IRQ_VECTOR  0x50
 //#define VETAR_IRQ_MASK    ((1 << 3) | (1 << 4)) /* interrupt happens at level 3 or 4 */
 #define VETAR_REGS_ADDR   0x1000000 /* this is default*/
-#define VETAR_REGS_SIZE   0x100000
+//#define VETAR_REGS_ADDR 0x0
+#define VETAR_REGS_SIZE   0x1000000;
+
 #define VETAR_CTRLREGS_SIZE 0xA0
 
 #define TRIGMOD_REGS_ADDR   0x2000000

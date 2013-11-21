@@ -66,10 +66,14 @@ static void vetar_wb_cycle(struct wishbone* wb, int on)
    struct vetar_privdata *privdata;
    privdata = container_of(wb, struct vetar_privdata, wb);
    vetar_dbg(KERN_ERR "*** vetar_wb_cycle...\n");
-   if (on) mutex_lock_interruptible(&privdata->wb_mutex);
+   //if (on) mutex_lock_interruptible(&privdata->wb_mutex);
+   if (on) mutex_lock(&privdata->wb_mutex);
    vetar_dbg(KERN_ERR "*** Vetar_WB: cycle(%d)\n",on);
    if (!on) mutex_unlock(&privdata->wb_mutex);
 }
+
+
+
 
 static wb_data_t vetar_wb_read_cfg(struct wishbone *wb, wb_addr_t addr)
 {
@@ -78,21 +82,25 @@ static wb_data_t vetar_wb_read_cfg(struct wishbone *wb, wb_addr_t addr)
    struct vetar_privdata *privdata;
    privdata = container_of(wb, struct vetar_privdata, wb);
 
-   vetar_dbg(KERN_ERR "*** Vetar_WB:: READ CFG  addr %d \n", addr);
+   //vetar_msg(KERN_ERR "*** Vetar_WB:: READ CFG  addr 0x%x \n", addr);
 
    switch (addr) {
    case 0:  out = 0; break;
-   //case 4:  out =0;
-   case 4:  out = be32_to_cpu(ioread32be(privdata->ctrl_registers + ERROR_FLAG));
+   case 4:  out =0;
+   //case 4:  out = be32_to_cpu(ioread32be(privdata->ctrl_registers + ERROR_FLAG));
     break;
    case 8:  out = 0; break;
-   case 12: out = 0x30000;
-   //case 12: out = be32_to_cpu(ioread32be(privdata->ctrl_registers + SDWB_ADDRESS));
-        break;
+
+   case 12: out = 0x300000; /* this is expected value*/
+   //case 12: out = ioread32be(privdata->ctrl_registers + SDWB_ADDRESS);
+           /* JAM note we have sometimes problems to get correct address here!*/
+   break;
    default: out = 0; break;
    }
-
    mb(); /* ensure serial ordering of non-posted operations for wishbone */
+   //ndelay(100);
+   //vetar_msg(KERN_ERR "*** Vetar_WB:: READ CFG  value 0x%x \n", out);
+
 #endif
    return out;
 }
@@ -460,6 +468,7 @@ ssize_t vetar_read(struct file *filp, char __user *buf, size_t count,
   void* memstart;
   int lcount=count>>2;
   u32* kbuf=0;
+  u32 out=0;
   /*  u32 kbuf[lcount];*/
   vetar_dbg(KERN_NOTICE "** starting vetar_read for f_pos=%d count=%d\n", (int) *f_pos, (int) count);
   privdata= get_privdata(filp);
@@ -472,6 +481,42 @@ ssize_t vetar_read(struct file *filp, char __user *buf, size_t count,
   vetar_is_present(privdata);
   return -EFAULT;
   /* end debug cscsr*/
+#endif
+
+#ifdef VETAR_CTRL_TEST
+
+  out = be32_to_cpu(ioread32(privdata->ctrl_registers + ERROR_FLAG));
+  mb(); ndelay(100);
+  vetar_msg(KERN_INFO "vetar_read: be32_to_cpu(ioread32 control register va 0x%0x = 0x%x \n",privdata->ctrl_registers + ERROR_FLAG, out);
+  out = be32_to_cpu(ioread32(privdata->ctrl_registers + SDWB_ADDRESS));
+  mb(); ndelay(100); mdelay(10);
+  vetar_msg(KERN_INFO "vetar_read: be32_to_cpu(ioread32 control register va 0x%0x = 0x%x \n",privdata->ctrl_registers + SDWB_ADDRESS, out);
+
+   out = be32_to_cpu(ioread32be(privdata->ctrl_registers + ERROR_FLAG));
+   mb(); ndelay(100); mdelay(10);
+   vetar_msg(KERN_INFO "vetar_read: be32_to_cpu(ioread32be control register va 0x%0x = 0x%x \n",privdata->ctrl_registers + ERROR_FLAG, out);
+   out = be32_to_cpu(ioread32be(privdata->ctrl_registers + SDWB_ADDRESS));
+   mb(); ndelay(100); mdelay(10);
+   vetar_msg(KERN_INFO "vetar_read: be32_to_cpu(ioread32be control register va 0x%0x = 0x%x \n",privdata->ctrl_registers + SDWB_ADDRESS, out);
+
+   out = ioread32be(privdata->ctrl_registers + ERROR_FLAG);
+   mb(); ndelay(100); mdelay(10);
+   vetar_msg(KERN_INFO "vetar_read: ioread32be control register va 0x%0x = 0x%x \n",privdata->ctrl_registers + ERROR_FLAG, out);
+   out = ioread32be(privdata->ctrl_registers + SDWB_ADDRESS);
+   mb(); ndelay(100); mdelay(10);
+   vetar_msg(KERN_INFO "vetar_read: ioread32be control register va 0x%0x = 0x%x \n",privdata->ctrl_registers + SDWB_ADDRESS, out);
+
+   out = ioread32(privdata->ctrl_registers + ERROR_FLAG);
+   mb(); ndelay(100); mdelay(10);
+   vetar_msg(KERN_INFO "vetar_read: ioread32 control register va 0x%0x = 0x%x \n",privdata->ctrl_registers + ERROR_FLAG, out);
+   out = ioread32(privdata->ctrl_registers + SDWB_ADDRESS);
+   mb(); ndelay(100); mdelay(10);
+   vetar_msg(KERN_INFO "vetar_read: ioread32 control register va 0x%0x = 0x%x \n",privdata->ctrl_registers + SDWB_ADDRESS, out);
+
+
+
+
+   return -EFAULT;
 #endif
 
   if (down_interruptible(&privdata->ramsem))
@@ -696,7 +741,7 @@ void vetar_csr_write(u8 value, void *base, u32 offset)
 void vetar_setup_csr_fa(struct vetar_privdata *privdata)
 {
     u8 fa[4];       /* FUN0 ADER contents */
-
+    xpc_vme_type_e am=0;
     /* reset the core */
     vetar_csr_write(RESET_CORE, privdata->cr_csr, BIT_SET_REG);
     msleep(10);
@@ -726,10 +771,24 @@ void vetar_setup_csr_fa(struct vetar_privdata *privdata)
 
 
     /*do address relocation for FUN1, WB control mapping*/
+    //am=0x39; /* JAM This is what we actually see on the vmebus monitor for (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_BLT | XPC_VME_PTYPE_USER)*/
+    am = VME_A24_USER_MBLT; /*0x38*/
+    //am= (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_MBLT | XPC_VME_PTYPE_USER); /* 0x44*/
+    //am= (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_BLT | XPC_VME_PTYPE_USER); /* 0x42*/
+    //am= XPC_VME_A24_STD_USER;
+
+    vetar_msg(KERN_NOTICE "vetar_setup_csr_fa sets address modifier 0x%x\n",am);
+
      fa[0] = 0x00;
      fa[1] = 0x00;
      fa[2] = (privdata->vmebase >> 24 ) & 0xFF;
-     fa[3] = (VME_A24_USER_MBLT & 0x3F) << 2;
+     //fa[3] = (am & 0x3F) << 2;
+     fa[3] = am  << 2;
+
+//     fa[0] = (privdata->vmebase >> 24) & 0xFF;
+//     fa[1] = (privdata->vmebase >> 16) & 0xFF;
+//     fa[2] = (privdata->vmebase >> 8 ) & 0xFF;
+//     fa[3] = (am & 0x3F) << 2;
 
      vetar_csr_write(fa[0], privdata->cr_csr, FUN1ADER);
      vetar_csr_write(fa[1], privdata->cr_csr, FUN1ADER + 4);
@@ -741,6 +800,7 @@ void vetar_setup_csr_fa(struct vetar_privdata *privdata)
 
     /* enable module, hence make FUN0/FUN1 available */
     vetar_csr_write(ENABLE_CORE, privdata->cr_csr, BIT_SET_REG);
+    msleep(100);
 }
 
 
@@ -923,9 +983,12 @@ vetar_setup_csr_fa(privdata);
 //            map_type_c = "WB MAP CTRL";
 //
     privdata->ctrl_reglen=VETAR_CTRLREGS_SIZE;
-    //am= (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_MBLT | XPC_VME_PTYPE_USER); /* 0x44*/
+    am= (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_MBLT | XPC_VME_PTYPE_USER); /* 0x44*/
     //am= (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_BLT | XPC_VME_PTYPE_USER); /* 0x42*/
-    am= VME_A24_USER_MBLT;
+    //am= XPC_VME_A24_STD_USER ;
+    //am = VME_A24_USER_MBLT;
+    vetar_msg(KERN_NOTICE "vetar_probe_vme maps with  controlspace address modifier 0x%x\n",am);
+
  #ifdef VETAR_NEW_XPCLIB
      privdata->ctrl_regs_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->vmebase, privdata->reglen, am);
      if (privdata->regs_phys == 0xffffffffffffffffULL) {
