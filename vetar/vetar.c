@@ -82,8 +82,8 @@ static wb_data_t vetar_wb_read_cfg(struct wishbone *wb, wb_addr_t addr)
 
    switch (addr) {
    case 0:  out = 0; break;
-   case 4:  out =0;
-   //case 4:  out = be32_to_cpu(ioread32be(privdata->ctrl_registers + ERROR_FLAG));
+   //case 4:  out =0;
+   case 4:  out = be32_to_cpu(ioread32be(privdata->ctrl_registers + ERROR_FLAG));
     break;
    case 8:  out = 0; break;
    case 12: out = 0x30000;
@@ -693,7 +693,7 @@ void vetar_csr_write(u8 value, void *base, u32 offset)
         value, (unsigned) base, offset);
 }
 
-void vetar_setup_csr_fa0(struct vetar_privdata *privdata)
+void vetar_setup_csr_fa(struct vetar_privdata *privdata)
 {
     u8 fa[4];       /* FUN0 ADER contents */
 
@@ -724,7 +724,22 @@ void vetar_setup_csr_fa0(struct vetar_privdata *privdata)
     vetar_csr_write(fa[2], privdata->cr_csr, FUN0ADER + 8);
     vetar_csr_write(fa[3], privdata->cr_csr, FUN0ADER + 12);
 
-    /* enable module, hence make FUN0 available */
+
+    /*do address relocation for FUN1, WB control mapping*/
+     fa[0] = 0x00;
+     fa[1] = 0x00;
+     fa[2] = (privdata->vmebase >> 24 ) & 0xFF;
+     fa[3] = (VME_A24_USER_MBLT & 0x3F) << 2;
+
+     vetar_csr_write(fa[0], privdata->cr_csr, FUN1ADER);
+     vetar_csr_write(fa[1], privdata->cr_csr, FUN1ADER + 4);
+     vetar_csr_write(fa[2], privdata->cr_csr, FUN1ADER + 8);
+     vetar_csr_write(fa[3], privdata->cr_csr, FUN1ADER + 12);
+
+
+
+
+    /* enable module, hence make FUN0/FUN1 available */
     vetar_csr_write(ENABLE_CORE, privdata->cr_csr, BIT_SET_REG);
 }
 
@@ -862,7 +877,7 @@ snprintf(privdata->irqname, 64, VETARNAMEFMT,privdata->lun);
 
 #ifdef VETAR_MAP_REGISTERS
 
-vetar_setup_csr_fa0(privdata);
+vetar_setup_csr_fa(privdata);
 
 
     // map register space:
@@ -909,8 +924,8 @@ vetar_setup_csr_fa0(privdata);
 //
     privdata->ctrl_reglen=VETAR_CTRLREGS_SIZE;
     //am= (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_MBLT | XPC_VME_PTYPE_USER); /* 0x44*/
-    am= (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_BLT | XPC_VME_PTYPE_USER); /* 0x42*/
-    //am= VME_A24_USER_MBLT;
+    //am= (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_BLT | XPC_VME_PTYPE_USER); /* 0x42*/
+    am= VME_A24_USER_MBLT;
  #ifdef VETAR_NEW_XPCLIB
      privdata->ctrl_regs_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->vmebase, privdata->reglen, am);
      if (privdata->regs_phys == 0xffffffffffffffffULL) {

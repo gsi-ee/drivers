@@ -72,17 +72,18 @@
 #define VETAR_CONFIGSIZE 0x80000 /* size of cr/csr space if any*/
 
 /* VETAR CSR offsets */
-#define FUN0ADER	0x7FF63
-#define INT_LEVEL	0x7ff5b
-#define INTVECTOR	0x7ff5f
-#define WB_32_64	0x7ff33
-#define BIT_SET_REG	0x7FFFB
-#define BIT_CLR_REG	0x7FFF7
-#define WB32		1
-#define WB64		0
-#define RESET_CORE	0x80
-#define ENABLE_CORE	0x10
 
+#define FUN0ADER    0x7FF63
+#define FUN1ADER    0x7FF73
+#define INT_LEVEL   0x7ff5b
+#define INTVECTOR   0x7ff5f
+#define WB_32_64    0x7ff33
+#define BIT_SET_REG 0x7FFFB
+#define BIT_CLR_REG 0x7FFF7
+#define WB32        1
+#define WB64        0
+#define RESET_CORE  0x80
+#define ENABLE_CORE 0x10
 
 
 
@@ -179,7 +180,7 @@ struct vetar_privdata *get_privdata(struct file *fil);
 int vetar_is_present(struct vetar_privdata *privdata);
 void vetar_csr_write(u8 value, void *base, u32 offset);
 
-void vetar_setup_csr_fa0(struct vetar_privdata *privdata);
+void vetar_setup_csr_fa(struct vetar_privdata *privdata);
 
 /* File operations:*/
 int vetar_open(struct inode *inode, struct file *filp);
