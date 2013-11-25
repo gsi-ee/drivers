@@ -78,7 +78,6 @@ static void vetar_wb_cycle(struct wishbone* wb, int on)
 static wb_data_t vetar_wb_read_cfg(struct wishbone *wb, wb_addr_t addr)
 {
    wb_data_t out=0;
-#ifdef VETAR_MAP_CONTROLSPACE
    struct vetar_privdata *privdata;
    privdata = container_of(wb, struct vetar_privdata, wb);
 
@@ -91,9 +90,15 @@ static wb_data_t vetar_wb_read_cfg(struct wishbone *wb, wb_addr_t addr)
     break;
    case 8:  out = 0; break;
 
+
+#ifdef VETAR_MAP_CONTROLSPACE
+   case 12: out = ioread32be(privdata->ctrl_registers + SDWB_ADDRESS);
+#else
    case 12: out = 0x300000; /* this is expected value*/
-   //case 12: out = ioread32be(privdata->ctrl_registers + SDWB_ADDRESS);
-           /* JAM note we have sometimes problems to get correct address here!*/
+#endif
+
+
+   /* JAM note we have sometimes problems to get correct address here!*/
    break;
    default: out = 0; break;
    }
@@ -101,7 +106,6 @@ static wb_data_t vetar_wb_read_cfg(struct wishbone *wb, wb_addr_t addr)
    //ndelay(100);
    //vetar_msg(KERN_ERR "*** Vetar_WB:: READ CFG  value 0x%x \n", out);
 
-#endif
    return out;
 }
 
@@ -260,6 +264,9 @@ static void vetar_cleanup_dev(struct vetar_privdata *privdata) {
 
 
    wishbone_unregister(&privdata->wb);
+
+   /* disable the core */
+   vetar_csr_write(ENABLE_CORE, privdata->cr_csr, BIT_CLR_REG);
 
 #ifdef VETAR_MAP_CONTROLSPACE
   if(privdata->ctrl_registers)
@@ -740,6 +747,8 @@ void vetar_csr_write(u8 value, void *base, u32 offset)
 
 void vetar_setup_csr_fa(struct vetar_privdata *privdata)
 {
+    int i;
+    u32 offset;
     u8 fa[4];       /* FUN0 ADER contents */
     xpc_vme_type_e am=0;
     /* reset the core */
@@ -757,6 +766,30 @@ void vetar_setup_csr_fa(struct vetar_privdata *privdata)
     vetar_csr_write(privdata->vector, privdata->cr_csr, INTVECTOR);
     vetar_csr_write(privdata->level, privdata->cr_csr, INT_LEVEL);
 #endif
+
+
+/* JAM test: do we need to disable all ADERs before defining the mapping?
+ * try to initialize it with address mode that will never used by mbs*/
+    //am=0x29;  /* A16=0x29, this will*/
+    am=0;
+    for(i=0;i<8;++i)
+    {
+      offset=FUN0ADER + i* 0x10;
+      vetar_msg(KERN_NOTICE "vetar_setup_csr_fa initializes ADER %d at register 0x%x with AM:0x%x\n",i,offset,am);
+      fa[0] = 0;
+      fa[1] = 0;
+      fa[2] = 0;
+      fa[3] = (am & 0x3F) << 2;
+      vetar_csr_write(fa[0], privdata->cr_csr, offset);
+      vetar_csr_write(fa[1], privdata->cr_csr, offset + 4);
+      vetar_csr_write(fa[2], privdata->cr_csr, offset + 8);
+      vetar_csr_write(fa[3], privdata->cr_csr, offset + 12);
+    }
+
+
+
+#ifdef VETAR_MAP_REGISTERS
+
     /* do address relocation for FUN0 */
     fa[0] = (privdata->vmebase >> 24) & 0xFF;
     fa[1] = (privdata->vmebase >> 16) & 0xFF;
@@ -768,8 +801,9 @@ void vetar_setup_csr_fa(struct vetar_privdata *privdata)
     vetar_csr_write(fa[1], privdata->cr_csr, FUN0ADER + 4);
     vetar_csr_write(fa[2], privdata->cr_csr, FUN0ADER + 8);
     vetar_csr_write(fa[3], privdata->cr_csr, FUN0ADER + 12);
+#endif
 
-
+#ifdef VETAR_MAP_CONTROLSPACE
     /*do address relocation for FUN1, WB control mapping*/
     //am=0x39; /* JAM This is what we actually see on the vmebus monitor for (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_BLT | XPC_VME_PTYPE_USER)*/
     am = VME_A24_USER_MBLT; /*0x38*/
@@ -795,7 +829,7 @@ void vetar_setup_csr_fa(struct vetar_privdata *privdata)
      vetar_csr_write(fa[2], privdata->cr_csr, FUN1ADER + 8);
      vetar_csr_write(fa[3], privdata->cr_csr, FUN1ADER + 12);
 
-
+#endif
 
 
     /* enable module, hence make FUN0/FUN1 available */
@@ -935,9 +969,11 @@ snprintf(privdata->irqname, 64, VETARNAMEFMT,privdata->lun);
 /********** END access to triggermodule test */
 
 
+vetar_setup_csr_fa(privdata);
+
 #ifdef VETAR_MAP_REGISTERS
 
-vetar_setup_csr_fa(privdata);
+
 
 
     // map register space:
@@ -1186,6 +1222,8 @@ void vetar_exit(void)
 {
   int i;
   vetar_msg(KERN_NOTICE "vetar driver exit...\n");
+
+
 
   /* since we have no remove, we need to cleanup all devices here:
    *

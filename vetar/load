@@ -7,7 +7,8 @@ wishbone="wbm"
 
 
 /sbin/insmod $wishmodule.ko
-/sbin/insmod $module.ko slot=0x1 vmebase=0x1000000 vector=0x60 lun=0
+#/sbin/insmod $module.ko slot=0x5 vmebase=0x5000000 vector=0x60 lun=0
+/sbin/insmod $module.ko slot=0x5 vmebase=0xC5000000 vector=0x60 lun=0
  
 # vetar device: retrieve major number
 major=$(awk "\$2==\"$modulex\" {print \$1}" /proc/devices)

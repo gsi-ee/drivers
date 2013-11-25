@@ -34,9 +34,9 @@
 //#define VETAR_ENABLE_IRQ 1
 
 //#define VETAR_TRIGMOD_TEST 1
-#define VETAR_CTRL_TEST 1
+//#define VETAR_CTRL_TEST 1
 #define VETAR_MAP_REGISTERS 1
-#define VETAR_MAP_CONTROLSPACE 1
+//#define VETAR_MAP_CONTROLSPACE 1
 
 //#define VETAR_IRQ_VECTOR  0x50
 //#define VETAR_IRQ_MASK    ((1 << 3) | (1 << 4)) /* interrupt happens at level 3 or 4 */
@@ -76,6 +76,9 @@
 
 #define FUN0ADER    0x7FF63
 #define FUN1ADER    0x7FF73
+
+
+
 #define INT_LEVEL   0x7ff5b
 #define INTVECTOR   0x7ff5f
 #define WB_32_64    0x7ff33
