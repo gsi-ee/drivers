@@ -12,7 +12,9 @@ static dev_t pexor_devt;
 static atomic_t pexor_numdevs=ATOMIC_INIT(0);
 
 static struct pci_device_id ids[] = {
-  { PCI_DEVICE(MY_VENDOR_ID, MY_DEVICE_ID), },
+  { PCI_DEVICE(PEXOR_VENDOR_ID, PEXOR_DEVICE_ID), }, // classic pexor
+  { PCI_DEVICE(PEXARIA_VENDOR_ID, PEXARIA_DEVICE_ID), }, //pexaria
+  { PCI_DEVICE(KINPEX_VENDOR_ID, KINPEX_DEVICE_ID), }, // kinpex
   { 0, }
 };
 MODULE_DEVICE_TABLE(pci, ids);

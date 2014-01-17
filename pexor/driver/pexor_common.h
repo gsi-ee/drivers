@@ -42,10 +42,18 @@
 #include "pexor_user.h"
 
 /* ids for pexor card:*/
-#define MY_VENDOR_ID 0x1204
-#define MY_DEVICE_ID 0x5303
+#define PEXOR_VENDOR_ID 0x1204
+#define PEXOR_DEVICE_ID 0x5303
 
-/*#define PEXOR_DEBUGPRINT 1*/
+#define PEXARIA_VENDOR_ID     0x1172
+#define PEXARIA_DEVICE_ID     0x1111
+
+#define KINPEX_VENDOR_ID     0x10EE
+#define KINPEX_DEVICE_ID     0x1111
+
+
+
+#define PEXOR_DEBUGPRINT 1
 
 
 /* this define will switch at compiletime between trbnet and gosip protocols*/
