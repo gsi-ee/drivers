@@ -443,8 +443,8 @@ int pexor_ioctl_mapbuffer(struct pexor_privdata *priv, unsigned long arg)
     /* populate sg list:*/
 		/* page0 is different */
 		if ( !PageReserved(pages[0]) )
-			//	__set_page_locked(pages[0]);
-			SetPageLocked(pages[0]);
+				__set_page_locked(pages[0]);
+			//SetPageLocked(pages[0]);
 
 		/* for first chunk, we take into account that memory is possibly not starting at
 		 * page boundary:*/
@@ -455,8 +455,8 @@ int pexor_ioctl_mapbuffer(struct pexor_privdata *priv, unsigned long arg)
 		count = dmabuf->size - length;
 		for(i=1;i<nr_pages;i++) {
 			if ( !PageReserved(pages[i]) )
-				//__set_page_locked(pages[i]);
-				SetPageLocked(pages[i]);
+				__set_page_locked(pages[i]);
+				//SetPageLocked(pages[i]);
 
 			sg_set_page(&sg[i], pages[i], ((count > PAGE_SIZE) ? PAGE_SIZE : count), 0);
 			count -= sg[i].length;
@@ -498,8 +498,8 @@ mapbuffer_unmap:
 	/* release pages */
 		for(i=0;i<nr_pages;i++) {
 			if (PageLocked(pages[i]))
-				//__clear_page_locked(pages[i]);
-				ClearPageLocked(pages[i]);
+				__clear_page_locked(pages[i]);
+				//ClearPageLocked(pages[i]);
 			if (!PageReserved(pages[i]))
 				SetPageDirty(pages[i]);
 			page_cache_release(pages[i]);
@@ -1188,8 +1188,8 @@ int unmap_sg_dmabuffer(struct pci_dev *pdev, struct pexor_dmabuf *buf)
 			if ( !PageReserved( buf->pages[i] ))
 				{
 				SetPageDirty( buf->pages[i] );
-				//__clear_page_locked(buf->pages[i]);
-				ClearPageLocked(buf->pages[i]);
+				__clear_page_locked(buf->pages[i]);
+				//ClearPageLocked(buf->pages[i]);
 				}
 			page_cache_release( buf->pages[i] );
 		}

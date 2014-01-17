@@ -23,7 +23,7 @@
 #include <linux/mm.h>
 #include <linux/pagemap.h>
 #include <linux/scatterlist.h>
-
+#include <linux/page-flags.h>
 #include <linux/sched.h>
 
 #include <linux/wait.h>
