@@ -1025,7 +1025,8 @@ int pexor_mmap(struct file *filp, struct vm_area_struct *vma)
 	    (void*) virt_to_phys((void*)buf->kernel_addr),
 	    page_to_pfn(virt_to_page((void*)buf->kernel_addr)));
 
-  vma->vm_flags |= (VM_RESERVED); /* TODO: do we need this?*/
+  /*vma->vm_flags |= (VM_RESERVED);*/
+  /* TODO: do we need this?*/
   ret = remap_pfn_range(
 			vma,
 			vma->vm_start,
@@ -1039,7 +1040,8 @@ int pexor_mmap(struct file *filp, struct vm_area_struct *vma)
 	  pexor_dbg(KERN_NOTICE "Using external address %p / PFN %lx\n",
 	 	    (void*) (vma->vm_pgoff << PAGE_SHIFT ),vma->vm_pgoff);
 
-	   vma->vm_flags |= (VM_RESERVED); /* TODO: do we need this?*/
+/*	   vma->vm_flags |= (VM_RESERVED); */ 
+	  /* TODO: do we need this?*/
 	   ret = remap_pfn_range(
 	 			vma,
 	 			vma->vm_start,
