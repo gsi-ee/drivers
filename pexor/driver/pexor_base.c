@@ -2346,7 +2346,7 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
   memset(privdata, 0, sizeof(struct pexor_privdata));
   pci_set_drvdata(dev, privdata);
   privdata->pdev = dev;
-  privdata->magic = MY_DEVICE_ID; /* for isr test TODO: what if multiple pexors share same irq?*/
+  privdata->magic = PEXOR_DEVICE_ID; /* for isr test TODO: what if multiple pexors share same irq?*/
 
   atomic_set(&(privdata->state), PEXOR_STATE_STOPPED);
 
