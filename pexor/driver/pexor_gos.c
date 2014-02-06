@@ -399,7 +399,8 @@ int  pexor_sfp_init_request( struct pexor_privdata* privdata, int ch, int numsla
   u32 sfp=0, comm=0, maxslave=0;
   u32 rstat=0, radd=0, rdat=0;
   sfp= (u32) ch;
-  maxslave = (u32) numslaves;
+  maxslave = (u32) numslaves -1; /* changed api: pass index of max slave, not number of slaves*/
+  if(numslaves<=0) maxslave=0; /* catch possible user workaround for changed api*/
   pexor_sfp_assert_channel(ch);
   comm = PEXOR_SFP_INI_REQ | (0x1 << (16 + sfp) );
   pexor_dbg(KERN_NOTICE "**pexor_sfp_init_request ***\n");
