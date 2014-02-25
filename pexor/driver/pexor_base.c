@@ -558,7 +558,7 @@ int pexor_ioctl_freebuffer(struct pexor_privdata* priv, unsigned long arg)
 	      /* this state indicates that dma flow was running out of buffer. We enable it again and restart dma*/
 	      atomic_set(&(priv->state),PEXOR_STATE_DMA_FLOW);
 	      pexor_dbg(KERN_NOTICE "** pexor_ioctl_freebuffer restarts dma flow \n");
-	      retval=pexor_next_dma(priv, priv->pexor.ram_dma_cursor, 0, 0 ,0 ,0); /* set previous dma source that was tried before suspend*/
+	      retval=pexor_next_dma(priv, priv->pexor.ram_dma_cursor, 0, 0 ,0 ,0, 0 ); /* set previous dma source that was tried before suspend*/
 	      if(retval)
 		{
 		  atomic_set(&(priv->state),PEXOR_STATE_STOPPED);
@@ -711,7 +711,7 @@ int pexor_ioctl_setrunstate(struct pexor_privdata* priv, unsigned long arg)
       break;
     case PEXOR_STATE_DMA_FLOW:
     case PEXOR_STATE_DMA_SINGLE:
-      retval=pexor_next_dma(priv, 0 , 0, 0, 0 , 0 ); /* TODO: set source address cursor?*/
+      retval=pexor_next_dma(priv, 0 , 0, 0, 0 , 0, 0 ); /* TODO: set source address cursor?*/
       if(retval)
 	{
 	  /* error handling, e.g. no more dma buffer available*/
@@ -1580,7 +1580,7 @@ void pexor_irq_tasklet(unsigned long arg)
 	atomic_set(&(privdata->state),PEXOR_STATE_DMA_SUSPENDED);
 	break;
 	}*/
-      rev=pexor_next_dma(privdata, 0, 0,0 , 0, 0); /* TODO: inc source address cursor? Handle sfp double buffering?*/
+      rev=pexor_next_dma(privdata, 0, 0, 0 , 0, 0, 0); /* TODO: inc source address cursor? Handle sfp double buffering?*/
       if(rev)
 	{
 	  /* no more dma buffers at the moment: suspend flow?*/
@@ -1602,7 +1602,7 @@ void pexor_irq_tasklet(unsigned long arg)
 }
 
 
-int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, u32 woffset, u32 dmasize, unsigned long bufid)
+int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, u32 woffset, u32 dmasize, unsigned long bufid, u32 channelmask)
 {
   struct pexor_dmabuf* nextbuf;
   int i,rev,rest;
@@ -1703,8 +1703,16 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 					}*/
 		}
 
+#ifdef PEXOR_WITH_SFP
+	  if(channelmask>1)
+	  {
+	    if(pexor_start_dma(priv, 0, nextbuf->dma_addr + woffset, 0,0, channelmask)<0)
+	              return -EINVAL;
+	  }
 
-	  if(pexor_start_dma(priv, priv->pexor.ram_dma_cursor, nextbuf->dma_addr + woffset, dmasize,0)<0)
+#endif
+
+	  if(pexor_start_dma(priv, priv->pexor.ram_dma_cursor, nextbuf->dma_addr + woffset, dmasize,0,channelmask)<0)
 		  return -EINVAL;
 
   }
@@ -1713,7 +1721,15 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
   {
 	  /* put emulated sg dma here
 	   * since pexor gosip fpga code does not support sglist dma, we do it manually within the driver*/
-	  pexor_dbg(KERN_ERR "#### pexor_next_dma in scatter-gather mode\n");
+	  pexor_dbg(KERN_NOTICE "#### pexor_next_dma in scatter-gather mode\n");
+
+	  if(channelmask>1)
+	     {
+	        pexor_msg(KERN_ERR "#### pexor_next_dma: ERROR no direct gosip DMA in scatter-gather mode\n");
+	        return -EINVAL;
+	     }
+
+
 	  /* test: align complete buffer to maximum burst?*/
 	  rest=dmasize % PEXOR_BURST;
 	  if(rest)
@@ -1747,7 +1763,7 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 
 	    	  /**** END DEBUG*/
 	    	  /* initiate dma to next sg part:*/
-	    	  if(pexor_start_dma(priv, sgcursor, sg_dma_address(sgentry)+woffset, sglen, (woffset>0)) < 0)
+	    	  if(pexor_start_dma(priv, sgcursor, sg_dma_address(sgentry)+woffset, sglen, (woffset>0),0) < 0)
 	    		  return -EINVAL;
 	    	  if(woffset>0) woffset=0; /* reset write offset, once it was applied to first sg segment*/
 
@@ -1846,11 +1862,12 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 #endif
 }
 
-int pexor_start_dma(struct pexor_privdata *priv, dma_addr_t source, dma_addr_t dest, u32 dmasize, int firstchunk)
+int pexor_start_dma(struct pexor_privdata *priv, dma_addr_t source, dma_addr_t dest, u32 dmasize, int firstchunk, u32 channelmask)
 {
 	int rev;
 	u32 burstsize=PEXOR_BURST;
-    u32 enable=PEXOR_DMA_ENABLED_BIT;
+    u32 enable=PEXOR_DMA_ENABLED_BIT; /* this will start dma immediately from given source address*/
+    if(channelmask>1) enable=channelmask; /* set sfp token transfer to initiate the DMA later*/
 
 
 	  rev=pexor_poll_dma_complete(priv);
@@ -1900,8 +1917,15 @@ int pexor_start_dma(struct pexor_privdata *priv, dma_addr_t source, dma_addr_t d
 	  mb();
 	  iowrite32(enable, priv->pexor.dma_control_stat);
 	  mb();
-	  pexor_dbg(KERN_NOTICE "#### pexor_start_dma started dma \n");
-	  return 0;
+	  if (enable > 1)
+	  {
+	    pexor_dbg(KERN_NOTICE "#### pexor_start_dma sets sfp mask to 0x%x \n", enable);
+	  }
+	  else
+	  {
+	    pexor_dbg(KERN_NOTICE "#### pexor_start_dma started dma\n");
+	  }
+	    return 0;
 }
 
 

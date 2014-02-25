@@ -14,6 +14,7 @@
 #include "pexorplugin/Device.h"
 #include "dabc/Command.h"
 #include "dabc/Manager.h"
+#include "dabc/Application.h"
 
 #include "mbs/MbsTypeDefs.h"
 //#include "mbs/Factory.h"
@@ -25,8 +26,9 @@
 
 #include "pexorplugin/Factory.h"
 #include "pexorplugin/Transport.h"
+#include "pexorplugin/Input.h"
 
-#include "pexorplugin/ReadoutApplication.h"
+//#include "pexorplugin/ReadoutApplication.h"
 
 
 #include "pexor/DMA_Buffer.h"
@@ -78,8 +80,10 @@ double pexorplugin::Device::fgdSigma[NUM_PEAK]  = {  10.,  5., 153.,  104.,   38
 
 unsigned int pexorplugin::Device::fgThreadnum=0;
 
-pexorplugin::Device::Device(const char* name, dabc::Command cmd) :
-dabc::Device(name),fBoard(0),fMbsFormat(true), fTestData(true),
+
+
+pexorplugin::Device::Device(const std::string& name, dabc::Command cmd):
+dabc::Device(name), fBoard(0),fMbsFormat(true), fTestData(true),
 fSynchronousRead(true), fParallelRead(true), fTriggeredRead(false), fMemoryTest(false),fSkipRequest(false),
 fCurrentSFP(0),fReadLength(0),fSubmemSize(3600),fTrixConvTime(0x20), fTrixFClearTime(0x10),
 fInitDone(false),fNumEvents(0),fuSeed(0)
@@ -94,24 +98,24 @@ fInitDone(false),fNumEvents(0),fuSeed(0)
 				return;
 			}
 	fZeroCopyMode=Cfg(pexorplugin::xmlDMAZeroCopy,cmd).AsBool(false); //GetCfgBool(pexorplugin::xmlDMAZeroCopy,false, cmd);
-	DOUT1(("Setting zero copy mode to %d\n", fZeroCopyMode));
+	DOUT1("Setting zero copy mode to %d\n", fZeroCopyMode);
 	bool sgmode=Cfg(pexorplugin::xmlDMAScatterGatherMode, cmd).AsBool(false); //GetCfgBool(pexorplugin::xmlDMAScatterGatherMode,false, cmd);
 	fBoard->SetScatterGatherMode(sgmode);
-	DOUT1(("Setting scatter gather mode to %d\n", sgmode));
+	DOUT1("Setting scatter gather mode to %d\n", sgmode);
 	// initialize here the connected channels:
 
 	 for (int sfp=0; sfp<PEXORPLUGIN_NUMSFP; sfp++)
 		 {
 
-			 fNumSlavesSFP[sfp]=Cfg(FORMAT(("%s%d",xmlPexorSFPSlaves, sfp)), cmd).AsInt(0);//GetCfgInt(FORMAT(("%s%d",xmlPexorSFPSlaves, sfp)), false,cmd);
+			 fNumSlavesSFP[sfp]=Cfg(dabc::format("%s%d",xmlPexorSFPSlaves, sfp), cmd).AsInt(0);//GetCfgInt(FORMAT(("%s%d",xmlPexorSFPSlaves, sfp)), false,cmd);
 			 fEnabledSFP[sfp] = fNumSlavesSFP[sfp]>0 ? true : false;
-			 DOUT1(("Sfp %d is %s with %d slave devices.\n", sfp, (fEnabledSFP[sfp] ? "enabled" : "disabled"),  fNumSlavesSFP[sfp]));
+			 DOUT1("Sfp %d is %s with %d slave devices.\n", sfp, (fEnabledSFP[sfp] ? "enabled" : "disabled"),  fNumSlavesSFP[sfp]);
 			 if(fEnabledSFP[sfp])
 				 {
 					 int iret=fBoard->InitBus(sfp,fNumSlavesSFP[sfp]);
 					 if(iret)
 						 {
-							 EOUT(("**** Error %d in PEXOR InitBus for sfp %d \n",iret,sfp));
+							 EOUT("**** Error %d in PEXOR InitBus for sfp %d \n",iret,sfp);
 							 delete fBoard;
 							 return; // TODO: proper error handling
 					 	  }
@@ -133,14 +137,14 @@ fInitDone(false),fNumEvents(0),fuSeed(0)
 		int rev=fBoard->Add_DMA_Buffers(size,numbufs);
 		if(rev)
 			{
-			 EOUT(("\n\nError %d on adding dma buffers\n",rev));
+			 EOUT("\n\nError %d on adding dma buffers\n",rev);
 				return;
 			}
     }
    fMbsFormat=Cfg(pexorplugin::xmlFormatMbs,cmd).AsBool(true);//GetCfgBool(pexorplugin::xmlFormatMbs,true, cmd);
 
 
-   DOUT1(("Created PEXOR device %d\n", fDeviceNum));
+   DOUT1("Created PEXOR device %d\n", fDeviceNum);
    fTestData=true; // TODO: configure this from XML once we have read data to fetch
    //fTestData=GetCfgBool(pexorplugin::xml????,20, cmd);
    fSubmemSize=Cfg(pexorplugin::xmlExploderSubmem,cmd).AsInt(3600); //GetCfgInt(pexorplugin::xmlExploderSubmem,3600, cmd);
@@ -148,7 +152,7 @@ fInitDone(false),fNumEvents(0),fuSeed(0)
 	   {
 		   if(!WriteTestBuffers())
 		   {
-			   EOUT(("\n\nError writing token test buffers to pexor device %d \n",fDeviceNum));
+			   EOUT("\n\nError writing token test buffers to pexor device %d \n",fDeviceNum);
 			    return;
 		   }
 		   DOUT1(("Wrote Test data to slaves."));
@@ -183,7 +187,7 @@ void pexorplugin::Device::MapDMAMemoryPool(dabc::MemoryPool* pool)
 {
 	if(!fZeroCopyMode) return;
 	if(!fInitDone) return;
-	 DOUT1(("SSSSSSS Starting MapDMAMemoryPool for pool:%s",pool->GetName()));
+	 DOUT1("SSSSSSS Starting MapDMAMemoryPool for pool:%s",pool->GetName());
 	// first clean up all previos buffers
 	 fBoard->Reset(); // problematic when pool should change during DMA transfer?
 
@@ -203,19 +207,19 @@ void pexorplugin::Device::MapDMAMemoryPool(dabc::MemoryPool* pool)
 	        	 // first we map the buffer for sglist and register to driver lists:
 	        	 if(fBoard->Register_DMA_Buffer((int*) addr, bufsize))
 					 {
-							 EOUT(("\n\nError registering buffer num:%d of pool:%s, addr:%p \n",bufid,pool->GetName(), addr));
+							 EOUT("\n\nError registering buffer num:%d of pool:%s, addr:%p \n",bufid,pool->GetName(), addr);
 							 continue;
 					 }
 	        	 // then tell the driver it should not use this dma buffer until we give it back:
 	        	 pexor::DMA_Buffer* taken=0;
 	        	 if((taken=fBoard->Take_DMA_Buffer(false))==0)
 					{
-						EOUT(("**** Could not take back DMA buffer %p for DABC!\n",addr));
+						EOUT("**** Could not take back DMA buffer %p for DABC!\n",addr);
 						continue;
 					}
 	        	 if(taken->Data() != (int*) addr)
 					 {
-						 EOUT(("**** Mismatch of mapped DMA buffer %p and reserved buffer %p !\n",taken->Data(),addr));
+						 EOUT("**** Mismatch of mapped DMA buffer %p and reserved buffer %p !\n",taken->Data(),addr);
 						 delete taken;
 						 continue;
 					 }
@@ -290,18 +294,56 @@ int pexorplugin::Device::ExecuteCommand(dabc::Command cmd)
 //    else // TODO: reset board buffers here!
 
 
-   DOUT1(("pexorplugin::Device::ExecuteCommand-  %s", cmd.GetName()));
+   DOUT1("pexorplugin::Device::ExecuteCommand-  %s", cmd.GetName());
      cmd_res = dabc::Device::ExecuteCommand(cmd);
 return cmd_res;
 
 }
 
-dabc::Transport*  pexorplugin::Device::CreateTransport(dabc::Command cmd, dabc::Reference port)
+dabc::Transport*  pexorplugin::Device::CreateTransport(dabc::Command cmd, const dabc::Reference& port)
 //int pexorplugin::Device::CreateTransport(dabc::Command* cmd, dabc::Port* port)
 {
    if(!fInitDone) return 0;
-   pexorplugin::Transport* transport = new pexorplugin::Transport(this, port);
-   DOUT1(("pexorplugin::Device::CreateTransport creates new transport instance %p", transport));
+   //   dabc::Url url(typ);
+   //
+   dabc::PortRef portref = port;
+   //
+   //   if (portref.IsInput() && (url.GetProtocol()=="pexor") && !url.GetHostName().empty()) {
+   //
+   //// TODO: evaluate parameters from connection url here
+   //     std::string devname = url.GetOptionStr("device", "pexor0")
+   //
+   //
+   //
+   //
+   ////      int nport = url.GetPort();
+   ////      int rcvbuflen = url.GetOptionInt("udpbuf", 2000000);
+   ////      int mtu = url.GetOptionInt("mtu", 64512);
+   ////      double flush = url.GetOptionDouble(dabc::xml_flush, 1.);
+   ////      bool observer = url.GetOptionBool("observer", false);
+   ////
+   ////      if (nport>0) {
+   ////
+   ////         int fd = DataSocketAddon::OpenUdp(nport, rcvbuflen);
+   ////
+   ////         if (fd>0) {
+   ////            DataSocketAddon* addon = new DataSocketAddon(fd, nport, mtu, flush);
+   ////
+   ////            return new hadaq::DataTransport(cmd, portref, addon, observer);
+   ////         }
+   ////      }
+   //      return new pexorplugin::Transport(cmd, portref);
+   //
+   //   }
+   //
+   //   return dabc::Factory::CreateTransport(port, typ, cmd);
+   //}
+
+
+
+   pexorplugin::Input* dinput= new pexorplugin::Input(this);
+   pexorplugin::Transport* transport = new pexorplugin::Transport(this, dinput, port, cmd);
+   DOUT1("pexorplugin::Device::CreateTransport creates new transport instance %p", transport);
    DOUT3(("Device thread %p\n", thread().GetObject()));
 
    return transport;
@@ -346,7 +388,7 @@ int  pexorplugin::Device::RequestToken(dabc::Buffer& buf, bool synchronous)
 		pexor::DMA_Buffer wrapper(bptr,buf.SegmentSize());
 		if(fBoard->Free_DMA_Buffer(&wrapper))
 		{
-				EOUT(("**** Could not make buffer %p available for DMA!\n",bptr));
+				EOUT("**** Could not make buffer %p available for DMA!\n",bptr);
 				return dabc::di_Error;
 		}
 	}
@@ -356,7 +398,7 @@ int  pexorplugin::Device::RequestToken(dabc::Buffer& buf, bool synchronous)
 	pexor::DMA_Buffer* tokbuf= fBoard->RequestToken(fCurrentSFP, fDoubleBufID[fCurrentSFP], synchronous, bptr, headeroffset); // synchronous dma mode here
 	if((long int) tokbuf==-1) // TODO: handle error situations by exceptions later!
 		{
-			EOUT(("**** Error in PEXOR Token Request from sfp %d !\n",fCurrentSFP));
+			EOUT("**** Error in PEXOR Token Request from sfp %d !\n",fCurrentSFP);
 			return  dabc::di_SkipBuffer;
 		}
 	fDoubleBufID[fCurrentSFP]= fDoubleBufID[fCurrentSFP]==0 ? 1 : 0;
@@ -385,7 +427,7 @@ int pexorplugin::Device::ReceiveTokenBuffer(dabc::Buffer& buf)
 	pexor::DMA_Buffer* tokbuf= fBoard->WaitForToken(fCurrentSFP,bptr,headeroffset);
 	if(tokbuf==0)
 		{
-				EOUT(("**** Error in PEXOR ReceiveTokenBuffer from sfp %d !\n",fCurrentSFP));
+				EOUT("**** Error in PEXOR ReceiveTokenBuffer from sfp %d !\n",fCurrentSFP);
 				return  dabc::di_SkipBuffer;
 		}
 	if(fTriggeredRead)
@@ -423,7 +465,7 @@ int pexorplugin::Device::RequestAllTokens(dabc::Buffer& buf, bool synchronous)
 
                     if((long int) tokbuf[fCurrentSFP]==-1) // TODO: handle error situations by exceptions later!
                             {
-                                    EOUT(("**** Error in PEXOR Token Request from sfp %d !\n",fCurrentSFP));
+                                    EOUT("**** Error in PEXOR Token Request from sfp %d !\n",fCurrentSFP);
                                     return  dabc::di_SkipBuffer;
                             }
                     fDoubleBufID[fCurrentSFP]= fDoubleBufID[fCurrentSFP]==0 ? 1 : 0;
@@ -451,7 +493,7 @@ int pexorplugin::Device::ReceiveAllTokenBuffer(dabc::Buffer& buf)
           tokbuf[sfp] = fBoard->WaitForToken(sfp);
           if (tokbuf[sfp] == 0)
             {
-              EOUT(("**** Error in PEXOR ReceiveAllTokenBuffer from sfp %d !\n",sfp));
+              EOUT("**** Error in PEXOR ReceiveAllTokenBuffer from sfp %d !\n",sfp);
               return dabc::di_SkipBuffer;
             }
           oldbuflen = tokbuf[sfp]->UsedSize();
@@ -511,10 +553,10 @@ int  pexorplugin::Device::CopyOutputBuffer(pexor::DMA_Buffer* tokbuf, dabc::Buff
 
    if (tokbuf->UsedSize() + used_size > buf.GetTotalSize())
     {
-      EOUT(("Token buffer used size %d + header sizes %d exceed available target buffer length %d \n", tokbuf->UsedSize(),used_size, buf.GetTotalSize()));
-      EOUT(("Mbs Event header size is %d;  Mbs subevent header sizes: %d \n", sizeof(mbs::EventHeader), sizeof(mbs::SubeventHeader)));
-      EOUT(("Mbs event filled size  %d\n", filled_size));
-      EOUT(("**** Error in PEXOR Token Request size, skip buffer!\n"));
+      EOUT("Token buffer used size %d + header sizes %d exceed available target buffer length %d \n", tokbuf->UsedSize(),used_size, buf.GetTotalSize());
+      EOUT("Mbs Event header size is %d;  Mbs subevent header sizes: %d \n", sizeof(mbs::EventHeader), sizeof(mbs::SubeventHeader));
+      EOUT("Mbs event filled size  %d\n", filled_size);
+      EOUT("**** Error in PEXOR Token Request size, skip buffer!\n");
       return dabc::di_SkipBuffer;
     }
 
@@ -632,7 +674,7 @@ bool  pexorplugin::Device::WriteTestBuffers()
 	{
 		if(!fEnabledSFP[ch]) continue;
 		// loop over all slaves
-		DOUT1(("Writing test data for sfp %x ...\n", ch));
+		DOUT1("Writing test data for sfp %x ...\n", ch);
 		for(unsigned int sl=0;sl<fNumSlavesSFP[ch];++sl)
 		{
 			int werrors=0;
@@ -643,47 +685,47 @@ bool  pexorplugin::Device::WriteTestBuffers()
 			int rev=fBoard->ReadBus(REG_BUF0, base_dbuf0, ch,sl);
 			if(rev==0)
 				{
-				   DOUT1(("Slave %x: Base address for Double Buffer 0  0x%x  \n", sl,base_dbuf0 ));
+				   DOUT1("Slave %x: Base address for Double Buffer 0  0x%x  \n", sl,base_dbuf0 );
 				}
 			else
 				{
-					EOUT(("\n\ntoken Error %d in ReadBus: slave %x addr %x (double buffer 0 address)\n", rev, sl, REG_BUF0));
+					EOUT("\n\ntoken Error %d in ReadBus: slave %x addr %x (double buffer 0 address)\n", rev, sl, REG_BUF0);
 					return false;
 				}
 			rev=fBoard->ReadBus(REG_BUF1,base_dbuf1,ch,sl);
 			if(rev==0)
 				{
-				   DOUT1(("Slave %x: Base address for Double Buffer 1  0x%x  \n", sl,base_dbuf1 ));
+				   DOUT1("Slave %x: Base address for Double Buffer 1  0x%x  \n", sl,base_dbuf1 );
 				}
 			else
 				{
-				   EOUT(("\n\ntoken Error %d in ReadBus: slave %x addr %x (double buffer 1 address)\n", rev, sl, REG_BUF1));
+				   EOUT("\n\ntoken Error %d in ReadBus: slave %x addr %x (double buffer 1 address)\n", rev, sl, REG_BUF1);
 				   return false;
 				}
 			rev=fBoard->ReadBus(REG_SUBMEM_NUM,num_submem,ch,sl);
 			if(rev==0)
 				{
-				   DOUT1(("Slave %x: Number of SubMemories  0x%x  \n", sl,num_submem ));
+				   DOUT1("Slave %x: Number of SubMemories  0x%x  \n", sl,num_submem );
 				}
 		   else
 			   {
-				   EOUT(("\n\ntoken Error %d in ReadBus: slave %x addr %x (num submem)\n", rev, sl, REG_SUBMEM_NUM));
+				   EOUT("\n\ntoken Error %d in ReadBus: slave %x addr %x (num submem)\n", rev, sl, REG_SUBMEM_NUM);
 				   return false;
 			   }
 		  rev=fBoard->ReadBus(REG_SUBMEM_OFF,submem_offset,ch,sl);
 		  if(rev==0)
 			  {
-				   DOUT1(("Slave %x: Offset of SubMemories to the Base address  0x%x  \n", sl,submem_offset ));
+				   DOUT1("Slave %x: Offset of SubMemories to the Base address  0x%x  \n", sl,submem_offset );
 			  }
 		  else
 			  {
-				   EOUT(("\n\ncheck_token Error %d in ReadBus: slave %x addr %x (submem offset)\n", rev, sl, REG_SUBMEM_OFF));
+				   EOUT("\n\ncheck_token Error %d in ReadBus: slave %x addr %x (submem offset)\n", rev, sl, REG_SUBMEM_OFF);
 				   return false;
 			  }
 		rev=fBoard->WriteBus(REG_DATA_LEN,datadepth,ch,sl);
 		if(rev)
 				{
-					 EOUT(("\n\nError %d in WriteBus setting datadepth %d\n",rev,datadepth));
+					 EOUT("\n\nError %d in WriteBus setting datadepth %d\n",rev,datadepth);
 					 return false;
 				}
 
@@ -697,7 +739,7 @@ bool  pexorplugin::Device::WriteTestBuffers()
 					int rev= fBoard->WriteBus( submembase0 + i*4 , Random_Event(submem) , ch, sl);
 					if(rev)
 						{
-							EOUT(("Error %d in WriteBus for submem %d of buffer 0, wordcount %d\n",rev,submem,i));
+							EOUT("Error %d in WriteBus for submem %d of buffer 0, wordcount %d\n",rev,submem,i);
 							werrors++;
 							continue;
 							//break;
@@ -706,7 +748,7 @@ bool  pexorplugin::Device::WriteTestBuffers()
 					rev= fBoard->WriteBus( submembase1 + i*4 , Random_Event(submem) , ch, sl);
 					if(rev)
 						{
-							EOUT(("Error %d in WriteBus for submem %d of buffer 1, wordcount %d\n",rev,submem,i));
+							EOUT("Error %d in WriteBus for submem %d of buffer 1, wordcount %d\n",rev,submem,i);
 							werrors++;
 							continue;
 							//break;

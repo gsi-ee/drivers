@@ -320,15 +320,19 @@ void pexor_irq_tasklet(unsigned long);
  * dmasize gives bytes to transfer by dma;
  * bufid is optional buffer id (i.e. user virtual address pointer) of buffer to fill
  * if 0, we use complete size of allocated dma buffer
- * Function may decide upon buffer type if we use plain dma or sg dma to user buffer*/
+ * Function may decide upon buffer type if we use plain dma or sg dma to user buffer
+ * channelmask is used to initiate direct dma while reading token requested sfp data
+ * bit i of channelmask (1...4) will decide sfp (i-1) will send data to dma buffer*/
 int pexor_next_dma(struct pexor_privdata *priv, dma_addr_t source,
-                   u32 roffset, u32 woffset, u32 dmasize, unsigned long bufid);
+                   u32 roffset, u32 woffset, u32 dmasize, unsigned long bufid, u32 channelmask);
 
 /* start dma engine to transfer dmasize bytes from source to dest.
  * Will not block until transfer is complete
- * if firstchunk is true, we may correct parameters internally to match burstsize>=8  modulos */
+ * if firstchunk is true, we may correct parameters internally to match burstsize>=8  modulos
+ * if channelmask >0, instead of starting dma immediately the mask defines which sfp channel may write
+ *         data on next token request to the dest address with direct dma*/
 int pexor_start_dma(struct pexor_privdata *priv, dma_addr_t source, dma_addr_t dest,
-					u32 dmasize, int firstchunk);
+					u32 dmasize, int firstchunk, u32 channelmask);
 
 /* poll the dma register complete bit.
    returns error if loop exceeds certain cycle number */

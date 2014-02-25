@@ -155,6 +155,14 @@ int pexor_ioctl_request_token(struct pexor_privdata* priv, unsigned long arg)
   /*u32 dmasize=0,oldsize=0;
     struct pexor_dmabuf dmabuf;*/
   struct pexor_token_io descriptor;
+
+#ifdef  PEXOR_DIRECT_DMA
+    u32 woffset;
+    unsigned long dmabufid=0;
+    struct pexor_dmabuf dmabuf;
+    u32 channelmask=0;
+#endif
+
   /*
     #ifdef PEXOR_WITH_SFP
     struct pexor_sfp* sfp=&(priv->pexor.sfp);
@@ -167,6 +175,31 @@ int pexor_ioctl_request_token(struct pexor_privdata* priv, unsigned long arg)
   /* send token request
      pexor_msg(KERN_NOTICE "** pexor_ioctl_request_token from_sfp 0x%x, bufid 0x%x\n",chan,bufid);*/
   pexor_sfp_assert_channel(chan);
+
+#ifdef  PEXOR_DIRECT_DMA
+  // TODO: setup here dma targets in direct dma mode before initiating gosip transfer
+    dmabufid=descriptor.tkbuf.addr;
+    woffset=descriptor.offset;
+    channelmask= 1 << (chan+1);// select SFP for PCI Express DMA
+    pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_token uses dma buffer 0x%x with write offset  0x%x\n",dmabufid,woffset);
+
+
+    atomic_set(&(priv->state),PEXOR_STATE_DMA_SINGLE);
+    retval=pexor_next_dma( priv, 0, 0 , woffset, 0, dmabufid, channelmask);
+    if(retval)
+      {
+        /* error handling, e.g. no more dma buffer available*/
+        pexor_dbg(KERN_ERR "pexor_ioctl_read_token error %d from nextdma\n", retval);
+        atomic_set(&(priv->state),PEXOR_STATE_STOPPED);
+        return retval;
+      }
+
+
+
+
+
+
+#endif
   comm = PEXOR_SFP_PT_TK_R_REQ | (0x1 << (16+ chan) );
   pexor_sfp_clear_channel(priv,chan);
   pexor_sfp_request(priv, comm, bufid, 0); /* note: slave is not specified; the chain of all slaves will send everything to receive buffer*/
@@ -225,6 +258,10 @@ int pexor_ioctl_wait_token(struct pexor_privdata* priv, unsigned long arg)
 	return -EIO;
 	}*/
 
+
+#ifndef  PEXOR_DIRECT_DMA
+
+
   /* issue DMA of token data from pexor to dma buffer */
   /* find out real package length :*/
   dmasize =  ioread32(sfp->tk_memsize[chan]);
@@ -251,7 +288,7 @@ int pexor_ioctl_wait_token(struct pexor_privdata* priv, unsigned long arg)
 
 
   atomic_set(&(priv->state),PEXOR_STATE_DMA_SINGLE);
-  retval=pexor_next_dma( priv, sfp->tk_mem_dma[chan], 0 , woffset, dmasize, dmabufid);
+  retval=pexor_next_dma( priv, sfp->tk_mem_dma[chan], 0 , woffset, dmasize, dmabufid,0);
   if(retval)
     {
       /* error handling, e.g. no more dma buffer available*/
@@ -259,6 +296,9 @@ int pexor_ioctl_wait_token(struct pexor_privdata* priv, unsigned long arg)
       atomic_set(&(priv->state),PEXOR_STATE_STOPPED);
       return retval;
     }
+#endif /* not PEXOR_DIRECT_DMA*/
+
+
 
   if((retval=pexor_wait_dma_buffer(priv, &dmabuf)) !=0)
     {

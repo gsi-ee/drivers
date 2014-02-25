@@ -15,9 +15,12 @@
 #define PEXORPLUGIN_Device
 
 #include "dabc/Device.h"
+#include "dabc/Object.h"
+#include "dabc/MemoryPool.h"
+
 
 //#include "dabc/Basic.h"
-#include "dabc/Pointer.h"
+//#include "dabc/Pointer.h"
 
 #include "pexor/PexorTwo.h"
 
@@ -79,7 +82,7 @@ extern const char* xmlPexorID; // id number N of pexor device file /dev/pexor-N
 
       public:
 
-         Device(const char* name, dabc::Command cmd);
+         Device(const std::string& name, dabc::Command cmd);
          virtual ~Device();
 
          /* for zero copy DMA: map complete dabc pool for sg DMA of driver*/
@@ -118,7 +121,11 @@ extern const char* xmlPexorID; // id number N of pexor device file /dev/pexor-N
 
 
          virtual int ExecuteCommand(dabc::Command cmd);
-         virtual dabc::Transport* CreateTransport(dabc::Command cmd, dabc::Reference port);
+
+         //virtual dabc::Transport* CreateTransport(dabc::Command cmd, dabc::Reference port);
+
+         virtual dabc::Transport* CreateTransport(dabc::Command cmd, const dabc::Reference& port);
+
 
          //virtual int CreateTransport(dabc::Command* cmd, dabc::Port* port);
 

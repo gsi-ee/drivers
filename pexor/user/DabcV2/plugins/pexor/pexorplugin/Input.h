@@ -11,47 +11,45 @@
  * This software can be used under the GPL license agreements as stated
  * in LICENSE.txt file which is part of the distribution.
  ********************************************************************/
-#ifndef PEXORPLUGIN_ReadoutModule
-#define PEXORPLUGIN_ReadoutModule
+#ifndef PEXORPLUGIN_Input
+#define PEXORPLUGIN_Input
 
-#include "dabc/ModuleAsync.h"
-
+#include "dabc/DataIO.h"
 #include "dabc/statistic.h"
 
 namespace pexorplugin {
 
-   class ReadoutModule : public dabc::ModuleAsync {
+   class Device;
+
+   class Input : public dabc::DataInput {
+      friend class Device;
+      friend class Transport;
 
       public:
-
-         ReadoutModule(const std::string name, dabc::Command cmd);
-
-        virtual void BeforeModuleStart();
-        virtual void AfterModuleStop();
-
-        virtual void ProcessInputEvent(unsigned port);
-        virtual void ProcessOutputEvent(unsigned port);
-
+         Input(pexorplugin::Device*);
+         virtual ~Input();
 
 
 
       protected:
 
+         virtual unsigned Read_Size();
 
+         virtual unsigned Read_Start(dabc::Buffer& buf);
 
-		void DoPexorReadout();
+         virtual unsigned Read_Complete(dabc::Buffer& buf);
 
+         virtual double Read_Timeout() { return 10; }
 
+         //virtual void ProcessPoolChanged(dabc::MemoryPool* pool);
 
-//         dabc::PoolHandle*    fInPool;
-//         dabc::PoolHandle*    fOutPool;
+         Device* fPexorDevice;
 
-         std::string        fEventRateName;
-         std::string        fDataRateName;
+         dabc::Ratemeter      fErrorRate;
 
-//         bool fBnetMode;
-//         dabc::BufferSize_t   fBufferSize;
+         //virtual void StartTransport();
 
+         //virtual void StopTransport();
 
    };
 }

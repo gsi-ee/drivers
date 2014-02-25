@@ -20,35 +20,37 @@
 namespace pexorplugin {
 
    class Device;
+   class Input;
 
-   class Transport : public dabc::DataTransport {
+   class Transport : public dabc::InputTransport {
       friend class Device;
+      friend class Input;
 
       public:
-         Transport(Device* dev, dabc::Reference port);
+         Transport(pexorplugin::Device*, pexorplugin::Input* inp, dabc::Command cmd, const dabc::PortRef& inpport);
          virtual ~Transport();
 
       protected:
 
-         virtual unsigned Read_Size();
-
-         virtual unsigned Read_Start(dabc::Buffer& buf);
-
-         virtual unsigned Read_Complete(dabc::Buffer& buf);
-
-         virtual double Read_Timeout() { return 10; }
-
-         //virtual bool WriteBuffer(dabc::Buffer* buf);
+//         virtual unsigned Read_Size();
+//
+//         virtual unsigned Read_Start(dabc::Buffer& buf);
+//
+//         virtual unsigned Read_Complete(dabc::Buffer& buf);
+//
+//         virtual double Read_Timeout() { return 10; }
 
          virtual void ProcessPoolChanged(dabc::MemoryPool* pool);
 
-         Device* fPexorDevice;
+         pexorplugin::Device* fPexorDevice;
 
-         dabc::Ratemeter      fErrorRate;
+         pexorplugin::Input* fPexorInput;
 
-         virtual void StartTransport();
+//         dabc::Ratemeter      fErrorRate;
 
-         virtual void StopTransport();
+         virtual bool StartTransport();
+
+         virtual bool StopTransport();
 
    };
 }
