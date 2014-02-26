@@ -167,6 +167,7 @@ struct pexor_privdata
   atomic_t state;               /* run state of device */
   dev_t devno;                  /* device number (major and minor) */
   int devid;                    /* local id (counter number) */
+  u8 board_type;                /* pexor, pexaria, kinpex, ...*/
   char irqname[64];             /* private name for irq */
   struct pci_dev *pdev;         /* PCI device */
   struct device *class_dev;     /* Class device */

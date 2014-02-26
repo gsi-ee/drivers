@@ -51,13 +51,16 @@
 #define KINPEX_VENDOR_ID     0x10EE
 #define KINPEX_DEVICE_ID     0x1111
 
+#define BOARDTYPE_PEXOR 0
+#define BOARDTYPE_PEXARIA 1
+#define BOARDTYPE_KINPEX 2
 
 
 #define PEXOR_DEBUGPRINT 1
 
 // this will enable mode where pexor on board memory is not used as buffer
 // instead, data from sfp token request will be directly streamed to host dma buffer.
-#define PEXOR_DIRECT_DMA 1
+//#define PEXOR_DIRECT_DMA 1
 
 
 /* this define will switch at compiletime between trbnet and gosip protocols*/

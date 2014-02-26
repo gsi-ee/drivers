@@ -16,7 +16,7 @@
 #define PEXOR_WITH_SFP 1
 
 /* enable usage of TRIXOR */
-#define PEXOR_WITH_TRIXOR 1
+/*#define PEXOR_WITH_TRIXOR 1*/
 
 
 #define PEXOR_DRAM		0x100000 /* use the first SFP port for DMA testing here*/

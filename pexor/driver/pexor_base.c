@@ -479,7 +479,7 @@ int pexor_ioctl_mapbuffer(struct pexor_privdata *priv, unsigned long arg)
 
 
 
-	    pexor_dbg(KERN_ERR "pexor_ioctl_mapbuffer mapped user buffer %lx, size %lx, pages %lx to %lx sg entries \n", dmabuf->virt_addr, dmabuf->size, nr_pages, nents);
+	    pexor_dbg(KERN_ERR "pexor_ioctl_mapbuffer mapped user buffer 0x%lx, size 0x%lx, pages 0x%x to 0x%x sg entries \n", dmabuf->virt_addr, dmabuf->size, nr_pages, nents);
 	    spin_lock( &(priv->buffers_lock) );
 	    /* this list contains only the unused (free) buffers: */
 	    list_add_tail( &(dmabuf->queue_list), &(priv->free_buffers));
@@ -488,7 +488,7 @@ int pexor_ioctl_mapbuffer(struct pexor_privdata *priv, unsigned long arg)
 	    /* DEBUG ****************************************/
 	    for_each_sg(dmabuf->sg,sg, dmabuf->sg_ents,i)
 	   	    	{
-	   	    	  pexor_dbg(KERN_ERR "-- dump sg chunk %d: start 0x%x length 0x%x \n",i, sg_dma_address(sg), sg_dma_len(sg));
+	   	    	  pexor_dbg(KERN_ERR "-- dump sg chunk %d: start 0x%x length 0x%x \n",i, (unsigned) sg_dma_address(sg), sg_dma_len(sg));
 	   	    	}
 	    /***************************************************/
 
@@ -1150,7 +1150,7 @@ if (buf->kernel_addr == 0)
 	else
 	{
 		/* neither kernel address nor sg list -> external phys memory*/
-		 pexor_dbg(KERN_NOTICE "**pexor_delete_dmabuffer of size=%ld, unregistering external physaddr=%lx \n", buf->size, buf->dma_addr);
+		 pexor_dbg(KERN_NOTICE "**pexor_delete_dmabuffer of size=%ld, unregistering external physaddr=%lx \n", buf->size, (unsigned long) buf->dma_addr);
 		 pci_dma_sync_single_for_cpu(pdev, buf->dma_addr, buf->size, PCI_DMA_FROMDEVICE );
 		 /* Release descriptor memory */
 		 kfree(buf);
@@ -1636,7 +1636,7 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 	  	{
 	  	  if(nextbuf->virt_addr==bufid)
 	  	    {
-	  	      pexor_dbg(KERN_NOTICE "** pexor_next_dma is using buffer of id %p\n",bufid);
+	  	      pexor_dbg(KERN_NOTICE "** pexor_next_dma is using buffer of id 0x%lx\n",bufid);
 	  	      /* put desired buffer to the begin of the free list, this will be treated subsequently*/
 	  	      list_move(&(nextbuf->queue_list) , &(priv->free_buffers));
 	  	      break;
@@ -1646,7 +1646,7 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 	  {
 		  /* check again if we found the correct buffer in list...*/
 		  spin_unlock( &(priv->buffers_lock) );
-		  pexor_dbg(KERN_ERR "pexor_next_dma: buffer of desired id %p is not in free list! \n",bufid);
+		  pexor_dbg(KERN_ERR "pexor_next_dma: buffer of desired id 0x%lx is not in free list! \n",bufid);
           return -EINVAL;
 	  }
   }
@@ -1659,7 +1659,7 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 
   if(woffset >nextbuf->size - 8)
   {
-	  pexor_dbg(KERN_NOTICE "#### pexor_next_dma illlegal write offset 0x%x for target buffer size 0x%x\n",woffset,nextbuf->size);
+	  pexor_dbg(KERN_NOTICE "#### pexor_next_dma illlegal write offset 0x%x for target buffer size 0x%x\n",woffset, (unsigned) nextbuf->size);
 	  return -EINVAL;
   }
 
@@ -1759,7 +1759,7 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 	    	  if(dmasize-sglensum < sglen) sglen=dmasize-sglensum; /* cut dma length for last sg page*/
 
 	    	  /* DEBUG: pretend to do dma, but do not issue it*/
-	    	  pexor_dbg(KERN_ERR "#### pexor_next_dma would start dma from 0x%x to 0x%x of length 0x%x, offset 0x%x, complete chunk length: 0x%x\n",sgcursor, sg_dma_address(sgentry), sglen, woffset,sg_dma_len(sgentry));
+	    	  pexor_dbg(KERN_ERR "#### pexor_next_dma would start dma from 0x%x to 0x%x of length 0x%x, offset 0x%x, complete chunk length: 0x%x\n", (unsigned) sgcursor, (unsigned) sg_dma_address(sgentry), sglen, woffset,sg_dma_len(sgentry));
 
 	    	  /**** END DEBUG*/
 	    	  /* initiate dma to next sg part:*/
@@ -1899,7 +1899,7 @@ int pexor_start_dma(struct pexor_privdata *priv, dma_addr_t source, dma_addr_t d
 						  /* otherwise this can only happen in the last chunk of sg dma.
 						   * here it should be no deal to transfer a little bit more...*/
 			     	 }
-			  pexor_dbg(KERN_NOTICE "**changed source address to 0x%x, dest:0x%x, dmasize to 0x%x, burstsize:0x%x\n",source,dest,dmasize, burstsize)
+			  pexor_dbg(KERN_NOTICE "**changed source address to 0x%x, dest:0x%x, dmasize to 0x%x, burstsize:0x%x\n",(unsigned) source, (unsigned) dest,dmasize, burstsize)
 		  }
 
 
@@ -2309,6 +2309,9 @@ void cleanup_device(struct pexor_privdata* priv)
 static int probe(struct pci_dev *dev, const struct pci_device_id *id)
 {
   int err = 0, ix = 0;
+  u16 vid = 0, did = 0;
+  char devnameformat[64];
+  char devname[64];
 #ifdef PEXOR_ENABLE_IRQ
   unsigned char irpin = 0, irline = 0, irnumbercount = 0;
 #ifdef PEXOR_WITH_TRIXOR
@@ -2372,6 +2375,46 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
   memset(privdata, 0, sizeof(struct pexor_privdata));
   pci_set_drvdata(dev, privdata);
   privdata->pdev = dev;
+  
+   // here check which board we have: pexor, pexaria, kinpex
+    pci_read_config_word(dev, PCI_VENDOR_ID, &vid);
+    pexor_dbg(KERN_NOTICE "  vendor id:........0x%x \n", vid);
+    pci_read_config_word(dev, PCI_DEVICE_ID, &did);
+    pexor_dbg(KERN_NOTICE "  device id:........0x%x \n", did);
+    if(vid==PEXOR_VENDOR_ID && did==PEXOR_DEVICE_ID){
+      privdata->board_type=BOARDTYPE_PEXOR;
+      strncpy(devnameformat,PEXORNAMEFMT,32);
+      pexor_msg(KERN_NOTICE "  Found board type PEXOR, vendor id: 0x%x, device id:0x%x\n",vid,did);
+    }
+    else if(vid==PEXARIA_VENDOR_ID && did==PEXARIA_DEVICE_ID){
+      privdata->board_type=BOARDTYPE_PEXARIA;
+      strncpy(devnameformat,PEXARIANAMEFMT,32);
+      pexor_msg(KERN_NOTICE "  Found board type PEXARIA, vendor id: 0x%x, device id:0x%x\n",vid,did);
+
+    }
+    else if(vid==KINPEX_VENDOR_ID && did==KINPEX_DEVICE_ID){
+         privdata->board_type=BOARDTYPE_KINPEX;
+         strncpy(devnameformat,KINPEXNAMEFMT,32);
+         pexor_msg(KERN_NOTICE "  Found board type KINPEX, vendor id: 0x%x, device id:0x%x\n",vid,did);
+       }
+    else
+    {
+        privdata->board_type=BOARDTYPE_PEXOR;
+        strncpy(devnameformat,PEXORNAMEFMT,32);
+        pexor_msg(KERN_NOTICE "  Unknown board type, vendor id: 0x%x, device id:0x%x. Assuming pexor mode...\n",vid,did);
+    }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   privdata->magic = PEXOR_DEVICE_ID; /* for isr test TODO: what if multiple pexors share same irq?*/
 
   atomic_set(&(privdata->state), PEXOR_STATE_STOPPED);
@@ -2484,8 +2527,8 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
     {
       pexor_msg(KERN_ERR "PEXOR pci driver probe: Error %d getting the PCI interrupt line.\n",err);
     }
+  snprintf(privdata->irqname, 64, devnameformat, atomic_read(&pexor_numdevs));
 
-  snprintf(privdata->irqname, 64, PEXORNAMEFMT,atomic_read(&pexor_numdevs));
   /*  if(request_irq(dev->irq,  pexor_isr , IRQF_DISABLED | IRQF_SHARED, privdata->irqname, privdata))
    */
 
@@ -2557,16 +2600,18 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
   if (!IS_ERR(pexor_class))
     {
       /* driver init had successfully created class, now we create device:*/
+      
+      snprintf(devname,64, devnameformat, MINOR(pexor_devt) + privdata->devid);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,27)
-      privdata->class_dev = device_create(pexor_class, NULL, privdata->devno,
-					  privdata, PEXORNAMEFMT, MINOR(pexor_devt) + privdata->devid);
+	    privdata->class_dev = device_create(pexor_class, NULL, privdata->devno,
+                    privdata, devname);
 #else
-      privdata->class_dev = device_create(pexor_class, NULL, privdata->devno,
-					  PEXORNAMEFMT, MINOR(pexor_devt) + privdata->devid);
-#endif
+            privdata->class_dev = device_create(pexor_class, NULL,
+                    privdata->devno, devname);
+#endif	
+
       dev_set_drvdata(privdata->class_dev, privdata);
-      pexor_msg(KERN_NOTICE "Added PEXOR device: ");
-      pexor_msg(KERN_NOTICE PEXORNAMEFMT, MINOR(pexor_devt) + privdata->devid);
+      pexor_msg(KERN_NOTICE "Added PEXOR device: %s",devname);
 
 #ifdef PEXOR_SYSFS_ENABLE
 

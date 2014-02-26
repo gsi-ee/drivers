@@ -159,7 +159,7 @@ int pexor_ioctl_request_token(struct pexor_privdata* priv, unsigned long arg)
 #ifdef  PEXOR_DIRECT_DMA
     u32 woffset;
     unsigned long dmabufid=0;
-    struct pexor_dmabuf dmabuf;
+    /*struct pexor_dmabuf dmabuf;*/
     u32 channelmask=0;
 #endif
 
@@ -181,7 +181,7 @@ int pexor_ioctl_request_token(struct pexor_privdata* priv, unsigned long arg)
     dmabufid=descriptor.tkbuf.addr;
     woffset=descriptor.offset;
     channelmask= 1 << (chan+1);// select SFP for PCI Express DMA
-    pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_token uses dma buffer 0x%x with write offset  0x%x\n",dmabufid,woffset);
+    pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_token uses dma buffer 0x%lx with write offset  0x%x\n",dmabufid,woffset);
 
 
     atomic_set(&(priv->state),PEXOR_STATE_DMA_SINGLE);
@@ -219,12 +219,17 @@ int pexor_ioctl_wait_token(struct pexor_privdata* priv, unsigned long arg)
   u32 chan=0;
   u32 rstat=0, radd=0, rdat=0;
   /*u32 tkreply=0, tkhead=0, tkfoot =0;*/
-  u32 dmasize=0,oldsize=0;
-  u32 woffset;
-  unsigned long dmabufid=0;
+  u32 dmasize=0;
   struct pexor_dmabuf dmabuf;
   struct pexor_token_io descriptor;
+  
+  
+#ifndef  PEXOR_DIRECT_DMA
+  u32 woffset , oldsize=0;
+  unsigned long dmabufid=0;
   struct pexor_sfp* sfp=&(priv->pexor.sfp);
+#endif
+ 
   retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pexor_token_io));
   if(retval) return retval;
   chan  = (u32) descriptor.sfp;
@@ -284,7 +289,7 @@ int pexor_ioctl_wait_token(struct pexor_privdata* priv, unsigned long arg)
   /* now handle dma buffer id and user write offset:*/
   dmabufid=descriptor.tkbuf.addr;
   woffset=descriptor.offset;
-  pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_token uses dma buffer 0x%x with write offset  0x%x\n",dmabufid,woffset);
+  pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_token uses dma buffer 0x%lx with write offset  0x%x\n", dmabufid,woffset);
 
 
   atomic_set(&(priv->state),PEXOR_STATE_DMA_SINGLE);

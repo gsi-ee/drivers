@@ -13,12 +13,13 @@
 #include <linux/ioctl.h>
 
 
-#define PEXORVERSION  "1.02"
+#define PEXORVERSION  "1.4"
 
 /* identify name in dev : */
 #define PEXORNAME 		"pexor"
 #define PEXORNAMEFMT 	"pexor-%d"
-
+#define PEXARIANAMEFMT  "pexaria-%d"
+#define KINPEXNAMEFMT   "kinpex-%d"
 
 
 /* the ioctl stuff here:*/
