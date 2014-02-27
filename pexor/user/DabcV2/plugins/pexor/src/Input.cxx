@@ -21,6 +21,7 @@ pexorplugin::Input::Input(pexorplugin::Device* dev) :
    fPexorDevice(dev)
    // provide input and output buffers
 {
+  DOUT2("Created new pexorplugin::Input\n");
 
 }
 
@@ -53,14 +54,14 @@ unsigned pexorplugin::Input::Read_Size()
 {
 	//return dabc::di_Error;
      int res = fPexorDevice->GetReadLength();
-     DOUT3(("Read_Size()=%d\n",res));
+     DOUT3("Read_Size()=%d\n",res);
 
      return res>0 ? res : dabc::di_Error;
 }
 
 unsigned pexorplugin::Input::Read_Start(dabc::Buffer& buf)
 {
-	  DOUT3(("Read_Start() with bufsize %d\n",buf.GetTotalSize()));
+	  DOUT2("Read_Start() with bufsize %d\n",buf.GetTotalSize());
 
   if (fPexorDevice->IsTriggeredRead() || fPexorDevice->IsSynchronousRead())
     {
@@ -98,7 +99,7 @@ unsigned pexorplugin::Input::Read_Start(dabc::Buffer& buf)
 
 unsigned pexorplugin::Input::Read_Complete(dabc::Buffer& buf)
 {
-	DOUT3(("Read_Complete()\n"));
+	DOUT2("Read_Complete()\n");
   int res = 0;
   if (fPexorDevice->IsParallelRead())
     {
@@ -130,7 +131,7 @@ unsigned pexorplugin::Input::Read_Complete(dabc::Buffer& buf)
     }
   if ((unsigned) res == dabc::di_RepeatTimeOut)
    {
-     DOUT1(("pexorplugin::Input() returns with timeout\n"));
+     DOUT1("pexorplugin::Input() returns with timeout\n");
      return dabc::di_RepeatTimeOut;
    }
 

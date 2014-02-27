@@ -1670,17 +1670,27 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
   {
 	  /* here we have coherent kernel buffer case*/
 	  pexor_dbg(KERN_ERR "#### pexor_next_dma in kernel buffer mode\n");
-	  if((dmasize==0) || (dmasize > nextbuf->size - woffset))
-		{
-		  pexor_dbg(KERN_NOTICE "#### pexor_next_dma resetting old dma size %x to %lx\n",dmasize,nextbuf->size);
-		  dmasize=nextbuf->size - woffset;
-		}
-	  if(priv->pexor.ram_dma_cursor+dmasize > priv->pexor.ram_dma_base + PEXOR_RAMSIZE)
-		{
-		pexor_dbg(KERN_NOTICE "#### pexor_next_dma resetting old dma size %x...\n",dmasize);
-		dmasize=priv->pexor.ram_dma_base + PEXOR_RAMSIZE - priv->pexor.ram_dma_cursor;
-		}
-
+	  if((channelmask<1))
+	  {
+	    // regular dma from pexor memory: check boundaries
+	  
+	      if((dmasize==0)  || (dmasize > nextbuf->size - woffset))
+		    {
+		      pexor_dbg(KERN_NOTICE "#### pexor_next_dma resetting old dma size %x to %lx\n",dmasize,nextbuf->size);
+		      dmasize=nextbuf->size - woffset;
+		    }
+	      if(priv->pexor.ram_dma_cursor+dmasize > priv->pexor.ram_dma_base + PEXOR_RAMSIZE)
+		    {
+		    pexor_dbg(KERN_NOTICE "#### pexor_next_dma resetting old dma size %x...\n",dmasize);
+		    dmasize=priv->pexor.ram_dma_base + PEXOR_RAMSIZE - priv->pexor.ram_dma_cursor;
+		    }
+	  }
+	  else
+	  {
+	    // direct dma with gosip request, unknown size!
+	    // can not check anything here!
+	  
+	  }
 
 	   /* check if size is multiple of burstsize and correct:*/
 	  rest=dmasize % PEXOR_BURST;
@@ -1709,12 +1719,14 @@ int pexor_next_dma(struct pexor_privdata* priv, dma_addr_t source, u32 roffset, 
 	    if(pexor_start_dma(priv, 0, nextbuf->dma_addr + woffset, 0,0, channelmask)<0)
 	              return -EINVAL;
 	  }
-
+	  else
 #endif
 
 	  if(pexor_start_dma(priv, priv->pexor.ram_dma_cursor, nextbuf->dma_addr + woffset, dmasize,0,channelmask)<0)
 		  return -EINVAL;
 
+	  
+	  
   }
 
   else

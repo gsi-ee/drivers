@@ -4,16 +4,16 @@
 <Context host="localhost" name="Pexortest">
 		<Run>
 			<lib value="libDabcMbs.so" />
-			<lib value="x86_64/lib/libDabcPexor.so" />
+			<lib value="libDabcPexor.so" />
 			<!--  lib value="libpexor.so" /-->
 			<logfile value="ReadoutPexor.log" />
 			<!-- <runtime value="20"/> -->
-         <debuglevel value="0"/>
+			<debuglevel value="1"/>
 		</Run>
 
 		<MemoryPool name="Pool">
-			<BufferSize value="200000" />
-			<NumBuffers value="1000" />
+			<BufferSize value="400000" />
+			<NumBuffers value="100" />
 		</MemoryPool>
 
 
@@ -33,11 +33,11 @@
 			<PexorNumSlaves_1 value="0" />
 			<PexorNumSlaves_2 value="0" />
 			<PexorNumSlaves_3 value="0" />
-			<PexorDMALen value="65536" />
+			<PexorDMALen value="262144" />
 			<PexorDMABuffers value="30" />
 			<PexorDMAScatterGather value="false" />
 			<PexorDMAZeroCopy value="false" />
-			<ExploderSubmemSize value="2048" />
+			<ExploderSubmemSize value="24000" />
 			<PexorFormatMbs value="true" />
 			<PexorSyncReadout value="true" />
 			<PexorParallelReadout value="false" />
@@ -51,13 +51,13 @@
 		<Module name="PexorReadout" class="pexorplugin::ReadoutModule">
 			<!-- these parameters will force to create inputs/oputputs of module -->
 			<NumInputs value="1" />
-			<NumOutputs value="2" />
+			<NumOutputs value="1" />
 
 			<InputPort name="Input0" url="device://PexorDevice" />
 
 
-			<OutputPort name="Output0" url="mbs://Stream:6002" />
-			<OutputPort name="Output1" url="lmd://test.lmd?maxsize=30&log=2" />
+			<OutputPort name="Output0" url="mbs://Stream:6900" />
+			<OutputPort name="Output1" url="lmd://test.lmd?maxsize=1500&log=2" />
 			
 			<Ratemeter name="*" debug="true" interval="3" width="5"
 				prec="2" />

@@ -193,7 +193,7 @@ void pexorplugin::Device::MapDMAMemoryPool(dabc::MemoryPool* pool)
 
 	// then map dabc buffers to driver list:
 	 unsigned numbufs = pool ? pool->GetNumBuffers() : 0;
-	 DOUT3(("pexorplugin::Device::MapDMAMemoryPool transport map pools buffers blocks: %u", numblocks));
+	 DOUT3("pexorplugin::Device::MapDMAMemoryPool transport map pools buffers blocks: %u", numblocks);
 	 for (unsigned bufid=0; bufid<numbufs; bufid++)
 		 {
 	         //if (!pool->IsMemoryBlock(blockid)) continue;
@@ -240,12 +240,13 @@ void pexorplugin::Device::MapDMAMemoryPool(dabc::MemoryPool* pool)
 void pexorplugin::Device::InitTrixor()
 {
 //
-
-  fBoard->StopAcquisition();
+if(fTriggeredRead)
+  {
+     fBoard->StopAcquisition();
   // TODO: setters to disable irqs in non trigger mode
-  fBoard->SetTriggerTimes(fTrixConvTime,fTrixFClearTime);
-  fBoard->ResetTrigger();
-
+    fBoard->SetTriggerTimes(fTrixConvTime,fTrixFClearTime);
+    fBoard->ResetTrigger();
+  }
 }
 
 void pexorplugin::Device::StartTrigger()
@@ -266,38 +267,37 @@ void pexorplugin::Device::StopTrigger()
 
 void pexorplugin::Device::ObjectCleanup()
 {
-   DOUT1(("_______pexorplugin::Device::ObjectCleanup..."));
+   DOUT1("_______pexorplugin::Device::ObjectCleanup...");
    //if(fInitDone) fBoard->Reset();
    dabc::Device::ObjectCleanup();
 }
 
 int pexorplugin::Device::ExecuteCommand(dabc::Command cmd)
 {
-	if(!fInitDone) return dabc::cmd_false;
-   int cmd_res = dabc::cmd_true;
-//   if (cmd->IsName(DABC_PCI_COMMAND_SET_READ_REGION))
+//   if (cmd->IsName(DABC_PCI_COMMAND_SET_READ_REGION) && fInitDone)
 //      {
 //          unsigned int bar=cmd->GetInt(DABC_PCI_COMPAR_BAR,1);
 //          unsigned int address=cmd->GetInt(DABC_PCI_COMPAR_ADDRESS, (0x8000 >> 2));
 //          unsigned int length=cmd->GetInt(DABC_PCI_COMPAR_SIZE, 1024);
 //          SetReadBuffer(bar, address, length);
 //          DOUT1(("Command %s  sets PCI READ region to bar:%d, address:%p, length:%d",DABC_PCI_COMMAND_SET_READ_REGION,bar,address,length));
+//          return cmd_true;
 //      }
-//    else if (cmd->IsName(DABC_PCI_COMMAND_SET_WRITE_REGION))
+//    else if (cmd->IsName(DABC_PCI_COMMAND_SET_WRITE_REGION) && fInitDone)
 //      {
 //          unsigned int bar=cmd->GetInt(DABC_PCI_COMPAR_BAR,1);
 //          unsigned int address=cmd->GetInt(DABC_PCI_COMPAR_ADDRESS, (0x8000 >> 2));
 //          unsigned int length=cmd->GetInt(DABC_PCI_COMPAR_SIZE, 1024);
 //          SetWriteBuffer(bar, address, length);
 //          DOUT1(("Command %s  sets PCI WRITE region to bar:%d, address:%p, length:%d",DABC_PCI_COMMAND_SET_READ_REGION,bar,address,length));
+//          return cmd_true;
 //     }
 //    else // TODO: reset board buffers here!
 
 
    DOUT1("pexorplugin::Device::ExecuteCommand-  %s", cmd.GetName());
-     cmd_res = dabc::Device::ExecuteCommand(cmd);
-return cmd_res;
 
+   return dabc::Device::ExecuteCommand(cmd);
 }
 
 dabc::Transport*  pexorplugin::Device::CreateTransport(dabc::Command cmd, const dabc::Reference& port)
@@ -307,45 +307,12 @@ dabc::Transport*  pexorplugin::Device::CreateTransport(dabc::Command cmd, const 
    //   dabc::Url url(typ);
    //
    dabc::PortRef portref = port;
-   //
-   //   if (portref.IsInput() && (url.GetProtocol()=="pexor") && !url.GetHostName().empty()) {
-   //
-   //// TODO: evaluate parameters from connection url here
-   //     std::string devname = url.GetOptionStr("device", "pexor0")
-   //
-   //
-   //
-   //
-   ////      int nport = url.GetPort();
-   ////      int rcvbuflen = url.GetOptionInt("udpbuf", 2000000);
-   ////      int mtu = url.GetOptionInt("mtu", 64512);
-   ////      double flush = url.GetOptionDouble(dabc::xml_flush, 1.);
-   ////      bool observer = url.GetOptionBool("observer", false);
-   ////
-   ////      if (nport>0) {
-   ////
-   ////         int fd = DataSocketAddon::OpenUdp(nport, rcvbuflen);
-   ////
-   ////         if (fd>0) {
-   ////            DataSocketAddon* addon = new DataSocketAddon(fd, nport, mtu, flush);
-   ////
-   ////            return new hadaq::DataTransport(cmd, portref, addon, observer);
-   ////         }
-   ////      }
-   //      return new pexorplugin::Transport(cmd, portref);
-   //
-   //   }
-   //
-   //   return dabc::Factory::CreateTransport(port, typ, cmd);
-   //}
-
-
-
    pexorplugin::Input* dinput= new pexorplugin::Input(this);
-   pexorplugin::Transport* transport = new pexorplugin::Transport(this, dinput, port, cmd);
+
+   DOUT0("~~~~~~~~~~~~~~~~~ pexorplugin::Device::CreateTransport port %s isinp %s", portref.ItemName().c_str(), DBOOL(portref.IsInput()));
+   pexorplugin::Transport* transport = new pexorplugin::Transport(this, dinput, cmd, portref);
    DOUT1("pexorplugin::Device::CreateTransport creates new transport instance %p", transport);
    DOUT3(("Device thread %p\n", thread().GetObject()));
-
    return transport;
 }
 
@@ -353,7 +320,7 @@ dabc::Transport*  pexorplugin::Device::CreateTransport(dabc::Command cmd, const 
 int  pexorplugin::Device::RequestToken(dabc::Buffer& buf, bool synchronous)
 {
 	if(!fInitDone) return dabc::di_Error;
-	DOUT3(("RequestToken is called"));
+	DOUT3("RequestToken is called");
 
 	if(!NextSFP())
 		{
@@ -382,7 +349,7 @@ int  pexorplugin::Device::RequestToken(dabc::Buffer& buf, bool synchronous)
 		if(fMbsFormat)
 			headeroffset=sizeof(mbs::EventHeader) + sizeof(mbs::SubeventHeader) + sizeof(int);
 
-		DOUT3(("Device RequestToken uses headeroffset :%x, mbs event:0x%x, subevent:0x%x",headeroffset, sizeof(mbs::EventHeader), sizeof(mbs::SubeventHeader)));
+		DOUT3("Device RequestToken uses headeroffset :%x, mbs event:0x%x, subevent:0x%x",headeroffset, sizeof(mbs::EventHeader), sizeof(mbs::SubeventHeader));
 		//
 		// make buffer available for driver DMA:
 		pexor::DMA_Buffer wrapper(bptr,buf.SegmentSize());
@@ -461,7 +428,7 @@ int pexorplugin::Device::RequestAllTokens(dabc::Buffer& buf, bool synchronous)
                     tokbuf[fCurrentSFP]=0;
                     if(!fEnabledSFP[fCurrentSFP]) continue;
                     tokbuf[fCurrentSFP]= fBoard->RequestToken(fCurrentSFP, fDoubleBufID[fCurrentSFP], synchronous); // synchronous dma mode here
-                    DOUT3(("pexorplugin::Device::RequestAllTokens gets dma buffer 0x%x for sfp:%d ", tokbuf[fCurrentSFP], fCurrentSFP));
+                    DOUT3("pexorplugin::Device::RequestAllTokens gets dma buffer 0x%x for sfp:%d ", tokbuf[fCurrentSFP], fCurrentSFP);
 
                     if((long int) tokbuf[fCurrentSFP]==-1) // TODO: handle error situations by exceptions later!
                             {
@@ -497,13 +464,13 @@ int pexorplugin::Device::ReceiveAllTokenBuffer(dabc::Buffer& buf)
               return dabc::di_SkipBuffer;
             }
           oldbuflen = tokbuf[sfp]->UsedSize();
-          DOUT3(("pexorplugin::Device::ReceiveAllTokenBuffer got token buffer of len %d\n", oldbuflen));
+          DOUT3("pexorplugin::Device::ReceiveAllTokenBuffer got token buffer of len %d\n", oldbuflen);
         }
       else
         {
           tokbuf[sfp] = fBoard->Take_DMA_Buffer(); // get empty buffer to emulate sync
           tokbuf[sfp]->SetUsedSize(oldbuflen); // set to length of real dma buffer
-          DOUT3(("pexorplugin::Device::ReceiveAllTokenBuffer set dummy buffer len to %d\n", oldbuflen));
+          DOUT3("pexorplugin::Device::ReceiveAllTokenBuffer set dummy buffer len to %d\n", oldbuflen);
         }
     }
   if(!fSkipRequest)
@@ -546,7 +513,7 @@ int  pexorplugin::Device::CopyOutputBuffer(pexor::DMA_Buffer* tokbuf, dabc::Buff
       evhdr->SetSubEventsSize(filled_size);
       buf.SetTypeId(mbs::mbt_MbsEvents);
     }
-   DOUT3(("Token buffer size:%d, used size%d, target buffer size:%d\n", tokbuf->Size(),tokbuf->UsedSize(), buf.GetTotalSize()));
+   DOUT2("Token buffer size:%d, used size%d, target buffer size:%d\n", tokbuf->Size(),tokbuf->UsedSize(), buf.GetTotalSize());
 
 
 
@@ -586,7 +553,7 @@ int  pexorplugin::Device::CombineTokenBuffers(pexor::DMA_Buffer** src, dabc::Buf
 {
 
   dabc::Pointer ptr(buf);
-  DOUT3(("pexorplugin::Device::CombineTokenBuffers initial pointer is 0x%x", ptr.ptr()));
+  DOUT3("pexorplugin::Device::CombineTokenBuffers initial pointer is 0x%x", ptr.ptr());
   unsigned int filled_size = 0, used_size = 0;
   mbs::EventHeader* evhdr=0;
   if (fMbsFormat)
@@ -596,7 +563,7 @@ int  pexorplugin::Device::CombineTokenBuffers(pexor::DMA_Buffer** src, dabc::Buf
       ptr.shift(sizeof(mbs::EventHeader));
       used_size += sizeof(mbs::EventHeader);
     }
-  DOUT3(("pexorplugin::Device::CombineTokenBuffers output pointer after mbs header is 0x%x", ptr.ptr()));
+  DOUT3("pexorplugin::Device::CombineTokenBuffers output pointer after mbs header is 0x%x", ptr.ptr());
   for (int sfp = 0; sfp < PEXORPLUGIN_NUMSFP; ++sfp)
         {
           if (src[sfp] == 0)
@@ -606,7 +573,7 @@ int  pexorplugin::Device::CombineTokenBuffers(pexor::DMA_Buffer** src, dabc::Buf
             continue; // TODO: some error handling here
           used_size += increment;
           filled_size += increment;
-          DOUT3(("pexorplugin::Device::CombineTokenBuffers after sfp %d : used size:%d filled size:%d", (int) sfp, used_size, filled_size));
+          DOUT3("pexorplugin::Device::CombineTokenBuffers after sfp %d : used size:%d filled size:%d", (int) sfp, used_size, filled_size);
         }
   if (fMbsFormat)
       {
@@ -625,7 +592,7 @@ int  pexorplugin::Device::CombineTokenBuffers(pexor::DMA_Buffer** src, dabc::Buf
 int  pexorplugin::Device::CopySubevent(pexor::DMA_Buffer* tokbuf, dabc::Pointer& cursor, char sfpnum)
 {
 	unsigned int filled_size=0;
-	DOUT3(("pexorplugin::Device::CopySubevent has dma buffer 0x%x for sfp %d, output cursor pointer :0x%x", tokbuf, (int) sfpnum, cursor.ptr()));
+	DOUT2("pexorplugin::Device::CopySubevent has dma buffer 0x%x for sfp %d, output cursor pointer :0x%x", tokbuf, (int) sfpnum, cursor.ptr());
 	if(fMbsFormat)
           {
                   mbs::SubeventHeader* subhdr = (mbs::SubeventHeader*) cursor();
@@ -642,11 +609,11 @@ int  pexorplugin::Device::CopySubevent(pexor::DMA_Buffer* tokbuf, dabc::Pointer&
           }
 	cursor.copyfrom(tokbuf->Data(),tokbuf->UsedSize());
 	cursor.shift(tokbuf->UsedSize()); // NOTE: you have to shift current pointer yourself after copyfrom!!
-	DOUT3(("pexorplugin::Device::CopySubevent output cursor pointer after copyvfrom  and shift is:0x%x",cursor.ptr()));
+	DOUT3("pexorplugin::Device::CopySubevent output cursor pointer after copyvfrom  and shift is:0x%x",cursor.ptr());
 	filled_size+=tokbuf->UsedSize();
 	fBoard->Free_DMA_Buffer(tokbuf);
-	DOUT3(("---------- token used size :%d", tokbuf->UsedSize()));
-	DOUT3(("---------- filledsize :%d", filled_size));
+	DOUT2("---------- token used size :%d", tokbuf->UsedSize());
+	DOUT2("---------- filledsize :%d", filled_size);
 
 	return filled_size;
 }

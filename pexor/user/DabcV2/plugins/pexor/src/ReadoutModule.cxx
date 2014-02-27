@@ -59,15 +59,9 @@ pexorplugin::ReadoutModule::ReadoutModule(const std::string name, dabc::Command 
 
 
 
-
-
-
-
-
-
 void pexorplugin::ReadoutModule::BeforeModuleStart()
 {
-    DOUT1(("\n\npexorplugin::ReadoutModule::BeforeModuleStart"));
+    DOUT1("pexorplugin::ReadoutModule::BeforeModuleStart");
 
 }
 
@@ -75,7 +69,7 @@ void pexorplugin::ReadoutModule::BeforeModuleStart()
 void pexorplugin::ReadoutModule::AfterModuleStop()
 {
    //DOUT1(("\npexorplugin::ReadoutModule finished. Rate %5.1f Mb/s numoper:%7ld time:%5.1f s\n\n", Par(fDataRateName).AsDouble(), Par(fDataRateName).GetNumOper(), fRecvRate.GetTotalTime()));
-	DOUT1("\npexorplugin::ReadoutModule finished. Rate %5.1f Mb/s",Par(fDataRateName).Value().AsDouble());
+   DOUT1("pexorplugin::ReadoutModule finished. Rate %5.1f Mb/s",Par(fDataRateName).Value().AsDouble());
 
 }
 
@@ -95,7 +89,7 @@ void pexorplugin::ReadoutModule::ProcessOutputEvent(unsigned port)
 void pexorplugin::ReadoutModule::DoPexorReadout()
 {
 	dabc::Buffer ref;
-	DOUT3(("pexorplugin::DoPexorReadout\n"));
+	DOUT3("pexorplugin::DoPexorReadout\n");
 	try {
 		while (CanRecv()) {
 			if (!CanSendToAllOutputs()) {

@@ -42,7 +42,7 @@ dabc::Module* pexorplugin::Factory::CreateModule(const std::string& classname, c
        {
            dabc::Module* mod= new pexorplugin::ReadoutModule(modulename, cmd);
            unsigned int boardnum=0; //cmd->GetInt(ABB_PAR_BOARDNUM, 0);
-           DOUT1("pexorplugin::Factory::CreateModule - Created PEXOR Readout module %s for /dev/pexor%d", modulename.c_str(), boardnum);
+           DOUT1("pexorplugin::Factory::CreateModule - Created PEXOR Readout module %s for /dev/pexor-%d", modulename.c_str(), boardnum);
            return mod;
          }
     return dabc::Factory::CreateModule(classname, modulename, cmd);

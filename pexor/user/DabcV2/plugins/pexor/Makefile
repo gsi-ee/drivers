@@ -42,6 +42,12 @@ $(PEXOR_O) $(PEXOR_D) : INCLUDES += $(PEXORSYS)/user/include  .
 $(PEXOR_LIB):  $(PEXOR_O) 
 	@$(MakeLib) $(PEXOR_LIBNAME) "$(PEXOR_O)" $(TGTDLLPATH) "-L$(PEXORSYS)/user/lib -lpexor "
 
+
+
+install: $(PEXOR_LIB) 
+	@cp -f $(TGTDLLPATH)/$(PEXOR_LIBNAME).$(DllSuf) $(PEXORSYS)/user/lib/
+
+
 ifdef EXTRA
 
 libs:: $(EXTRA_LIB)

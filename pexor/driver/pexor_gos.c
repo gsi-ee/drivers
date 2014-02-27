@@ -311,7 +311,15 @@ int pexor_ioctl_wait_token(struct pexor_privdata* priv, unsigned long arg)
       return retval;
     }
   descriptor.tkbuf.addr=dmabuf.virt_addr;
+ 
+#ifdef  PEXOR_DIRECT_DMA 
+  /* find out real package length after dma has completed:*/
+  descriptor.tkbuf.size =  ioread32(priv->pexor.dma_len);
+  mb();ndelay(20);
+  pexor_dbg(KERN_NOTICE "pexor_ioctl_wait_token finds token size %x bytes after direct dma\n", descriptor.tkbuf.size);
+#else
   descriptor.tkbuf.size=dmasize; /* account used payload size disregarding offset.*/
+#endif
   retval=copy_to_user((void __user *) arg, &descriptor, sizeof(struct pexor_token_io));
 
   return retval;
