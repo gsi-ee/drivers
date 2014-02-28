@@ -34,7 +34,7 @@
 			<PexorNumSlaves_2 value="0" />
 			<PexorNumSlaves_3 value="0" />
 			<PexorDMALen value="262144" />
-			<PexorDMABuffers value="30" />
+			<PexorDMABuffers value="50" />
 			<PexorDMAScatterGather value="false" />
 			<PexorDMAZeroCopy value="false" />
 			<ExploderSubmemSize value="24000" />
@@ -57,7 +57,7 @@
 
 
 			<OutputPort name="Output0" url="mbs://Stream:6900" />
-			<OutputPort name="Output1" url="lmd://test.lmd?maxsize=1500&log=2" />
+			<OutputPort name="Output1" url="lmd:///data/pexortest.lmd?maxsize=1500&log=2" />
 			
 			<Ratemeter name="*" debug="true" interval="3" width="5"
 				prec="2" />

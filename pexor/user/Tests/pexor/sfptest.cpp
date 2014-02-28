@@ -37,18 +37,20 @@
 
 #define NUMARGS 6
 
-#define TESTBUFSIZE 16384
+#define TESTBUFSIZE 0x10000
 #define DMABUFNUM 30
 
 
-#define NUMSLAVES 4
+#define NUMSLAVES 1
 #define EXPLODERBUF0 0x000000
 #define EXPLODERBUF1 0x100000
-#define EXPLODERLEN  128 //0x384
+#define EXPLODERLEN  6100 
+//7200
+//0x384
 
 //#define FLOWSIZE 500
 
-#define WITHTRIGGER 1
+//#define WITHTRIGGER 1
 #define MAXTRIGGERS 100
 
 /* will set debug and check Debugmode on
@@ -159,7 +161,8 @@ int main(int argc, char **argv)
     printf(" - set address:0x%x\n",Address);
     printf(" - set data value:0x%x\n",Data);
 
-	//if(Debugmode == 2 ) pexor::Logger::Instance()->SetMessageLevel(pexor::MSG_DEBUG);
+	//if(Debugmode == 2 ) 
+	pexor::Logger::Instance()->SetMessageLevel(pexor::MSG_DEBUG);
 
 	pexor::Benchmark bench;
 	bench.TimerInit();
