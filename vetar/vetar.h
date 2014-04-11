@@ -30,13 +30,16 @@
 
 
 //#define DEBUG 1
+
+#define VETAR_DUMP_REGISTERS 1
+
 #define VETAR_SYSFS_ENABLE 1
-//#define VETAR_ENABLE_IRQ 1
+#define VETAR_ENABLE_IRQ 1
 
 //#define VETAR_TRIGMOD_TEST 1
 //#define VETAR_CTRL_TEST 1
 #define VETAR_MAP_REGISTERS 1
-//#define VETAR_MAP_CONTROLSPACE 1
+#define VETAR_MAP_CONTROLSPACE 1
 
 //#define VETAR_IRQ_VECTOR  0x50
 //#define VETAR_IRQ_MASK    ((1 << 3) | (1 << 4)) /* interrupt happens at level 3 or 4 */
@@ -53,6 +56,25 @@
 #define ERROR_FLAG    0
 #define SDWB_ADDRESS  8
 #define VME_A24_USER_MBLT 0x38
+
+
+/* VME WB Interdace*/
+#define CTRL 16
+#define MASTER_CTRL 24
+#define MASTER_ADD 32
+#define MASTER_DATA 40
+#define EMUL_DAT_WD 48
+#define WINDOW_OFFSET_LOW  56
+#define WINDOW_OFFSET_HIGH 64
+
+#define WBM_ADD_MASK 0xFFFFFFFC
+
+#define WINDOW_HIGH 0xFFFF0000UL
+#define WINDOW_LOW  0x0000FFFCUL
+
+
+
+
 
 #define VETARVERSION     "1.0"
 #define VETARNAME       "vetar"
@@ -88,6 +110,9 @@
 #define WB64        0
 #define RESET_CORE  0x80
 #define ENABLE_CORE 0x10
+
+
+
 
 
 
@@ -155,14 +180,16 @@ struct vetar_privdata {
     struct mutex    wb_mutex; /* wishbone mutex*/
     unsigned int wb_low_addr; /* wishbone access parameters*/
     unsigned int wb_width;    /* wishbone access parameters*/
-    unsigned int wb_shift;    /* wishbone access parameters*/
+    unsigned int wb_shift;    /* wishbone access parameters */
+    unsigned int wb_window_offset; /* wishbone access parameters */
 
     struct semaphore ramsem;      /* protects read/write access to mapped ram */
     uint32_t        configbase; /* base adress in vme address space*/
 	void __iomem *cr_csr;    /* kernel mapped address of board configuration/status space*/
     phys_addr_t cr_csr_phys; /* physical bus address of board configuration/status space*/
     unsigned long configlen; /* contains config space length to be mapped */
-    uint32_t		vmebase; /* base adress in vme address space*/
+    uint32_t		vmebase; /* base adress in vme address space for wishbone memory*/
+    uint32_t       ctrl_vmebase; /* base adress in vme address space for control memory*/
 	void __iomem *registers; /* kernel mapped address of board register space*/
 	unsigned long reglen; /* contains register length to be mapped */
 	phys_addr_t regs_phys; /* physical bus address of board register space*/
@@ -225,7 +252,6 @@ ssize_t vetar_sysfs_codeversion_show(struct device *dev,
 
 #ifdef VETAR_ENABLE_IRQ
  static void vetar_irqhandler(int vec, int prio, void *arg);
- static int vetar_get_irqcount(struct vetar_privdata *dev, int clear);
 #endif
 
 #ifdef VETAR_TRIGMOD_TEST
