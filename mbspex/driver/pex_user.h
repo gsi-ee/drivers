@@ -13,6 +13,10 @@
 #include <linux/ioctl.h>
 
 
+#define PEXNAME       "mbspex"
+#define PEXORNAMEFMT    "pexor%d"
+#define PEXARIANAMEFMT  "pexaria%d"
+#define KINPEXNAMEFMT   "kinpex%d"
 
 
 
@@ -67,6 +71,9 @@ struct pex_token_io {
 	unsigned long bufid;	/* switch double buffer id on slave (1 or 0)*/
 	unsigned long dmatarget; /* target address (physical) for dma transfer*/
 	unsigned long dmasize;   /* length of transferred data (bytes) after DMA*/
+	unsigned long check_comm;   /* optional check returned command*/
+	unsigned long check_token;  /* optional check returned token status bits*/
+	unsigned long check_numslaves; /* optional check returned number of slaves*/
 };
 
 

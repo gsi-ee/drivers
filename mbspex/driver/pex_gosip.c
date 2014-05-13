@@ -102,7 +102,7 @@ int pex_ioctl_read_bus(struct pex_privdata* priv, unsigned long arg)
 int pex_ioctl_request_token(struct pex_privdata* priv, unsigned long arg)
 {
   int retval=0;
-  u32 comm=0, chan=0, bufid=0;
+  u32 comm=0, chan=0, chanpattern, bufid=0;
   struct pex_token_io descriptor;
 
 #ifdef  PEX_DIRECT_DMA
@@ -114,8 +114,10 @@ int pex_ioctl_request_token(struct pex_privdata* priv, unsigned long arg)
 
   retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pex_token_io));
   if(retval) return retval;
-  chan  = (u32) descriptor.sfp;
+  chan  = ((u32) descriptor.sfp) & 0xFFFF;
+  chanpattern  = (((u32) descriptor.sfp) & 0xFFFF0000) >> 16; /* optionally use sfp pattern in upper bytes*/
   bufid = (u32) descriptor.bufid;
+
 
   /* send token request
      pex_msg(KERN_NOTICE "** pex_ioctl_request_token from_sfp 0x%x, bufid 0x%x\n",chan,bufid);*/
@@ -137,8 +139,17 @@ int pex_ioctl_request_token(struct pex_privdata* priv, unsigned long arg)
 
 
 #endif
-  comm = PEX_SFP_PT_TK_R_REQ | (0x1 << (16+ chan) );
-  pex_sfp_clear_channel(priv,chan);
+  if(chanpattern!=0)
+  {
+    comm = PEX_SFP_PT_TK_R_REQ | (chanpattern << 16); /* token broadcast mode*/
+    pex_sfp_clear_channelpattern(priv,chanpattern);
+  }
+  else
+  {
+    comm = PEX_SFP_PT_TK_R_REQ | (0x1 << (16+ chan) ); /* single sfp token mode*/
+     pex_sfp_clear_channel(priv,chan);
+  }
+
   pex_sfp_request(priv, comm, bufid, 0); /* note: slave is not specified; the chain of all slaves will send everything to receive buffer*/
   if(descriptor.sync != 0)
     {
@@ -166,7 +177,7 @@ int pex_ioctl_wait_token(struct pex_privdata* priv, unsigned long arg)
   struct pex_token_io descriptor;
   retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pex_token_io));
   if(retval) return retval;
-  chan  = (u32) descriptor.sfp;
+  chan  = ((u32) descriptor.sfp) & 0xFFFF;
 
   /* send token request
      pex_msg(KERN_NOTICE "** pex_ioctl_request_token from_sfp 0x%x, bufid 0x%x\n",chan,bufid);*/
@@ -179,7 +190,9 @@ int pex_ioctl_wait_token(struct pex_privdata* priv, unsigned long arg)
       pex_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
 	return -EIO;
     }
-
+  descriptor.check_comm=rstat;
+  descriptor.check_token=radd;
+  descriptor.check_numslaves=rdat;
 
 
 
@@ -442,7 +455,48 @@ int pex_sfp_clear_channel( struct pex_privdata* privdata, int ch )
 
 
 
+int pex_sfp_clear_channelpattern( struct pex_privdata* privdata, int pat )
+{
+  u32 repstatus=0, loopcount=0, clrval, mask;
+  struct pex_sfp* sfp=&(privdata->regs.sfp);
+  pex_dbg(KERN_NOTICE "**pex_sfp_clear_channel pattern 0x%x ***\n",pat);
+  clrval=pat;
+  mask=(pat<<8)|(pat<<4)|pat;
+  do
+    {
+      if(loopcount++ > 1000000)
+    {
+      pex_msg(KERN_WARNING "**pex_sfp_clear_channelpattern 0x%x tried %d x 20 ns without success, abort\n",pat,loopcount);
+      print_register(" ... reply status after FAILED pex_sfp_clear_channelpattern:", sfp->rep_stat_clr);
+      return -EIO;
+    }
+      iowrite32(clrval, sfp->rep_stat_clr);
+      pex_sfp_delay();
+      repstatus= ioread32(sfp->rep_stat_clr) & mask;
+      pex_sfp_delay();
 
+    }
+  while( (repstatus!=0x0) );
+
+  pex_dbg(KERN_INFO "**after pex_sfp_clear_channelpattern 0x%x : loopcount:%d \n",pat,loopcount);
+  /*print_register(" ... reply status:", sfp->rep_stat_clr); */
+  return 0;
+}
+
+//int PEXOR_RX_Clear_Pattern( s_pexor *ps_pexor, long l_ptn ){
+//  long mask;
+//  mask=(l_ptn<<8)|(l_ptn<<4)|l_ptn;
+//  //  while( (*ps_pexor->rep_stat&0xcccc)!=0x0 ){
+//  while( ((*ps_pexor->rep_stat)&mask)!=0x0 ){
+//    *ps_pexor->rep_clr=l_ptn;
+//    //    sleep(1);
+//#ifdef DEBUG
+//    //    printf ("PEXOR_RX_Clear: rep_stat: 0x%x 0x%x \n",ps_pexor->rep_stat, *ps_pexor->rep_stat );
+//#endif
+//  }
+//  return(1);
+//}
+//
 
 
 

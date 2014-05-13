@@ -58,10 +58,6 @@
 
 
 #define PEXVERSION     "1.4"
-#define PEXNAME       "mbspex"
-#define PEXORNAMEFMT    "pexor%d"
-#define PEXARIANAMEFMT  "pexaria%d"
-#define KINPEXNAMEFMT   "kinpex%d"
 
 
 #define PEX_DEBUGPRINT 1

@@ -190,6 +190,9 @@ int pex_sfp_clear_all(struct pex_privdata *privdata);
  * return value specifies error if not 0 */
 int pex_sfp_clear_channel(struct pex_privdata *privdata, int ch);
 
+/* clear sfp channel pattern pat before broadcast and wait for success
+ * return value specifies error if not 0 */
+int pex_sfp_clear_channelpattern(struct pex_privdata *privdata, int pat);
 
 
 /* Initiate reading a token buffer from sfp front end hardware.
