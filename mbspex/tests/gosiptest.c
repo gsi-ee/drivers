@@ -9,7 +9,7 @@
 #include <string.h>
 
 
-#define NUMARGS 2
+#define NUMARGS 3
 
 /* logical numer of pexor device*/
 #define PEXDEVNO 0
@@ -73,10 +73,10 @@ static   int    sfp_slaves[MAX_SFP] = NR_SLAVES;
 void init_buffers(int bytesize)
 {
     int i=0;
-    printf("  Alloc test buffer...\n");
+    printf("  Alloc test buffers for %d (0x%x)bytes\n",bytesize,bytesize);
     wbuffer = (int*) malloc(bytesize);
     rbuffer = (int*) malloc(bytesize);
-    printf("  Filling testbuffer...\n");
+    printf("  Filling testbuffers...\n");
     srand(time(0));
     for(i=0; i<bytesize/sizeof(int);++i)
     {
@@ -143,21 +143,23 @@ return ercnt;
 }
 
 
-int gosiptest_check_unpack(int* dmabuf, int* testbuf, int intlen, int numsubmem, int debugmode)
+int gosiptest_check_unpack(int* dmabuf, int* testbuf, int intlen, int numsubmem)
 {
   int isheaderread=0,isdsizeread=0;
   int datasize=0,t,j=0;
   int hlength=0, dlength=0,trigid=0, modid=0,memid=0;
   int submemcount=0,slavecount=0;
   int cursor,currentdata;
+  int buflen=Submembytes/sizeof(int);
 
+  printf("Check unpack of %d submems (%d integers each) contained in %d integer field \n",numsubmem, buflen, intlen);
   for(cursor=0; cursor<intlen;++cursor)
        {
 
                currentdata=dmabuf[cursor];
                if(!isheaderread)
                    {
-                   printf("Token header full: 0x%x \n",currentdata);
+                   printf("\nToken header full: 0x%x \n",currentdata);
                        // get next submemory header:
                        hlength=((currentdata )  & 0xf0) >> 4; // just for check should be 3(byte)
                        dlength=((currentdata )  & 0x0f); // should be 4 (byte)
@@ -199,16 +201,17 @@ int gosiptest_check_unpack(int* dmabuf, int* testbuf, int intlen, int numsubmem,
                                    continue;
                                }
                                rbuffer[j++]=currentdata;
-                               //printf("j=%x,data=:0x%x\t",j,currentdata);
+                               if(Debugmode>1)
+                                   printf("j=%x,data=:0x%x\t",j,currentdata);
                            }
                        else
                            {
-                           if(gosiptest_compare_buffers(wbuffer, rbuffer, intlen, Debugmode)==0)
+                           if(gosiptest_compare_buffers(wbuffer, rbuffer, buflen, Debugmode)==0)
                                printf("Mod %x Submem %x - No errors!\n",modid,memid);
 
 
                            // reset bufs and counters:
-                           for (t=0; t < intlen; ++t)
+                           for (t=0; t < buflen; ++t)
                                 {
                                    rbuffer[t]=0;
                                 }
@@ -226,6 +229,9 @@ int gosiptest_check_unpack(int* dmabuf, int* testbuf, int intlen, int numsubmem,
                            }
                        }
        } // for cursor
+  // after final submem need to check this outside loop:
+  if(gosiptest_compare_buffers(wbuffer, rbuffer, buflen, Debugmode)==0)
+                                printf("Mod %x Submem %x - No errors!\n",modid,memid);
 return 0;
 }
 
@@ -254,10 +260,10 @@ int main (int argc, char *argv[])
 
   unsigned long base_dbuf0=0, base_dbuf1=0;
   unsigned long num_submem=0, submem_offset=0;
-  unsigned long  submembytes=0, dmasize=0;
+  unsigned long dmasize=0;
   long check_comm=0, check_token=0, check_slaves=0;
   double cycledelta, clockdelta=0;
-  int totalsize;
+  double totalsize;
   mode_t       mode;
   long         l_bar0; 
   long         l_trix_base;
@@ -305,6 +311,8 @@ int main (int argc, char *argv[])
         Debugmode=atoi(argv[2]);
       }
 
+ MbsPextest_TimerInit();
+
 /* OPEN DEVICE handle*/
 fd_pex=mbspex_open(PEXDEVNO);
 if (fd_pex < 0) {
@@ -327,6 +335,7 @@ printf ("Test to map pipe at 0x%x, size: 0x%x, ...\n", off, len);
     printf ("size:                         0x%x \n", len);
     printf ("first mapped virtual address: 0x%x \n", pa);
     printf ("last  mapped virtual address: 0x%x \n", pe);
+    pdat= (int*) pa;
   }
 /* allocate and fill test buffer with random values*/
 
@@ -371,7 +380,7 @@ printf ("Test to map pipe at 0x%x, size: 0x%x, ...\n", off, len);
             else
                 printf("\n\nError %d in mbspex_slave_rd: slave %x addr %x (submem offset)\n", rev, sl, REG_SUBMEM_OFF);
 
-            rev=mbspex_slave_wr  (fd_pex, sfp_channel, sl, REG_DATA_LEN, submembytes);
+            rev=mbspex_slave_wr  (fd_pex, sfp_channel, sl, REG_DATA_LEN, Submembytes);
             if(rev)
                       {
                           printf("\n\nError %d in mbspex_slave_wr setting datadepth\n",rev);
@@ -407,7 +416,7 @@ printf ("Test to map pipe at 0x%x, size: 0x%x, ...\n", off, len);
                    } // submem
                   cycledelta=MbsPextest_TimerDelta();
                   clockdelta=MbsPextest_ClockDelta();
-                  int totalsize=submembytes*num_submem*2;
+                  totalsize=Submembytes*num_submem*2;
                   MbsPextest_ShowRate("Clock:  SFP write submems", totalsize, clockdelta); // bytes
                   MbsPextest_ShowRate("Cycles: SFP write submems", totalsize , cycledelta);
                   printf("\nSlave %d has %d write errors\n",sl,werrors);
@@ -458,15 +467,15 @@ printf ("Test to map pipe at 0x%x, size: 0x%x, ...\n", off, len);
 
 
    // TODO: get real dma transfer size and use this for rate calculation and unpack boundary
-    totalsize=NUMSLAVES*submembytes*num_submem;
+    totalsize=NUMSLAVES*Submembytes*num_submem;
     printf ("Received %d DMA bytes, token memory payload:%d bytes\n",dmasize, totalsize);
 
-    MbsPextest_ShowRate("Clock:  dma read:", dmasize, clockdelta); // bytes
-    MbsPextest_ShowRate("Cycles: dma read:", dmasize , cycledelta);
+    MbsPextest_ShowRate("Clock:  dma read:", (double) dmasize, clockdelta); // bytes
+    MbsPextest_ShowRate("Cycles: dma read:", (double) dmasize , cycledelta);
     MbsPextest_ShowRate("Clock:  payload read:", totalsize, clockdelta); // bytes
     MbsPextest_ShowRate("Cycles: payload read:", totalsize , cycledelta);
 
-    gosiptest_check_unpack((int*) off, wbuffer, dmasize/sizeof(int), num_submem, Debugmode);
+    gosiptest_check_unpack(pdat, wbuffer, dmasize/sizeof(int), num_submem);
 
     close_exit(fd_pex);
 

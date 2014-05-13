@@ -4,7 +4,7 @@ include ../common.mk
 
 INCDIR += ../include
 LDINC += $(addprefix -L ,$(LIBDIR))
-LDFLAGS += -lrt
+LDFLAGS += -Wl,-rpath,/usr/lib -lrt
 # avoid shared lib for the moment due to more easy testing
 #PEXLIB = -Wl,-rpath,/usr/lib -Wl,-rpath,$(LIBDIR) -lmbspex
 PEXLIB = $(LIBDIR)/libmbspex.a
