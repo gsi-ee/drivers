@@ -7,7 +7,7 @@
 #include "../driver/pex_user.h"
 
 #include <string.h>
-
+#include "timing.h"
 
 #define NUMARGS 3
 
@@ -262,7 +262,8 @@ int main (int argc, char *argv[])
   unsigned long num_submem=0, submem_offset=0;
   unsigned long dmasize=0;
   long check_comm=0, check_token=0, check_slaves=0;
-  double cycledelta, clockdelta=0;
+  double cycledelta=0;
+  double clockdelta=0;
   double totalsize;
   mode_t       mode;
   long         l_bar0; 
@@ -312,6 +313,21 @@ int main (int argc, char *argv[])
       }
 
  MbsPextest_TimerInit();
+
+ if(Debugmode==42)
+ {
+    printf ("Special test of benchmarking!\n");
+    MbsPextest_ClockStart();
+    //MbsPextest_TimerStart();
+    sleep(3);
+    cycledelta=MbsPextest_TimerDelta();
+    clockdelta=MbsPextest_ClockDelta();
+    printf ("\t Clockdelta = %e (%f) s\n",clockdelta,clockdelta);
+    MbsPextest_ShowRate("Clock:  deltaT test", 100.0, clockdelta); // bytes
+    MbsPextest_ShowRate("Cycles: deltaT test", 100.0, cycledelta);
+     exit(0);
+ }
+
 
 /* OPEN DEVICE handle*/
 fd_pex=mbspex_open(PEXDEVNO);

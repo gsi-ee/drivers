@@ -9,6 +9,9 @@
 
 
 #include "timing.h"
+#include "errno.h"
+
+/*#define _TIMING_DEBUG_ 1*/
 
 static cycles_t StartTime=0;
 
@@ -119,17 +122,36 @@ double MbsPextest_Linux_get_cpu_mhz()
 /* resets start time value of system realtime clock*/
 void MbsPextest_ClockStart()
 {
-	clock_gettime(CLOCK_REALTIME, &ClockStart);
+  int lerr;
+	if(clock_gettime(CLOCK_REALTIME, &ClockStart))
+	  {
+	    lerr=errno;
+	    printf("clock_gettime error %d (%s)in MbsPextest_ClockStart", lerr, strerror(lerr));
+	  }
+#ifdef	_TIMING_DEBUG_
+	printf("ClockStart got time %d seconds, %ul ns\n",ClockStart.tv_sec, ClockStart.tv_nsec);
+#endif
 
 }
 
 /* return value is seconds since ClockStart*/
 double MbsPextest_ClockDelta()
 {
+    int lerr;
+    double rev=0;
+	if(clock_gettime(CLOCK_REALTIME, &ClockStop))
+	      {
+	        lerr=errno;
+	        printf("clock_gettime error %d  (%s) in MbsPextest_ClockDelta", lerr, strerror(lerr));
+	      }
 
-	clock_gettime(CLOCK_REALTIME, &ClockStop);
 	MbsPextest_tsDiff(&ClockDiff,&ClockStart,&ClockStop);
-	return (MbsPextest_tsAsSeconds(&ClockDiff));
+	rev=MbsPextest_tsAsSeconds(&ClockDiff);
+#ifdef  _TIMING_DEBUG_
+    printf("ClockDelta got time %d seconds, %ul ns\n",ClockStop.tv_sec, ClockStop.tv_nsec);
+    printf("ClockDelta got delta time %d seconds, %ul ns -> as seconds=%e\n",ClockDiff.tv_sec, ClockDiff.tv_nsec, rev);
+#endif
+	return rev;
 }
 
 
@@ -162,12 +184,12 @@ double MbsPextest_tsAsSeconds(struct timespec* ts) {
 }
 
 
-void MbsPextest_ShowRate(const char* description, double mem, double time)
+void MbsPextest_ShowRate(const char* description, double mem, double timeseconds)
 {
 	double rate=0;
-	if(time)
-		rate=mem/time;
-	printf("Show Rate: %s - time:%e s for %e bytes, speed is %e bytes/s\n", description, time, mem,rate);
+	if(timeseconds)
+		rate=mem/timeseconds;
+	printf("Show Rate: %s - time:%e s for %e bytes, speed is %e bytes/s\n", description, timeseconds, mem,rate);
 
 }
 
