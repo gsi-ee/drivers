@@ -6,6 +6,14 @@
 /* enable this define if you link against mbs libraries */
 /*#define MBSPEX_USEMBS 1*/
 
+
+#ifdef MBSPEX_USEMBS
+#include "f_ut_printm.h"
+#else
+#define printm printf
+#endif
+
+
 //////////////
 
 /* these internal registers are used from library instead of implementing dedicated ioctl calls.

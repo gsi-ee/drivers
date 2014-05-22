@@ -12,11 +12,7 @@
 #define RON  "\x1B[7m"
 #define RES  "\x1B[0m"
 
-#ifdef MBSPEX_USEMBS
-#include "f_ut_printm.h"
-#else
-#define printm printf
-#endif
+
 
 int mbspex_open(int devnum)
 {

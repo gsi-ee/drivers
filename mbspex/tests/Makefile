@@ -9,7 +9,7 @@ LDFLAGS += -Wl,-rpath,/usr/lib -lrt
 #PEXLIB = -Wl,-rpath,/usr/lib -Wl,-rpath,$(LIBDIR) -lmbspex
 PEXLIB = $(LIBDIR)/libmbspex.a
 
-BINARIES = m_test5 gosiptest 
+BINARIES = m_test5 gosiptest gosipcmd
 
 ###############################################################
 # Target definitions
@@ -25,12 +25,15 @@ $(BINARIES) : % : $(BINDIR)/% ;
 # Target for each exec from the object file
 $(BINDIR)/%: $(OBJDIR)/%.o
 	@echo -e "LD \t$@"
-	$(Q)$(CXX) $(LDINC) $(LDFLAGS) $(PEXLIB) $(CFLAGS) -o $@ $<
+#	$(Q)$(CXX) $(LDINC) $(LDFLAGS) $(PEXLIB) $(CFLAGS) -o $@ $<
+	$(Q)$(CXX) $(LDFLAGS) $(CFLAGS) -o  $@  $< $(PEXLIB)
 
 $(BINDIR)/gosiptest: $(OBJDIR)/gosiptest.o $(OBJDIR)/timing.o
 	@echo -e "LD \t$@"
 	$(Q)$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(OBJDIR)/gosiptest.o $(OBJDIR)/timing.o $(PEXLIB)
 #	$(Q)$(CC) $(LDINC) $(LDFLAGS) $(PEXLIB) $(CFLAGS) -o $@ $(OBJDIR)/gosiptest.o $(OBJDIR)/timing.o
+
+
 
 # dummy for included common.mk
 liball: exall
