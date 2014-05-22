@@ -917,7 +917,12 @@ int f_user_readout (unsigned char   bh_trig_typ,
     //printm ("send token in WAIT_FOR_DATA_READY_TOKEN mode \n");
     //printm ("l_tog | l_tok_mode: 0x%x \n", l_tog | l_tok_mode);
     //sleep (1);
+
+#ifdef USE_MBSPEX_LIB
+      l_stat =  mbspex_send_tok (fd_pex, l_sfp_pat,  l_tog | l_tok_mode);
+#else
     l_stat = f_pex_send_tok (l_sfp_pat, l_tog | l_tok_mode);
+#endif
     #endif 
 
     //printm ("l_tog: %d \n", l_tog);
@@ -1120,7 +1125,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
           }
 
 
-          l_stat =   mbspex_receive_tok (fd_pex, l_i, l_dma_target_base, &l_dma_trans_size,
+          l_stat =   mbspex_receive_tok (fd_pex, l_i, l_dma_target_base, (long unsigned*) &l_dma_trans_size,
               &l_dummy, &l_tok_check, &l_n_slaves);
 
           l_dat_len_sum[l_i]= l_dma_trans_size;
@@ -1184,18 +1189,55 @@ int f_user_readout (unsigned char   bh_trig_typ,
         } //if (l_sfp_slaves[l_i] != 0)
       }// for
       #endif // else SEQUENTIAL_TOKEN_SEND := parallel token send
-#ifdef USE_MBSPEX_LIB
-      #ifndef DIRECT_DMA
+
+#ifndef DIRECT_DMA
       // read exploder/febex data (sent by token mode to the pexor)
       // from pexor the pexor memory 
       for (l_i=0; l_i<MAX_SFP; l_i++)
       {
         if (l_sfp_slaves[l_i] != 0)
         {
+
+#ifdef USE_MBSPEX_LIB
+          l_dat_len_sum[l_i] =  mbspex_get_tok_memsize(fd_pex, l_i); // in bytes
+#else
           l_dat_len_sum[l_i] = PEXOR_TK_Mem_Size (&sPEXOR, l_i); // in bytes
+
+#endif
           l_dat_len_sum[l_i] += 4; // wg. shizu !!??
       
           #ifdef PEXOR_PC_DRAM_DMA
+
+
+#ifdef USE_MBSPEX_LIB
+          l_burst_size=0x80; // fix in driver ioctl for the moment!
+
+          // transfer size must be adjusted to burst size
+                   if ( (l_dat_len_sum[l_i] % l_burst_size) != 0)
+                   {
+                     l_dma_trans_size    =  l_dat_len_sum[l_i] + l_burst_size     // in bytes
+                                         - (l_dat_len_sum[l_i] % l_burst_size);
+                   }
+                   else
+                   {
+                     l_dma_trans_size = l_dat_len_sum[l_i];
+                   }
+
+                   l_padd[l_i] = 0;
+                             if ( ((long)pl_dat % l_burst_size) != 0)
+                             {
+                               l_padd[l_i] = l_burst_size - ((long)pl_dat % l_burst_size);
+                               l_dma_target_base = (long) pl_dat + l_diff_pipe_phys_virt + l_padd[l_i];
+                             }
+                             else
+                             {
+                               l_dma_target_base = (long) pl_dat + l_diff_pipe_phys_virt;
+                             }
+
+          mbspex_dma_rd (fd_pex, l_pex_sfp_phys_mem_base[l_i], l_dma_target_base, l_dma_trans_size);
+          /* note: return value is true dma transfer size, we do not use this here*/
+
+#else
 
           // choose burst size to accept max. 20% padding size
           if      (l_dat_len_sum[l_i] < 0xa0 ) { l_burst_size = 0x10; }
@@ -1259,6 +1301,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
             sched_yield ();
             #endif
           }
+#endif // not mbspex lib
 
           // adjust pl_dat, pl_dat comes always 4 byte aligned
           // fill padding space with pattern
@@ -1277,18 +1320,27 @@ int f_user_readout (unsigned char   bh_trig_typ,
 
           //l_dat_len_sum_long[l_i] = (l_dat_len_sum[l_i] >> 2) + 1;  // in 4 bytes
           l_dat_len_sum_long[l_i] = (l_dat_len_sum[l_i] >> 2);  // in 4 bytes
+
+#ifdef USE_MBSPEX_LIB
+
+          for (l_k=0; l_k<l_dat_len_sum_long[l_i]; l_k++)
+                   {
+                     l_rd_ct++;
+                     mbspex_register_rd (fd_pex, 0, PEX_MEM_OFF + (long)(PEX_SFP_OFF * l_i), pl_dat++);
+                   }
+#else
           pl_tmp = pl_pex_sfp_mem_base[l_i];
           for (l_k=0; l_k<l_dat_len_sum_long[l_i]; l_k++)
           {
             l_rd_ct++;
             *pl_dat++ = *pl_tmp++;
           }
-
+#endif
           #endif // PEXOR_PC_DRAM_DMA 
         }
       }
       #endif // not DIRECT_DMA
-#endif // not USE_MBSPEX_LIB
+
     }
 
     if ( (l_tr_ct[0] % STATISTIC) == 0)

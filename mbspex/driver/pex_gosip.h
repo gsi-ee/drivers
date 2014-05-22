@@ -79,7 +79,6 @@
 #define PEX_SFP_VERSION 0x1fc
 
 
-
 #define PEX_SFP_TK_MEM_0 0x100000
 #define PEX_SFP_TK_MEM_1 0x140000
 #define PEX_SFP_TK_MEM_2 0x180000
