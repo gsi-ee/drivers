@@ -37,8 +37,10 @@
 #define PEX_IOC_REQUEST_TOKEN    _IOWR(  PEX_IOC_MAGIC, 11, struct pex_token_io)
 #define PEX_IOC_WAIT_TOKEN    _IOWR(  PEX_IOC_MAGIC, 12, struct pex_token_io)
 #define PEX_IOC_WAIT_TRIGGER    _IO(  PEX_IOC_MAGIC, 13)
-
-#define PEX_IOC_MAXNR 14
+#define PEX_IOC_WRITE_REGISTER   _IOW(  PEX_IOC_MAGIC, 14, struct pex_reg_io)
+#define PEX_IOC_READ_REGISTER    _IOWR(  PEX_IOC_MAGIC, 15, struct pex_reg_io)
+#define PEX_IOC_READ_DMA         _IOWR(  PEX_IOC_MAGIC, 16, struct pex_dma_io)
+#define PEX_IOC_MAXNR 17
 
 
 /* for mbs backward compatibility:*/
@@ -56,6 +58,18 @@
 
 #define PEX_TRIGGER_FIRED  0/* return value from wait trigger to inform that trigger ir was fired reached */
 #define PEX_TRIGGER_TIMEOUT 1 /* return value from wait trigger to inform that wait timeout was reached */
+
+struct pex_reg_io {
+    unsigned int address;   /* address of a board register, relative to the specified BAR*/
+    unsigned int value;     /* value for read/write at register address*/
+    unsigned char bar;      /* the BAR where the register is mapped to PCI access. */
+};
+
+struct pex_dma_io {
+    unsigned int source;     /* DMA source start address on the *pex* pciEx board*/
+    unsigned int target;     /* physical DMA target start address in host memory*/
+    unsigned int size;      /* size of bytes to transfer. returns real transfer size*/
+};
 
 struct pex_bus_io {
 	unsigned long sfp;		/* sfp link id 0..3 (optional)*/

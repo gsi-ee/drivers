@@ -57,6 +57,20 @@ int mbspex_send_tok (int handle, long l_sfp_p, long l_toggle);
 int mbspex_receive_tok (int handle, long l_sfp, unsigned long l_dma_target, unsigned long *pl_transfersize,
     long *pl_check_comm, long *pl_check_token, long *pl_check_slaves);
 
+
+/* write value of l_dat to board l_address on mapped bar*/
+int mbspex_register_wr (int handle, unsigned char s_bar, long l_address, long l_dat);
+
+/* read value of &l_dat from board l_address on mapped bar*/
+int mbspex_register_rd (int handle, unsigned char s_bar, long l_address, long * l_dat);
+
+/* transfer dma of size bytes from board source to host dest addresses.
+ * returns real number of bytes transferred, or -1 in case of error
+ * This funkction will no sooner return than dma is complete*/
+int mbspex_dma_rd (int handle, long source, long dest, long size);
+
+
+
 /*void f_feb_init ();*/
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////

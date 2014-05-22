@@ -68,7 +68,7 @@ ssize_t pex_sysfs_trixorregs_show(struct device *dev,
         struct device_attribute *attr, char *buf)
 {
     ssize_t curs = 0;
-#ifdef PEXOR_WITH_TRIXOR
+#ifdef PEX_WITH_TRIXOR
     struct pex_privdata *privdata;
     privdata = (struct pex_privdata*) dev_get_drvdata(dev);
     curs += snprintf(buf + curs, PAGE_SIZE - curs,
@@ -102,7 +102,7 @@ ssize_t pex_sysfs_trixorbase_show(struct device *dev,
         struct device_attribute *attr, char *buf)
 {
     ssize_t curs = 0;
-#ifdef PEXOR_WITH_TRIXOR
+#ifdef PEX_WITH_TRIXOR
     struct pex_privdata *privdata;
     privdata = (struct pex_privdata*) dev_get_drvdata(dev);
     curs += snprintf(buf + curs, PAGE_SIZE - curs, "%x\n",
@@ -140,7 +140,7 @@ ssize_t pex_sysfs_dmaregs_show(struct device *dev, struct device_attribute *attr
   pg=&(privdata->regs);
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "*** PEX dma/irq register dump:\n");
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t dma control/status: 0x%x\n", readl(pg->dma_control_stat));
-#ifdef PEXOR_WITH_TRIXOR
+#ifdef PEX_WITH_TRIXOR
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t irq/trixor stat: 0x%x\n", readl(pg->irq_status));
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t irq/trixor ctrl: 0x%x\n", readl(pg->irq_control));
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t trixor fcti: 0x%x\n", readl(pg->trix_fcti));
@@ -331,7 +331,7 @@ void print_regs(struct  regs_pex* pg)
   pex_dbg(KERN_NOTICE "init: \t=%x\n", pg->init_done);
   if(!pg->init_done) return;
   print_register("dma control/status", pg->dma_control_stat);
-#ifdef PEXOR_WITH_TRIXOR
+#ifdef PEX_WITH_TRIXOR
   print_register("irq status", pg->irq_status);
   print_register("irq control", pg->irq_control);
 
@@ -646,8 +646,98 @@ int pex_ioctl_reset(struct pex_privdata* priv, unsigned long arg)
 
 
 
+int pex_ioctl_write_register(struct pex_privdata* priv, unsigned long arg)
+{
+  int retval=0;
+  u32* ad=0;
+  u32 val=0;
+  int bar=0;
+  struct pex_reg_io descriptor;
+  retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pex_reg_io));
+  if(retval) return retval;
+  /* here we assume something for this very connection, to be adjusted later*/
+  ad= (u32*) (ptrdiff_t) descriptor.address;
+  val = (u32) descriptor.value;
+  bar = descriptor.bar;
+  if((bar > 5) || priv->iomem[bar]==0)
+    {
+      pex_msg(KERN_ERR "** pex_ioctl_write_register: no mapped bar %d\n",bar);
+      return -EIO;
+    }
+  pex_dbg(KERN_NOTICE "** pex_ioctl_write_register writes value %x to address %p within bar %d \n",val,ad,bar);
+  if((unsigned long) ad  > priv->reglen[bar])
+    {
+      pex_msg(KERN_ERR "** pex_ioctl_write_register: address %p is exceeding length %lx of bar %d\n",ad, priv->reglen[bar], bar);
+      return -EIO;
+    }
+  ad= (u32*) ( (unsigned long) priv->iomem[bar] + (unsigned long) ad);
+  pex_dbg(KERN_NOTICE "** pex_ioctl_write_register writes value %x to mapped PCI address %p !\n",val,ad);
+  iowrite32(val, ad);
+  mb();
+  ndelay(20);
+  return retval;
+}
+
+int pex_ioctl_read_register(struct pex_privdata* priv, unsigned long arg)
+{
+  int retval=0;
+  u32* ad=0;
+  u32 val=0;
+  int bar=0;
+  struct pex_reg_io descriptor;
+  retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pex_reg_io));
+  if(retval) return retval;
+  ad= (u32*)(ptrdiff_t)descriptor.address;
+  pex_dbg(KERN_NOTICE "** pex_ioctl_reading from register address %p\n",ad);
+  bar = descriptor.bar;
+  if((bar > 5) || priv->iomem[bar]==0)
+    {
+      pex_msg(KERN_ERR "** pex_ioctl_read_register: no mapped bar %d\n",bar);
+      return -EIO;
+    }
+  pex_dbg(KERN_NOTICE "** pex_ioctl_read_register reads from address %p within bar %d \n",ad,bar);
+  if((unsigned long) ad  > priv->reglen[bar])
+    {
+      pex_msg(KERN_ERR "** pex_ioctl_read_register: address %p is exceeding length %lx of bar %d\n",ad, priv->reglen[bar], bar);
+      return -EIO;
+    }
+  ad= (u32*) ( (unsigned long) priv->iomem[bar] + (unsigned long) ad);
+  val=ioread32(ad);
+  mb();
+  ndelay(20);
+  pex_dbg(KERN_NOTICE "** pex_ioctl_read_register read value %x from mapped PCI address %p !\n",val,ad);
+  descriptor.value=val;
+  retval=copy_to_user((void __user *) arg, &descriptor, sizeof(struct pex_reg_io));
+  return retval;
+}
 
 
+
+int pex_ioctl_read_dma(struct pex_privdata* priv, unsigned long arg)
+{
+  int retval=0;
+  dma_addr_t dmasource, dmadest;
+  u32 dmasize;
+  struct pex_dma_io descriptor;
+  retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pex_dma_io));
+  if(retval) return retval;
+  dmasource=descriptor.source;
+  dmadest=descriptor.target;
+  dmasize=descriptor.size;
+
+  if((retval=pex_start_dma(priv, dmasource, dmadest, dmasize, 1))!=0)
+      return retval;
+
+
+  if((retval=pex_poll_dma_complete(priv))!=0)
+     return retval;
+   /* find out real package length after dma:*/
+  descriptor.size=ioread32(priv->regs.dma_len);
+
+  retval=copy_to_user((void __user *) arg, &descriptor, sizeof(struct pex_dma_io));
+
+  return retval;
+}
 
 
 
@@ -752,59 +842,78 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     struct pex_privdata *privdata;
     pex_dbg((KERN_INFO "BEGIN pex_ioctl \n"));
     privdata = (struct pex_privdata*) filp->private_data;
+    /* use semaphore to allow multi user mode:*/
+    if (down_interruptible(&(privdata->ioctl_sem)))
+                         return -ERESTARTSYS;
     switch (cmd)
         {
       case PEX_IOC_RESET:
           pex_dbg(KERN_NOTICE "** pex_ioctl reset\n");
-          return pex_ioctl_reset(privdata,arg);
+          retval = pex_ioctl_reset(privdata,arg);
           break;
 
         case PEX_IOC_TEST:
           pex_dbg(KERN_NOTICE "** pex_ioctl test\n");
-          return pex_ioctl_test(privdata, arg);
+          retval = pex_ioctl_test(privdata, arg);
           break;
 
         case PEX_IOC_WRITE_BUS:
            pex_dbg(KERN_NOTICE "** pex_ioctl write bus\n");
-           return pex_ioctl_write_bus(privdata, arg);
+           retval = pex_ioctl_write_bus(privdata, arg);
            break;
 
          case PEX_IOC_READ_BUS:
            pex_dbg(KERN_NOTICE "** pex_ioctl read bus\n");
-           return pex_ioctl_read_bus(privdata, arg);
+           retval = pex_ioctl_read_bus(privdata, arg);
            break;
 
          case PEX_IOC_INIT_BUS:
            pex_dbg(KERN_NOTICE "** pex_ioctl init bus\n");
-           return pex_ioctl_init_bus(privdata, arg);
+           retval = pex_ioctl_init_bus(privdata, arg);
            break;
 
         case PEX_IOC_REQUEST_TOKEN:
            pex_dbg(KERN_NOTICE "** pex_ioctl request token\n");
-           return pex_ioctl_request_token(privdata, arg);
+           retval = pex_ioctl_request_token(privdata, arg);
            break;
 
          case PEX_IOC_WAIT_TOKEN:
            pex_dbg(KERN_NOTICE "** pex_ioctl wait token\n");
-           return pex_ioctl_wait_token(privdata, arg);
+           retval = pex_ioctl_wait_token(privdata, arg);
            break;
+
+         case PEX_IOC_WRITE_REGISTER:
+             pex_dbg(KERN_NOTICE "** pex_ioctl write register\n");
+             retval = pex_ioctl_write_register(privdata, arg);
+             break;
+
+           case PEX_IOC_READ_REGISTER:
+             pex_dbg(KERN_NOTICE "** pex_ioctl read register\n");
+             retval = pex_ioctl_read_register(privdata, arg);
+             break;
+
+           case PEX_IOC_READ_DMA:
+             pex_dbg(KERN_NOTICE "** pex_ioctl read dma\n");
+             retval = pex_ioctl_read_dma(privdata, arg);
+             break;
+
 
 #ifdef PEX_WITH_TRIXOR
          case PEX_IOC_WAIT_TRIGGER:
            pex_dbg(KERN_NOTICE "** pex_ioctl wait trigger\n");
-           return pex_ioctl_wait_trigger(privdata, arg);
+           retval = pex_ioctl_wait_trigger(privdata, arg);
            break;
 
          case PEX_IOC_SET_TRIXOR:
           pex_dbg(KERN_NOTICE "** pex_ioctl set trixor\n");
-          return pex_ioctl_set_trixor(privdata, arg);
+          retval = pex_ioctl_set_trixor(privdata, arg);
           break;
 
 #ifdef  PEX_IRQ_WAITQUEUE
 
         case PEX_IOC_WAIT_SEM:
             pex_dbg(KERN_INFO "Emulated WAIT_SEM using waitqueu\n");
-            return pex_ioctl_wait_trigger(privdata,arg);
+            retval = pex_ioctl_wait_trigger(privdata,arg);
             break;
         case PEX_IOC_POLL_SEM:
             trigcount=atomic_read( &(privdata->trig_outstanding) );
@@ -822,9 +931,11 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
         case PEX_IOC_WAIT_SEM:
                    pex_dbg(KERN_INFO " before WAIT_SEM \n");
-                   if (down_interruptible(&(privdata->trix_sem)))
+                   if (down_interruptible(&(privdata->trix_sem))){
+                     up(&privdata->ioctl_sem);
                      return -ERESTARTSYS; /* JAM avoid possible hangup of m_read_meb when killed by resl*/
-                   privdata->trix_val = 0;
+                    }
+                     privdata->trix_val = 0;
                    pex_dbg((KERN_INFO " after  WAIT_SEM \n"));
                    break;
         case PEX_IOC_POLL_SEM:
@@ -848,7 +959,7 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 
 #endif /* irq waitqueue */
-#endif /* pexor with trixor*/
+#endif /* pex with trixor*/
 
         case PEX_IOC_GET_BAR0_BASE:
             pex_dbg(KERN_INFO " before GET_BAR0_BASE \n");
@@ -866,30 +977,9 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
                  return -ENOTTY;
         }
     pex_dbg((KERN_INFO "END   pex_ioctl \n"));
+    up(&privdata->ioctl_sem);
     return retval;
 }
-
-//PEX_IOC_RESET             _IO(  PEX_IOC_MAGIC, 0)
-//#define PEX_IOC_TEST            _IOR(  PEX_IOC_MAGIC, 1, int)
-//#define PEX_IOC_WAIT_SEM          _IO(  PEX_IOC_MAGIC, 2)
-//#define PEX_IOC_POLL_SEM          _IOR(  PEX_IOC_MAGIC, 3, int)
-//#define PEX_IOC_RESET_SEM         _IOR(  PEX_IOC_MAGIC, 4, int)
-//#define PEX_IOC_GET_BAR0_BASE      _IOR(  PEX_IOC_MAGIC, 5, int)
-//#define PEX_IOC_GET_BAR0_TRIX_BASE      _IOR(  PEX_IOC_MAGIC, 6, int)
-//#define PEX_IOC_WRITE_BUS   _IOWR(  PEX_IOC_MAGIC, 7, struct pex_bus_io)
-//#define PEX_IOC_READ_BUS    _IOWR(  PEX_IOC_MAGIC, 8, struct pex_bus_io)
-//#define PEX_IOC_INIT_BUS    _IOW(  PEX_IOC_MAGIC, 9, struct pex_bus_io)
-//#define PEX_IOC_SET_TRIXOR    _IOR(  PEX_IOC_MAGIC, 10, struct pex_trixor_set)
-//#define PEX_IOC_REQUEST_TOKEN    _IOWR(  PEX_IOC_MAGIC, 11, struct pex_token_io)
-//#define PEX_IOC_WAIT_TOKEN    _IOWR(  PEX_IOC_MAGIC, 12, struct pex_token_io)
-//#define PEX_IOC_WAIT_TRIGGER
-
-
-
-
-
-
-
 
 
 
@@ -923,10 +1013,12 @@ MODULE_DEVICE_TABLE(pci, ids);
  * */
 irqreturn_t irq_hand( int irq, void *dev_id)
 {
-  struct pex_privdata *privdata;
-  privdata=(struct pex_privdata *) dev_id;
 #ifdef PEX_WITH_TRIXOR
   u32 irtype;
+  struct pex_privdata *privdata;
+  privdata=(struct pex_privdata *) dev_id;
+
+
   /* check if this interrupt was raised by our device*/
   irtype=ioread32(privdata->regs.irq_status);
   mb();
@@ -1201,7 +1293,12 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
 
     print_regs(&(privdata->regs));
 
-
+// semaphore for ioctl access:
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 37)
+    init_MUTEX(&(privdata->ioctl_sem));
+#else
+    sema_init (&(privdata->ioctl_sem), 1);
+#endif
 
 // here set custom registers for mbs implementation:
     privdata->l_bar0_base = privdata->bases[0];

@@ -1,0 +1,5 @@
+sta acq
+x "sleep 10"
+sto ac
+x "sleep 10"
+

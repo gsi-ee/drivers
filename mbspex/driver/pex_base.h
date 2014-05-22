@@ -191,7 +191,7 @@ struct pex_privdata
     void *iomem[6]; /* points to mapped io memory of the bars */
     u8 irqpin; /* hardware irq pin */
     u8 irqline; /* default irq line */
-
+    struct semaphore ioctl_sem;      /* protects multi user ioctl access */
 #ifdef  PEX_IRQ_WAITQUEUE
     wait_queue_head_t irq_trig_queue;     /* wait queue between top half ir_handler
                                                    and user wait trigger ioctl */
@@ -281,6 +281,14 @@ int pex_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned
 long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
 #endif
 
+/* pio read value from a single register on the pex board*/
+int pex_ioctl_read_register(struct pex_privdata* priv, unsigned long arg);
+
+/* pio write value from a single register on the pex board*/
+int pex_ioctl_write_register(struct pex_privdata* priv, unsigned long arg);
+
+/* dma read from memory on the pex board to a known physical address in host memory*/
+int pex_ioctl_read_dma(struct pex_privdata* priv, unsigned long arg);
 
 #ifdef PEX_WITH_TRIXOR
 /* set acquisition state of trixor trigger module extension.

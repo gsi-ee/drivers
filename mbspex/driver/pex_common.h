@@ -60,7 +60,7 @@
 #define PEXVERSION     "1.4"
 
 
-#define PEX_DEBUGPRINT 1
+/*#define PEX_DEBUGPRINT 1*/
 
 
 /* maximum number of devices controlled by this driver*/
@@ -69,7 +69,7 @@
 ///////////////////////////////////77
 
 /* enable usage of TRIXOR */
-//#define PEX_WITH_TRIXOR 1
+#define PEX_WITH_TRIXOR 1
 
 
 //#define INTERNAL_TRIG_TEST 1
