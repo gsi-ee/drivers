@@ -40,6 +40,7 @@ void goscmd_set_command (struct gosip_cmd* com, gos_cmd_id id)
 void goscmd_dump_command(struct gosip_cmd* com)
 {
     printm(" gosipcmd dump: \n");
+    printm(" \t command  :%d \n",com->command);
     printm(" \t device   :%d \n",com->devnum);
     printm(" \t sfp      :%d \n",com->sfp);
     printm(" \t slave    :%d \n",com->slave);
@@ -71,8 +72,8 @@ void goscmd_assert_command(struct gosip_cmd* com)
   if(com==GOSIP_NOP) do_exit=1;
   if (com->fd_pex < 0) do_exit=1;
   if(com->sfp <0)  do_exit=1;
-  if(com->slave <0)  do_exit=1;
-  if(com->address <0)  do_exit=1;
+  if((com->command!=GOSIP_INIT) && (com->slave <0))  do_exit=1;
+  if((com->command!=GOSIP_INIT) && (com->address <0))  do_exit=1;
 
   if(do_exit)
     {
@@ -102,6 +103,7 @@ void goscmd_close_device(struct gosip_cmd* com)
 int goscmd_write(struct gosip_cmd* com)
 {
   goscmd_assert_command(com);
+  if(com->verboselevel) goscmd_dump_command(com);
   return (mbspex_slave_wr(com->fd_pex, com->sfp, com->slave, com->address, com->value));
 }
 
@@ -109,6 +111,7 @@ int goscmd_read(struct gosip_cmd* com)
 {
   int rev=0;
   goscmd_assert_command(com);
+  if(com->verboselevel) goscmd_dump_command(com);
   rev=mbspex_slave_rd(com->fd_pex, com->sfp, com->slave, com->address, &(com->value));
   if(rev==0)
     {
@@ -125,6 +128,7 @@ int goscmd_read(struct gosip_cmd* com)
 int goscmd_init(struct gosip_cmd* com)
 {
   goscmd_assert_command(com);
+  if(com->verboselevel) goscmd_dump_command(com);
   return (mbspex_slave_init(com->fd_pex, com->sfp, com->slave));
 }
 
@@ -151,7 +155,7 @@ void goscmd_usage(const char *progname)
     printf("\t\t -r        : read from register \n");
     printf("\t\t -i        : initialize sfp chain \n");
     printf("\t\t -d DEVICE : specify device number N (/dev/pexorN) \n");
-    printf("\t\t -v VERBOS : verbose debug mode \n");
+    printf("\t\t -v        : verbose debug mode \n");
     printf("\t\t -x        : results in hex format \n");
     printf("\t Arguments:\n");
     printf("\t\t sfp      - sfp chain \n");
@@ -203,7 +207,7 @@ int main (int argc, char *argv[])
 
 /* get arguments*/
   optind = 1;
-     while ((opt = getopt(argc, argv, "hwrid:v:x")) != -1) {
+     while ((opt = getopt(argc, argv, "hwrid:vx")) != -1) {
        switch (opt) {
        case '?':
          goscmd_usage(basename(argv[0]));
@@ -224,7 +228,7 @@ int main (int argc, char *argv[])
          goscmd_set_command (&theCommand, GOSIP_INIT);
          break;
        case 'v':
-         theCommand.verboselevel = strtol(optarg, NULL, 0);
+         theCommand.verboselevel = 1; /*strtol(optarg, NULL, 0); later maybe diffferent verbose level*/
          break;
        case 'x':
          theCommand.hexformat= 1;
@@ -236,6 +240,7 @@ int main (int argc, char *argv[])
 
   /* get parameters:*/
       cmdLen = argc - optind;
+      /*printf("- argc:%d optind:%d cmdlen:%d \n",argc, optind, cmdLen);*/
       goscmd_assert_arguments(&theCommand,cmdLen);
       for (i = 0; (i < cmdLen) && (i < GOSIP_CMD_MAX_ARGS); i++) {
         strncpy(cmd[i], argv[optind + i], GOSIP_CMD_SIZE);
