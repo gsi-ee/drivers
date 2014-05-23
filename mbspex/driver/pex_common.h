@@ -57,7 +57,7 @@
 #define BOARDTYPE_KINPEX 2
 
 
-#define PEXVERSION     "1.4"
+#define PEXVERSION     "1.5"
 
 
 /*#define PEX_DEBUGPRINT 1*/
@@ -77,7 +77,7 @@
 
 // this will enable mode where pexor on board memory is not used as buffer
 // instead, data from sfp token request will be directly streamed to host dma buffer.
-#define PEX_DIRECT_DMA 1
+//#define PEX_DIRECT_DMA 1
 
 
 /* timeout for ir wait queue */

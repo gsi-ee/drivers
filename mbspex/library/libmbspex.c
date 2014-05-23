@@ -22,7 +22,7 @@ int mbspex_open(int devnum)
 
   snprintf(devname,64,PEXORNAMEFMT, devnum);
   snprintf(fname,256,"/dev/%s",devname);
-  printm("mbspex: opening %s...\n",fname);
+  /*printm("mbspex: opening %s...\n",fname);*/
   filehandle = open(fname, O_RDWR );
   errsv = errno;
 
@@ -54,7 +54,7 @@ int  mbspex_slave_init (int handle, long l_sfp, long l_n_slaves)
   mbspex_assert_handle(handle);
   descriptor.sfp = l_sfp;
   descriptor.slave = l_n_slaves;
-  printm ("initialize SFP chain %d with %d slaves", l_sfp, l_n_slaves);
+  printm ("mbspex: initialize SFP chain %d with %d slaves\n", l_sfp, l_n_slaves);
   rev = ioctl (handle, PEX_IOC_INIT_BUS, &descriptor);
   if (rev)
   {
@@ -125,7 +125,9 @@ int  mbspex_send_and_receive_tok (int handle, long l_sfp, long l_toggle, unsigne
       descriptor.bufid=l_toggle;
       descriptor.sfp=l_sfp;
       descriptor.sync=1;
+      descriptor.directdma=1;
       descriptor.dmatarget= l_dma_target;
+      descriptor.dmaburst=0;
       rev=ioctl(handle, PEX_IOC_REQUEST_TOKEN, &descriptor);
       if(rev)
           {
@@ -154,6 +156,7 @@ int  mbspex_send_tok (int handle, long l_sfp_p, long l_toggle)
        descriptor.bufid=l_toggle;
        descriptor.sfp= (l_sfp_p << 16); // upper bytes expected as sfp pattern by driver
        descriptor.sync=0;
+       descriptor.directdma=0;
        rev=ioctl(handle, PEX_IOC_REQUEST_TOKEN, &descriptor);
        if(rev)
            {
@@ -173,6 +176,9 @@ int  mbspex_receive_tok (int handle, long l_sfp, unsigned long l_dma_target, uns
       struct pex_token_io descriptor;
       descriptor.sfp=l_sfp;
       descriptor.dmatarget= l_dma_target;
+      descriptor.dmaburst=0;
+      descriptor.directdma=0;
+      if(l_dma_target==0) descriptor.directdma=1; // we disable the automatic DMA sending after token reception by this
       rev=ioctl(handle, PEX_IOC_WAIT_TOKEN, &descriptor);
       if(rev)
           {
@@ -247,7 +253,7 @@ int mbspex_register_rd (int handle, unsigned char s_bar, long l_address, long * 
 }
 
 
-int mbspex_dma_rd (int handle, long source, long dest, long size)
+int mbspex_dma_rd (int handle, long source, long dest, long size, int burst)
 {
   int rev = 0;
   struct pex_dma_io descriptor;
@@ -255,6 +261,7 @@ int mbspex_dma_rd (int handle, long source, long dest, long size)
   descriptor.source = source;
   descriptor.target = dest;
   descriptor.size = size;
+  descriptor.burst=burst;
   rev = ioctl (handle, PEX_IOC_READ_DMA, &descriptor);
   if (rev)
   {

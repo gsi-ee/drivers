@@ -105,11 +105,9 @@ int pex_ioctl_request_token(struct pex_privdata* priv, unsigned long arg)
   u32 comm=0, chan=0, chanpattern, bufid=0;
   struct pex_token_io descriptor;
 
-#ifdef  PEX_DIRECT_DMA
   dma_addr_t dmatarget=0;
-  u32 dmalen=0;
+  u32 dmalen=0, dmaburst=0;
    u32 channelmask=0;
-#endif
 
 
   retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pex_token_io));
@@ -123,13 +121,15 @@ int pex_ioctl_request_token(struct pex_privdata* priv, unsigned long arg)
      pex_msg(KERN_NOTICE "** pex_ioctl_request_token from_sfp 0x%x, bufid 0x%x\n",chan,bufid);*/
   pex_sfp_assert_channel(chan);
 
-#ifdef  PEX_DIRECT_DMA
+  if (descriptor.directdma)
+  {
   // setup here dma targets in direct dma mode before initiating gosip transfer
   dmatarget = (dma_addr_t) descriptor.dmatarget;
   dmalen = (u32) descriptor.dmasize;
+  dmaburst = (u32) descriptor.dmaburst;
   channelmask= 1 << (chan+1);// select SFP for PCI Express DMA
   pex_dbg(KERN_NOTICE "** pex_ioctl_request_token uses dma target 0x%x, channelmask=0x%x\n", (unsigned) dmatarget,channelmask);
-  retval=pex_start_dma(priv, 0, dmatarget, 0, channelmask);
+  retval=pex_start_dma(priv, 0, dmatarget, 0, channelmask,dmaburst);
   if(retval)
         {
           /* error handling, e.g. no more dma buffer available*/
@@ -138,7 +138,9 @@ int pex_ioctl_request_token(struct pex_privdata* priv, unsigned long arg)
         }
 
 
-#endif
+
+  } // if directdma
+
   if(chanpattern!=0)
   {
     comm = PEX_SFP_PT_TK_R_REQ | (chanpattern << 16); /* token broadcast mode*/
@@ -166,17 +168,14 @@ int pex_ioctl_wait_token(struct pex_privdata* priv, unsigned long arg)
   int retval=0;
   u32 chan=0;
   u32 rstat=0, radd=0, rdat=0;
-  /*u32 tkreply=0, tkhead=0, tkfoot =0;*/
-
-  u32 dmasize=0;
-#ifndef  PEX_DIRECT_DMA
+  u32 dmasize=0, oldsize=0, dmaburst=0;
   dma_addr_t dmatarget=0;
-#endif
 
-
+  struct pex_sfp* sfp=&(priv->regs.sfp);
   struct pex_token_io descriptor;
   retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pex_token_io));
   if(retval) return retval;
+
   chan  = ((u32) descriptor.sfp) & 0xFFFF;
 
   /* send token request
@@ -195,50 +194,42 @@ int pex_ioctl_wait_token(struct pex_privdata* priv, unsigned long arg)
   descriptor.check_numslaves=rdat;
 
 
-
-  /* poll for return status: not necessary, since token request command is synchronous
-   * token data will be ready after sfp_get_reply */
-  /*	if((retval=pex_sfp_get_token_reply(priv, chan, &tkreply, &tkhead, &tkfoot))!=0)
-	{
-	pex_msg(KERN_ERR "** pex_ioctl_read_token: error %d at token_reply \n",retval);
-	pex_msg(KERN_ERR "    incorrect reply:0x%x head:0x%x foot:0x%x \n", tkreply, tkhead, tkfoot);
-	return -EIO;
-	}*/
-
-
-#ifndef  PEX_DIRECT_DMA
-
-  /* find out real package length :*/
-  dmasize =  ioread32(sfp->tk_memsize[chan]);
-  mb();
-  ndelay(20);
-  if(dmasize > PEX_SFP_TK_MEM_RANGE)
+  /* for not direct dma we have to perform DMA here:*/
+  if (descriptor.directdma == 0)
+  {
+    /* find out real package length :*/
+    dmasize = ioread32 (sfp->tk_memsize[chan]);
+    dmaburst = (dma_addr_t) descriptor.dmaburst;
+    if(dmaburst > PEX_BURST) dmaburst=PEX_BURST;
+    mb();
+    ndelay(20);
+    if (dmasize > PEX_SFP_TK_MEM_RANGE)
     {
-      oldsize=dmasize;
-      dmasize=PEX_SFP_TK_MEM_RANGE - (PEX_SFP_TK_MEM_RANGE % PEX_BURST); /* align on last proper burst interval*/
-      pex_msg(KERN_NOTICE "** pex_ioctl_wait_token reduces dma size from 0x%x to 0x%x \n",oldsize, dmasize);
+      oldsize = dmasize;
+      dmasize = PEX_SFP_TK_MEM_RANGE - (PEX_SFP_TK_MEM_RANGE % dmaburst); /* align on last proper burst interval*/
+      pex_msg(KERN_NOTICE "** pex_ioctl_wait_token reduces dma size from 0x%x to 0x%x \n", oldsize, dmasize);
     }
-  pex_dbg(KERN_NOTICE "** pex_ioctl_wait_token uses dma size 0x%x of channel %x\n",dmasize,chan);
+    pex_dbg(KERN_NOTICE "** pex_ioctl_wait_token uses dma size 0x%x of channel %x\n", dmasize, chan);
 
-  print_register("DUMP token dma size", sfp->tk_memsize[chan]);
+    print_register ("DUMP token dma size", sfp->tk_memsize[chan]);
 
-  /*	pex_msg(KERN_NOTICE "** pex_ioctl_read_token  uses token memory %x (dma:%x)\n",sfp->tk_mem[chan],sfp->tk_mem_dma[chan]);*/
-  print_register("DUMP token memory first content", sfp->tk_mem[chan]);
-  print_register("DUMP token memory second content", (sfp->tk_mem[chan]+1));
+    /*	pex_msg(KERN_NOTICE "** pex_ioctl_read_token  uses token memory %x (dma:%x)\n",sfp->tk_mem[chan],sfp->tk_mem_dma[chan]);*/
+    print_register ("DUMP token memory first content", sfp->tk_mem[chan]);
+    print_register ("DUMP token memory second content", (sfp->tk_mem[chan] + 1));
 
-/* here issue dma to mbs pipe target address:*/
-  dmatarget = (dma_addr_t) descriptor.dmatarget;
-  pex_dbg(KERN_NOTICE "** pex_ioctl_wait_token uses dma target 0x%x, channelmask=0x%x\n",dmatarget,channelmask);
-   retval=pex_start_dma(priv, sfp->tk_mem_dma[chan], dmatarget, dmasize, 0);
-   if(retval)
-         {
-           /* error handling, e.g. no more dma buffer available*/
-           pex_dbg(KERN_ERR "pex_ioctl_wait_token error %d from startdma\n", retval);
-           return retval;
-         }
+    /* here issue dma to mbs pipe target address:*/
+    dmatarget = (dma_addr_t) descriptor.dmatarget;
 
-#endif
-   /* not PEX_DIRECT_DMA*/
+    pex_dbg(KERN_NOTICE "** pex_ioctl_wait_token uses dma target 0x%x, dmasize=0x%x burst=0x%x\n", (unsigned) dmatarget, dmasize, dmaburst);
+    retval = pex_start_dma (priv, sfp->tk_mem_dma[chan], dmatarget, dmasize, 0, dmaburst);
+    if (retval)
+    {
+      /* error handling, e.g. no more dma buffer available*/
+      pex_dbg(KERN_ERR "pex_ioctl_wait_token error %d from startdma\n", retval);
+      return retval;
+    }
+
+  } /* not PEX_DIRECT_DMA*/
 
    if((retval=pex_poll_dma_complete(priv))!=0)
     {
@@ -246,15 +237,11 @@ int pex_ioctl_wait_token(struct pex_privdata* priv, unsigned long arg)
       return retval;
     }
 
-#ifdef  PEX_DIRECT_DMA
    /* find out real package length after dma:*/
-        dmasize =  ioread32(priv->regs.dma_len);
-#endif
-
+  dmasize =  ioread32(priv->regs.dma_len);
   descriptor.dmasize=dmasize; /* account used payload size.*/
 
   retval=copy_to_user((void __user *) arg, &descriptor, sizeof(struct pex_token_io));
-
   return retval;
 
 }

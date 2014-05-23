@@ -69,6 +69,7 @@ struct pex_dma_io {
     unsigned int source;     /* DMA source start address on the *pex* pciEx board*/
     unsigned int target;     /* physical DMA target start address in host memory*/
     unsigned int size;      /* size of bytes to transfer. returns real transfer size*/
+    unsigned int burst;     /* burst lenght in bytes*/
 };
 
 struct pex_bus_io {
@@ -81,10 +82,12 @@ struct pex_bus_io {
 
 struct pex_token_io {
 	unsigned char sync;		/* 1:synchronous mode, 0: asynchronous mode*/
+	unsigned char directdma;  /* 1: direct DMA to host on token receive, 0 explicit DMA from pex ram required*/
 	unsigned long sfp;		/* sfp link id 0..3 */
 	unsigned long bufid;	/* switch double buffer id on slave (1 or 0)*/
-	unsigned long dmatarget; /* target address (physical) for dma transfer*/
+	unsigned long dmatarget; /* target address (physical) for DMA transfer*/
 	unsigned long dmasize;   /* length of transferred data (bytes) after DMA*/
+	unsigned long dmaburst;   /* burst size (bytes) for DMA*/
 	unsigned long check_comm;   /* optional check returned command*/
 	unsigned long check_token;  /* optional check returned token status bits*/
 	unsigned long check_numslaves; /* optional check returned number of slaves*/

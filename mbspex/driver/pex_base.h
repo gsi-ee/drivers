@@ -102,41 +102,6 @@
 
 
 
-//-----------------------------------------------------------------------------
-// only for the moment:
-//#define WAIT_SEM              12
-//#define POLL_SEM              16
-//#define GET_BAR0_BASE       0x1234
-//#define GET_BAR0_TRIX_BASE  0x1235
-//#define RESET_SEM           0x1236
-
-//-----------------------------------------------------------------------------
-//--- status register bits
-//#define DT_CLEAR     0x00000020
-//#define IRQ_CLEAR    0x00001000
-//#define DI_CLEAR     0x00002000
-//#define EV_IRQ_CLEAR 0x00008000
-//#define EON          0x00008000
-//#define FC_PULSE     0x00000010
-////--- control register
-//#define MASTER     0x00000004
-//#define SLAVE      0x00000020
-//#define HALT       0x00000010
-//#define GO         0x00000002
-//#define EN_IRQ     0x00000001
-//#define DIS_IRQ    0x00000008
-//#define CLEAR      0x00000040
-//#define BUS_ENABLE 0x00000800
-//-----------------------------------------------------------------------------
-
-
-
-// here we merge with common definitions above
-//#define BAR0_REG_OFF        0x20000  // register base offset with resp. to BAR0 =PEX_DMA_BASE
-//#define BAR0_TRIX_OFF       0x40000  // TRIXOR base offset with resp. to BAR0 =PEX_TRIXOR_BASE
-//#define BAR0_RAM_OFF        0x100000 // =PEX_DRAM
-//#define BAR0_SIZE           0x200000 // >= PEX_RAMSIZE not in use anymore
-//
 
 
 
@@ -303,8 +268,9 @@ int pex_ioctl_wait_trigger(struct pex_privdata *priv, unsigned long arg);
 
 
 /* initiate dma from source to dest. depending on channelmask, dma transfer will start immediately (channelmask=1), or will be
- * triggered after token mode data request from indicated sfp channel (channelmask = 1 << (sfp+1))*/
-int pex_start_dma(struct pex_privdata *priv, dma_addr_t source, dma_addr_t dest, u32 dmasize, u32 channelmask);
+ * triggered after token mode data request from indicated sfp channel (channelmask = 1 << (sfp+1))
+ * burst size may be defined*/
+int pex_start_dma(struct pex_privdata *priv, dma_addr_t source, dma_addr_t dest, u32 dmasize, u32 channelmask, u32 burst);
 
 /* poll on dma status word until dma is complete*/
 int pex_poll_dma_complete(struct pex_privdata* priv);

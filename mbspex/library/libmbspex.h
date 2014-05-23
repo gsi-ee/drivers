@@ -90,9 +90,10 @@ int mbspex_register_wr (int handle, unsigned char s_bar, long l_address, long l_
 int mbspex_register_rd (int handle, unsigned char s_bar, long l_address, long * l_dat);
 
 /* transfer dma of size bytes from board source to host dest addresses.
+ * burst size may be specified, or 0 for automatic burst adjustment in driver
  * returns real number of bytes transferred, or -1 in case of error
- * This funkction will no sooner return than dma is complete*/
-int mbspex_dma_rd (int handle, long source, long dest, long size);
+ * This function will no sooner return than dma is complete*/
+int mbspex_dma_rd (int handle, long source, long dest, long size, int burst);
 
 
 

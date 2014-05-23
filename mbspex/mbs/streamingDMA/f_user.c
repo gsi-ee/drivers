@@ -1110,25 +1110,9 @@ int f_user_readout (unsigned char   bh_trig_typ,
           // wait until token of all used SFPs returned successfully
 
 #ifdef USE_MBSPEX_LIB
-
-          /* here we have to keep track of dma destination for each token packet in advance:*/
-          l_burst_size = 0x80; // for the moment this is fixed in driver
-          l_padd[l_i] = 0;
-          if ( ((long)pl_dat % l_burst_size) != 0)
-          {
-            l_padd[l_i] = l_burst_size - ((long)pl_dat % l_burst_size);
-            l_dma_target_base = (long) pl_dat + l_diff_pipe_phys_virt + l_padd[l_i];
-          }
-          else
-          {
-            l_dma_target_base = (long) pl_dat + l_diff_pipe_phys_virt;
-          }
-
-
+          l_dma_target_base=0; // disable automatic internal dma, we do it manually with burst adjustment later!
           l_stat =   mbspex_receive_tok (fd_pex, l_i, l_dma_target_base, (long unsigned*) &l_dma_trans_size,
               &l_dummy, &l_tok_check, &l_n_slaves);
-
-          l_dat_len_sum[l_i]= l_dma_trans_size;
 
 #else
 
@@ -1164,26 +1148,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
             l_check_err = 2; goto bad_event; 
             //printm ("exiting..\n"); exit (0);   
           }
-#ifdef USE_MBSPEX_LIB
 
-          // adjust pl_dat, pl_dat comes always 4 byte aligned
-                   // fill padding space with pattern
-
-
-
-                   l_padd[l_i] = l_padd[l_i] >> 2;                  // now in 4 bytes (longs)
-                   for (l_k=0; l_k<l_padd[l_i]; l_k++)
-                   {
-                     //*pl_dat++ = 0xadd00000 + (l_i*0x1000) + l_k;
-                     *pl_dat++ = 0xadd00000 + (l_padd[l_i]<<8) + l_k;
-                   }
-                   // increment pl_dat with true transfer size (not dma transfer size)
-                   // true transfer size expected and must be 4 bytes aligned
-                   l_dat_len_sum_long[l_i] = (l_dat_len_sum[l_i] >> 2);
-                   pl_dat += l_dat_len_sum_long[l_i];
-
-
-#endif
 
 
         } //if (l_sfp_slaves[l_i] != 0)
@@ -1206,13 +1171,19 @@ int f_user_readout (unsigned char   bh_trig_typ,
 #endif
           l_dat_len_sum[l_i] += 4; // wg. shizu !!??
       
-          #ifdef PEXOR_PC_DRAM_DMA
+#ifdef PEXOR_PC_DRAM_DMA
+
+
+
+          // choose burst size to accept max. 20% padding size
+                   if      (l_dat_len_sum[l_i] < 0xa0 ) { l_burst_size = 0x10; }
+                   else if (l_dat_len_sum[l_i] < 0x140) { l_burst_size = 0x20; }
+                   else if (l_dat_len_sum[l_i] < 0x280) { l_burst_size = 0x40; }
+                   else                                 { l_burst_size = 0x80; }
 
 
 #ifdef USE_MBSPEX_LIB
-          l_burst_size=0x80; // fix in driver ioctl for the moment!
-
-          // transfer size must be adjusted to burst size
+           // transfer size must be adjusted to burst size
                    if ( (l_dat_len_sum[l_i] % l_burst_size) != 0)
                    {
                      l_dma_trans_size    =  l_dat_len_sum[l_i] + l_burst_size     // in bytes
@@ -1234,17 +1205,12 @@ int f_user_readout (unsigned char   bh_trig_typ,
                                l_dma_target_base = (long) pl_dat + l_diff_pipe_phys_virt;
                              }
 
-          mbspex_dma_rd (fd_pex, l_pex_sfp_phys_mem_base[l_i], l_dma_target_base, l_dma_trans_size);
+          mbspex_dma_rd (fd_pex, l_pex_sfp_phys_mem_base[l_i], l_dma_target_base, l_dma_trans_size,l_burst_size);
           /* note: return value is true dma transfer size, we do not use this here*/
 
 #else
 
-          // choose burst size to accept max. 20% padding size
-          if      (l_dat_len_sum[l_i] < 0xa0 ) { l_burst_size = 0x10; }
-          else if (l_dat_len_sum[l_i] < 0x140) { l_burst_size = 0x20; }
-          else if (l_dat_len_sum[l_i] < 0x280) { l_burst_size = 0x40; }
-          else                                 { l_burst_size = 0x80; }
- 
+
           // setup DMA
           *pl_dma_burst_size  = l_burst_size;                          // in bytes
 
@@ -1316,7 +1282,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
           l_dat_len_sum_long[l_i] = (l_dat_len_sum[l_i] >> 2);
           pl_dat += l_dat_len_sum_long[l_i];      
 
-          #else // PEXOR_PC_DRAM_DMA 
+ #else // PEXOR_PC_DRAM_DMA
 
           //l_dat_len_sum_long[l_i] = (l_dat_len_sum[l_i] >> 2) + 1;  // in 4 bytes
           l_dat_len_sum_long[l_i] = (l_dat_len_sum[l_i] >> 2);  // in 4 bytes

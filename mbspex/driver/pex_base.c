@@ -358,20 +358,22 @@ void print_regs(struct  regs_pex* pg)
 
 }
 
-int pex_start_dma(struct pex_privdata *priv, dma_addr_t source, dma_addr_t dest, u32 dmasize, u32 channelmask)
+int pex_start_dma(struct pex_privdata *priv, dma_addr_t source, dma_addr_t dest, u32 dmasize, u32 channelmask, u32 burstsize)
 {
     int rev;
-    u32 burstsize=PEX_BURST;
     u32 enable=PEX_DMA_ENABLED_BIT; /* this will start dma immediately from given source address*/
+    if(burstsize>PEX_BURST) burstsize=PEX_BURST;
     if(channelmask>1) enable=channelmask; /* set sfp token transfer to initiate the DMA later*/
-
-
-      rev=pex_poll_dma_complete(priv);
+    rev=pex_poll_dma_complete(priv);
       if(rev)
           {
             pex_msg(KERN_NOTICE "**pex_start_dma: dma was not finished, do not start new one!\n");
             return rev;
           }
+      if(burstsize==0)
+      {
+        /* automatic burst size mode*/
+        burstsize=PEX_BURST;
       /* calculate maximum burstsize here:*/
       while (dmasize % burstsize)
          {
@@ -390,7 +392,7 @@ int pex_start_dma(struct pex_privdata *priv, dma_addr_t source, dma_addr_t dest,
               pex_dbg(KERN_NOTICE "**changed source address to 0x%x, dest:0x%x, dmasize to 0x%x, burstsize:0x%x\n", (unsigned) source, (unsigned) dest,dmasize, burstsize)
           }
 
-
+      } // if automatic burstsizemode
       pex_dbg(KERN_NOTICE "#### pex_start_dma will initiate dma from 0x%x to 0x%x, len=0x%x, burstsize=0x%x...\n",
             (unsigned) source, (unsigned) dest,  dmasize, burstsize);
 
@@ -717,15 +719,16 @@ int pex_ioctl_read_dma(struct pex_privdata* priv, unsigned long arg)
 {
   int retval=0;
   dma_addr_t dmasource, dmadest;
-  u32 dmasize;
+  u32 dmasize, dmaburst;
   struct pex_dma_io descriptor;
   retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pex_dma_io));
   if(retval) return retval;
   dmasource=descriptor.source;
   dmadest=descriptor.target;
   dmasize=descriptor.size;
+  dmaburst=descriptor.burst;
 
-  if((retval=pex_start_dma(priv, dmasource, dmadest, dmasize, 1))!=0)
+  if((retval=pex_start_dma(priv, dmasource, dmadest, dmasize, 1, dmaburst))!=0)
       return retval;
 
 
