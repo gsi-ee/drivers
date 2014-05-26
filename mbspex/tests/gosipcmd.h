@@ -34,13 +34,14 @@
 #define GOSIP_CMD_MAX_ARGS 10
 
 
-
 typedef enum
 {
   GOSIP_NOP,
   GOSIP_INIT,
   GOSIP_READ,
-  GOSIP_WRITE
+  GOSIP_WRITE,
+  GOSIP_CONFIGURE,
+  GOSIP_VERIFY
 } gos_cmd_id;
 
 
@@ -54,6 +55,9 @@ struct gosip_cmd {
     long slave;                  /* slave id*/
     long address;                /* address on slave*/
     long value;                /* value to write, or read back*/
+    char filename[GOSIP_MAXTEXT]; /* optional name of configuration file*/
+    FILE* configfile;              /* handle to configuration file*/
+    int linecount;                /* configfile linecounter*/
 };
 
 
@@ -86,6 +90,17 @@ int goscmd_execute_command(struct gosip_cmd* com);
 /* open the pex device, return file descriptor in com*/
 int goscmd_open_device(struct gosip_cmd* com);
 
+/* open configuration file*/
+int goscmd_open_configuration (struct gosip_cmd* com);
+
+/* close configuration file*/
+int goscmd_close_configuration (struct gosip_cmd* com);
+
+/* fill next values from configuration file into com structure.
+ * returns -1 if end of config is reached*/
+int goscmd_next_config_values (struct gosip_cmd* com);
+
+
 /* write to slave address specified in command*/
 int goscmd_write(struct gosip_cmd* com);
 
@@ -94,6 +109,12 @@ int goscmd_read(struct gosip_cmd* com);
 
 /* initialize sfp chain*/
 int goscmd_init(struct gosip_cmd* com);
+
+/* load register values from configuration file*/
+int goscmd_configure(struct gosip_cmd* com);
+
+/* compare register values with configuration file*/
+int goscmd_verify(struct gosip_cmd* com);
 
 
 /* printout results of operation*/

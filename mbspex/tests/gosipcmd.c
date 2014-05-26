@@ -1,26 +1,23 @@
 /*
  * Command line interface for gosip io protocol with mbxpex library
- * J.Adamczewski-Musch, gsi, 22-May_2014
+ * J.Adamczewski-Musch, gsi, 26-May_2014
  *
  */
 
 #include "gosipcmd.h"
+#include <string.h>
 
-
-
-
-
-void goscmd_defaults(struct gosip_cmd* com)
+void goscmd_defaults (struct gosip_cmd* com)
 {
-  com->devnum=0;
-  com->command=GOSIP_NOP;
-  com->verboselevel=0;
-  com->hexformat=0;
-  com->fd_pex=-1;
-  com->sfp=-1;
-  com->slave=-1;
-  com->address=-1;
-  com->value=0;
+  com->devnum = 0;
+  com->command = GOSIP_NOP;
+  com->verboselevel = 0;
+  com->hexformat = 0;
+  com->fd_pex = -1;
+  com->sfp = -1;
+  com->slave = -1;
+  com->address = -1;
+  com->value = 0;
 }
 
 void goscmd_set_command (struct gosip_cmd* com, gos_cmd_id id)
@@ -36,231 +33,421 @@ void goscmd_set_command (struct gosip_cmd* com, gos_cmd_id id)
   }
 }
 
-
-void goscmd_dump_command(struct gosip_cmd* com)
+void goscmd_dump_command (struct gosip_cmd* com)
 {
-    printm(" gosipcmd dump: \n");
-    printm(" \t command  :%d \n",com->command);
-    printm(" \t device   :%d \n",com->devnum);
-    printm(" \t sfp      :%d \n",com->sfp);
-    printm(" \t slave    :%d \n",com->slave);
-    printm(" \t address  :0x%x \n",com->address);
-    printm(" \t value    :0x%x \n",com->value);
+  //printm (" gosipcmd dump: \n");
+  com->hexformat == 1 ? printm (" Command  :0x%x \t", com->command) : printm (" Command: %d \t", com->command);
+  com->hexformat == 1 ? printm (" \t device: 0x%x \t", com->devnum) : printm (" \t device: %d \t", com->devnum);
+  com->hexformat == 1 ? printm (" \t sfp: 0x%x \t", com->sfp) : printm (" \t sfp: %d \t", com->sfp);
+  com->hexformat == 1 ? printm (" \t slave: 0x%x \t", com->slave) : printm (" \t slave: %d \t", com->slave);
+  com->hexformat == 1 ? printm (" \t address: 0x%x \t", com->address) : printm (" \t address: %d \t", com->address);
+  com->hexformat == 1 ? printm (" \t value: 0x%x \n", com->value) : printm (" \t value: %d \n", com->value);
+//  if ((com->command == GOSIP_CONFIGURE) || (com->command == GOSIP_VERIFY))
+//  printm (" \t config file    :%s \n", com->filename);
+}
+
+void goscmd_assert_arguments (struct gosip_cmd* com, int arglen)
+{
+  int do_exit = 0;
+  if ((com->command == GOSIP_INIT) && (arglen < 2))
+    do_exit = 1;
+  if ((com->command == GOSIP_READ) && (arglen < 3))
+    do_exit = 1;
+  if ((com->command == GOSIP_WRITE) && (arglen < 4))
+    do_exit = 1;
+  if (do_exit)
+  {
+    printm (" gosipcmd ERROR - number of parameters not sufficient for command!\n");
+    exit (1);
+  }
 
 }
 
-void goscmd_assert_arguments(struct gosip_cmd* com, int arglen)
+void goscmd_assert_command (struct gosip_cmd* com)
 {
-  int do_exit=0;
-  if((com->command==GOSIP_INIT) && (arglen<2)) do_exit=1;
-  if((com->command==GOSIP_READ) && (arglen<3)) do_exit=1;
-  if((com->command==GOSIP_WRITE) && (arglen<4)) do_exit=1;
-  if(do_exit)
-      {
-          printm(" gosipcmd ERROR - number of parameters not sufficient for command!\n");
-          exit(1);
-      }
-
-
-
-
+  int do_exit = 0;
+  if (com == GOSIP_NOP)
+    do_exit = 1;
+  if (com->fd_pex < 0)
+    do_exit = 1;
+  if ((com->command != GOSIP_CONFIGURE) && (com->command != GOSIP_VERIFY))
+  {
+    if (com->sfp < 0)
+      do_exit = 1;
+    if ((com->command != GOSIP_INIT) && (com->slave < 0))
+      do_exit = 1;
+    if ((com->command != GOSIP_INIT) && (com->address < 0))
+      do_exit = 1;
+  }
+  if (do_exit)
+  {
+    printm (" gosipcmd ERROR - illegal parameters \n");
+    goscmd_dump_command (com);
+    exit (1);
+  }
 }
 
-void goscmd_assert_command(struct gosip_cmd* com)
+int goscmd_open_device (struct gosip_cmd* com)
 {
-  int do_exit=0;
-  if(com==GOSIP_NOP) do_exit=1;
-  if (com->fd_pex < 0) do_exit=1;
-  if(com->sfp <0)  do_exit=1;
-  if((com->command!=GOSIP_INIT) && (com->slave <0))  do_exit=1;
-  if((com->command!=GOSIP_INIT) && (com->address <0))  do_exit=1;
-
-  if(do_exit)
-    {
-        printm(" gosipcmd ERROR - illegal parameters \n");
-        goscmd_dump_command(com);
-        exit(1);
-    }
-}
-
-
-int goscmd_open_device(struct gosip_cmd* com)
-{
-  com->fd_pex=mbspex_open(com->devnum);
-  if (com->fd_pex < 0) {
-    printm("ERROR>> open /dev/pexor%d \n", com->devnum);
-    exit(1);
+  com->fd_pex = mbspex_open (com->devnum);
+  if (com->fd_pex < 0)
+  {
+    printm ("ERROR>> open /dev/pexor%d \n", com->devnum);
+    exit (1);
   }
   return 0;
 }
 
-void goscmd_close_device(struct gosip_cmd* com)
+void goscmd_close_device (struct gosip_cmd* com)
 {
-    close(com->fd_pex);
+  close (com->fd_pex);
 }
 
-
-int goscmd_write(struct gosip_cmd* com)
+int goscmd_open_configuration (struct gosip_cmd* com)
 {
-  goscmd_assert_command(com);
-  if(com->verboselevel) goscmd_dump_command(com);
-  return (mbspex_slave_wr(com->fd_pex, com->sfp, com->slave, com->address, com->value));
-}
-
-int goscmd_read(struct gosip_cmd* com)
-{
-  int rev=0;
-  goscmd_assert_command(com);
-  if(com->verboselevel) goscmd_dump_command(com);
-  rev=mbspex_slave_rd(com->fd_pex, com->sfp, com->slave, com->address, &(com->value));
-  if(rev==0)
-    {
-      goscmd_output(com);
-    }
+  if (strncmp (com->filename, "-", 256) == 0)
+  {
+    com->configfile = stdin; /* do we need this? line input like trbcmd */
+  }
   else
+  {
+    com->configfile = fopen (com->filename, "r");
+    if (com->configfile == NULL )
     {
-      printm("ERROR on reading!\n");
-      if(com->verboselevel) goscmd_dump_command(com);
+      printm (" Error opening Configuration File '%s': %s\n", com->filename, strerror (errno));
+      return -1;
     }
-    return rev;
+  }
+  com->linecount = 0;
+  return 0;
 }
 
-int goscmd_init(struct gosip_cmd* com)
+int goscmd_close_configuration (struct gosip_cmd* com)
 {
-  goscmd_assert_command(com);
-  if(com->verboselevel) goscmd_dump_command(com);
-  return (mbspex_slave_init(com->fd_pex, com->sfp, com->slave));
+  fclose (com->configfile);
 }
 
-
-int goscmd_output(struct gosip_cmd* com)
+int goscmd_next_config_values (struct gosip_cmd* com)
 {
-  com->hexformat ? printm("0x%x \n", com->value): printm("%d \n", com->value);
+  /* file parsing code was partially stolen from trbcmd.c Thanks Ludwig Maier et al. for this!*/
+  int status = 0;
+  size_t linelen = 0;
+  char* cmdline;
+  char cmd[GOSIP_CMD_MAX_ARGS][GOSIP_CMD_SIZE];
+  int i, cmdlen;
+  char *c = NULL;
+  for (i = 0; i < GOSIP_CMD_MAX_ARGS; i++)
+  {
+    cmd[i][0] = '\0';
+  }
+  com->linecount++;
+  status = getline (&cmdline, &linelen, com->configfile);
+  //printm("DDD got from file %s line %s !\n",com->filename, cmdline);
+  if (status == -1)
+  {
+    if (feof (com->configfile) != 0)
+    {
+      /* EOF reached */
+      rewind (com->configfile);
+      return -1;
+    }
+    else
+    {
+      /* Error reading line */
+      printm ("Error reading script-file\n");
+      return -1;
+    }
+  }
+
+  /* Remove newline and comments */
+  if ((c = strchr (cmdline, '\n')) != NULL )
+  {
+    *c = '\0';
+  }
+  if ((c = strchr (cmdline, '#')) != NULL )
+  {
+    *c = '\0';
+  }
+
+  /* Split up cmdLine */
+  sscanf (cmdline, "%s %s %s %s %s %s %s %s %s %s", cmd[0], cmd[1], cmd[2], cmd[3], cmd[4], cmd[5], cmd[6], cmd[7],
+      cmd[8], cmd[9]);
+
+  for (i = 0, cmdlen = 0; i < GOSIP_CMD_MAX_ARGS; i++, cmdlen++)
+  {
+    if (cmd[i][0] == '\0')
+    {
+      //printm("got commandlen(%d)=%d\n",i,cmdlen);
+      break;
+    }
+  }
+  if (cmdlen == 0)
+  {
+    /* Empty Line */
+    //printm("got empty line\n");
+    return 0;
+  }
+
+  if (com->verboselevel > 1)
+  {
+    printm ("#Line %d:  %s\n", com->linecount, cmdline);
+  }
+
+  if (cmdlen != 4)
+  {
+    printm ("Invalid configuration data at line %d, (cmdlen=%d)stopping configuration\n", com->linecount, cmdlen);
+    return -1;
+  }
+  com->sfp = strtoul (cmd[0], NULL, com->hexformat == 1 ? 16 : 0);
+  com->slave = strtoul (cmd[1], NULL, com->hexformat == 1 ? 16 : 0);
+  com->address = strtoul (cmd[2], NULL, com->hexformat == 1 ? 16 : 0);
+  com->value = strtoul (cmd[3], NULL, com->hexformat == 1 ? 16 : 0);
+  return status;
 }
 
-
-
-
-void goscmd_usage(const char *progname)
+int goscmd_write (struct gosip_cmd* com)
 {
-    printf("***************************************************************************\n");
-
-    printf(" %s for mbspex library  \n",progname);
-    printf(" v0.1 22-May-2014 by JAM (j.adamczewski@gsi.de)\n");
-    printf("***************************************************************************\n");
-    printf("  usage: %s [-w|-r|-i|-d DEVICE |-v VERBOSITY] sfp slave [address [value]] \n",progname);
-    printf("\t Options:\n");
-    printf("\t\t -h        : display this help\n");
-    printf("\t\t -w        : write to  register\n");
-    printf("\t\t -r        : read from register \n");
-    printf("\t\t -i        : initialize sfp chain \n");
-    printf("\t\t -d DEVICE : specify device number N (/dev/pexorN) \n");
-    printf("\t\t -v        : verbose debug mode \n");
-    printf("\t\t -x        : results in hex format \n");
-    printf("\t Arguments:\n");
-    printf("\t\t sfp      - sfp chain \n");
-    printf("\t\t slave    - slave id at chain, or total number of slaves\n");
-    printf("\t\t address  - register on slave \n");
-    printf("\t\t value    - value to write on slave \n");
-    printf("\t Examples:\n");
-    printf("\t  %s -i 0 24: initialize chain at sfp 0 with 24 slave devices\n",progname);
-    printf("\t  %s -r -x 0 3 0x1000  : read from sfp0, slave 3, address 0x1000\n",progname);
-    printf("\t  %s -w -x 0 3 0x1000 0x2A  : write value 0x2A to sfp 0, slave 3, address 0x1000\n",progname);
-    printf("*****************************************************************************\n");
-    exit(0);
+  goscmd_assert_command (com);
+  if (com->verboselevel)
+    goscmd_dump_command (com);
+  return (mbspex_slave_wr (com->fd_pex, com->sfp, com->slave, com->address, com->value));
 }
 
-
-int goscmd_execute_command(struct gosip_cmd* com)
+int goscmd_read (struct gosip_cmd* com)
 {
-  int rev=0;
-  switch(com->command)
+  int rev = 0;
+  goscmd_assert_command (com);
+  if (com->verboselevel)
+    goscmd_dump_command (com);
+  rev = mbspex_slave_rd (com->fd_pex, com->sfp, com->slave, com->address, &(com->value));
+  if (rev == 0)
+  {
+    if (com->command != GOSIP_VERIFY)
+      goscmd_output (com);    // only do output if we have explicit read, suppress during verify
+  }
+  else
+  {
+    printm ("ERROR on reading!\n");
+    if (com->verboselevel)
+      goscmd_dump_command (com);
+  }
+  return rev;
+}
+
+int goscmd_init (struct gosip_cmd* com)
+{
+  goscmd_assert_command (com);
+  if (com->verboselevel)
+    goscmd_dump_command (com);
+  return (mbspex_slave_init (com->fd_pex, com->sfp, com->slave));
+}
+
+int goscmd_configure (struct gosip_cmd* com)
+{
+  int rev = 0;
+  goscmd_assert_command (com);
+  if (com->verboselevel > 1)
+    goscmd_dump_command (com);
+  if (goscmd_open_configuration (com) < 0)
+    return -1;
+  printm ("Configuring from file %s - \n", com->filename);
+  while ((rev = goscmd_next_config_values (com)) != -1)
+  {
+    if (rev == 0)
+      continue;    // skip line
+    if (goscmd_write (com) != 0)
+      return -1;
+  }
+  printm ("Done.\n");
+  goscmd_close_configuration (com);
+  return 0;
+
+}
+
+int goscmd_verify (struct gosip_cmd* com)
+{
+  long checkvalue = 0;
+  int errcount = 0;
+  int rev = 0;
+  goscmd_assert_command (com);
+  if (com->verboselevel)
+    goscmd_dump_command (com);
+  if (goscmd_open_configuration (com) < 0)
+    return -1;
+  printm ("Verified actual configuration with file %s - \n", com->filename);
+  while ((rev = goscmd_next_config_values (com)) != -1)
+  {
+    if (rev == 0)
+      continue;    // skip line
+    checkvalue = com->value;
+    if (goscmd_read (com) != 0)
+      return -1;
+    if (checkvalue != com->value)
+    {
+      errcount++;
+      if (com->verboselevel)
+      {
+        printm (" Verify ERROR %d at sfp %d slave %d address 0xd%x : readback=0x%x, config=0x%x\n", errcount, com->sfp,
+            com->slave, com->address, com->value, checkvalue);
+      }
+    }
+  }
+  printm ("Verify found %d errors\n", errcount);
+  goscmd_close_configuration (com);
+  return 0;
+  return -1;
+
+}
+
+int goscmd_output (struct gosip_cmd* com)
+{
+  com->hexformat ? printm ("0x%x \n", com->value) : printm ("%d \n", com->value);
+}
+
+void goscmd_usage (const char *progname)
+{
+  printf ("***************************************************************************\n");
+
+  printf (" %s for mbspex library  \n", progname);
+  printf (" v0.1 22-May-2014 by JAM (j.adamczewski@gsi.de)\n");
+  printf ("***************************************************************************\n");
+  printf ("  usage: %s [-i|-r|-w|-c] [-d DEVICE |-v VERBOSITY] sfp slave [address [value]] \n", progname);
+  printf ("\t Options:\n");
+  printf ("\t\t -h        : display this help\n");
+  printf ("\t\t -i        : initialize sfp chain \n");
+  printf ("\t\t -r        : read from register \n");
+  printf ("\t\t -w        : write to  register\n");
+  printf ("\t\t -c FILE   : configure registers with values from FILE.gos\n");
+  printf ("\t\t -v FILE   : verify register contents (compare with FILE.gos)\n");
+  printf ("\t\t -n DEVICE : specify device number N (/dev/pexorN) \n");
+  printf ("\t\t -d        : debug mode \n");
+  printf ("\t\t -x        : results in hex format \n");
+  printf ("\t Arguments:\n");
+  printf ("\t\t sfp      - sfp chain \n");
+  printf ("\t\t slave    - slave id at chain, or total number of slaves\n");
+  printf ("\t\t address  - register on slave \n");
+  printf ("\t\t value    - value to write on slave \n");
+  printf ("\t Examples:\n");
+  printf ("\t  %s -i 0 24: initialize chain at sfp 0 with 24 slave devices\n", progname);
+  printf ("\t  %s -r -x 0 3 0x1000  : read from sfp0, slave 3, address 0x1000\n", progname);
+  printf ("\t  %s -w -x 0 3 0x1000 0x2A  : write value 0x2A to sfp 0, slave 3, address 0x1000\n", progname);
+  printf ("*****************************************************************************\n");
+  exit (0);
+}
+
+int goscmd_execute_command (struct gosip_cmd* com)
+{
+  int rev = 0;
+  switch (com->command)
   {
     case GOSIP_INIT:
-      rev=goscmd_init(com);
+      rev = goscmd_init (com);
       break;
     case GOSIP_READ:
-      rev=goscmd_read(com);
+      rev = goscmd_read (com);
       break;
     case GOSIP_WRITE:
-      rev=goscmd_write(com);
+      rev = goscmd_write (com);
+      break;
+    case GOSIP_CONFIGURE:
+      rev = goscmd_configure (com);
+      break;
+    case GOSIP_VERIFY:
+      rev = goscmd_verify (com);
       break;
     default:
-      printm("Error: Unknown command %d \n",com->command);
-      rev=-2;
+      printm ("Error: Unknown command %d \n", com->command);
+      rev = -2;
       break;
   };
-return rev;
+  return rev;
 }
-
 
 int main (int argc, char *argv[])
 {
-  int          l_status;
+  int l_status;
   int opt;
   char cmd[GOSIP_CMD_MAX_ARGS][GOSIP_CMD_SIZE];
   unsigned int cmdLen = 0;
   unsigned int i;
   struct gosip_cmd theCommand;
-  goscmd_defaults(&theCommand);
+  goscmd_defaults (&theCommand);
 
-
-/* get arguments*/
+  /* get arguments*/
   optind = 1;
-     while ((opt = getopt(argc, argv, "hwrid:vx")) != -1) {
-       switch (opt) {
-       case '?':
-         goscmd_usage(basename(argv[0]));
-         exit(EXIT_FAILURE);
-       case 'h':
-         goscmd_usage(basename(argv[0]));
-         exit(EXIT_SUCCESS);
-       case 'd':
-         theCommand.devnum = strtol(optarg, NULL, 0);
-         break;
-       case 'w':
-         goscmd_set_command (&theCommand, GOSIP_WRITE);
-         break;
-       case 'r':
-         goscmd_set_command (&theCommand, GOSIP_READ);
-         break;
-       case 'i':
-         goscmd_set_command (&theCommand, GOSIP_INIT);
-         break;
-       case 'v':
-         theCommand.verboselevel = 1; /*strtol(optarg, NULL, 0); later maybe diffferent verbose level*/
-         break;
-       case 'x':
-         theCommand.hexformat= 1;
-         break;
-       default:
-         break;
-       }
-     }
+  while ((opt = getopt (argc, argv, "hwrin:c:v:dx")) != -1)
+  {
+    switch (opt)
+    {
+      case '?':
+        goscmd_usage (basename (argv[0]));
+        exit (EXIT_FAILURE);
+      case 'h':
+        goscmd_usage (basename (argv[0]));
+        exit (EXIT_SUCCESS);
+      case 'n':
+        theCommand.devnum = strtol (optarg, NULL, 0);
+        break;
+      case 'w':
+        goscmd_set_command (&theCommand, GOSIP_WRITE);
+        break;
+      case 'r':
+        goscmd_set_command (&theCommand, GOSIP_READ);
+        break;
+      case 'i':
+        goscmd_set_command (&theCommand, GOSIP_INIT);
+        break;
+      case 'c':
+        goscmd_set_command (&theCommand, GOSIP_CONFIGURE);
+        strncpy (theCommand.filename, optarg, GOSIP_MAXTEXT);
+        break;
+      case 'v':
+        goscmd_set_command (&theCommand, GOSIP_VERIFY);
+        strncpy (theCommand.filename, optarg, GOSIP_MAXTEXT);
+        break;
+      case 'd':
+        theCommand.verboselevel = 1; /*strtol(optarg, NULL, 0); later maybe different verbose level*/
+        break;
+      case 'x':
+        theCommand.hexformat = 1;
+        break;
+      default:
+        break;
+    }
+  }
 
   /* get parameters:*/
-      cmdLen = argc - optind;
-      /*printf("- argc:%d optind:%d cmdlen:%d \n",argc, optind, cmdLen);*/
-      goscmd_assert_arguments(&theCommand,cmdLen);
-      for (i = 0; (i < cmdLen) && (i < GOSIP_CMD_MAX_ARGS); i++) {
-        strncpy(cmd[i], argv[optind + i], GOSIP_CMD_SIZE);
-      }
+  cmdLen = argc - optind;
+  /*printf("- argc:%d optind:%d cmdlen:%d \n",argc, optind, cmdLen);*/
+  goscmd_assert_arguments (&theCommand, cmdLen);
+  for (i = 0; (i < cmdLen) && (i < GOSIP_CMD_MAX_ARGS); i++)
+  {
+    if (argv[optind + i])
+      strncpy (cmd[i], argv[optind + i], GOSIP_CMD_SIZE);
+    else
+      printm ("warning: argument at position %d is empty!", optind + i);
+  }
   /* TODO: implement skript processing as in trbcmd*/
+  if ((theCommand.command == GOSIP_CONFIGURE) || (theCommand.command == GOSIP_VERIFY))
+  {
+    // get list of addresses and values from file:
 
+  }
+  else
+  {
+    theCommand.sfp = strtoul (cmd[0], NULL, theCommand.hexformat == 1 ? 16 : 0);
+    theCommand.slave = strtoul (cmd[1], NULL, theCommand.hexformat == 1 ? 16 : 0);
 
-      theCommand.sfp=strtoul(cmd[0], NULL, theCommand.hexformat == 1 ? 16 : 0);
-      theCommand.slave=strtoul(cmd[1], NULL, theCommand.hexformat == 1 ? 16 : 0);
+    if ((theCommand.command == GOSIP_READ) || (theCommand.command == GOSIP_WRITE))
+      theCommand.address = strtoul (cmd[2], NULL, theCommand.hexformat == 1 ? 16 : 0);
+    if (theCommand.command == GOSIP_WRITE)
+      theCommand.value = strtoul (cmd[3], NULL, theCommand.hexformat == 1 ? 16 : 0);
+  }
+  goscmd_open_device (&theCommand);
+  goscmd_assert_command (&theCommand);
+  l_status = goscmd_execute_command (&theCommand);
+  goscmd_close_device (&theCommand);
 
-      if((theCommand.command==GOSIP_READ) || (theCommand.command==GOSIP_WRITE))
-        theCommand.address=strtoul(cmd[2], NULL, theCommand.hexformat == 1 ? 16 : 0);
-      if(theCommand.command==GOSIP_WRITE)
-        theCommand.value=strtoul(cmd[3], NULL, theCommand.hexformat == 1 ? 16 : 0);
-
-      goscmd_open_device(&theCommand);
-      goscmd_assert_command(&theCommand);
-      l_status=goscmd_execute_command(&theCommand);
-      goscmd_close_device(&theCommand);
-
-return l_status;
+  return l_status;
 }
 

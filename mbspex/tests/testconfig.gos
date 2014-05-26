@@ -1,0 +1,11 @@
+#  gosipcmd configuration test for exploder1 memory
+# format: 
+# sfp slave address value
+0 0 0x100000 42
+0 0 0x110000 43
+0 0 0x120000 44
+
+0 0 0x130000 45
+# this is a comment
+0 0 0x140000 46 # 47 comment at end of line
+0 0 0x100004 11
