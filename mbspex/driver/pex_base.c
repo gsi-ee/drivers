@@ -27,42 +27,7 @@ static int my_major_nr = 0;
 MODULE_AUTHOR("Nikolaus Kurz, Joern Adamczewski-Musch, EE, GSI, 8-Apr-2014");
 MODULE_LICENSE("Dual BSD/GPL");
 
-//void pex_show_version(struct pex_privdata *privdata, char* buf)
-//{
-//    /* stolen from pex_gosip.h*/
-//    u32 tmp, year, month, day, version[2];
-//    char txt[512];
-//    u32* ptversion = (u32*) (privdata->iomem[0] + PEX_SFP_BASE
-//            + PEX_SFP_VERSION);
-//    tmp = ioread32(ptversion);
-//    mb();
-//    ndelay(20);
-//    year = ((tmp & 0xff000000) >> 24) + 0x2000;
-//    month = (tmp & 0xff0000) >> 16;
-//    day = (tmp & 0xff00) >> 8;
-//    version[0] = (tmp & 0xf0) >> 4;
-//    version[1] = (tmp & 0xf);
-//    snprintf(txt, 512,
-//            "PEX FPGA code compiled at Year=%x Month=%x Date=%x Version=%x.%x \n",
-//            year, month, day, version[0], version[1]);
-//    pex_dbg(KERN_NOTICE "%s", txt);
-//    if (buf) snprintf(buf, 512, "%s", txt);
-//}
-//
-//ssize_t pex_sysfs_codeversion_show(struct device *dev,
-//        struct device_attribute *attr, char *buf)
-//{
-//    char vstring[512];
-//    ssize_t curs = 0;
-//    struct pex_privdata *privdata;
-//    privdata = (struct pex_privdata*) dev_get_drvdata(dev);
-//    curs =
-//            snprintf(vstring, 512,
-//                    "*** This is PEX driver for MBS, Version %s build on %s at %s \n\t",
-//                    PEXVERSION, __DATE__, __TIME__);
-//    pex_show_version(privdata, vstring + curs);
-//    return snprintf(buf, PAGE_SIZE, "%s\n", vstring);
-//}
+
 
 ssize_t pex_sysfs_trixorregs_show(struct device *dev,
         struct device_attribute *attr, char *buf)
@@ -580,8 +545,10 @@ int pex_ioctl_reset(struct pex_privdata* priv, unsigned long arg)
 
 #ifdef PEX_WITH_TRIXOR
   pex_dbg(KERN_NOTICE "Initalizing TRIXOR... \n");
-  atomic_set(&(priv->trig_outstanding), 0);
 
+#ifdef  PEX_IRQ_WAITQUEUE
+  atomic_set(&(priv->trig_outstanding), 0);
+#endif
   iowrite32(TRIX_EV_IRQ_CLEAR | TRIX_IRQ_CLEAR, priv->regs.irq_status);   /*reset interrupt source*/
   mb();
   ndelay(20);
@@ -798,6 +765,7 @@ int pex_ioctl_set_trixor(struct pex_privdata* priv, unsigned long arg)
 
 int pex_ioctl_wait_trigger(struct pex_privdata* priv, unsigned long arg)
 {
+#ifdef  PEX_IRQ_WAITQUEUE
   int wjifs=0;
   wjifs=wait_event_interruptible_timeout( priv->irq_trig_queue, atomic_read( &(priv->trig_outstanding) ) > 0, PEX_WAIT_TIMEOUT );
   pex_dbg(KERN_NOTICE "** pex_wait_trigger after wait_event_interruptible_timeout with TIMEOUT %d, waitjiffies=%d, outstanding=%d \n",PEX_WAIT_TIMEOUT, wjifs, atomic_read( &(priv->trig_outstanding)));
@@ -813,6 +781,7 @@ int pex_ioctl_wait_trigger(struct pex_privdata* priv, unsigned long arg)
     }
   else{}
   atomic_dec(&(priv->trig_outstanding));
+#endif
   return PEX_TRIGGER_FIRED;
 }
 
@@ -913,25 +882,29 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
           break;
 
 #ifdef  PEX_IRQ_WAITQUEUE
-
+        case WAIT_SEM:
         case PEX_IOC_WAIT_SEM:
             pex_dbg(KERN_INFO "Emulated WAIT_SEM using waitqueu\n");
             retval = pex_ioctl_wait_trigger(privdata,arg);
             break;
+        case POLL_SEM:
         case PEX_IOC_POLL_SEM:
             trigcount=atomic_read( &(privdata->trig_outstanding) );
             pex_dbg(KERN_INFO "Emulated POLL_SEM, trix_val: %d \n", trigcount);
-            retval = __put_user(trigcount, (int __user *)arg);
+            retval = __put_user(trigcount>0 ? 1 : 0, (int __user *)arg);
+            atomic_set(&(privdata->trig_outstanding), 0); /* discard mbs we do not process */
             pex_dbg((KERN_INFO " after POLL_SEM \n"));
             break;
-
+        case RESET_SEM:
         case PEX_IOC_RESET_SEM:
-            pex_dbg(KERN_INFO " Emulated RESET_SEM doing nothing\n");
+            pex_dbg(KERN_INFO " Emulated RESET_SEM flushes waitqueue:\n");
+            while((trigcount=atomic_read( &(privdata->trig_outstanding))>0))
+                pex_ioctl_wait_trigger(privdata,arg);
             break;
 
 
 #else
-
+        case WAIT_SEM:
         case PEX_IOC_WAIT_SEM:
                    pex_dbg(KERN_INFO " before WAIT_SEM \n");
                    if (down_interruptible(&(privdata->trix_sem))){
@@ -941,14 +914,15 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
                      privdata->trix_val = 0;
                    pex_dbg((KERN_INFO " after  WAIT_SEM \n"));
                    break;
+        case POLL_SEM:
         case PEX_IOC_POLL_SEM:
                    pex_dbg(
                            KERN_INFO " before POLL_SEM, trix_val: %ld \n", privdata->trix_val);
                    retval = __put_user(privdata->trix_val, (int __user *)arg);
                    pex_dbg((KERN_INFO " after POLL_SEM \n"));
                    break;
-
-         case PEX_IOC_RESET_SEM:
+        case RESET_SEM:
+        case PEX_IOC_RESET_SEM:
                           pex_dbg(KERN_INFO " before RESET_SEM \n");
                           privdata->trix_val = 0;
               #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 37)
@@ -963,12 +937,13 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 #endif /* irq waitqueue */
 #endif /* pex with trixor*/
-
+        case GET_BAR0_BASE:
         case PEX_IOC_GET_BAR0_BASE:
             pex_dbg(KERN_INFO " before GET_BAR0_BASE \n");
             retval = __put_user(privdata->l_bar0_base, (int __user *)arg);
             pex_dbg(KERN_INFO " after  GET_BAR0_BASE \n");
             break;
+        case GET_BAR0_TRIX_BASE:
         case PEX_IOC_GET_BAR0_TRIX_BASE:
             pex_dbg(KERN_INFO " before GET_TRIX_BASE \n");
             retval = __put_user(privdata->l_bar0_trix_base, (int __user *)arg);
@@ -1028,11 +1003,15 @@ irqreturn_t irq_hand( int irq, void *dev_id)
   ndelay(20);
   if(irtype & (TRIX_EV_IRQ_CLEAR | TRIX_DT_CLEAR)) /* test bits */
     {
+//      disable_irq_nosync(irq);
+//      ndelay(1000);
       /* prepare for trixor interrupts here:*/
       irtype = TRIX_EV_IRQ_CLEAR | TRIX_IRQ_CLEAR;
       iowrite32(irtype, privdata->regs.irq_status);   /*reset interrupt source*/
       mb();
       ndelay(20);
+//      ndelay(1000);
+//      enable_irq(irq);
       /* trigger interrupt from trixor. wake up waiting application if any:*/
       /* pex_dbg(KERN_NOTICE "mbspex driver interrupt handler sees trigger ir!\n"); */
       atomic_inc(&(privdata->trig_outstanding));
@@ -1078,7 +1057,7 @@ irqreturn_t irq_hand(int irq, void *dev_id)
 {
 
     struct pex_privdata *privdata;
-    pex_dbg(KERN_INFO "BEGIN irq_hand \n");
+    /*pex_dbg(KERN_INFO "BEGIN irq_hand \n");*/
 
     privdata = (struct pex_privdata *) dev_id;
     disable_irq_nosync(irq);
@@ -1086,7 +1065,7 @@ irqreturn_t irq_hand(int irq, void *dev_id)
     ndelay(1000);
 
     // clear source of pending interrupts (in trixor)
-    iowrite32((EV_IRQ_CLEAR | IRQ_CLEAR), privdata->pl_stat);
+    iowrite32((TRIX_EV_IRQ_CLEAR | TRIX_IRQ_CLEAR), privdata->regs.irq_status);
     //wmb ();
     mb ();
 
@@ -1105,7 +1084,8 @@ irqreturn_t irq_hand(int irq, void *dev_id)
     iowrite32 (FC_PULSE, privdata->pl_stat);
     iowrite32 (DT_CLEAR, privdata->pl_stat);
 #endif //INTERNAL_TRIG_TEST
-    pex_dbg(KERN_INFO "END   irq_hand \n");
+/*    pex_dbg(KERN_INFO "END   irq_hand \n");*/
+
     //printk (KERN_INFO "END   irq_hand \n");
     return IRQ_HANDLED;
 }
@@ -1349,6 +1329,7 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
 #else
     sema_init (&(privdata->trix_sem), 0);
 #endif
+
     privdata->trix_val = 0;
 #endif
 

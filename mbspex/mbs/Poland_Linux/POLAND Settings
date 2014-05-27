@@ -1,0 +1,369 @@
+Poland 
+:::::::::::::::
+pex_bar0_rw 21044 f
+pex_bar0_rw 21044 0
+ini_chane 0 1
+ini_chane 1 1
+
+= ini chaine after restart / reboot / powercyle
+
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+Example to prepare Start Settings for test strucure:
+:::::::::::::::::::::
+sh start_s2_stairs.sh
+:::::::::::::::::::::
+sh reset_logic.sh
+--reset internal statemachine
+
+sh trig_off.sh
+--blocks all Trigger inputs
+
+sh test_dac_qfw.sh
+--loads test-structure into DACs => Stairs on screen
+
+sh loop_time_ini.sh
+--main settings for Timeslice generation 
+--Master Slave Module
+--internal external Trigger
+--FESA / MBS
+
+sh s2_ini_qfw.sh
+--Messbereich S2 = 100uA
+
+sh trig_on.sh 
+--enable Trigger Input
+
+
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+Example to prepare Start Settings for individual DAC settings:
+:::::::::::::::::::::
+sh start_s2_stairs.sh
+:::::::::::::::::::::
+sh reset_logic.sh
+--reset internal statemachine
+
+sh trig_off.sh
+--blocks all Trigger inputs
+
+sh set_dac_sfp0.sh
+--load DAC settings for SFP1
+
+sh set_dac_sfp1.sh
+--load DAC settings for SFP1
+
+sh loop_time_ini.sh
+--main settings for Timeslice generation 
+--Master Slave Module
+--internal external Trigger
+--FESA / MBS
+
+sh s2_ini_qfw.sh
+--Messbereich S2 = 100uA
+
+sh trig_on.sh 
+--enable Trigger Input
+
+
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+Example to run calibration mode
+::::::::::::::::::
+sh cali_dac_qfw.sh
+::::::::::::::::::
+#reset & load QFW
+sh s2_ini_qfw.sh
+
+#set DAC mode to calibration
+write_slave 0 0 20002c 3
+write_slave 1 0 20002c 3
+
+#write dac start value for dacs in cali mode
+write_slave 0 0 2000d0 8000
+write_slave 1 0 2000d0 8000
+
+#for the moment only for s2 ans s3 possible
+#offset Value
+#C8 =200
+write_slave 0 0 200034 c8
+write_slave 1 0 200034 c8
+
+#accepted offset value + max X
+write_slave 0 0 20000c 8
+write_slave 1 0 20000c 8
+
+##cali_time = 100ms 
+write_slave 0 0 200038 4c4b40
+write_slave 1 0 200038 4c4b40
+
+#Start DAC program
+write_slave 0 0 200030 1
+write_slave 1 0 200030 1
+
+write_slave 0 0 200030 0
+write_slave 1 0 200030 0
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+Example to set all dacs with same value 
+::::::::::::::::::
+sh dac_all.sh
+::::::::::::::::::
+
+#value for all dacs
+write_slave 0 0 2000d4 6400
+write_slave 1 0 2000d4 6400
+
+#set DAC mode to same all mode
+write_slave 0 0 20002c 4
+write_slave 1 0 20002c 4
+
+#Start DAC program
+write_slave 0 0 200030 1
+write_slave 1 0 200030 1
+
+write_slave 0 0 200030 0
+write_slave 1 0 200030 0
+
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+Example to set 
+
+
+
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+Example to generate Offset Value
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+sh offset_measurment.sh
+:::::::::::::::::::::::::
+#example to read Offset 
+read_slave 0 0 200100 20
+read_slave 1 0 200100 20
+
+#example to read adjusted DAC Values
+read_slave 0 0 200180 20
+read_slave 1 0 200180 20
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+read Memory
+X86L-22 fruehauf > read_slave 1 0 000000 a0
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+#internal Trigger Counter Beginn & End should be the same!!!!!
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x0  Data: 0xaf
+
+#QFW Mode
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x4  Data: 0x2 
+
+#prgram QFW setting
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x8  Data: 0x0 
+
+#accepted difference between real value and measured value in cali mode (DAC) 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xc  Data: 0x8 
+
+#reset QFE to initial state
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x10  Data: 0x1 
+
+#Number of loops timeslice 1
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x14  Data: 0x1 
+#Number of loops timeslice 2
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x18  Data: 0x1 
+#Number of loops timeslice 3
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1c  Data: 0x1 
+
+#time for each loop in timeslice 1
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x20  Data: 0x4c4b40 
+#time for each loop in timeslice 2
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x24  Data: 0x4c4b40 
+#time for each loop in timeslice 1
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x28  Data: 0x4c4b40
+
+#DAC Mode 1= manual setting each channel 2= stairs 3= calibration 4= all same value
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x2c  Data: 0x3 
+
+#program dac setting (start adjusted mode)
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x30  Data: 0x0 
+
+#offset value for calibration mode
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x34  Data: 0xc8 
+
+#calibration time
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x38  Data: 0x4c4b40 
+
+#reset all internal scaler
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x3c  Data: 0x0 
+
+#internal trigger on = 1 / off = 0
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x40  Data: 0x0 
+
+#start offset measurment
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x44  Data: 0x0 
+
+#Bit '0' = FESA on/off /////Bit'1' = MASTER on/off
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x48  Data: 0x0 
+
+#enable Trigger input
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x4c  Data: 0x1 
+
+#ignore.....
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x50  Data: 0x0 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x54  Data: 0x0 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x58  Data: 0x0 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x5c  Data: 0x0 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x60  Data: 0x0 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x64  Data: 0x0 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x68  Data: 0x0 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x6c  Data: 0x0 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x70  Data: 0x0 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x74  Data: 0x0 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x78  Data: 0x0 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x7c  Data: 0x0 
+
+#value for TS1 / TS2 / TS3 (example for 3 timeslices
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x80  Data: 0xc2 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x84  Data: 0xc6 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x88  Data: 0xc4 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x8c  Data: 0xc4 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x90  Data: 0xc0 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x94  Data: 0xc1 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x98  Data: 0xc0 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x9c  Data: 0xc3 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xa0  Data: 0xc3 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xa4  Data: 0xc5 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xa8  Data: 0xc5 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xac  Data: 0xcc 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xb0  Data: 0xc3 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xb4  Data: 0xca 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xb8  Data: 0xc2 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xbc  Data: 0xc4 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xc0  Data: 0xc6 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xc4  Data: 0xc3 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xc8  Data: 0xca 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xcc  Data: 0xc3 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xd0  Data: 0xc2 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xd4  Data: 0xc4 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xd8  Data: 0xbe 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xdc  Data: 0xbe 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xe0  Data: 0xcd 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xe4  Data: 0xc9 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xe8  Data: 0xd2 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xec  Data: 0xc7 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xf0  Data: 0xc5 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xf4  Data: 0xcc 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xf8  Data: 0xcc 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0xfc  Data: 0xcc 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x100  Data: 0xc2 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x104  Data: 0xc8 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x108  Data: 0xcc 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x10c  Data: 0xc4 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x110  Data: 0xbf 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x114  Data: 0xc1 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x118  Data: 0xbf 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x11c  Data: 0xc3 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x120  Data: 0xc3 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x124  Data: 0xc4 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x128  Data: 0xc5 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x12c  Data: 0xc6 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x130  Data: 0xc3 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x134  Data: 0xc6 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x138  Data: 0xc3 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x13c  Data: 0xc4 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x140  Data: 0xc6 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x144  Data: 0xc2 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x148  Data: 0xc9 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x14c  Data: 0xc3 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x150  Data: 0xc2 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x154  Data: 0xc3 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x158  Data: 0xbd 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x15c  Data: 0xbd 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x160  Data: 0xca 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x164  Data: 0xcb 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x168  Data: 0xcc 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x16c  Data: 0xce 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x170  Data: 0xc5 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x174  Data: 0xc4 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x178  Data: 0xca 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x17c  Data: 0xd4 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x180  Data: 0xc2 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x184  Data: 0xcd 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x188  Data: 0xc5 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x18c  Data: 0xc3 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x190  Data: 0xbf 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x194  Data: 0xc0 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x198  Data: 0xbf 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x19c  Data: 0xc3 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1a0  Data: 0xc2 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1a4  Data: 0xc5 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1a8  Data: 0xcc 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1ac  Data: 0xc5 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1b0  Data: 0xc2 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1b4  Data: 0xc5 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1b8  Data: 0xc2 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1bc  Data: 0xc5 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1c0  Data: 0xc6 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1c4  Data: 0xc3 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1c8  Data: 0xc5 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1cc  Data: 0xc8 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1d0  Data: 0xc3 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1d4  Data: 0xc2 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1d8  Data: 0xbc 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1dc  Data: 0xbd 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1e0  Data: 0xc7 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1e4  Data: 0xca 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1e8  Data: 0xd1 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1ec  Data: 0xc9 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1f0  Data: 0xc4 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1f4  Data: 0xc4 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1f8  Data: 0xc9 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x1fc  Data: 0xcb 
+
+#Error Counter of QFW 1- 8
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x200  Data: 0x6 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x204  Data: 0x4 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x208  Data: 0x4 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x20c  Data: 0x2e5 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x210  Data: 0x5 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x214  Data: 0x4 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x218  Data: 0x7 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x21c  Data: 0x39c 
+
+#error calibration for each channel
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x220  Data: 0x7fd8fff6 
+
+#calibration finished = '1' for each channel
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x224  Data: 0xffffffff 
+
+#dummy data (alway fix value)
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x228  Data: 0xcbcbcbcb 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x22c  Data: 0xfbadbadf 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x230  Data: 0xa 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x234  Data: 0xb 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x238  Data: 0xc 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x23c  Data: 0xd 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x240  Data: 0xaa 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x244  Data: 0xbb 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x248  Data: 0xcc 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x24c  Data: 0xdd 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x250  Data: 0xaaa 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x254  Data: 0xbbb 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x258  Data: 0xccc 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x25c  Data: 0xddd 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x260  Data: 0xaaaa 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x264  Data: 0xbbbb 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x268  Data: 0xcccc 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x26c  Data: 0xdddd 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x270  Data: 0xaaaaa 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x274  Data: 0x8badbad8 
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x278  Data: 0xaffeaffe 
+
+#Trigger Counter (same as first word)
+Reply to PEXOR from SFP: 0x1 Module: 0x0 Address: 0x27c  Data: 0xaf 
+X86L-22 fruehauf > 
+
+
+
+

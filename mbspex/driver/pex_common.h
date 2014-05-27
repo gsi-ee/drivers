@@ -75,13 +75,11 @@
 //#define INTERNAL_TRIG_TEST 1
 
 
-// this will enable mode where pexor on board memory is not used as buffer
-// instead, data from sfp token request will be directly streamed to host dma buffer.
-//#define PEX_DIRECT_DMA 1
 
 
-/* timeout for ir wait queue */
-#define PEX_WAIT_TIMEOUT (1*HZ)
+
+/* timeout for ir wait queue, set to 5 s for slow poland tests */
+#define PEX_WAIT_TIMEOUT (5*HZ)
 /* maximum number of timeouts before wait loop terminates*/
 #define PEX_WAIT_MAXTIMEOUTS 20
 
@@ -89,21 +87,23 @@
 #define PEX_DMA_MAXPOLLS 10000
 
 /* polling delay for each cycle in ns for dma complete bit*/
-#define PEX_DMA_POLLDELAY 0
+#define PEX_DMA_POLLDELAY 20
 
 /* if set, we use a schedule() in the dma complete polling.
  * Note: according to linux kernel book, yield() will just prepare this
  * task to be scheduled in near future, but schedule() will initiate the
  * schedule directly*/
-#define PEX_DMA_POLL_SCHEDULE 0
+#define PEX_DMA_POLL_SCHEDULE 1
 
 
 
 
 #define PEX_ENABLE_IRQ 1
 
-/* use waitqueue after isr instead of semaphore*/
-#define PEX_IRQ_WAITQUEUE 1
+/* use waitqueue after isr instead of semaphore
+ * NOTE: this does not make sense with mbs/pipe, because we do
+ * not have automatic dma readout to kernel buffer queue as in dabc driver here!*/
+/*#define PEX_IRQ_WAITQUEUE 1*/
 
 #define PEX_SYSFS_ENABLE 1
 

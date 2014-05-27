@@ -40,15 +40,27 @@
 #define PEX_IOC_WRITE_REGISTER   _IOW(  PEX_IOC_MAGIC, 14, struct pex_reg_io)
 #define PEX_IOC_READ_REGISTER    _IOWR(  PEX_IOC_MAGIC, 15, struct pex_reg_io)
 #define PEX_IOC_READ_DMA         _IOWR(  PEX_IOC_MAGIC, 16, struct pex_dma_io)
-#define PEX_IOC_MAXNR 17
+/* we keep old ioctl definitions for backward compatibility and patch it in ioctl function*/
+#define WAIT_SEM              12
+#define POLL_SEM              16
+#define GET_BAR0_BASE       0x1234
+#define GET_BAR0_TRIX_BASE  0x1235
+#define RESET_SEM           0x1236
+#define PEX_IOC_MAXNR 22
 
 
-/* for mbs backward compatibility:*/
-#define WAIT_SEM              PEX_IOC_WAIT_SEM
-#define POLL_SEM              PEX_IOC_POLL_SEM
-#define GET_BAR0_BASE       PEX_IOC_GET_BAR0_BASE
-#define GET_BAR0_TRIX_BASE  PEX_IOC_GET_BAR0_TRIX_BASE
-#define RESET_SEM           PEX_IOC_RESET_SEM
+/* note: we do not redefine ioctls existing in mbs user code!*/
+//#define WAIT_SEM              PEX_IOC_WAIT_SEM
+//#define POLL_SEM              PEX_IOC_POLL_SEM
+//#define GET_BAR0_BASE       PEX_IOC_GET_BAR0_BASE
+//#define GET_BAR0_TRIX_BASE  PEX_IOC_GET_BAR0_TRIX_BASE
+//#define RESET_SEM           PEX_IOC_RESET_SEM
+
+
+
+
+
+
 
 
 #define PEX_TRIX_RES          0   /* Command for ioctl set trixor to reset trigger - clear dt flag */
