@@ -1,0 +1,2 @@
+#/bin/bash
+ /daq/usr/adamczew/workspace/drivers/mbspex/bin/gosipcmd -x -i  $*

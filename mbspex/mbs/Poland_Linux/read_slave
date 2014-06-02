@@ -1,0 +1,4 @@
+#/bin/bash
+/daq/usr/adamczew/workspace/drivers/mbspex/bin/gosipcmd -x -r $*
+#/daq/usr/adamczew/workspace/drivers/mbspex/mbs/Poland_Linux/read_slave_bin $*
+echo "read slave  with parameters: $*"

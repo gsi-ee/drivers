@@ -1,0 +1,4 @@
+#!/bin/bash 
+/daq/usr/adamczew/workspace/drivers/mbspex/bin/gosipcmd -x -w $*
+#/daq/usr/adamczew/workspace/drivers/mbspex/mbs/Poland_Linux/write_slave_bin $*
+#echo "wrote  slave  with parameters: $*"

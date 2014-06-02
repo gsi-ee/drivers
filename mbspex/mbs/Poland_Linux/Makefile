@@ -76,10 +76,15 @@ SMILIBS = $(LIB)/lib_mbs.a $(LIB)/lib_tools.a $(LIB)/lib_mbs.a $(LIB)/lib_smi.a 
           $(LIB)/libedit.a  -lnetinet
 endif
 
+PEX_INC = -I/daq/usr/adamczew/workspace/drivers/mbspex/include
+PEX_LIB = /daq/usr/adamczew/workspace/drivers/mbspex/lib/libmbspex.a
+
+
+
 endif
 
 m_read_meb : $(OBJ)/m_read_meb.o  $(OBJ)/objects f_user.c
-	gcc -O2 $(CFLAGS) -o m_read_meb -I$(INC) f_user.c $(OBJ)/m_read_meb.o $(LIBS) $(WR_LIB)
+	gcc -O2 $(CFLAGS) -o m_read_meb -I$(INC) $(PEX_INC) f_user.c $(OBJ)/m_read_meb.o $(LIBS) $(WR_LIB) $(PEX_LIB)
 	strip m_read_meb
 
 clean :

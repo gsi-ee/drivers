@@ -1,7 +1,9 @@
 // N.Kurz, EE, GSI, 20-Mar-2013
 // N.Kurz, EE, GSI, 11-Feb-2014: adopted for Linux (compiles and runs also on LynxOS)
+// J.Adamczewski-Musch, EE, GSI, 02-Jun-2014: added usage of mbspex lib
 
-// pexor qfw_lu readout 
+/* This define will switch on usage of mbspex lib with locked ioctls instead of direct register mapping usage*/
+#define USE_MBSPEX_LIB 1
 
 #include "stdio.h"
 #include "s_veshe.h"
@@ -24,8 +26,43 @@
 #include "f_ut_printm.h"
 #include "f_user_trig_clear.h"
 
-#include  "./pexor_gosip.h"
+#ifdef USE_MBSPEX_LIB
+#include "mbspex/libmbspex.h"
 
+// address map for slave (exploder1): this is user specific data concering frontends , so it is not available from libmbspex
+#define REG_BUF0     0xFFFFD0 // base address for buffer 0 : 0x0000
+#define REG_BUF1     0xFFFFD4  // base address for buffer 1 : 0x20000
+#define REG_SUBMEM_NUM   0xFFFFD8 //num of channels 8
+#define REG_SUBMEM_OFF   0xFFFFDC // offset of channels 0x4000
+#define REG_MODID     0xFFFFE0
+#define REG_HEADER    0xFFFFE4
+#define REG_FOOTER    0xFFFFE8
+#define REG_DATA_LEN  0xFFFFEC
+#define REG_DATA_REDUCTION  0xFFFFB0  // Nth bit = 1 enable data reduction of  Nth channel from block transfer readout. (bit0:time, bit1-8:adc)
+#define REG_MEM_DISABLE     0xFFFFB4  // Nth bit =1  disable Nth channel from block transfer readout.(bit0:time, bit1-8:adc)
+#define REG_MEM_FLAG_0      0xFFFFB8  // read only:
+#define REG_MEM_FLAG_1      0xFFFFBc  // read only:
+
+
+#define REG_BUF0_DATA_LEN     0xFFFD00  // buffer 0 submemory data length
+#define REG_BUF1_DATA_LEN     0xFFFE00  // buffer 1 submemory data length
+
+
+#define REG_DATA_REDUCTION  0xFFFFB0  // Nth bit = 1 enable data reduction of  Nth channel from block transfer readout. (bit0:time, bit1-8:adc)
+#define REG_MEM_DISABLE     0xFFFFB4  // Nth bit =1  disable Nth channel from block transfer readout.(bit0:time, bit1-8:adc)
+#define REG_MEM_FLAG_0      0xFFFFB8  // read only:
+#define REG_MEM_FLAG_1      0xFFFFBc  // read only:
+
+#define REG_RST 0xFFFFF4
+#define REG_LED 0xFFFFF8
+#define REG_VERSION 0xFFFFFC
+
+
+
+
+#else
+#include  "./pexor_gosip.h"
+#endif
 //----------------------------------------------------------------------------
 
 // User change area:
@@ -88,9 +125,12 @@
 int  f_pex_slave_rd (long, long, long, long*);
 int  f_pex_slave_wr (long, long, long,  long);
 int  f_pex_slave_init (long, long);
+#ifndef USE_MBSPEX_LIB
 int  f_pex_send_and_receive_tok (long, long, long*, long*, long*);
 int  f_pex_send_tok (long, long);
 int  f_pex_receive_tok (long, long*, long*, long*);
+static   s_pexor  sPEXOR;
+#endif
 void f_qfw_init ();
 
 static long          l_first = 0, l_first2 = 0, l_first3 = 0;       
@@ -101,7 +141,6 @@ static   INTS4    l_sfp_slaves[MAX_SFP] = NR_SLAVES;
 
 static   INTS4    l_bar0_base;
 static   long  volatile *pl_virt_bar0;
-static   s_pexor  sPEXOR;
 
 static   int   l_i, l_j, l_k;
 static  long  l_stat;
@@ -138,6 +177,7 @@ static  long  volatile *pl_dma_target_base;
 static  long  volatile *pl_dma_trans_size;
 static  long  volatile *pl_dma_burst_size;
 static  long  volatile *pl_dma_stat;
+static  long             l_dma_target_base;
 static  long            l_dma_trans_size;
 static  long            l_burst_size;
 static  long            l_dat;
@@ -171,6 +211,24 @@ int f_user_get_virt_ptr (long  *pl_loc_hwacc, long  pl_rem_cam[])
   {
     l_first2 = 1;
 
+#ifdef USE_MBSPEX_LIB
+    if ((fd_pex = mbspex_open (0)) == -1)
+       {
+         printm (RON"ERROR>>"RES" could not open mbspex device \n");
+         exit (0);
+       }
+    for (l_i=0; l_i<MAX_SFP; l_i++)
+        {
+          if (l_sfp_slaves[l_i] != 0)
+          {
+            l_sfp_pat |= (1<<l_i);
+          }
+        }
+        printm ("sfp pattern: 0x%x \n", l_sfp_pat);
+
+
+
+#else
     pl_page = (struct dmachain*) malloc (sizeof(struct dmachain*) * MAX_PAGE);
 
     if ((fd_pex = open (PEXDEV, O_RDWR)) == -1)
@@ -257,6 +315,11 @@ int f_user_get_virt_ptr (long  *pl_loc_hwacc, long  pl_rem_cam[])
     }
   }     
 }
+#endif
+
+  }
+  return 0;
+}
 
 /*****************************************************************************/
  
@@ -271,8 +334,9 @@ int f_user_init (unsigned char   bh_crate_nr,
   #else
    l_tok_mode = 0;    // qfw / exploder send data after token reception
   #endif
-
+#ifndef USE_MBSPEX_LIB
   PEXOR_GetPointer(0, pl_virt_bar0, &sPEXOR); 
+#endif  
   f_qfw_init();
   l_tog = 1;
   l_lec_check = -1;
@@ -336,7 +400,12 @@ int f_user_readout (unsigned char   bh_trig_typ,
     //printm ("send token in WAIT_FOR_DATA_READY_TOKEN mode \n");
     //printm ("l_tog | l_tok_mode: 0x%x \n", l_tog | l_tok_mode);
     //sleep (1);
+
+#ifdef USE_MBSPEX_LIB
+      l_stat =  mbspex_send_tok (fd_pex, l_sfp_pat,  l_tog | l_tok_mode);
+#else
     l_stat = f_pex_send_tok (l_sfp_pat, l_tog | l_tok_mode);
+#endif
     #endif 
 
     //printm ("l_tog: %d \n", l_tog);
@@ -374,7 +443,18 @@ int f_user_readout (unsigned char   bh_trig_typ,
         if (l_sfp_slaves[l_i] != 0)
         {
 
-          #ifdef DIRECT_DMA
+
+
+
+
+#ifdef USE_MBSPEX_LIB
+          l_stat=mbspex_send_and_receive_tok (fd_pex, l_i, l_tog | l_tok_mode,
+              (long) pl_dat + l_diff_pipe_phys_virt, (long unsigned*) &l_dma_trans_size,
+              &l_dummy, &l_tok_check, &l_n_slaves);
+          /* note: burst adjustment is done inside driver here*/
+#else
+
+#ifdef DIRECT_DMA
           l_burst_size = BURST_SIZE;
           // target address is (must be) adjusted to burst size ! 
           l_padd[l_i] = 0;
@@ -396,6 +476,8 @@ int f_user_readout (unsigned char   bh_trig_typ,
    
           // send token to slave(s) / to SFPs
           l_stat = f_pex_send_and_receive_tok (l_i, l_tog | l_tok_mode, &l_dummy, &l_tok_check, &l_n_slaves);
+
+#endif //USE_MBSPEX_LIB
           if (l_stat == -1)
           {
             printm (RON"ERROR>>"RES" PEXOR send token to slave(s) / SFPs failed\n");
@@ -426,6 +508,10 @@ int f_user_readout (unsigned char   bh_trig_typ,
           }
 
           #ifdef DIRECT_DMA
+
+
+#ifndef USE_MBSPEX_LIB
+          // mbspex lib does this internally, dma is finished when call mbspex_send_and_receive_tok returns
           l_ct = 0; 
           while (1)    // check if dma transfer finished 
           {
@@ -454,6 +540,13 @@ int f_user_readout (unsigned char   bh_trig_typ,
             #endif
           }
           l_dma_trans_size = *pl_dma_trans_size; // in this case true, not BURST_SIZE aligned size
+#endif // not USE_MBSPEX_LIB
+
+          if ((l_dma_trans_size % 8) != 0)
+          {
+            printm ("data size: %d \n",l_dma_trans_size); 
+          }
+
           // adjust pl_dat, pl_dat comes always 4 byte aligned
           // fill padding space with pattern
           l_padd[l_i] = l_padd[l_i] >> 2;                  // now in 4 bytes (longs) 
@@ -469,7 +562,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
           yield ();
           #else
           sched_yield ();
-          #endif
+          #endif // Linux
           #endif // DIRECT_DMA
         }
       }
@@ -482,7 +575,11 @@ int f_user_readout (unsigned char   bh_trig_typ,
       //printm ("send token in NOT WAIT_FOR_DATA_READY_TOKEN mode \n");
       //printm ("l_tog | l_tok_mode: 0x%x \n", l_tog | l_tok_mode);
       //sleep (1);
+#ifdef USE_MBSPEX_LIB
+      l_stat =  mbspex_send_tok (fd_pex, l_sfp_pat,  l_tog | l_tok_mode);
+#else
       l_stat = f_pex_send_tok (l_sfp_pat, l_tog | l_tok_mode);
+#endif
       #endif
 
       for (l_i=0; l_i<MAX_SFP; l_i++)
@@ -490,7 +587,16 @@ int f_user_readout (unsigned char   bh_trig_typ,
         if (l_sfp_slaves[l_i] != 0)
         {
           // wait until token of all used SFPs returned successfully
+
+#ifdef USE_MBSPEX_LIB
+          l_dma_target_base=0; // disable automatic internal dma, we do it manually with burst adjustment later!
+          l_stat =   mbspex_receive_tok (fd_pex, l_i, l_dma_target_base, (long unsigned*) &l_dma_trans_size,
+              &l_dummy, &l_tok_check, &l_n_slaves);
+
+#else
+
           l_stat = f_pex_receive_tok (l_i, &l_dummy, &l_tok_check, &l_n_slaves);
+#endif
           if (l_stat == -1)
           {
             printm (RON"ERROR>>"RES" PEXOR receive token from SFP %d failed\n", l_i);
@@ -506,7 +612,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
           }
           if ((l_tok_check & 0x2) != l_tok_mode)
           {
-            printm (RON"ERROR>>"RES" token mode bit differs from token return token mode bit \n");
+            printm (RON"ERROR>>"RES" token mode 0x%x bit differs from token return token mode 0x%x bit  \n",l_tok_mode,l_tok_check);
             l_err_prot_ct++;
             l_check_err = 2; goto bad_event; 
             //printm ("exiting..\n"); exit (0);
@@ -519,8 +625,11 @@ int f_user_readout (unsigned char   bh_trig_typ,
             l_check_err = 2; goto bad_event; 
             //printm ("exiting..\n"); exit (0);   
           }
-        }
-      }
+
+
+
+        } //if (l_sfp_slaves[l_i] != 0)
+      }// for
       #endif // else SEQUENTIAL_TOKEN_SEND := parallel token send
 
       #ifndef DIRECT_DMA
@@ -530,17 +639,53 @@ int f_user_readout (unsigned char   bh_trig_typ,
       {
         if (l_sfp_slaves[l_i] != 0)
         {
+
+#ifdef USE_MBSPEX_LIB
+          l_dat_len_sum[l_i] =  mbspex_get_tok_memsize(fd_pex, l_i); // in bytes
+#else
           l_dat_len_sum[l_i] = PEXOR_TK_Mem_Size (&sPEXOR, l_i); // in bytes
+
+#endif
           l_dat_len_sum[l_i] += 4; // wg. shizu !!??
       
           #ifdef PEXOR_PC_DRAM_DMA
 
           // choose burst size to accept max. 20% padding size
-          if      (l_dat_len_sum[l_i] < 0xa0 ) { l_burst_size = 0x10; }
-          else if (l_dat_len_sum[l_i] < 0x140) { l_burst_size = 0x20; }
-          else if (l_dat_len_sum[l_i] < 0x280) { l_burst_size = 0x40; }
-          else                                 { l_burst_size = 0x80; }
- 
+                   if      (l_dat_len_sum[l_i] < 0xa0 ) { l_burst_size = 0x10; }
+                   else if (l_dat_len_sum[l_i] < 0x140) { l_burst_size = 0x20; }
+                   else if (l_dat_len_sum[l_i] < 0x280) { l_burst_size = 0x40; }
+                   else                                 { l_burst_size = 0x80; }
+
+
+#ifdef USE_MBSPEX_LIB
+           // transfer size must be adjusted to burst size
+                   if ( (l_dat_len_sum[l_i] % l_burst_size) != 0)
+                   {
+                     l_dma_trans_size    =  l_dat_len_sum[l_i] + l_burst_size     // in bytes
+                                         - (l_dat_len_sum[l_i] % l_burst_size);
+                   }
+                   else
+                   {
+                     l_dma_trans_size = l_dat_len_sum[l_i];
+                   }
+
+                   l_padd[l_i] = 0;
+                             if ( ((long)pl_dat % l_burst_size) != 0)
+                             {
+                               l_padd[l_i] = l_burst_size - ((long)pl_dat % l_burst_size);
+                               l_dma_target_base = (long) pl_dat + l_diff_pipe_phys_virt + l_padd[l_i];
+                             }
+                             else
+                             {
+                               l_dma_target_base = (long) pl_dat + l_diff_pipe_phys_virt;
+                             }
+
+          mbspex_dma_rd (fd_pex, l_pex_sfp_phys_mem_base[l_i], l_dma_target_base, l_dma_trans_size,l_burst_size);
+          /* note: return value is true dma transfer size, we do not use this here*/
+
+#else
+
+
           // setup DMA
           *pl_dma_burst_size  = l_burst_size;                          // in bytes
 
@@ -597,6 +742,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
             sched_yield ();
             #endif
           }
+#endif // not mbspex lib
 
           // adjust pl_dat, pl_dat comes always 4 byte aligned
           // fill padding space with pattern
@@ -615,13 +761,22 @@ int f_user_readout (unsigned char   bh_trig_typ,
 
           //l_dat_len_sum_long[l_i] = (l_dat_len_sum[l_i] >> 2) + 1;  // in 4 bytes
           l_dat_len_sum_long[l_i] = (l_dat_len_sum[l_i] >> 2);  // in 4 bytes
+
+#ifdef USE_MBSPEX_LIB
+
+          for (l_k=0; l_k<l_dat_len_sum_long[l_i]; l_k++)
+                   {
+                     l_rd_ct++;
+                     mbspex_register_rd (fd_pex, 0, PEX_MEM_OFF + (long)(PEX_SFP_OFF * l_i), pl_dat++);
+                   }
+#else
           pl_tmp = pl_pex_sfp_mem_base[l_i];
           for (l_k=0; l_k<l_dat_len_sum_long[l_i]; l_k++)
           {
             l_rd_ct++;
             *pl_dat++ = *pl_tmp++;
           }
-
+#endif
           #endif // PEXOR_PC_DRAM_DMA 
         }
       }
@@ -747,6 +902,11 @@ bad_event:
 
 int f_pex_slave_init (long l_sfp, long l_n_slaves)
 {
+#ifdef USE_MBSPEX_LIB
+
+  return mbspex_slave_init (fd_pex, l_sfp, l_n_slaves);
+
+#else
   int  l_ret;
   long l_comm;
 
@@ -793,13 +953,22 @@ int f_pex_slave_init (long l_sfp, long l_n_slaves)
       //printm ("exiting.. \n"); exit (0);
     }
   }
-  return (l_ret);
+ return (l_ret);
+
+#endif // not MBSPEX LIB
 }
 
 /*****************************************************************************/
 
 int f_pex_slave_wr (long l_sfp, long l_slave, long l_slave_off, long l_dat)
 {
+#ifdef USE_MBSPEX_LIB
+
+  return mbspex_slave_wr (fd_pex, l_sfp, l_slave, l_slave_off, l_dat);
+
+#else
+
+
   int  l_ret;
   long l_comm;
   long l_addr;
@@ -852,12 +1021,19 @@ int f_pex_slave_wr (long l_sfp, long l_slave, long l_slave_off, long l_dat)
     }
   }
   return (l_ret);
+#endif
 }
 
 /*****************************************************************************/
 
 int f_pex_slave_rd (long l_sfp, long l_slave, long l_slave_off, long *l_dat)
 {
+#ifdef USE_MBSPEX_LIB
+
+  return mbspex_slave_rd (fd_pex, l_sfp, l_slave, l_slave_off, l_dat);
+
+#else
+
   int  l_ret;
   long l_comm;
   long l_addr;
@@ -911,6 +1087,7 @@ int f_pex_slave_rd (long l_sfp, long l_slave, long l_slave_off, long *l_dat)
     }
   }
   return (l_ret);
+#endif
 }
 
 /*****************************************************************************/
@@ -918,7 +1095,9 @@ int f_pex_slave_rd (long l_sfp, long l_slave, long l_slave_off, long *l_dat)
 void f_qfw_init ()
 
 {
+#ifndef USE_MBSPEX_LIB
   PEXOR_Port_Monitor (&sPEXOR);
+#endif  
   for (l_i=0; l_i<MAX_SFP; l_i++)
   {
     if (l_sfp_slaves[l_i] != 0)
@@ -1025,6 +1204,8 @@ void f_qfw_init ()
 }
 /*****************************************************************************/
 
+#ifndef USE_MBSPEX_LIB
+
 int f_pex_send_and_receive_tok (long l_sfp, long l_toggle,
                     long *pl_check1, long *pl_check2, long *pl_check3)
 {
@@ -1095,5 +1276,5 @@ int f_pex_receive_tok (long l_sfp, long *pl_check1, long *pl_check2, long *pl_ch
 
   return (l_ret);
 }
-
+#endif
 /*****************************************************************************/
