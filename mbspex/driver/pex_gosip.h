@@ -157,6 +157,9 @@ void set_sfp(struct pex_sfp *sfp, void *membase, unsigned long bar);
 void print_sfp(struct pex_sfp *sfp);
 void pex_show_version(struct pex_sfp *sfp, char *buf);
 
+/* issue receive reset for all sfps*/
+void pex_sfp_reset( struct pex_privdata* privdata);
+
 /* send request command comm to sfp address addr with optional send data.
  * will not wait for response! */
 void pex_sfp_request(struct pex_privdata *privdata, u32 comm, u32 addr,

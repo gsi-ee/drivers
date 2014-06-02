@@ -248,8 +248,17 @@ int pex_ioctl_wait_token(struct pex_privdata* priv, unsigned long arg)
 
 
 
-
-
+void pex_sfp_reset( struct pex_privdata* privdata)
+{
+  struct pex_sfp* sfp=&(privdata->regs.sfp);
+  pex_dbg(KERN_NOTICE "**pex_sfp_reset\n");
+  iowrite32(0xF,sfp->reset);
+  mb();
+  pex_sfp_delay();
+  iowrite32(0, sfp->reset);
+  mb();
+  pex_sfp_delay();
+}
 
 
 
@@ -286,6 +295,7 @@ int pex_sfp_get_reply ( struct pex_privdata* privdata, int ch,  u32* comm, u32 *
 
     }
   while(((status & 0x3000) >> 12) != 0x02); /* packet received bit is set*/
+
 
   *comm =  ioread32(sfp->rep_stat[ch]);
   pex_sfp_delay();

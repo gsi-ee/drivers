@@ -540,6 +540,7 @@ int pex_ioctl_test(struct pex_privdata* priv, unsigned long arg)
 int pex_ioctl_reset(struct pex_privdata* priv, unsigned long arg)
 {
   pex_dbg(KERN_NOTICE "** pex_ioctl_reset...\n");
+  pex_sfp_reset(priv);
   pex_sfp_clear_all(priv);
   // note that clear sfp channels is done via pex_ioctl_init_bus
 
@@ -815,7 +816,8 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     pex_dbg((KERN_INFO "BEGIN pex_ioctl \n"));
     privdata = (struct pex_privdata*) filp->private_data;
     /* use semaphore to allow multi user mode:*/
-    if (down_interruptible(&(privdata->ioctl_sem)))
+    /* but do not deadlock trigger semaphore against ioctl semaphore here!*/
+    if ((cmd!= WAIT_SEM) && (cmd!=PEX_IOC_WAIT_SEM) && (down_interruptible(&(privdata->ioctl_sem))))
                          return -ERESTARTSYS;
     switch (cmd)
         {

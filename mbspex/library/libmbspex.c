@@ -41,7 +41,18 @@ int mbspex_close(int handle)
 }
 
 
-
+int mbspex_reset (int handle)
+{
+  int rev;
+  mbspex_assert_handle(handle);
+  printm ("mbspex: resetting pex device\n");
+  rev = ioctl (handle, PEX_IOC_RESET);
+    if (rev)
+    {
+      printm ("\n\nError %d reseting pex device", rev, strerror (rev));
+    }
+    return rev;
+}
 
 /*****************************************************************************/
 
@@ -78,8 +89,8 @@ int mbspex_slave_wr (int handle, long l_sfp, long l_slave, long l_slave_off, lon
   rev = ioctl (handle, PEX_IOC_WRITE_BUS, &descriptor);
   if (rev)
   {
-    printm (RON"ERROR>>"RES"Error %d  on writing value %0xlx to address %0xlx (sfp:%d, slave:%d)- %s\n", rev, l_dat, l_sfp,
-        l_slave, l_slave_off, strerror (rev));
+    printm (RON"ERROR>>"RES"Error %d  on writing value 0x%lx to address 0x%lx (sfp:%d, slave:%d)- %s\n", rev, l_dat,  l_slave_off, l_sfp,
+        l_slave, strerror (rev));
   }
   return rev;
 }

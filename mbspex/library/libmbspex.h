@@ -37,6 +37,9 @@ int mbspex_open (int devnum);
 /* close file handle*/
 int mbspex_close (int handle);
 
+/* reset dma and sfp engines */
+int mbspex_reset (int handle);
+
 /* read data word *l_dat from sfp, slave and memory offset l_slave_off*/
 int mbspex_slave_rd (int handle, long l_sfp, long l_slave, long l_slave_off, long *l_dat);
 
