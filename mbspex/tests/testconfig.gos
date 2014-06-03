@@ -9,3 +9,5 @@
 # this is a comment
 0 0 0x140000 46 # 47 comment at end of line
 0 0 0x100004 11
+0 0 0x100008 3 setbit   # keyword makes value to bitmask
+0 0 0x10000C 1 CLEARBIT # keyword is not case sensitive

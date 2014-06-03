@@ -359,12 +359,18 @@ printf ("Test to map pipe at 0x%x, size: 0x%x, ...\n", off, len);
 
  init_buffers(Submembytes);
 
+ rev=mbspex_reset(fd_pex);
+ if(rev!=0)
+ {
+   printf("\n\nError %d in mbspex_reset . exiting...\n", rev);
+   close_exit(fd_pex);
+ }
 /* copy random test values to exploder frontend memory*/
 
  rev=mbspex_slave_init (fd_pex, sfp_channel, NUMSLAVES);
  if(rev!=0)
  {
-   printf("\n\nError %d in mbspex_slave_init for channel %x . exiting...\n", sfp_channel);
+   printf("\n\nError %d in mbspex_slave_init for channel %x . exiting...\n", rev, sfp_channel);
    close_exit(fd_pex);
  }
 

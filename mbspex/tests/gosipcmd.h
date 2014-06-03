@@ -37,9 +37,12 @@
 typedef enum
 {
   GOSIP_NOP,
+  GOSIP_RESET,
   GOSIP_INIT,
   GOSIP_READ,
   GOSIP_WRITE,
+  GOSIP_SETBIT,
+  GOSIP_CLEARBIT,
   GOSIP_CONFIGURE,
   GOSIP_VERIFY
 } gos_cmd_id;
@@ -107,6 +110,11 @@ int goscmd_write(struct gosip_cmd* com);
 /* read from slave address specified in command*/
 int goscmd_read(struct gosip_cmd* com);
 
+/* set or clear bits of given mask in slave address register*/
+int goscmd_changebits(struct gosip_cmd* com);
+
+
+
 /* initialize sfp chain*/
 int goscmd_init(struct gosip_cmd* com);
 
@@ -119,6 +127,9 @@ int goscmd_verify(struct gosip_cmd* com);
 
 /* printout results of operation*/
 int goscmd_output(struct gosip_cmd* com);
+
+/* evaluate command name string*/
+char* goscmd_get_description(struct gosip_cmd* com);
 
 int main (int argc, char *argv[]);
 
