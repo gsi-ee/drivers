@@ -17,7 +17,7 @@ CFLAGS += $(addprefix -I ,$(INCDIR))
 
 .PHONY: all liball depend clean install 
 
-liball: depend $(LIB) $(LIBSTATIC) install 
+liball: dirs depend $(LIB) $(LIBSTATIC) install 
 
 
 # Target for dynamic  library

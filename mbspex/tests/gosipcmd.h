@@ -58,6 +58,7 @@ struct gosip_cmd {
     long slave;                  /* slave id*/
     long address;                /* address on slave*/
     long value;                /* value to write, or read back*/
+    long repeat;               /* number of words for incremental read*/
     char filename[GOSIP_MAXTEXT]; /* optional name of configuration file*/
     FILE* configfile;              /* handle to configuration file*/
     int linecount;                /* configfile linecounter*/
