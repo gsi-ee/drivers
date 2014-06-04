@@ -53,12 +53,14 @@ struct gosip_cmd {
     gos_cmd_id command;                 /* command identifier*/
     char verboselevel;            /* level of debug 0=off*/
     char hexformat;               /* hexoutput(1) or decimal (0)*/
+    char broadcast;                /* command is broadcasted to range of 0..sfp/chain*/
     int fd_pex;                  /* keep file descriptor here*/
-    long sfp;                    /* sfp chain */
-    long slave;                  /* slave id*/
+    long sfp;                    /* sfp chain (broadcast: max sfp)*/
+    long slave;                  /* slave id (broadcast: max slave)*/
     long address;                /* address on slave*/
     long value;                /* value to write, or read back*/
     long repeat;               /* number of words for incremental read*/
+
     char filename[GOSIP_MAXTEXT]; /* optional name of configuration file*/
     FILE* configfile;              /* handle to configuration file*/
     int linecount;                /* configfile linecounter*/
@@ -115,6 +117,8 @@ int goscmd_read(struct gosip_cmd* com);
 int goscmd_changebits(struct gosip_cmd* com);
 
 
+/* wrapper for all slave operations with incremental address io capabilities*/
+int goscmd_busio(struct gosip_cmd* com);
 
 /* initialize sfp chain*/
 int goscmd_init(struct gosip_cmd* com);
@@ -125,6 +129,8 @@ int goscmd_configure(struct gosip_cmd* com);
 /* compare register values with configuration file*/
 int goscmd_verify(struct gosip_cmd* com);
 
+/* broadcast: loop command operation over several slaves*/
+int goscmd_broadcast(struct gosip_cmd* com);
 
 /* printout results of operation*/
 int goscmd_output(struct gosip_cmd* com);

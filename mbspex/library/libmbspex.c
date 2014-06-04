@@ -43,13 +43,14 @@ int mbspex_close(int handle)
 
 int mbspex_reset (int handle)
 {
-  int rev;
+  int rev, errsv=0;;
   mbspex_assert_handle(handle);
   printm ("mbspex: resetting pex device\n");
   rev = ioctl (handle, PEX_IOC_RESET);
+  errsv = errno;
     if (rev)
     {
-      printm ("\n\nError %d reseting pex device", rev, strerror (rev));
+      printm ("\n\nError %d reseting pex device", errsv, strerror (errsv));
     }
     return rev;
 }
@@ -60,16 +61,17 @@ int  mbspex_slave_init (int handle, long l_sfp, long l_n_slaves)
 
 {
 
-  int rev = 0;
+  int rev = 0, errsv=0;
   struct pex_bus_io descriptor;
   mbspex_assert_handle(handle);
   descriptor.sfp = l_sfp;
   descriptor.slave = l_n_slaves;
   printm ("mbspex: initialize SFP chain %d with %d slaves\n", l_sfp, l_n_slaves);
   rev = ioctl (handle, PEX_IOC_INIT_BUS, &descriptor);
+  errsv = errno;
   if (rev)
   {
-    printm ("\n\nError %d  on initializing channel %lx, maxdevices %lx - %s\n", rev, l_sfp, l_n_slaves, strerror (rev));
+    printm ("\n\nError %d  on initializing channel %lx, maxdevices %lx - %s\n", errsv, l_sfp, l_n_slaves, strerror (errsv));
   }
   return rev;
 }
@@ -78,7 +80,7 @@ int  mbspex_slave_init (int handle, long l_sfp, long l_n_slaves)
 /*****************************************************************************/
 int mbspex_slave_wr (int handle, long l_sfp, long l_slave, long l_slave_off, long l_dat)
 {
-  int rev = 0;
+  int rev = 0, errsv=0;
   struct pex_bus_io descriptor;
   mbspex_assert_handle(handle);
   //PexorInfo("WriteBus writes %x to %x \n",value, address);
@@ -87,10 +89,11 @@ int mbspex_slave_wr (int handle, long l_sfp, long l_slave, long l_slave_off, lon
   descriptor.sfp = l_sfp;
   descriptor.slave = l_slave;
   rev = ioctl (handle, PEX_IOC_WRITE_BUS, &descriptor);
+  errsv = errno;
   if (rev)
   {
-    printm (RON"ERROR>>"RES"Error %d  on writing value 0x%lx to address 0x%lx (sfp:%d, slave:%d)- %s\n", rev, l_dat,  l_slave_off, l_sfp,
-        l_slave, strerror (rev));
+    printm (RON"ERROR>>"RES"Error %d  on writing value 0x%lx to address 0x%lx (sfp:%d, slave:%d)- %s\n", errsv, l_dat,  l_slave_off, l_sfp,
+        l_slave, strerror (errsv));
   }
   return rev;
 }
@@ -104,7 +107,7 @@ int mbspex_slave_wr (int handle, long l_sfp, long l_slave, long l_slave_off, lon
 /*****************************************************************************/
 int mbspex_slave_rd (int handle, long l_sfp, long l_slave, long l_slave_off, long *l_dat)
 {
-  int rev = 0;
+  int rev = 0, errsv=0;
   struct pex_bus_io descriptor;
   mbspex_assert_handle(handle);
   descriptor.address = l_slave_off;
@@ -112,10 +115,11 @@ int mbspex_slave_rd (int handle, long l_sfp, long l_slave, long l_slave_off, lon
   descriptor.sfp = l_sfp;
   descriptor.slave = l_slave;
   rev = ioctl (handle, PEX_IOC_READ_BUS, &descriptor);
+  errsv = errno;
   if (rev)
   {
-    printm (RON"ERROR>>"RES" Error %d  on reading from address %0xlx (sfp:%d, slave:%d)- %s\n", rev, l_slave_off, l_sfp, l_slave,
-        strerror (rev));
+    printm (RON"ERROR>>"RES" Error %d  on reading from address %0xlx (sfp:%d, slave:%d)- %s\n", errsv, l_slave_off, l_sfp, l_slave,
+        strerror (errsv));
     return rev;
   }
   *l_dat = descriptor.value;
@@ -131,7 +135,7 @@ int  mbspex_send_and_receive_tok (int handle, long l_sfp, long l_toggle, unsigne
     long *pl_check_comm, long *pl_check_token, long *pl_check_slaves)
 
 {
-  int rev=0;
+  int rev=0, errsv=0;
       struct pex_token_io descriptor;
       descriptor.bufid=l_toggle;
       descriptor.sfp=l_sfp;
@@ -140,9 +144,10 @@ int  mbspex_send_and_receive_tok (int handle, long l_sfp, long l_toggle, unsigne
       descriptor.dmatarget= l_dma_target;
       descriptor.dmaburst=0;
       rev=ioctl(handle, PEX_IOC_REQUEST_TOKEN, &descriptor);
+      errsv = errno;
       if(rev)
           {
-              printm(RON"ERROR>>"RES" mbspex_send_and_receive_tok -Error %d  on token request, sfp 0x%x toggle:0x%x - %s\n",rev, l_sfp, l_toggle, strerror(rev));
+              printm(RON"ERROR>>"RES" mbspex_send_and_receive_tok -Error %d  on token request, sfp 0x%x toggle:0x%x - %s\n",errsv, l_sfp, l_toggle, strerror(errsv));
               return -1;
           }
       *pl_check_comm=descriptor.check_comm;
@@ -162,16 +167,17 @@ return rev;
 int  mbspex_send_tok (int handle, long l_sfp_p, long l_toggle)
 {
 
-  int rev=0;
+  int rev=0, errsv=0;
        struct pex_token_io descriptor;
        descriptor.bufid=l_toggle;
        descriptor.sfp= (l_sfp_p << 16); // upper bytes expected as sfp pattern by driver
        descriptor.sync=0;
        descriptor.directdma=0;
        rev=ioctl(handle, PEX_IOC_REQUEST_TOKEN, &descriptor);
+       errsv = errno;
        if(rev)
            {
-               printm(RON"ERROR>>"RES" mbspex_send_tok -Error %d  on token request, sfp pattern 0x%x toggle:0x%x - %s\n",rev, l_sfp_p, l_toggle, strerror(rev));
+               printm(RON"ERROR>>"RES" mbspex_send_tok -Error %d  on token request, sfp pattern 0x%x toggle:0x%x - %s\n",errsv, l_sfp_p, l_toggle, strerror(errsv));
                return -1;
            }
 return rev;
@@ -183,7 +189,7 @@ return rev;
 /*****************************************************************************/
 int  mbspex_receive_tok (int handle, long l_sfp, unsigned long l_dma_target, unsigned long* pl_transfersize, long *pl_check_comm, long *pl_check_token, long *pl_check_slaves)
 {
-  int rev=0;
+  int rev=0, errsv=0;
       struct pex_token_io descriptor;
       descriptor.sfp=l_sfp;
       descriptor.dmatarget= l_dma_target;
@@ -191,9 +197,10 @@ int  mbspex_receive_tok (int handle, long l_sfp, unsigned long l_dma_target, uns
       descriptor.directdma=0;
       if(l_dma_target==0) descriptor.directdma=1; // we disable the automatic DMA sending after token reception by this
       rev=ioctl(handle, PEX_IOC_WAIT_TOKEN, &descriptor);
+      errsv = errno;
       if(rev)
           {
-              printm(RON"ERROR>>"RES "Error %d  on wait token from channel 0x%x - %s\n",rev,l_sfp, strerror(rev));
+              printm(RON"ERROR>>"RES "Error %d  on wait token from channel 0x%x - %s\n",errsv,l_sfp, strerror(errsv));
               return -1;
           }
       *pl_check_comm=descriptor.check_comm;
@@ -231,33 +238,35 @@ long mbspex_get_tok_memsize(int handle , long l_sfp ){
 /*****************************************************************************/
 int mbspex_register_wr (int handle, unsigned char s_bar, long l_address, long l_dat)
 {
-  int rev = 0;
+  int rev = 0, errsv = 0;
   struct pex_reg_io descriptor;
   mbspex_assert_handle(handle);
   descriptor.address = l_address;
   descriptor.value = l_dat;
   descriptor.bar = s_bar;
   rev = ioctl (handle, PEX_IOC_WRITE_REGISTER, &descriptor);
+  errsv = errno;
   if (rev)
   {
-    printm (RON"ERROR>>"RES"Error %d  on writing value %0xlx to address %0xlx (bar:%d)- %s\n", rev, l_dat, l_address,
-        s_bar, strerror (rev));
+    printm (RON"ERROR>>"RES"Error %d  on writing value %0xlx to address %0xlx (bar:%d)- %s\n", errsv, l_dat, l_address,
+        s_bar, strerror (errsv));
   }
   return rev;
 }
 
 int mbspex_register_rd (int handle, unsigned char s_bar, long l_address, long * l_dat)
 {
-  int rev = 0;
+  int rev = 0, errsv = 0;
   struct pex_reg_io descriptor;
   mbspex_assert_handle(handle);
   descriptor.address = l_address;
   descriptor.bar = s_bar;
   rev = ioctl (handle, PEX_IOC_READ_REGISTER, &descriptor);
+  errsv = errno;
   if (rev)
   {
-    printm (RON"ERROR>>"RES"Error %d  on reading from address 0x%lx (bar:%d)- %s\n", rev, l_address,
-        s_bar, strerror (rev));
+    printm (RON"ERROR>>"RES"Error %d  on reading from address 0x%lx (bar:%d)- %s\n", errsv, l_address,
+        s_bar, strerror (errsv));
   }
   * l_dat=descriptor.value;
   return rev;
@@ -266,7 +275,7 @@ int mbspex_register_rd (int handle, unsigned char s_bar, long l_address, long * 
 
 int mbspex_dma_rd (int handle, long source, long dest, long size, int burst)
 {
-  int rev = 0;
+  int rev = 0, errsv = 0;;
   struct pex_dma_io descriptor;
   mbspex_assert_handle(handle);
   descriptor.source = source;
@@ -274,9 +283,10 @@ int mbspex_dma_rd (int handle, long source, long dest, long size, int burst)
   descriptor.size = size;
   descriptor.burst=burst;
   rev = ioctl (handle, PEX_IOC_READ_DMA, &descriptor);
+  errsv = errno;
   if (rev)
   {
-    printm (RON"ERROR>>"RES"Error %d  on DMA reading 0x%x bytes from address 0x%lx  to 0x%lx (%s)\n", rev, size, source,dest, strerror (rev));
+    printm (RON"ERROR>>"RES"Error %d  on DMA reading 0x%x bytes from address 0x%lx  to 0x%lx (%s)\n", errsv, size, source,dest, strerror (errsv));
     return -1;
   }
   return descriptor.size;
