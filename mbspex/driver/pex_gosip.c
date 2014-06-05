@@ -143,11 +143,13 @@ int pex_ioctl_request_token(struct pex_privdata* priv, unsigned long arg)
 
   if(chanpattern!=0)
   {
+    pex_dbg(KERN_NOTICE "** pex_ioctl_request_token with channelpattern 0x%x\n", (unsigned) chanpattern);
     comm = PEX_SFP_PT_TK_R_REQ | (chanpattern << 16); /* token broadcast mode*/
     pex_sfp_clear_channelpattern(priv,chanpattern);
   }
   else
   {
+    pex_dbg(KERN_NOTICE "** pex_ioctl_request_token for channel 0x%x\n", (unsigned) chan);
     comm = PEX_SFP_PT_TK_R_REQ | (0x1 << (16+ chan) ); /* single sfp token mode*/
      pex_sfp_clear_channel(priv,chan);
   }

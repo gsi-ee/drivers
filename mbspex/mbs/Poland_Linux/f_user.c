@@ -80,7 +80,7 @@
                                        // - otherwisse send data immediately
                                        //   after token arrived at qfw/exploder  
 
-//#define SEQUENTIAL_TOKEN_SEND 1        // - token sending and receiving is
+/*#define SEQUENTIAL_TOKEN_SEND 1 */       // - token sending and receiving is
                                        //   sequential for all used SFPs
                                        // - otherwise token sending and receiving
                                        //   is done parallel for all used SFPs
@@ -222,11 +222,14 @@ int f_user_get_virt_ptr (long  *pl_loc_hwacc, long  pl_rem_cam[])
           if (l_sfp_slaves[l_i] != 0)
           {
             l_sfp_pat |= (1<<l_i);
+            l_pex_sfp_phys_mem_base[l_i] = (long)PEX_MEM_OFF + (long)(PEX_SFP_OFF * l_i);
           }
         }
         printm ("sfp pattern: 0x%x \n", l_sfp_pat);
+        printm ("SFP id: %d, Pexor SFP physical memory base: 0x%8x \n",
+                                                       l_i, l_pex_sfp_phys_mem_base[l_i]);
 
-
+  } // if (l_first2 == 0)
 
 #else
     pl_page = (struct dmachain*) malloc (sizeof(struct dmachain*) * MAX_PAGE);
@@ -302,7 +305,8 @@ int f_user_get_virt_ptr (long  *pl_loc_hwacc, long  pl_rem_cam[])
       }
     }
     printm ("sfp pattern: 0x%x \n", l_sfp_pat);     
-  }
+  } // if (l_first2 == 0)
+
   printm ("pl_virt_bar0: 0x%x \n", pl_virt_bar0); 
   for (l_i=0; l_i<MAX_SFP; l_i++)
   {
@@ -314,10 +318,10 @@ int f_user_get_virt_ptr (long  *pl_loc_hwacc, long  pl_rem_cam[])
                                                      l_pex_sfp_phys_mem_base[l_i]);
     }
   }     
-}
+
 #endif
 
-  }
+
   return 0;
 }
 
@@ -396,7 +400,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
     if (l_tog == 1) { l_tog = 0; } else { l_tog = 1; }
 
     //#ifdef  WAIT_FOR_DATA_READY_TOKEN
-    #if defined (WAIT_FOR_DATA_READY_TOKEN) && ! (SEQUENTIAL_TOKEN_SEND)
+#if defined (WAIT_FOR_DATA_READY_TOKEN) && ! (SEQUENTIAL_TOKEN_SEND)
     //printm ("send token in WAIT_FOR_DATA_READY_TOKEN mode \n");
     //printm ("l_tog | l_tok_mode: 0x%x \n", l_tog | l_tok_mode);
     //sleep (1);
@@ -406,7 +410,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
 #else
     l_stat = f_pex_send_tok (l_sfp_pat, l_tog | l_tok_mode);
 #endif
-    #endif 
+#endif
 
     //printm ("l_tog: %d \n", l_tog);
     l_lec_check++;
@@ -415,7 +419,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
     if (l_first3 == 0)
     {
       l_first3 = 1;
-      #ifndef Linux
+#ifndef Linux
       sleep (1);
       if ((vmtopm (getpid(), pl_page, (char*) pl_dat,
                                         (long)100 *sizeof(long))) == -1)
@@ -428,9 +432,9 @@ int f_user_readout (unsigned char   bh_trig_typ,
       // pipe is consecutive memory => const difference physical - virtual
       printm ("pl_dat: 0x%x, pl_dat_phys: 0x%x \n", pl_dat_save, pl_page->address);
       l_diff_pipe_phys_virt = (long)pl_page->address - (long)pl_dat;
-      #else      
+#else
       l_diff_pipe_phys_virt = (long)pl_rem_cam;
-      #endif // Linux
+#endif // Linux
       printm ("diff pipe base phys-virt: 0x%x \n", l_diff_pipe_phys_virt);
     }
 
@@ -447,12 +451,6 @@ int f_user_readout (unsigned char   bh_trig_typ,
 
 
 
-#ifdef USE_MBSPEX_LIB
-          l_stat=mbspex_send_and_receive_tok (fd_pex, l_i, l_tog | l_tok_mode,
-              (long) pl_dat + l_diff_pipe_phys_virt, (long unsigned*) &l_dma_trans_size,
-              &l_dummy, &l_tok_check, &l_n_slaves);
-          /* note: burst adjustment is done inside driver here*/
-#else
 
 #ifdef DIRECT_DMA
           l_burst_size = BURST_SIZE;
@@ -461,19 +459,26 @@ int f_user_readout (unsigned char   bh_trig_typ,
           if ( ((long)pl_dat % l_burst_size) != 0)
           {
             l_padd[l_i] = l_burst_size - ((long)pl_dat % l_burst_size);  
-            *pl_dma_target_base = (long) pl_dat + l_diff_pipe_phys_virt + l_padd[l_i];
+            l_dma_target_base = (long) pl_dat + l_diff_pipe_phys_virt + l_padd[l_i];
           }
           else
           {
-            *pl_dma_target_base = (long) pl_dat + l_diff_pipe_phys_virt;
+            l_dma_target_base = (long) pl_dat + l_diff_pipe_phys_virt;
           }
 
+#endif //DIRECT_DMA
+
+
+#ifdef USE_MBSPEX_LIB
+          l_stat=mbspex_send_and_receive_tok (fd_pex, l_i, l_tog | l_tok_mode,
+              (long) l_dma_target_base, (long unsigned*) &l_dma_trans_size,
+              &l_dummy, &l_tok_check, &l_n_slaves);
+
+#else
+          *pl_dma_target_base =l_dma_target_base;
           // select SFP for PCI Express DMA
           *pl_dma_stat = 1 << (l_i+1);
           //printm ("depp: %d \n", 1 << (l_i+1));
-          #endif //DIRECT_DMA
-
-   
           // send token to slave(s) / to SFPs
           l_stat = f_pex_send_and_receive_tok (l_i, l_tog | l_tok_mode, &l_dummy, &l_tok_check, &l_n_slaves);
 
@@ -563,7 +568,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
           #else
           sched_yield ();
           #endif // Linux
-          #endif // DIRECT_DMA
+#endif // DIRECT_DMA
         }
       }
       // end SEQUENTIAL_TOKEN_SEND
