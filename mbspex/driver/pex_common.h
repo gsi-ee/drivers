@@ -60,7 +60,7 @@
 #define PEXVERSION     "1.5"
 
 
-#define PEX_DEBUGPRINT 1
+/*#define PEX_DEBUGPRINT 1*/
 
 
 /* maximum number of devices controlled by this driver*/
