@@ -80,7 +80,7 @@
                                        // - otherwisse send data immediately
                                        //   after token arrived at qfw/exploder  
 
-/*#define SEQUENTIAL_TOKEN_SEND 1 */       // - token sending and receiving is
+#define SEQUENTIAL_TOKEN_SEND 1        // - token sending and receiving is
                                        //   sequential for all used SFPs
                                        // - otherwise token sending and receiving
                                        //   is done parallel for all used SFPs

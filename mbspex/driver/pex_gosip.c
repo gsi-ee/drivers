@@ -29,75 +29,117 @@ int pex_ioctl_init_bus(struct pex_privdata* priv, unsigned long arg)
 int pex_ioctl_write_bus(struct pex_privdata* priv, unsigned long arg)
 {
   int retval=0;
-  u32 ad=0,val=0,sfp=0, slave=0,comm=0;
-
-  u32 totaladdress=0;
-  u32 rstat=0, radd=0, rdat=0;
   struct pex_bus_io descriptor;
   retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pex_bus_io));
   if(retval) return retval;
-  ad= (u32) descriptor.address;
-  val = (u32) descriptor.value;
-  sfp  = (u32) descriptor.sfp;
-  slave = (u32) descriptor.slave;
-  pex_dbg(KERN_NOTICE "** pex_ioctl_write_bus writes value %x to address %x on sfp %x, slave %x\n",val,ad,sfp,slave);
-
-
-  comm = PEX_SFP_PT_AD_W_REQ | ( 0x1 << (16 + sfp) );
-  totaladdress = ad + (slave << 24);
-  pex_sfp_clear_all(priv);
-  //pex_sfp_clear_channel(priv,sfp);
-  pex_sfp_request(priv, comm, totaladdress, val);
-  //if((retval=pex_sfp_get_reply(priv, sfp, &rstat, &radd, &rdat, 0))!=0) // debug: no response check
-  if((retval=pex_sfp_get_reply(priv, sfp, &rstat, &radd, &rdat, PEX_SFP_PT_AD_W_REP))!=0)
-    {
-      pex_msg(KERN_ERR "** pex_ioctl_write_bus: error %d at sfp_reply \n",retval);
-      pex_msg(KERN_ERR "   pex_ioctl_write_bus: incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat);
-      return -EIO;
-    }
-  descriptor.value=rstat;
-  descriptor.address=radd;
+  retval=pex_sfp_write_bus(priv,&descriptor); /* everything is subfunctions now*/
+  if(retval) return retval;
   retval=copy_to_user((void __user *) arg, &descriptor, sizeof(struct pex_bus_io));
-
   return retval;
 }
 
 int pex_ioctl_read_bus(struct pex_privdata* priv, unsigned long arg)
 {
   int retval=0;
-  u32 ad=0, chan=0, slave=0,comm=0;
-  u32 rstat=0, radd=0, rdat=0;
-  u32 totaladdress=0;
   struct pex_bus_io descriptor;
   retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pex_bus_io));
   if(retval) return retval;
-  ad= (u32) descriptor.address;
-  chan  = (u32) descriptor.sfp;
-  slave = (u32) descriptor.slave;
-
-
-
-  pex_dbg(KERN_NOTICE "** pex_ioctl_read_bus from_address %x on sfp %x, slave %x\n",ad,chan,slave);
-
-
-
-  comm = PEX_SFP_PT_AD_R_REQ | ( 0x1 << (16 + chan) );
-  totaladdress = ad + (slave << 24);
-  pex_sfp_clear_channel(priv,chan);
-  pex_sfp_request(priv, comm, totaladdress, 0);
-  //if((retval=pex_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, 0))!=0) // debug:  no check
-  if((retval=pex_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEX_SFP_PT_AD_R_REP))!=0)
-    {
-      pex_msg(KERN_ERR "** pex_ioctl_read_bus: error %d at sfp_reply \n",retval);
-      pex_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
-	return -EIO;
-    }
-
-  descriptor.value=rdat;
+  retval=pex_sfp_read_bus(priv,&descriptor); /* everything is subfunctions now*/
+  if(retval) return retval;
   retval=copy_to_user((void __user *) arg, &descriptor, sizeof(struct pex_bus_io));
-
   return retval;
 }
+
+
+int pex_ioctl_configure_bus (struct pex_privdata* priv, unsigned long arg)
+{
+  int retval = 0, i = 0;
+  struct pex_bus_config descriptor;
+  retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_bus_config));
+  if (retval)
+    return retval;
+  if(descriptor.numpars>PEX_MAXCONFIG_VALS)
+  {
+      pex_msg(KERN_ERR "** pex_ioctl_configure_bus: warning too many parameters %d , reduced to %d\n", descriptor.numpars,
+          PEX_MAXCONFIG_VALS);
+      descriptor.numpars=PEX_MAXCONFIG_VALS;
+  }
+  pex_dbg(KERN_NOTICE "** pex_ioctl_configure_bus with %d parameters\n", descriptor.numpars);
+  for (i = 0; i < descriptor.numpars; ++i)
+  {
+    // todo: handle sfp and slave broadcasts and setbit/clearbit io
+    // for broadcast privdata needs to memorize last successfull init values!
+    struct pex_bus_io data = descriptor.param[i];
+    retval = pex_sfp_write_bus (priv, &data);
+    if (retval)
+    {
+      pex_msg(KERN_ERR "** pex_ioctl_configure_bus: error %d at pex_sfp_write_bus for value i=%d\n", retval,i);
+      return retval;
+    }
+  }
+  return retval;
+}
+
+
+int pex_sfp_write_bus(struct pex_privdata* priv, struct pex_bus_io* descriptor)
+{
+
+  int retval=0;
+  u32 ad=0,val=0,sfp=0, slave=0,comm=0;
+  u32 rstat=0, radd=0, rdat=0;
+  u32 totaladdress=0;
+  ad= (u32) descriptor->address;
+  val = (u32) descriptor->value;
+  sfp  = (u32) descriptor->sfp;
+  slave = (u32) descriptor->slave;
+  pex_dbg(KERN_NOTICE "** pex_sfp_write_bus writes value %x to address %x on sfp %x, slave %x\n",val,ad,sfp,slave);
+
+
+    comm = PEX_SFP_PT_AD_W_REQ | ( 0x1 << (16 + sfp) );
+    totaladdress = ad + (slave << 24);
+    pex_sfp_clear_all(priv);
+    //pex_sfp_clear_channel(priv,sfp);
+    pex_sfp_request(priv, comm, totaladdress, val);
+    //if((retval=pex_sfp_get_reply(priv, sfp, &rstat, &radd, &rdat, 0))!=0) // debug: no response check
+    if((retval=pex_sfp_get_reply(priv, sfp, &rstat, &radd, &rdat, PEX_SFP_PT_AD_W_REP))!=0)
+      {
+        pex_msg(KERN_ERR "** pex_sfp_write_bus: error %d at sfp_reply \n",retval);
+        pex_msg(KERN_ERR "   pex_sfp_write_bus: incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat);
+        return -EIO;
+      }
+    descriptor->value=rstat;
+    descriptor->address=radd;
+  return 0;
+}
+
+int pex_sfp_read_bus(struct pex_privdata* priv, struct pex_bus_io* descriptor)
+{
+  int retval=0;
+  u32 ad=0, chan=0, slave=0,comm=0;
+  u32 rstat=0, radd=0, rdat=0;
+  u32 totaladdress=0;
+  ad= (u32) descriptor->address;
+  chan  = (u32) descriptor->sfp;
+  slave = (u32) descriptor->slave;
+  pex_dbg(KERN_NOTICE "** pex_sfp_read_bus from_address %x on sfp %x, slave %x\n",ad,chan,slave);
+    comm = PEX_SFP_PT_AD_R_REQ | ( 0x1 << (16 + chan) );
+    totaladdress = ad + (slave << 24);
+    pex_sfp_clear_channel(priv,chan);
+    pex_sfp_request(priv, comm, totaladdress, 0);
+    //if((retval=pex_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, 0))!=0) // debug:  no check
+    if((retval=pex_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEX_SFP_PT_AD_R_REP))!=0)
+      {
+        pex_msg(KERN_ERR "** pex_sfp_read_bus: error %d at sfp_reply \n",retval);
+        pex_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
+      return -EIO;
+      }
+
+    descriptor->value=rdat;
+return 0;
+}
+
+
+
 
 int pex_ioctl_request_token(struct pex_privdata* priv, unsigned long arg)
 {

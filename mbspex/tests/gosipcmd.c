@@ -401,33 +401,67 @@ int goscmd_init (struct gosip_cmd* com)
 int goscmd_configure (struct gosip_cmd* com)
 {
   int rev = 0;
+#ifdef GOSIPCMD_BLOCKCONFIG
+  int numconfs=0;
+  struct pex_bus_config theConfig;
+#else
+
   gos_cmd_id mastercommand;
+#endif
   goscmd_assert_command (com);
   if (com->verboselevel > 1)
     goscmd_dump_command (com);
   if (goscmd_open_configuration (com) < 0)
     return -1;
   printm ("Configuring from file %s - \n", com->filename);
-  mastercommand = com->command;
+  //mastercommand = com->command;
+  numconfs=0;
   while ((rev = goscmd_next_config_values (com)) != -1)
   {
     if (rev == 0)
       continue;    // skip line
+
+    // TODO: put together configuration structure to be executed in kernel module "atomically"
+    // requires new ioctl "configure"
+#ifdef GOSIPCMD_BLOCKCONFIG
+     if (com->verboselevel)
+    {
+      printm("Config: %d",numconfs);
+      goscmd_dump_command(com);
+    }
+    theConfig.param[numconfs].sfp=com->sfp;
+    theConfig.param[numconfs].slave=com->slave;
+    theConfig.param[numconfs].address=com->address;
+    theConfig.param[numconfs].value=com->value;
+    theConfig.numpars=++numconfs;
+    if(numconfs>=PEX_MAXCONFIG_VALS) break;
+#else
     if ((com->command == GOSIP_SETBIT) || (com->command == GOSIP_CLEARBIT))
     {
-      if (goscmd_changebits (com) != 0)
-        return -1;
+      if ((rev=goscmd_changebits (com)) != 0)
+        break;
       com->command = mastercommand;    // reset command descriptor
     }
     else
     {
-      if (goscmd_write (com) != 0)
-        return -1;
+      if ((rev=goscmd_write (com)) != 0)
+        break;
     }
+#endif
+
   }
+#ifdef GOSIPCMD_BLOCKCONFIG
+  rev=mbspex_slave_config (com->fd_pex, &theConfig);
+#endif
+
+if(rev)
+  printm ("ERROR during configuration!\n");
+else
   printm ("Done.\n");
+
+
   goscmd_close_configuration (com);
-  return 0;
+  return rev;
 
 }
 
@@ -451,6 +485,9 @@ int goscmd_verify (struct gosip_cmd* com)
     if (rev == 0)
       continue;    // skip line
     checkvalue = com->value;    // this is reference value from file
+
+
+
 
     if (goscmd_read (com) != 0)
       return -1;

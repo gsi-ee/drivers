@@ -221,7 +221,14 @@ int pex_ioctl_write_bus(struct pex_privdata* priv, unsigned long arg);
 /* read from sfp fieldbus of frontends*/
 int pex_ioctl_read_bus(struct pex_privdata* priv, unsigned long arg);
 
+/* write list of configuration parameters to frontends*/
+int pex_ioctl_configure_bus(struct pex_privdata* priv, unsigned long arg);
 
+/* write values as specified in data to frontends*/
+int pex_sfp_write_bus(struct pex_privdata* priv, struct pex_bus_io* data);
+
+/* read values as specified in data to frontends. results are in data structure*/
+int pex_sfp_read_bus(struct pex_privdata* priv, struct pex_bus_io* data);
 
 
 

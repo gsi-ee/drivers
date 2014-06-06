@@ -540,6 +540,12 @@ int pex_ioctl_test(struct pex_privdata* priv, unsigned long arg)
 int pex_ioctl_reset(struct pex_privdata* priv, unsigned long arg)
 {
   pex_dbg(KERN_NOTICE "** pex_ioctl_reset...\n");
+
+  pex_dbg(KERN_NOTICE "Clearing DMA status... \n");
+  iowrite32(0,priv->regs.dma_control_stat);
+  mb();
+  ndelay(20);
+
   pex_sfp_reset(priv);
   pex_sfp_clear_all(priv);
   // note that clear sfp channels is done via pex_ioctl_init_bus
@@ -846,6 +852,12 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
            retval = pex_ioctl_init_bus(privdata, arg);
            break;
 
+         case PEX_IOC_CONFIG_BUS:
+           pex_dbg(KERN_NOTICE "** pex_ioctl config bus\n");
+           retval = pex_ioctl_configure_bus(privdata, arg);
+           break;
+
+
         case PEX_IOC_REQUEST_TOKEN:
            pex_dbg(KERN_NOTICE "** pex_ioctl request token\n");
            retval = pex_ioctl_request_token(privdata, arg);
@@ -910,7 +922,6 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         case PEX_IOC_WAIT_SEM:
                    pex_dbg(KERN_INFO " before WAIT_SEM \n");
                    if (down_interruptible(&(privdata->trix_sem))){
-                     up(&privdata->ioctl_sem);
                      return -ERESTARTSYS; /* JAM avoid possible hangup of m_read_meb when killed by resl*/
                     }
                      privdata->trix_val = 0;
@@ -954,7 +965,8 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 
         default:
-                 return -ENOTTY;
+            retval=-ENOTTY;
+            break;
         }
     pex_dbg((KERN_INFO "END   pex_ioctl \n"));
     up(&privdata->ioctl_sem);

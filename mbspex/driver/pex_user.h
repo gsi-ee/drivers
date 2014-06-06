@@ -20,41 +20,6 @@
 
 
 
-/* the ioctl stuff here:*/
-#define PEX_IOC_MAGIC  0xE0
-
-#define PEX_IOC_RESET             _IO(  PEX_IOC_MAGIC, 0)
-#define PEX_IOC_TEST  	        _IOR(  PEX_IOC_MAGIC, 1, int)
-#define PEX_IOC_WAIT_SEM          _IO(  PEX_IOC_MAGIC, 2)
-#define PEX_IOC_POLL_SEM          _IOR(  PEX_IOC_MAGIC, 3, int)
-#define PEX_IOC_RESET_SEM         _IOR(  PEX_IOC_MAGIC, 4, int)
-#define PEX_IOC_GET_BAR0_BASE      _IOR(  PEX_IOC_MAGIC, 5, int)
-#define PEX_IOC_GET_BAR0_TRIX_BASE      _IOR(  PEX_IOC_MAGIC, 6, int)
-#define PEX_IOC_WRITE_BUS   _IOWR(  PEX_IOC_MAGIC, 7, struct pex_bus_io)
-#define PEX_IOC_READ_BUS    _IOWR(  PEX_IOC_MAGIC, 8, struct pex_bus_io)
-#define PEX_IOC_INIT_BUS    _IOW(  PEX_IOC_MAGIC, 9, struct pex_bus_io)
-#define PEX_IOC_SET_TRIXOR    _IOR(  PEX_IOC_MAGIC, 10, struct pex_trixor_set)
-#define PEX_IOC_REQUEST_TOKEN    _IOWR(  PEX_IOC_MAGIC, 11, struct pex_token_io)
-#define PEX_IOC_WAIT_TOKEN    _IOWR(  PEX_IOC_MAGIC, 12, struct pex_token_io)
-#define PEX_IOC_WAIT_TRIGGER    _IO(  PEX_IOC_MAGIC, 13)
-#define PEX_IOC_WRITE_REGISTER   _IOW(  PEX_IOC_MAGIC, 14, struct pex_reg_io)
-#define PEX_IOC_READ_REGISTER    _IOWR(  PEX_IOC_MAGIC, 15, struct pex_reg_io)
-#define PEX_IOC_READ_DMA         _IOWR(  PEX_IOC_MAGIC, 16, struct pex_dma_io)
-/* we keep old ioctl definitions for backward compatibility and patch it in ioctl function*/
-#define WAIT_SEM              12
-#define POLL_SEM              16
-#define GET_BAR0_BASE       0x1234
-#define GET_BAR0_TRIX_BASE  0x1235
-#define RESET_SEM           0x1236
-#define PEX_IOC_MAXNR 22
-
-
-/* note: we do not redefine ioctls existing in mbs user code!*/
-//#define WAIT_SEM              PEX_IOC_WAIT_SEM
-//#define POLL_SEM              PEX_IOC_POLL_SEM
-//#define GET_BAR0_BASE       PEX_IOC_GET_BAR0_BASE
-//#define GET_BAR0_TRIX_BASE  PEX_IOC_GET_BAR0_TRIX_BASE
-//#define RESET_SEM           PEX_IOC_RESET_SEM
 
 
 
@@ -70,6 +35,9 @@
 
 #define PEX_TRIGGER_FIRED  0/* return value from wait trigger to inform that trigger ir was fired reached */
 #define PEX_TRIGGER_TIMEOUT 1 /* return value from wait trigger to inform that wait timeout was reached */
+
+#define PEX_MAXCONFIG_VALS 60 /* number of configuration commands treated by driver in a single operation*/
+
 
 struct pex_reg_io {
     unsigned int address;   /* address of a board register, relative to the specified BAR*/
@@ -91,6 +59,11 @@ struct pex_bus_io {
 	unsigned long value;	/* value for read/write at bus address. Contains result status after write*/
 };
 
+
+struct pex_bus_config{
+  struct pex_bus_io param[PEX_MAXCONFIG_VALS]; /* array of configuration parameters*/
+  unsigned int numpars; /* number of used parameters*/
+};
 
 struct pex_token_io {
 	unsigned char sync;		/* 1:synchronous mode, 0: asynchronous mode*/
@@ -114,6 +87,43 @@ struct pex_trixor_set {
 };
 
 
+/* the ioctl stuff here:*/
+#define PEX_IOC_MAGIC  0xE0
+
+#define PEX_IOC_RESET             _IO(  PEX_IOC_MAGIC, 0)
+#define PEX_IOC_TEST            _IOR(  PEX_IOC_MAGIC, 1, int)
+#define PEX_IOC_WAIT_SEM          _IO(  PEX_IOC_MAGIC, 2)
+#define PEX_IOC_POLL_SEM          _IOR(  PEX_IOC_MAGIC, 3, int)
+#define PEX_IOC_RESET_SEM         _IOR(  PEX_IOC_MAGIC, 4, int)
+#define PEX_IOC_GET_BAR0_BASE      _IOR(  PEX_IOC_MAGIC, 5, int)
+#define PEX_IOC_GET_BAR0_TRIX_BASE      _IOR(  PEX_IOC_MAGIC, 6, int)
+#define PEX_IOC_WRITE_BUS   _IOWR(  PEX_IOC_MAGIC, 7, struct pex_bus_io)
+#define PEX_IOC_READ_BUS    _IOWR(  PEX_IOC_MAGIC, 8, struct pex_bus_io)
+#define PEX_IOC_INIT_BUS    _IOW(  PEX_IOC_MAGIC, 9, struct pex_bus_io)
+#define PEX_IOC_SET_TRIXOR    _IOR(  PEX_IOC_MAGIC, 10, struct pex_trixor_set)
+#define PEX_IOC_REQUEST_TOKEN    _IOWR(  PEX_IOC_MAGIC, 11, struct pex_token_io)
+#define PEX_IOC_WAIT_TOKEN    _IOWR(  PEX_IOC_MAGIC, 12, struct pex_token_io)
+#define PEX_IOC_WAIT_TRIGGER    _IO(  PEX_IOC_MAGIC, 13)
+#define PEX_IOC_WRITE_REGISTER   _IOW(  PEX_IOC_MAGIC, 14, struct pex_reg_io)
+#define PEX_IOC_READ_REGISTER    _IOWR(  PEX_IOC_MAGIC, 15, struct pex_reg_io)
+#define PEX_IOC_READ_DMA         _IOWR(  PEX_IOC_MAGIC, 16, struct pex_dma_io)
+#define PEX_IOC_CONFIG_BUS       _IOWR(  PEX_IOC_MAGIC, 17, struct pex_bus_config)
+
+/* we keep old ioctl definitions for backward compatibility and patch it in ioctl function*/
+#define WAIT_SEM              12
+#define POLL_SEM              16
+#define GET_BAR0_BASE       0x1234
+#define GET_BAR0_TRIX_BASE  0x1235
+#define RESET_SEM           0x1236
+#define PEX_IOC_MAXNR 23
+
+
+/* note: we do not redefine ioctls existing in mbs user code!*/
+//#define WAIT_SEM              PEX_IOC_WAIT_SEM
+//#define POLL_SEM              PEX_IOC_POLL_SEM
+//#define GET_BAR0_BASE       PEX_IOC_GET_BAR0_BASE
+//#define GET_BAR0_TRIX_BASE  PEX_IOC_GET_BAR0_TRIX_BASE
+//#define RESET_SEM           PEX_IOC_RESET_SEM
 
 
 #endif /* PEX_USER_H_ */

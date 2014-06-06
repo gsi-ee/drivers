@@ -33,6 +33,8 @@
 #define GOSIP_CMD_SIZE 256
 #define GOSIP_CMD_MAX_ARGS 10
 
+/* toggle configuration mode: send config from file as data block to driver (1), or write with single bus commands (0)*/
+#define GOSIPCMD_BLOCKCONFIG 1
 
 typedef enum
 {
