@@ -49,6 +49,9 @@ int mbspex_slave_wr (int handle, long l_sfp, long l_slave, long l_slave_off, lon
 /* initialize chain at l_sfp with l_s_slaves number of slaves*/
 int mbspex_slave_init (int handle, long l_sfp, long l_n_slaves);
 
+/* write block of configuration data to driver*/
+int mbspex_slave_config (int handle, struct pex_bus_config* config);
+
 /* send token request to pexor device of handle at chain sfp
  *  with l_toggle word (sets frontend buffer)
  * l_ldma_target specifies physical address of target buffer for token data DMA

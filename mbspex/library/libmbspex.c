@@ -98,7 +98,27 @@ int mbspex_slave_wr (int handle, long l_sfp, long l_slave, long l_slave_off, lon
   return rev;
 }
 
-
+int mbspex_slave_config (int handle, struct pex_bus_config* config)
+{
+  int rev = 0, errsv=0, i=0;
+  mbspex_assert_handle(handle);
+  if(!config) return -EINVAL;
+  /* need to copy config structure to stack?*/
+//  struct pex_bus_config theConfig;
+//  for(i=0;(i<config->numpars) && (i< PEX_MAXCONFIG_VALS);++i){
+//    theConfig.param[i]=config->param[i];
+//    printf("mbspex_slave_config- s:%d d:%d a:0x%x val:0x%x\n",
+//        theConfig.param[i].sfp, theConfig.param[i].slave,theConfig.param[i].address,theConfig.param[i].value);
+//  }
+//  theConfig.numpars=config->numpars;
+  rev = ioctl (handle, PEX_IOC_CONFIG_BUS, config);
+   errsv = errno;
+    if (rev)
+    {
+      printm (RON"ERROR>>"RES"Error %d  on writing configuration to bus- %s\n", errsv, strerror (errsv));
+    }
+    return rev;
+}
 
 
 
