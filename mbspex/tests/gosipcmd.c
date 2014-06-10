@@ -17,8 +17,8 @@ void goscmd_defaults (struct gosip_cmd* com)
   com->hexformat = 0;
   com->broadcast = 0;
   com->fd_pex = -1;
-  com->sfp = -1;
-  com->slave = -1;
+  com->sfp = -2;
+  com->slave = -2;
   com->address = -1;
   com->value = 0;
   com->repeat = 1;
@@ -84,11 +84,11 @@ void goscmd_assert_command (struct gosip_cmd* com)
     do_exit = 1;
   if ((com->command != GOSIP_CONFIGURE) && (com->command != GOSIP_VERIFY) && (com->command != GOSIP_RESET))
   {
-    if (com->sfp < 0)
+    if (com->sfp < -1) /*allow broadcast statements -1*/
       do_exit = 1;
-    if ((com->command != GOSIP_INIT) && (com->slave < 0))
+    if ((com->command != GOSIP_INIT) && (com->slave < -1))
       do_exit = 1;
-    if ((com->command != GOSIP_INIT) && (com->address < 0))
+    if ((com->command != GOSIP_INIT) && (com->address < -1))
       do_exit = 1;
   }
   else
@@ -251,8 +251,8 @@ int goscmd_next_config_values (struct gosip_cmd* com)
     printm ("Invalid configuration data at line %d, (cmdlen=%d)stopping configuration\n", com->linecount, cmdlen);
     return -1;
   }
-  com->sfp = strtoul (cmd[0], NULL, com->hexformat == 1 ? 16 : 0);
-  com->slave = strtoul (cmd[1], NULL, com->hexformat == 1 ? 16 : 0);
+  com->sfp = strtol (cmd[0], NULL, com->hexformat == 1 ? 16 : 0);
+  com->slave = strtol (cmd[1], NULL, com->hexformat == 1 ? 16 : 0);
   com->address = strtoul (cmd[2], NULL, com->hexformat == 1 ? 16 : 0);
   com->value = strtoul (cmd[3], NULL, com->hexformat == 1 ? 16 : 0);
   if (cmdlen > 4)
@@ -593,8 +593,8 @@ void goscmd_usage (const char *progname)
   printf ("\t\t -d        : debug mode (verbose output) \n");
   printf ("\t\t -x        : results in hex format \n");
   printf ("\t Arguments:\n");
-  printf ("\t\t sfp      - sfp chain \n");
-  printf ("\t\t slave    - slave id at chain, or total number of slaves\n");
+  printf ("\t\t sfp      - sfp chain- -1 to broadcast all registered chains \n");
+  printf ("\t\t slave    - slave id at chain, or total number of slaves. -1 for internal broadcast\n");
   printf ("\t\t address  - register on slave \n");
   printf ("\t\t value    - value to write on slave \n");
   printf ("\t\t words    - number of words to read/write/set incrementally\n");
@@ -603,11 +603,15 @@ void goscmd_usage (const char *progname)
   printf ("\t  %s -i 0 24                   : initialize chain at sfp 0 with 24 slave devices\n", progname);
   printf ("\t  %s -r -x 1 0 0x1000          : read from sfp 1, slave 0, address 0x1000 and printout value\n", progname);
   printf ("\t  %s -r -x 0 3 0x1000 5        : read from sfp 0, slave 3, address 0x1000 next 5 words\n", progname);
+  printf ("\t  %s -r -b  1 3 0x1000 10      : broadcast read from sfp (0..1), slave (0..3), address 0x1000 next 10 words\n", progname);
   printf ("\t  %s -w -x 0 3 0x1000 0x2A     : write value 0x2A to sfp 0, slave 3, address 0x1000\n", progname);
   printf ("\t  %s -w -x 1 0 20000 AB FF     : write value 0xAB to sfp 1, slave 0, to addresses 0x20000-0x200FF\n",
       progname);
+  printf ("\t  %s -w -b  1  3 0x20004c 1    : broadcast write value 1 to address 0x20004c on sfp (0..1) slaves (0..3)\n", progname);
+  printf ("\t  %s -w -- -1 -1 0x20004c 1    : write value 1 to address 0x20004c on all registered slaves (internal driver broadcast)\n", progname);
   printf ("\t  %s -s  0 0 0x200000 0x4      : set bit 100 on sfp0, slave 0, address 0x200000\n", progname);
   printf ("\t  %s -u  0 0 0x200000 0x4 0xFF : unset bit 100 on sfp0, slave 0, address 0x200000-0x2000FF\n", progname);
+  printf ("\t  %s -x -c run42.gos           : write configuration values from file run42.gos to slaves \n", progname);
   printf ("*****************************************************************************\n");
   exit (0);
 }
@@ -728,8 +732,8 @@ int main (int argc, char *argv[])
   }
   else
   {
-    theCommand.sfp = strtoul (cmd[0], NULL, theCommand.hexformat == 1 ? 16 : 0);
-    theCommand.slave = strtoul (cmd[1], NULL, theCommand.hexformat == 1 ? 16 : 0);
+    theCommand.sfp = strtol (cmd[0], NULL, theCommand.hexformat == 1 ? 16 : 0);
+    theCommand.slave = strtol (cmd[1], NULL, theCommand.hexformat == 1 ? 16 : 0); /* note: we might have negative values for broadcast here*/
 
     // if ((theCommand.command == GOSIP_READ) || (theCommand.command == GOSIP_WRITE))
     theCommand.address = strtoul (cmd[2], NULL, theCommand.hexformat == 1 ? 16 : 0);

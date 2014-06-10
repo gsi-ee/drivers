@@ -150,6 +150,7 @@ struct pex_sfp
                                            data transfer for sfp 0...3 */
   dma_addr_t tk_mem_dma[PEX_SFP_NUMBER];  /* token data memory area
                                                expressed as dma bus address */
+  int num_slaves[PEX_SFP_NUMBER]; /* number of initialized slaves, for bus broadcast*/
 };
 
 
@@ -223,6 +224,10 @@ int pex_ioctl_read_bus(struct pex_privdata* priv, unsigned long arg);
 
 /* write list of configuration parameters to frontends*/
 int pex_ioctl_configure_bus(struct pex_privdata* priv, unsigned long arg);
+
+/* write values as specified in data to frontend and optionally treat broadcast write
+ * if sfp or slave numbers are negative*/
+int pex_sfp_broadcast_write_bus(struct pex_privdata* priv, struct pex_bus_io* data);
 
 /* write values as specified in data to frontends*/
 int pex_sfp_write_bus(struct pex_privdata* priv, struct pex_bus_io* data);

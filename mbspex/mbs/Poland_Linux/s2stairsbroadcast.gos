@@ -1,0 +1,77 @@
+#  gosipcmd configuration for poland qfw with example s2 stairs
+# format: 
+# sfp slave address value [setbit/clearbit]
+# -1 for sfp and/or slave will broadcast to all initialized sfps and slaves
+
+#reset logic:
+-1 -1 200000 0
+-1 -1 200000 1
+
+#Disable Trigger (ON=1 OFF=0)
+-1 -1 20004c 0
+
+#Start DAC program
+-1 -1 200030 1
+-1 -1 200030 0
+
+#set number of TS loop1
+#max x"fd" slices in total 
+-1 -1 200014 1 
+
+#set number of TS loop2
+-1 -1 200018 1
+
+#set number of TS loop3
+-1 -1 20001c 1
+
+#::::::::::::::::::::::::::::::::::::
+#all numbers = hex / unit = 20ns
+#::::::::::::::::::::::::::::::::::::
+#set time of TS loop1
+#1F4 #10us
+#c350 #1ms
+#7a120 #10ms
+#1e8480 #40ms
+#4c4b40 #100ms
+#2faf080 #1s
+-1 -1 200020 af4
+
+#set time of TS loop2
+-1 -1 200024 af4
+
+#set time of TS loop3
+-1 -1 200028 af4 
+
+#:::::::::::::::::::::::::::::::::::::
+#:::::::::::::::::::::::::::::::::::::
+#:::::::::::::::::::::::::::::::::::::
+#reset counter on FPGA
+-1 -1 20003c 1
+-1 -1 20003c 0
+
+#internal trigger is on (1) or off (0)
+-1 -1 200040 0
+#0 0 200040 1 # enable one master trigger here?
+#FESA = Bit 1 (ON=1 OFF=0) MASTER or Slave = BIT 2 (ON=1 OFF=0)
+#only one Module should be Master 
+-1 -1 200048 0 # all slaves by default
+0 0 200048 2 # this one is master
+
+#Offset Measurment (1s mess - time)
+-1 -1 200044 0
+
+################
+# s2_ini_qfw:
+#reset qfw
+-1 -1 200010 0
+-1 -1 200010 1
+
+#QFW mode 2
+
+-1 -1 200004 2
+#program qfw
+-1 -1 200008 1
+-1 -1 200008 0
+
+#Enable Trigger (ON=1 OFF=0)
+-1 -1 20004c 1

@@ -53,8 +53,8 @@ struct pex_dma_io {
 };
 
 struct pex_bus_io {
-	unsigned long sfp;		/* sfp link id 0..3 (optional)*/
-	unsigned long slave;	/* slave device id at the sfp (optional)*/
+	int sfp;		/* sfp link id 0..3 (-1 for broadcast to all configured sfps)*/
+	long slave;	    /* slave device id at the sfp (-1 ato broadcast to all slaves)*/
 	unsigned long address;	/* address on the "field bus" connected to the optical links*/
 	unsigned long value;	/* value for read/write at bus address. Contains result status after write*/
 };
