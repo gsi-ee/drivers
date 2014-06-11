@@ -79,6 +79,8 @@ int pex_ioctl_configure_bus (struct pex_privdata* priv, unsigned long arg)
       return retval;
     }
   }
+  mb();
+  udelay(100); /* set waitstate after configure*/
   return retval;
 }
 

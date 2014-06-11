@@ -113,8 +113,10 @@
 
 
 #define pex_sfp_delay()                       \
-  mb();                                         \
-  ndelay(20);
+  mb();      \
+  ndelay(200);
+
+/*  ndelay(20); too short for multiprocesses with semaphore wait?*/
 /*udelay(10);*/
 
 

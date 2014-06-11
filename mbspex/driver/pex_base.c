@@ -821,10 +821,13 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     struct pex_privdata *privdata;
     pex_dbg((KERN_INFO "BEGIN pex_ioctl \n"));
     privdata = (struct pex_privdata*) filp->private_data;
+
     /* use semaphore to allow multi user mode:*/
-    /* but do not deadlock trigger semaphore against ioctl semaphore here!*/
-    if ((cmd!= WAIT_SEM) && (cmd!=PEX_IOC_WAIT_SEM) && (down_interruptible(&(privdata->ioctl_sem))))
-                         return -ERESTARTSYS;
+    if (down_interruptible(&(privdata->ioctl_sem)))
+    {
+      pex_msg((KERN_INFO "down interruptible of ioctl sem is not zero, restartsys!\n"));
+      return -ERESTARTSYS;
+    }
     switch (cmd)
         {
       case PEX_IOC_RESET:
@@ -899,7 +902,9 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         case WAIT_SEM:
         case PEX_IOC_WAIT_SEM:
             pex_dbg(KERN_INFO "Emulated WAIT_SEM using waitqueu\n");
+            up(&privdata->ioctl_sem); /* do not lock ioctl during wait on next trigger*/
             retval = pex_ioctl_wait_trigger(privdata,arg);
+            return retval;
             break;
         case POLL_SEM:
         case PEX_IOC_POLL_SEM:
@@ -921,11 +926,14 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         case WAIT_SEM:
         case PEX_IOC_WAIT_SEM:
                    pex_dbg(KERN_INFO " before WAIT_SEM \n");
+                   up(&privdata->ioctl_sem); /* do not lock ioctl during wait for next trigger*/
                    if (down_interruptible(&(privdata->trix_sem))){
+                     //pex_msg((KERN_INFO "down interruptible of trix  sem is not zero, restartsys!\n"));
                      return -ERESTARTSYS; /* JAM avoid possible hangup of m_read_meb when killed by resl*/
                     }
                      privdata->trix_val = 0;
                    pex_dbg((KERN_INFO " after  WAIT_SEM \n"));
+                   return retval;
                    break;
         case POLL_SEM:
         case PEX_IOC_POLL_SEM:

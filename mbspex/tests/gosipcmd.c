@@ -573,7 +573,7 @@ void goscmd_usage (const char *progname)
   printf ("***************************************************************************\n");
 
   printf (" %s for mbspex library  \n", progname);
-  printf (" v0.2 3-Jun-2014 by JAM (j.adamczewski@gsi.de)\n");
+  printf (" v0.3 10-Jun-2014 by JAM (j.adamczewski@gsi.de)\n");
   printf ("***************************************************************************\n");
   printf (
       "  usage: %s [-h|-z] [[-i|-r|-w|-s|-u] [-b] | [-c|-v FILE] [-n DEVICE |-d|-x] sfp slave [address [value [words]|[words]]]] \n",
