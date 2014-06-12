@@ -80,7 +80,7 @@ int pex_ioctl_configure_bus (struct pex_privdata* priv, unsigned long arg)
     }
   }
   mb();
-  udelay(100); /* set waitstate after configure*/
+  udelay(1000); /* set waitstate after configure*/
   return retval;
 }
 
@@ -419,15 +419,17 @@ int pex_sfp_get_reply (struct pex_privdata* privdata, int ch, u32* comm, u32 *ad
 
   do
   {
-    if (loopcount++ > 1000000)/* 1000000*/
+    if (loopcount++ > 10000000)/* 1000000*/
     {
-      pex_msg(KERN_WARNING "**pex_sfp_get_reply polled %d x without success, abort\n", loopcount);
+      pex_msg(KERN_WARNING "**pex_sfp_get_reply polled %d x 400ns without success, abort\n", loopcount);
       print_register (" ... status after FAILED pex_sfp_get_reply:", sfp->rep_stat[ch]);
       return -EIO;
     }
     status = ioread32 (sfp->rep_stat[ch]);
     pex_sfp_delay()
     ;
+    //pex_sfp_delay(); /* additional waitstate here?*/
+    //if(PEX_DMA_POLL_SCHEDULE) schedule(); /* probably this also may help*/
 
   } while (((status & 0x3000) >> 12) != 0x02); /* packet received bit is set*/
 
@@ -478,6 +480,7 @@ int pex_sfp_get_token_reply (struct pex_privdata* privdata, int ch, u32* stat, u
     status = ioread32 (sfp->tk_stat[ch]);
     pex_sfp_delay()
     ;
+
 
   } while (((status & 0x3000) >> 12) != 0x02); /* packet received bit is set*/
 
@@ -613,20 +616,7 @@ int pex_sfp_clear_channelpattern (struct pex_privdata* privdata, int pat)
   return 0;
 }
 
-//int PEXOR_RX_Clear_Pattern( s_pexor *ps_pexor, long l_ptn ){
-//  long mask;
-//  mask=(l_ptn<<8)|(l_ptn<<4)|l_ptn;
-//  //  while( (*ps_pexor->rep_stat&0xcccc)!=0x0 ){
-//  while( ((*ps_pexor->rep_stat)&mask)!=0x0 ){
-//    *ps_pexor->rep_clr=l_ptn;
-//    //    sleep(1);
-//#ifdef DEBUG
-//    //    printf ("PEXOR_RX_Clear: rep_stat: 0x%x 0x%x \n",ps_pexor->rep_stat, *ps_pexor->rep_stat );
-//#endif
-//  }
-//  return(1);
-//}
-//
+
 
 void set_sfp (struct pex_sfp* sfp, void* membase, unsigned long bar)
 {

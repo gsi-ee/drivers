@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 ---------- MBSPEX kernel driver, library and tools
----------- v0.1 26-05-2014 by JAM
+---------- v0.2 03-06-2014 by JAM
 ------------------------------------------------------------------------
 Copyright (C) 2014- Gesellschaft f. Schwerionenforschung, GSI
                     Planckstr. 1, 64291 Darmstadt, Germany
@@ -30,6 +30,7 @@ GNU General Public License for more details (http://www.gnu.org).
 
 - templates of mbs user readout functions using libmbspex in subfolder mbs:
 	- streamingDMA: most generic template, first try
+	- PolandLinux: readout of beam diagnostic qfw modules (POLAND) tested!
 
 2) Building:
 Top level Makefile will	build kernel module, library and all test programs by invoking "make" in top directory. 
