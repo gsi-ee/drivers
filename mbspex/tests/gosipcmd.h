@@ -56,6 +56,7 @@ struct gosip_cmd {
     char verboselevel;            /* level of debug 0=off*/
     char hexformat;               /* hexoutput(1) or decimal (0)*/
     char broadcast;                /* command is broadcasted to range of 0..sfp/chain*/
+    char verify;                   /* verify mode*/
     int fd_pex;                  /* keep file descriptor here*/
     long sfp;                    /* sfp chain (broadcast: max sfp)*/
     long slave;                  /* slave id (broadcast: max slave)*/
@@ -66,6 +67,7 @@ struct gosip_cmd {
     char filename[GOSIP_MAXTEXT]; /* optional name of configuration file*/
     FILE* configfile;              /* handle to configuration file*/
     int linecount;                /* configfile linecounter*/
+    int errcount;                 /* errorcount for verify*/
 };
 
 
