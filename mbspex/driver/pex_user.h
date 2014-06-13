@@ -36,6 +36,7 @@
 #define PEX_TRIGGER_FIRED  0/* return value from wait trigger to inform that trigger ir was fired reached */
 #define PEX_TRIGGER_TIMEOUT 1 /* return value from wait trigger to inform that wait timeout was reached */
 
+#define PEX_SFP_NUMBER 4 /* number of used sfp connections*/
 #define PEX_MAXCONFIG_VALS 60 /* number of configuration commands treated by driver in a single operation*/
 
 
@@ -63,6 +64,11 @@ struct pex_bus_io {
 struct pex_bus_config{
   struct pex_bus_io param[PEX_MAXCONFIG_VALS]; /* array of configuration parameters*/
   unsigned int numpars; /* number of used parameters*/
+};
+
+
+struct pex_sfp_links{
+    int numslaves[PEX_SFP_NUMBER]; /* contains configured number of slaves at each sfp chain. */
 };
 
 struct pex_token_io {
@@ -108,14 +114,14 @@ struct pex_trixor_set {
 #define PEX_IOC_READ_REGISTER    _IOWR(  PEX_IOC_MAGIC, 15, struct pex_reg_io)
 #define PEX_IOC_READ_DMA         _IOWR(  PEX_IOC_MAGIC, 16, struct pex_dma_io)
 #define PEX_IOC_CONFIG_BUS       _IOWR(  PEX_IOC_MAGIC, 17, struct pex_bus_config)
-
+#define PEX_IOC_GET_SFP_LINKS    _IOR(  PEX_IOC_MAGIC, 18, struct pex_sfp_links)
 /* we keep old ioctl definitions for backward compatibility and patch it in ioctl function*/
 #define WAIT_SEM              12
 #define POLL_SEM              16
 #define GET_BAR0_BASE       0x1234
 #define GET_BAR0_TRIX_BASE  0x1235
 #define RESET_SEM           0x1236
-#define PEX_IOC_MAXNR 23
+#define PEX_IOC_MAXNR 24
 
 
 /* note: we do not redefine ioctls existing in mbs user code!*/

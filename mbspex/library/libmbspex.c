@@ -237,6 +237,7 @@ int  mbspex_receive_tok (int handle, long l_sfp, unsigned long l_dma_target, uns
 long mbspex_get_tok_datasize(int handle, long l_sfp,  long slave_id ){
 
   long rev=0;
+  mbspex_assert_handle(handle);
   if(mbspex_register_wr(handle,0, MBSPEX_TK_DSIZE_SEL + 4*l_sfp ,slave_id)) return -1;
   if(mbspex_register_rd (handle, 0, MBSPEX_REP_TK_DSIZE + 4*l_sfp , &rev)) return -1;
   return rev;
@@ -248,11 +249,24 @@ long mbspex_get_tok_datasize(int handle, long l_sfp,  long slave_id ){
 
 long mbspex_get_tok_memsize(int handle , long l_sfp ){
   long rev=0;
+  mbspex_assert_handle(handle);
   if(mbspex_register_rd (handle, 0, MBSPEX_TK_MEM_SIZE + 4*l_sfp , &rev)) return -1;
   return rev;
   //return ( *(ps_pexor->tk_mem_size+l_sfp)) ;
 }
 
+int mbspex_get_configured_slaves(int handle , struct pex_sfp_links* setup)
+{
+  int rev = 0, errsv = 0;
+  mbspex_assert_handle(handle);
+  rev = ioctl (handle, PEX_IOC_GET_SFP_LINKS, setup);
+    errsv = errno;
+    if (rev)
+    {
+      printm (RON"ERROR>>"RES"Error %d  on retrieving slave link configuration- %s\n", errsv, strerror (errsv));
+    }
+    return rev;
+}
 
 
 /*****************************************************************************/

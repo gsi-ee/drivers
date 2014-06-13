@@ -971,6 +971,10 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
             pex_dbg(KERN_INFO " after  GET_TRIX_BASE \n");
             break;
 
+        case PEX_IOC_GET_SFP_LINKS:
+          pex_dbg(KERN_NOTICE "** pex_ioctl get sfp links\n");
+          retval = pex_ioctl_get_sfp_links(privdata, arg);
+          break;
 
         default:
             retval=-ENOTTY;

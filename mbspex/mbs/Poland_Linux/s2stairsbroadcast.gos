@@ -4,25 +4,25 @@
 # -1 for sfp and/or slave will broadcast to all initialized sfps and slaves
 
 #reset logic:
--1 -1 200000 0
--1 -1 200000 1
+#-1 -1 200000 0
+#-1 -1 200000 1
 
 #Disable Trigger (ON=1 OFF=0)
--1 -1 20004c 0
+1 -1 20004c 0
 
 #Start DAC program
--1 -1 200030 1
--1 -1 200030 0
+#-1 -1 200030 1
+#-1 -1 200030 0
 
 #set number of TS loop1
 #max x"fd" slices in total 
--1 -1 200014 1 
+-1 -1 200014 3 
 
 #set number of TS loop2
--1 -1 200018 1
+-1 -1 200018 5
 
 #set number of TS loop3
--1 -1 20001c 1
+-1 -1 20001c 2
 
 #::::::::::::::::::::::::::::::::::::
 #all numbers = hex / unit = 20ns
@@ -46,8 +46,8 @@
 #:::::::::::::::::::::::::::::::::::::
 #:::::::::::::::::::::::::::::::::::::
 #reset counter on FPGA
--1 -1 20003c 1
--1 -1 20003c 0
+#-1 -1 20003c 1
+#-1 -1 20003c 0
 
 #internal trigger is on (1) or off (0)
 -1 -1 200040 0

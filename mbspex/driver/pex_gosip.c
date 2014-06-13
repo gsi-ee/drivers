@@ -26,6 +26,22 @@ int pex_ioctl_init_bus (struct pex_privdata* priv, unsigned long arg)
 
 }
 
+int pex_ioctl_get_sfp_links (struct pex_privdata* priv, unsigned long arg)
+{
+  int retval = 0;
+  u32 sfp = 0;
+  struct pex_sfp_links descriptor;
+  struct pex_sfp* sfpregisters = &(priv->regs.sfp);
+  for (sfp = 0; sfp < PEX_SFP_NUMBER; ++sfp)
+  {
+    descriptor.numslaves[sfp] = sfpregisters->num_slaves[sfp];
+  }
+  retval = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pex_sfp_links));
+  return retval;
+}
+
+
+
 int pex_ioctl_write_bus (struct pex_privdata* priv, unsigned long arg)
 {
   int retval = 0;
@@ -106,7 +122,7 @@ int pex_sfp_broadcast_write_bus (struct pex_privdata* priv, struct pex_bus_io* d
     for (sfp = 0; sfp < PEX_SFP_NUMBER; ++sfp)
     {
       data->sfp = sfp;
-
+      if(sfpregisters->num_slaves[sfp]==0) continue;
       if (slavebroadcast)
       {
         for (sl = 0; sl < sfpregisters->num_slaves[sfp]; ++sl)
@@ -419,7 +435,7 @@ int pex_sfp_get_reply (struct pex_privdata* privdata, int ch, u32* comm, u32 *ad
 
   do
   {
-    if (loopcount++ > 10000000)/* 1000000*/
+    if (loopcount++ > 1000000)/* 1000000*/
     {
       pex_msg(KERN_WARNING "**pex_sfp_get_reply polled %d x 400ns without success, abort\n", loopcount);
       print_register (" ... status after FAILED pex_sfp_get_reply:", sfp->rep_stat[ch]);
@@ -429,7 +445,7 @@ int pex_sfp_get_reply (struct pex_privdata* privdata, int ch, u32* comm, u32 *ad
     pex_sfp_delay()
     ;
     //pex_sfp_delay(); /* additional waitstate here?*/
-    //if(PEX_DMA_POLL_SCHEDULE) schedule(); /* probably this also may help*/
+    if(PEX_DMA_POLL_SCHEDULE) schedule(); /* probably this also may help*/
 
   } while (((status & 0x3000) >> 12) != 0x02); /* packet received bit is set*/
 
@@ -466,7 +482,7 @@ int pex_sfp_get_token_reply (struct pex_privdata* privdata, int ch, u32* stat, u
 {
   u32 status = 0, loopcount = 0;
   struct pex_sfp* sfp = &(privdata->regs.sfp);
-  pex_dbg(KERN_NOTICE "**pex_sfp_get_reply ***\n");
+  pex_dbg(KERN_NOTICE "**pex_sfp_get_token_reply ***\n");
   pex_sfp_assert_channel(ch);
 
   do

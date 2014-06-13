@@ -12,8 +12,8 @@
 
 
 
-/* SFP registers and commands:*/
-#define PEX_SFP_NUMBER 4 /* number of used sfp connections*/
+/* SFP registers and commands: this definition was moved to pex_user.h*/
+/*#define PEX_SFP_NUMBER 4  number of used sfp connections */
 
 #define PEX_SFP_BASE 0x21000
 
@@ -226,6 +226,9 @@ int pex_ioctl_read_bus(struct pex_privdata* priv, unsigned long arg);
 
 /* write list of configuration parameters to frontends*/
 int pex_ioctl_configure_bus(struct pex_privdata* priv, unsigned long arg);
+
+/* pass information about configured slaves to user*/
+int pex_ioctl_get_sfp_links(struct pex_privdata* privdata, unsigned long arg);
 
 /* write values as specified in data to frontend and optionally treat broadcast write
  * if sfp or slave numbers are negative*/

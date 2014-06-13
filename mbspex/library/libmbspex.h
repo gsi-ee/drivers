@@ -87,6 +87,9 @@ long mbspex_get_tok_datasize(int handle, long l_sfp,  long slave_id );
 /* read token memory size of sfp from internal pex registers*/
 long mbspex_get_tok_memsize(int handle , long l_sfp );
 
+/* retrieve actual slave configuration at sfp chains and put to external structure*/
+int mbspex_get_configured_slaves(int handle , struct pex_sfp_links* setup);
+
 
 
 /* write value of l_dat to board l_address on mapped bar*/
