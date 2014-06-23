@@ -77,7 +77,7 @@ int DMA_Pool::AdjustLimits(int additional_bytes)
 				return -1;
 			}
 			PexorInfo("DMA_Pool::AdjustLimits has set memory lock limits to current=%d bytes, max=%d bytes \n",locklimits.rlim_cur,locklimits.rlim_max);
-			return 1;
+			return 0;
 		}
 return 0;
 

@@ -88,13 +88,11 @@ int Pexor::Unregister_DMA_Buffer(int* buf)
 
 pexor::DMA_Buffer* Pexor::Map_Physical_DMA_Buffer(unsigned long physaddr, size_t size)
 {
-	/* Note that we do not need Unmap_Physical_DMA_Buffer, since this is handled also with Delete_DMA_Buffer*/
-
 
 	/* TODO: replace this method by extension of New_DMA_Buffer and DMA_Buffer arguments by physaddr.
 	 * In this case fully transparent with or without memory pool*/
-	int pagesize=sysconf( _SC_PAGE_SIZE );
-	unsigned long rest= (physaddr % pagesize);
+	unsigned long  pagesize=sysconf( _SC_PAGE_SIZE );
+	double rest= (physaddr % pagesize);
 	if(rest)
 		physaddr=physaddr-rest +pagesize;
 	PexorInfo("Pexor::Map_Physical_DMA_Buffer is mapping buffer at %lx for size %d, pagesize:%d, rest:%d ",
