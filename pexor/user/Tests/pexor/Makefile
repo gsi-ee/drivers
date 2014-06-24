@@ -7,7 +7,7 @@ LDINC += $(addprefix -L ,$(LIBDIR))
 LDFLAGS += -lrt
 PEXORLIB = -Wl,-rpath,/usr/lib -Wl,-rpath,$(LIBDIR) -lpexor
 
-BINARIES = pexortest_simple test_pexor_1 sfptest registertest
+BINARIES = pexortest_simple test_pexor_1 sfptest registertest polandtest
 
 ###############################################################
 # Target definitions
