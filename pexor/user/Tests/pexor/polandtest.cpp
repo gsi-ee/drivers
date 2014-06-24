@@ -26,7 +26,10 @@
 #define REG_FOOTER    0xFFFFE8
 #define REG_DATA_LEN  0xFFFFEC
 
-#define NUMARGS 6
+#define REG_RST 0xFFFFF4
+#define REG_CTRL       0x200000
+
+//#define NUMARGS 6
 
 #define TESTBUFSIZE 0x10000
 #define DMABUFNUM 30
@@ -35,10 +38,6 @@
 #define EXPLODERBUF0 0x000000
 #define EXPLODERBUF1 0x100000
 #define EXPLODERLEN  6100 
-//7200
-//0x384
-
-//#define FLOWSIZE 500
 
 //#define WITHTRIGGER 1//
 #define MAXTRIGGERS 100
@@ -57,6 +56,7 @@ static int Maxslaves = NUMSLAVES;
 
 static int Trignum = MAXTRIGGERS;
 static bool withtrigger = false;
+static bool DoConfig=false;
 static int Channel = 0;
 
 static unsigned int ErrorScaler[QFWNUM] = { 0 };
@@ -84,22 +84,193 @@ if((pdata - pdatastart) > (opticlen/4)) \
 
 void usage ()
 {
-  printf ("\n**** polandtest v 0.1 24-Jun-2014 by JAM (j.adamczewski@gsi.de)\n");
+  printf ("\n**** polandtest v 0.2 24-Jun-2014 by JAM (j.adamczewski@gsi.de)\n");
   printf ("* read out data via token DMA from preconfigured poland frontends and unpack/display\n");
   printf ("Usage:\n");
-  printf ("\t polandtest [-s sfp] [-b bufsize -n numbufs -t numtrigs -x -d level]\n");
+  printf ("\t polandtest [-i] [-s sfp] [-p slaves ] [-b bufsize] [-n numbufs] [-t numtrigs] [-d level]\n");
   printf ("Options:\n");
   printf ("\t\t -h          : display this help\n");
+  printf ("\t\t -i          : initialize qfw before test\n");
   printf ("\t\t -s sfp      : select sfp chain   (default 0)\n");
   printf ("\t\t -p slaves   : number of poland slaves at chain   (default 1)\n");
   printf ("\t\t -b bufsize  : size of dma buffer (default %d integers)\n", TESTBUFSIZE);
   printf ("\t\t -n numbufs  : number of dma buffers in pool (default %d)\n", DMABUFNUM);
   printf ("\t\t -t numtrigs : use triggered readout with number of triggers to read (default polling) \n");
   //printf ("\t\t -x          : hex output mode \n");
-  printf ("\t\t -d level    : verbose output (debug) mode with level\n");
+  printf ("\t\t -d level    : verbose output (debug) mode with level 1: print traces, 2: traces+ libpexor debug\n");
   printf ("**********************************\n");
   exit (0);
 }
+
+
+int init_qfw(pexor::PexorTwo* theBoard)
+{
+
+  int rev=theBoard->InitBus(Channel,Maxslaves);
+  if(rev)
+          {
+              printf("\n\nError %d in InitBus\n",rev);
+              return 1;
+          }
+
+
+  // evaluate the submemory structures:
+    unsigned long base_dbuf0 = 0, base_dbuf1 = 0;
+    unsigned long num_submem = 0, submem_offset = 0;
+    unsigned long qfw_control=0;
+    //            unsigned long datadepth=EXPLODERLEN*sizeof(int); // bytes per submemory
+
+    for (int sl = 0; sl < Maxslaves; ++sl)
+    {
+      int werrors = 0;
+      rev = theBoard->ReadBus (REG_BUF0, base_dbuf0, Channel, sl);
+      if (rev == 0)
+        printf ("Slave %x: Base address for Double Buffer 0  0x%x  \n", sl, base_dbuf0);
+      else
+        printf ("\n\ntoken Error %d in ReadBus: slave %x addr %x (double buffer 0 address)\n", rev, sl, REG_BUF0);
+
+      rev = theBoard->ReadBus (REG_BUF1, base_dbuf1, Channel, sl);
+      if (rev == 0)
+        printf ("Slave %x: Base address for Double Buffer 1  0x%x  \n", sl, base_dbuf1);
+      else
+        printf ("\n\ntoken Error %d in ReadBus: slave %x addr %x (double buffer 1 address)\n", rev, sl, REG_BUF1);
+
+      rev = theBoard->ReadBus (REG_SUBMEM_NUM, num_submem, Channel, sl);
+      if (rev == 0)
+        printf ("Slave %x: Number of SubMemories  0x%x  \n", sl, num_submem);
+      else
+        printf ("\n\ntoken Error %d in ReadBus: slave %x addr %x (num submem)\n", rev, sl, REG_SUBMEM_NUM);
+
+      rev = theBoard->ReadBus (REG_SUBMEM_OFF, submem_offset, Channel, sl);
+      if (rev == 0)
+        printf ("Slave %x: Offset of SubMemories to the Base address  0x%x  \n", sl, submem_offset);
+      else
+        printf ("\n\ncheck_token Error %d in ReadBus: slave %x addr %x (submem offset)\n", rev, sl, REG_SUBMEM_OFF);
+
+// now configuration as in mbs:
+      // disable test data length
+
+      theBoard->WriteBus (REG_DATA_LEN, 0x10000000, Channel, sl);
+      theBoard->WriteBus (REG_CTRL, 0, Channel, sl);
+      theBoard->ReadBus (REG_CTRL, qfw_control, Channel, sl);
+      if ( (qfw_control & 0x1) != 0)
+          {
+          printf ("ERROR disabling trigger acceptance in qfw failed, qfw control=0x%x!\n",qfw_control);
+          return 1;
+          }
+      theBoard->WriteBus (REG_CTRL, 1, Channel, sl);
+      theBoard->ReadBus (REG_CTRL, qfw_control, Channel, sl);
+      if ( (qfw_control & 0x1) != 1)
+      {
+        printf ("ERROR enabling trigger acceptance in qfw failed, qfw control=0x%x!\n",qfw_control);
+        return 1;
+      }
+
+      // write SFP id for channel header
+      rev = theBoard->WriteBus (REG_HEADER, Channel, Channel, sl);
+      if (rev)
+        {
+                         printf ("ERROR>> PEXOR slave write REG_HEADER  failed\n");
+                         return 1;
+        }
+      rev = theBoard->WriteBus (REG_RST, 1 , Channel, sl);
+      if (rev)
+      {
+        printf ("ERROR>> PEXOR slave write REG_RST  failed\n");
+        return 1;
+      }
+
+
+      // now put setup for stairs here:
+
+//
+//#Disable Trigger (ON=1 OFF=0)
+      theBoard->WriteBus (0x20004c, 0, Channel, sl);
+
+//0 0 20004c 0
+//
+//#Start DAC program
+      theBoard->WriteBus (0x200030, 1, Channel, sl);
+      theBoard->WriteBus (0x200030, 0, Channel, sl);
+
+//
+//#set number of TS loop1
+//#max x"fd" slices in total
+      theBoard->WriteBus (0x200014, 2, Channel, sl);
+//#set number of TS loop2
+      theBoard->WriteBus (0x200018, 3, Channel, sl);
+//
+//#set number of TS loop3
+      theBoard->WriteBus (0x20001c, 4, Channel, sl);
+//
+//#::::::::::::::::::::::::::::::::::::
+//#all numbers = hex / unit = 20ns
+//#::::::::::::::::::::::::::::::::::::
+//#set time of TS loop1
+//#1F4 #10us
+//#c350 #1ms
+//#7a120 #10ms
+//#1e8480 #40ms
+//#4c4b40 #100ms
+//#2faf080 #1s
+      theBoard->WriteBus (0x200020, 0xc350, Channel, sl);
+//
+//#set time of TS loop2
+      theBoard->WriteBus (0x200024, 0xc350, Channel, sl);
+//
+//#set time of TS loop3
+      theBoard->WriteBus (0x200028, 0xc350, Channel, sl);
+
+      //#reset counter on FPGA
+      theBoard->WriteBus (0x20003c, 1, Channel, sl);
+      theBoard->WriteBus (0x20003c, 0, Channel, sl);
+
+      //#only one Module should be Master:
+      if(Channel==0)
+      {
+        theBoard->WriteBus (0x200040, 1, Channel, sl); //#internal trigger is on (1) or off (0)
+        theBoard->WriteBus (0x200048, 2, Channel, sl); //#FESA = Bit 1 (ON=1 OFF=0) MASTER or Slave = BIT 2 (ON=1 OFF=0)
+      }
+      else
+      {
+        theBoard->WriteBus (0x200040, 0, Channel, sl); //#internal trigger is on (1) or off (0)
+        theBoard->WriteBus (0x200048, 0, Channel, sl); //#FESA = Bit 1 (ON=1 OFF=0) MASTER or Slave = BIT 2 (ON=1 OFF=0)
+          }
+
+//#Offset Measurment (1s mess - time)
+      theBoard->WriteBus (0x200044, 0, Channel, sl);
+//
+//################
+//# s2_ini_qfw:
+//#reset qfw
+      theBoard->WriteBus (0x200010, 0, Channel, sl);
+      theBoard->WriteBus (0x200010, 1, Channel, sl);
+
+//#QFW mode 2
+ theBoard->WriteBus (0x200004, 2, Channel, sl);
+//#program qfw
+ theBoard->WriteBus (0x200008, 1, Channel, sl);
+ theBoard->WriteBus (0x200008, 0, Channel, sl);
+
+//#Enable Trigger (ON=1 OFF=0)
+ theBoard->WriteBus (0x20004c, 1, Channel, sl);
+
+    }    // for slaves
+
+
+
+    if (withtrigger)
+      {
+        /* case of trixor interrupt mode: set up readout loop*/
+        theBoard->ResetTrigger ();
+        theBoard->SetTriggerTimes (10, 300);    // fcti, cvti
+        theBoard->StartAcquisition ();
+      }
+
+
+    return 0;
+}
+
 
 int unpack_qfw (pexor::DMA_Buffer* tokbuf)
 {
@@ -189,8 +360,8 @@ int unpack_qfw (pexor::DMA_Buffer* tokbuf)
           int value = *pdata++;
           //loopData->fQfwTrace[ch].push_back(value);
           // TODO: pseudo trace graphics on terminal
-
-          printf (" -- loop %d slice %d ch %d = 0x%x\n", loop, sl, ch, value);
+          if(Debugmode)
+            printf (" -- loop %d slice %d ch %d = 0x%x\n", loop, sl, ch, value);
         }
     }    //loop
 
@@ -207,7 +378,7 @@ int unpack_qfw (pexor::DMA_Buffer* tokbuf)
     // skip filler words at the end of gosip payload:
     while (pdata - pdatastart <= (opticlen / 4))    // note that trailer is outside opticlen!
     {
-      printf("######### skipping word 0x%x\n ",*pdata);
+      if(Debugmode) printf("######### skipping word 0x%x\n ",*pdata);
       pdata++;
     }
 
@@ -234,7 +405,7 @@ int main (int argc, char **argv)
 
   /* get arguments*/
   int opt, optind = 1;
-  while ((opt = getopt (argc, argv, "hs:p:b:n:t:xd:")) != -1)
+  while ((opt = getopt (argc, argv, "hs:p:b:n:t:xd:i")) != -1)
   {
     switch (opt)
     {
@@ -260,6 +431,10 @@ int main (int argc, char **argv)
         withtrigger = true;
         Trignum = strtol (optarg, NULL, 0);
         break;
+      case 'i':
+        DoConfig = true;
+        break;
+
 //      case 'x':
 //        Hexmode = strtol (optarg, NULL, 0);
 //        break;
@@ -281,9 +456,11 @@ int main (int argc, char **argv)
   printf (" - set DMA Bufsize:%d integers (%d bytes)\n", Bufsize, bytes);
   printf (" - set DMA Poolsize:%d buffers\n", Bufnum);
   printf (" - set sfp Channel:0x%x\n", Channel);
+   printf(" - set number of slave devices:0x%x \n",Maxslaves);
   printf (" - set token mode double buffer:%d \n", BufID);
+  printf (" - set do configure:%d \n",DoConfig);
+  printf (" - set Triggermode:%d with 0x%x triggers \n",withtrigger,Trignum);
 
-  //		printf(" - set slave device:0x%x \n",Slave);
 //    printf(" - set address:0x%x\n",Address);
 //    printf(" - set data value:0x%x\n",Data);
 
@@ -300,14 +477,14 @@ int main (int argc, char **argv)
     return 1;
   }
 
-// do not intitialize preconfigured slaves here!
-//	int iret=board.InitBus(Channel,Maxslaves);
-//	if(iret)
-//		{
-//			printf("\n\nError %d in InitBus\n",iret);
-//			return 1;
-//		}
-//	sleep(1);
+  if(DoConfig)
+  {
+    if(init_qfw(&board)!=0)
+      {
+        printf ("**** Could not configure qfw!\n");
+        return 1;
+      }
+  }
 
   int rev = board.Add_DMA_Buffers (bytes, Bufnum);
   if (rev)
@@ -316,51 +493,10 @@ int main (int argc, char **argv)
     return rev;
   }
 
-  // evaluate the submemory structures:
-  unsigned long base_dbuf0 = 0, base_dbuf1 = 0;
-  unsigned long num_submem = 0, submem_offset = 0;
-  //   			unsigned long datadepth=EXPLODERLEN*sizeof(int); // bytes per submemory
 
-  for (int sl = 0; sl < Maxslaves; ++sl)
-  {
-    int werrors = 0;
-    rev = board.ReadBus (REG_BUF0, base_dbuf0, Channel, sl);
-    if (rev == 0)
-      printf ("Slave %x: Base address for Double Buffer 0  0x%x  \n", sl, base_dbuf0);
-    else
-      printf ("\n\ntoken Error %d in ReadBus: slave %x addr %x (double buffer 0 address)\n", rev, sl, REG_BUF0);
-
-    rev = board.ReadBus (REG_BUF1, base_dbuf1, Channel, sl);
-    if (rev == 0)
-      printf ("Slave %x: Base address for Double Buffer 1  0x%x  \n", sl, base_dbuf1);
-    else
-      printf ("\n\ntoken Error %d in ReadBus: slave %x addr %x (double buffer 1 address)\n", rev, sl, REG_BUF1);
-
-    rev = board.ReadBus (REG_SUBMEM_NUM, num_submem, Channel, sl);
-    if (rev == 0)
-      printf ("Slave %x: Number of SubMemories  0x%x  \n", sl, num_submem);
-    else
-      printf ("\n\ntoken Error %d in ReadBus: slave %x addr %x (num submem)\n", rev, sl, REG_SUBMEM_NUM);
-
-    rev = board.ReadBus (REG_SUBMEM_OFF, submem_offset, Channel, sl);
-    if (rev == 0)
-      printf ("Slave %x: Offset of SubMemories to the Base address  0x%x  \n", sl, submem_offset);
-    else
-      printf ("\n\ncheck_token Error %d in ReadBus: slave %x addr %x (submem offset)\n", rev, sl, REG_SUBMEM_OFF);
-
-    // just show slave configuration, we do not reconfigure here!
-
-  }    // for slaves
 
   /* Test the token io*/
-  if (withtrigger)
-  {
-    /* case of trixor interrupt mode: set up readout loop*/
-    board.ResetTrigger ();
-    board.SetTriggerTimes (0x10, 0x20);    // fcti, cvti
-    board.StartAcquisition ();
-  }
-  else
+  if (!withtrigger)
   {
     Trignum = 1;
   }
@@ -403,9 +539,8 @@ int main (int argc, char **argv)
 
     if (unpack_qfw (tokbuf) != 0)
     {
-      printf ("Error in unpacker!\n");
-      exit (0);
-
+      printf ("Error in unpacker at event %d\n",i);
+      continue;
     }
 
 
@@ -414,7 +549,7 @@ int main (int argc, char **argv)
 
 }    // for loop
 
-if(withtrigger)
+if(withtrigger && DoConfig)
   board.StopAcquisition();
 
 return 0;
