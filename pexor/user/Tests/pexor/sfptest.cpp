@@ -50,7 +50,7 @@
 
 //#define FLOWSIZE 500
 
-//#define WITHTRIGGER 1
+//#define WITHTRIGGER 1//
 #define MAXTRIGGERS 100
 
 /* will set debug and check Debugmode on
@@ -189,7 +189,14 @@ int main(int argc, char **argv)
 			printf("**** Could not open pexor board!\n");
 			return 1;
 		}
-	int iret=board.InitBus(Channel,Maxslaves);
+	int iret=board.Reset();
+	if(iret)
+	{
+	  printf("\n\nError %d in Board reset",iret);
+	  return 1;
+	}
+
+	iret=board.InitBus(Channel,Maxslaves);
 	if(iret)
 		{
 			printf("\n\nError %d in InitBus\n",iret);

@@ -106,6 +106,8 @@ void usage ()
 int init_qfw(pexor::PexorTwo* theBoard)
 {
 
+
+
   int rev=theBoard->InitBus(Channel,Maxslaves);
   if(rev)
           {
@@ -479,11 +481,20 @@ int main (int argc, char **argv)
 
   if(DoConfig)
   {
+    if (board.Reset ()!=0)
+     {
+       printf ("**** Could not reset pexor board!\n");
+       return 1;
+     }
+
+
     if(init_qfw(&board)!=0)
       {
         printf ("**** Could not configure qfw!\n");
         return 1;
       }
+    printf("* Wait a while after config...\n\n");
+    sleep(1);
   }
 
   int rev = board.Add_DMA_Buffers (bytes, Bufnum);

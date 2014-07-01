@@ -52,99 +52,358 @@ int pexor_ioctl_set_trixor(struct pexor_privdata* priv, unsigned long arg)
 }
 #endif
 
-int pexor_ioctl_init_bus(struct pexor_privdata* priv, unsigned long arg)
+int pexor_ioctl_init_bus (struct pexor_privdata* priv, unsigned long arg)
 {
-  int retval=0;
-  u32 sfp=0, slave=0;/*,comm=0;*/
+  int retval = 0;
+  u32 sfp = 0;/*,comm=0;*/
+  int slave=0;
   struct pexor_bus_io descriptor;
-  retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pexor_bus_io));
-  if(retval) return retval;
-  sfp  = (u32) descriptor.sfp; // sfp connection to initialize chain
-  slave = (u32) descriptor.slave; // maximum # of connected slave boards
-  // for pexor standard sfp code, we use this ioctl to initalize chain of slaves:
-  retval=pexor_sfp_clear_channel(priv,sfp);
-  if(retval) return retval;
-  retval = pexor_sfp_init_request(priv,sfp,slave);
-  if(retval) return retval;
+  struct pexor_sfp* sfpregisters = &(priv->pexor.sfp);
+  retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pexor_bus_io));
+  if (retval)
+    return retval;
+
+  sfp = (u32) descriptor.sfp;    // sfp connection to initialize chain
+  slave = descriptor.slave;    // maximum # of connected slave boards
+  // for pex standard sfp code, we use this ioctl to initalize chain of slaves:
+  retval = pexor_sfp_clear_channel (priv, sfp);
+  if (retval)
+    return retval;
+  retval = pexor_sfp_init_request (priv, sfp, slave);
+  if (retval)
+    return retval;
+  sfpregisters->num_slaves[sfp] = slave; /* keep track of existing slaves for configuration broadcast*/
   return retval;
 
+}
 
+//int pexor_ioctl_init_bus(struct pexor_privdata* priv, unsigned long arg)
+//{
+//  int retval=0;
+//  u32 sfp=0, slave=0;/*,comm=0;*/
+//  struct pexor_bus_io descriptor;
+//  retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pexor_bus_io));
+//  if(retval) return retval;
+//  sfp  = (u32) descriptor.sfp; // sfp connection to initialize chain
+//  slave = (u32) descriptor.slave; // maximum # of connected slave boards
+//  // for pexor standard sfp code, we use this ioctl to initalize chain of slaves:
+//  retval=pexor_sfp_clear_channel(priv,sfp);
+//  if(retval) return retval;
+//  retval = pexor_sfp_init_request(priv,sfp,slave);
+//  if(retval) return retval;
+//  return retval;
+//
+//
+//}
+
+
+
+int pexor_ioctl_get_sfp_links (struct pexor_privdata* priv, unsigned long arg)
+{
+  int retval = 0;
+  u32 sfp = 0;
+  struct pexor_sfp_links descriptor;
+  struct pexor_sfp* sfpregisters = &(priv->pexor.sfp);
+  for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
+  {
+    descriptor.numslaves[sfp] = sfpregisters->num_slaves[sfp];
+  }
+  retval = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pexor_sfp_links));
+  return retval;
 }
 
 
 
-int pexor_ioctl_write_bus(struct pexor_privdata* priv, unsigned long arg)
+int pexor_ioctl_write_bus (struct pexor_privdata* priv, unsigned long arg)
 {
-  int retval=0;
-  u32 ad=0,val=0,sfp=0, slave=0,comm=0;
-
-  u32 totaladdress=0;
-  u32 rstat=0, radd=0, rdat=0;
+  int retval = 0;
   struct pexor_bus_io descriptor;
-  retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pexor_bus_io));
-  if(retval) return retval;
-  ad= (u32) descriptor.address;
-  val = (u32) descriptor.value;
-  sfp  = (u32) descriptor.sfp;
-  slave = (u32) descriptor.slave;
-  pexor_dbg(KERN_NOTICE "** pexor_ioctl_write_bus writes value %x to address %x on sfp %x, slave %x\n",val,ad,sfp,slave);
+  retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pexor_bus_io));
+  if (retval)
+    return retval;
+  retval = pexor_sfp_broadcast_write_bus (priv, &descriptor); /* everything is subfunctions now*/
+  if (retval)
+    return retval;
+  retval = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pexor_bus_io));
+  return retval;
+}
 
 
-  comm = PEXOR_SFP_PT_AD_W_REQ | ( 0x1 << (16 + sfp) );
+//int pexor_ioctl_write_bus(struct pexor_privdata* priv, unsigned long arg)
+//{
+//  int retval=0;
+//  u32 ad=0,val=0,sfp=0, slave=0,comm=0;
+//
+//  u32 totaladdress=0;
+//  u32 rstat=0, radd=0, rdat=0;
+//  struct pexor_bus_io descriptor;
+//  retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pexor_bus_io));
+//  if(retval) return retval;
+//  ad= (u32) descriptor.address;
+//  val = (u32) descriptor.value;
+//  sfp  = (u32) descriptor.sfp;
+//  slave = (u32) descriptor.slave;
+//  pexor_dbg(KERN_NOTICE "** pexor_ioctl_write_bus writes value %x to address %x on sfp %x, slave %x\n",val,ad,sfp,slave);
+//
+//
+//  comm = PEXOR_SFP_PT_AD_W_REQ | ( 0x1 << (16 + sfp) );
+//  totaladdress = ad + (slave << 24);
+//  pexor_sfp_clear_all(priv);
+//  //pexor_sfp_clear_channel(priv,sfp);
+//  pexor_sfp_request(priv, comm, totaladdress, val);
+//  //if((retval=pexor_sfp_get_reply(priv, sfp, &rstat, &radd, &rdat, 0))!=0) // debug: no response check
+//  if((retval=pexor_sfp_get_reply(priv, sfp, &rstat, &radd, &rdat, PEXOR_SFP_PT_AD_W_REP))!=0)
+//    {
+//      pexor_msg(KERN_ERR "** pexor_ioctl_write_bus: error %d at sfp_reply \n",retval);
+//      pexor_msg(KERN_ERR "   pexor_ioctl_write_bus: incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat);
+//      return -EIO;
+//    }
+//  descriptor.value=rstat;
+//  descriptor.address=radd;
+//  retval=copy_to_user((void __user *) arg, &descriptor, sizeof(struct pexor_bus_io));
+//
+//  return retval;
+//}
+
+
+
+int pexor_ioctl_read_bus (struct pexor_privdata* priv, unsigned long arg)
+{
+  int retval = 0;
+  struct pexor_bus_io descriptor;
+  retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pexor_bus_io));
+  if (retval)
+    return retval;
+  retval = pexor_sfp_read_bus (priv, &descriptor); /* everything is subfunctions now*/
+  if (retval)
+    return retval;
+  retval = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pexor_bus_io));
+  return retval;
+}
+
+//int pexor_ioctl_read_bus(struct pexor_privdata* priv, unsigned long arg)
+//{
+//  int retval=0;
+//  u32 ad=0, chan=0, slave=0,comm=0;
+//  u32 rstat=0, radd=0, rdat=0;
+//  u32 totaladdress=0;
+//  struct pexor_bus_io descriptor;
+//  retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pexor_bus_io));
+//  if(retval) return retval;
+//  ad= (u32) descriptor.address;
+//  chan  = (u32) descriptor.sfp;
+//  slave = (u32) descriptor.slave;
+//
+//
+//
+//  pexor_dbg(KERN_NOTICE "** pexor_ioctl_read_bus from_address %x on sfp %x, slave %x\n",ad,chan,slave);
+//
+//
+//
+//  comm = PEXOR_SFP_PT_AD_R_REQ | ( 0x1 << (16 + chan) );
+//  totaladdress = ad + (slave << 24);
+//  pexor_sfp_clear_channel(priv,chan);
+//  pexor_sfp_request(priv, comm, totaladdress, 0);
+//  //if((retval=pexor_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, 0))!=0) // debug:  no check
+//  if((retval=pexor_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEXOR_SFP_PT_AD_R_REP))!=0)
+//    {
+//      pexor_msg(KERN_ERR "** pexor_ioctl_read_bus: error %d at sfp_reply \n",retval);
+//      pexor_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
+//    return -EIO;
+//    }
+//
+//  descriptor.value=rdat;
+//  retval=copy_to_user((void __user *) arg, &descriptor, sizeof(struct pexor_bus_io));
+//
+//  return retval;
+//}
+
+
+int pexor_ioctl_configure_bus (struct pexor_privdata* priv, unsigned long arg)
+{
+  int retval = 0, i = 0;
+  struct pexor_bus_config descriptor;
+  retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pexor_bus_config));
+  if (retval)
+    return retval;
+  if (descriptor.numpars > PEXOR_MAXCONFIG_VALS)
+  {
+    pexor_msg(
+        KERN_ERR "** pexor_ioctl_configure_bus: warning too many parameters %d , reduced to %d\n", descriptor.numpars, PEXOR_MAXCONFIG_VALS);
+    descriptor.numpars = PEXOR_MAXCONFIG_VALS;
+  }
+  pexor_dbg(KERN_NOTICE "** pexor_ioctl_configure_bus with %d parameters\n", descriptor.numpars);
+  for (i = 0; i < descriptor.numpars; ++i)
+  {
+    struct pexor_bus_io data = descriptor.param[i];
+    retval = pexor_sfp_broadcast_write_bus (priv, &data);
+    if (retval)
+    {
+      pexor_msg(
+          KERN_ERR "** pexor_ioctl_configure_bus: error %d at pexor_sfp_broadcast_write_bus for value i=%d\n", retval, i);
+      return retval;
+    }
+  }
+  mb();
+  udelay(1000); /* set waitstate after configure*/
+  return retval;
+}
+
+
+int pexor_sfp_broadcast_write_bus (struct pexor_privdata* priv, struct pexor_bus_io* data)
+{
+  int retval = 0, i = 0, sl = 0, sfp = 0;
+  char sfpbroadcast = 0, slavebroadcast = 0;
+  unsigned long address=0, value=0;
+  struct pexor_sfp* sfpregisters = &(priv->pexor.sfp);
+  address=data->address;
+  value=data->value; /* save this because pexor_bus_io will be changed by write bus!*/
+  mb();
+  if (data->sfp < 0)
+    sfpbroadcast = 1;
+  if (data->slave < 0)
+    slavebroadcast = 1;
+  pexor_dbg(KERN_NOTICE "** pexor_sfp_broadcast_write_bus with sfpbroadcast %d slavebroadcast %d \n", sfpbroadcast,slavebroadcast);
+  if (sfpbroadcast)
+  {
+    pexor_dbg(KERN_NOTICE "** pexor_sfp_broadcast_write_bus with sfpbroadcast\n");
+
+    for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
+    {
+      data->sfp = sfp;
+      if(sfpregisters->num_slaves[sfp]==0) continue;
+      if (slavebroadcast)
+      {
+        for (sl = 0; sl < sfpregisters->num_slaves[sfp]; ++sl)
+        {
+          data->slave = sl;
+          data->address=address;
+          data->value=value;
+          retval = pexor_sfp_write_bus (priv, data);
+          if (retval)
+          {
+            pexor_msg(
+                KERN_ERR "** pexor_sfp_broadcast_write_bus: error %d at pexor_sfp_write_bus for value i=%d, sfp:%d slave:%ld \n", retval, i, data->sfp, data->slave);
+            continue;
+          }
+        }
+      }    // slavebroadcast
+      else
+      {
+        data->address=address;
+        data->value=value;
+        retval = pexor_sfp_write_bus (priv, data);
+        if (retval)
+        {
+          pexor_msg(
+              KERN_ERR "** pexor_sfp_broadcast_write_bus: error %d at pexor_sfp_write_bus for value i=%d, sfp:%d slave:%ld \n", retval, i, data->sfp, data->slave);
+          continue;
+        }
+      }
+    }
+
+  }
+  else if (slavebroadcast)
+  {
+    for (sl = 0; sl < sfpregisters->num_slaves[sfp]; ++sl)
+    {
+      data->slave = sl;
+      data->address=address;
+      data->value=value;
+      retval = pexor_sfp_write_bus (priv, data);
+      if (retval)
+      {
+        pexor_msg(
+            KERN_ERR "** pexor_sfp_broadcast_write_bus: error %d at pexor_sfp_write_bus for value i=%d, sfp:%d slave:%ld \n", retval, i, data->sfp, data->slave);
+        continue;
+      }
+    }
+
+  }
+  else
+  {
+    /* single write, no broadcast loop*/
+    retval = pexor_sfp_write_bus (priv, data);
+    if (retval)
+    {
+      pexor_msg(KERN_ERR "** pexor_sfp_broadcast_write_bus: error %d at pexor_sfp_write_bus for value i=%d\n", retval, i);
+      return retval;
+    }
+  }
+
+  return retval;
+}
+
+
+
+
+int pexor_sfp_write_bus (struct pexor_privdata* priv, struct pexor_bus_io* descriptor)
+{
+
+  int retval = 0;
+  u32 ad = 0, val = 0, sfp = 0, slave = 0, comm = 0;
+  u32 rstat = 0, radd = 0, rdat = 0;
+  u32 totaladdress = 0;
+  ad = (u32) descriptor->address;
+  val = (u32) descriptor->value;
+  sfp = (u32) descriptor->sfp;
+  slave = (u32) descriptor->slave;
+  pexor_dbg(KERN_NOTICE "** pexor_sfp_write_bus writes value %x to address %x on sfp %x, slave %x\n", val, ad, sfp, slave);
+
+  comm = PEXOR_SFP_PT_AD_W_REQ | (0x1 << (16 + sfp));
   totaladdress = ad + (slave << 24);
-  pexor_sfp_clear_all(priv);
+  pexor_sfp_clear_all (priv);
   //pexor_sfp_clear_channel(priv,sfp);
-  pexor_sfp_request(priv, comm, totaladdress, val);
+  pexor_sfp_request (priv, comm, totaladdress, val);
   //if((retval=pexor_sfp_get_reply(priv, sfp, &rstat, &radd, &rdat, 0))!=0) // debug: no response check
-  if((retval=pexor_sfp_get_reply(priv, sfp, &rstat, &radd, &rdat, PEXOR_SFP_PT_AD_W_REP))!=0)
-    {
-      pexor_msg(KERN_ERR "** pexor_ioctl_write_bus: error %d at sfp_reply \n",retval);
-      pexor_msg(KERN_ERR "   pexor_ioctl_write_bus: incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat);
-      return -EIO;
-    }
-  descriptor.value=rstat;
-  descriptor.address=radd;
-  retval=copy_to_user((void __user *) arg, &descriptor, sizeof(struct pexor_bus_io));
-
-  return retval;
+  if ((retval = pexor_sfp_get_reply (priv, sfp, &rstat, &radd, &rdat, PEXOR_SFP_PT_AD_W_REP)) != 0)
+  {
+    pexor_msg(KERN_ERR "** pexor_sfp_write_bus: error %d at sfp_reply \n", retval);
+    pexor_msg(KERN_ERR "   pexor_sfp_write_bus: incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat);
+    return -EIO;
+  }
+  descriptor->value = rstat;
+  descriptor->address = radd;
+  return 0;
 }
 
-int pexor_ioctl_read_bus(struct pexor_privdata* priv, unsigned long arg)
+int pexor_sfp_read_bus (struct pexor_privdata* priv, struct pexor_bus_io* descriptor)
 {
-  int retval=0;
-  u32 ad=0, chan=0, slave=0,comm=0;
-  u32 rstat=0, radd=0, rdat=0;
-  u32 totaladdress=0;
-  struct pexor_bus_io descriptor;
-  retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pexor_bus_io));
-  if(retval) return retval;
-  ad= (u32) descriptor.address;
-  chan  = (u32) descriptor.sfp;
-  slave = (u32) descriptor.slave;
-
-
-
-  pexor_dbg(KERN_NOTICE "** pexor_ioctl_read_bus from_address %x on sfp %x, slave %x\n",ad,chan,slave);
-
-
-
-  comm = PEXOR_SFP_PT_AD_R_REQ | ( 0x1 << (16 + chan) );
+  int retval = 0;
+  u32 ad = 0, chan = 0, slave = 0, comm = 0;
+  u32 rstat = 0, radd = 0, rdat = 0;
+  u32 totaladdress = 0;
+  ad = (u32) descriptor->address;
+  chan = (u32) descriptor->sfp;
+  slave = (u32) descriptor->slave;
+  pexor_dbg(KERN_NOTICE "** pexor_sfp_read_bus from_address %x on sfp %x, slave %x\n", ad, chan, slave);
+  comm = PEXOR_SFP_PT_AD_R_REQ | (0x1 << (16 + chan));
   totaladdress = ad + (slave << 24);
-  pexor_sfp_clear_channel(priv,chan);
-  pexor_sfp_request(priv, comm, totaladdress, 0);
+  pexor_sfp_clear_channel (priv, chan);
+  pexor_sfp_request (priv, comm, totaladdress, 0);
   //if((retval=pexor_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, 0))!=0) // debug:  no check
-  if((retval=pexor_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEXOR_SFP_PT_AD_R_REP))!=0)
-    {
-      pexor_msg(KERN_ERR "** pexor_ioctl_read_bus: error %d at sfp_reply \n",retval);
-      pexor_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
-	return -EIO;
-    }
+  if ((retval = pexor_sfp_get_reply (priv, chan, &rstat, &radd, &rdat, PEXOR_SFP_PT_AD_R_REP)) != 0)
+  {
+    pexor_msg(KERN_ERR "** pexor_sfp_read_bus: error %d at sfp_reply \n", retval);
+    pexor_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
+    return -EIO;
+  }
 
-  descriptor.value=rdat;
-  retval=copy_to_user((void __user *) arg, &descriptor, sizeof(struct pexor_bus_io));
-
-  return retval;
+  descriptor->value = rdat;
+  return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 int pexor_ioctl_request_token(struct pexor_privdata* priv, unsigned long arg)
 {
@@ -332,11 +591,11 @@ int pexor_ioctl_wait_token(struct pexor_privdata* priv, unsigned long arg)
 int pexor_ioctl_wait_trigger(struct pexor_privdata* priv, unsigned long arg)
 {
   int wjifs=0;
-  wjifs=wait_event_interruptible_timeout( priv->irq_trig_queue, atomic_read( &(priv->trig_outstanding) ) > 0, PEXOR_WAIT_TIMEOUT );
-  pexor_dbg(KERN_NOTICE "** pexor_wait_trigger after wait_event_interruptible_timeout with TIMEOUT %d, waitjiffies=%d, outstanding=%d \n",PEXOR_WAIT_TIMEOUT, wjifs, atomic_read( &(priv->trig_outstanding)));
+  wjifs=wait_event_interruptible_timeout( priv->irq_trig_queue, atomic_read( &(priv->trig_outstanding) ) > 0, PEXOR_TRIG_TIMEOUT );
+  pexor_dbg(KERN_NOTICE "** pexor_wait_trigger after wait_event_interruptible_timeout with TIMEOUT %d, waitjiffies=%d, outstanding=%d \n",PEXOR_TRIG_TIMEOUT, wjifs, atomic_read( &(priv->trig_outstanding)));
   if(wjifs==0)
     {
-      pexor_msg(KERN_NOTICE "** pexor_wait_trigger TIMEOUT %d jiffies expired on wait_event_interruptible_timeout... \n",PEXOR_WAIT_TIMEOUT);
+      pexor_msg(KERN_NOTICE "** pexor_wait_trigger TIMEOUT %d jiffies expired on wait_event_interruptible_timeout... \n",PEXOR_TRIG_TIMEOUT);
       return PEXOR_TRIGGER_TIMEOUT;
     }
   else if(wjifs==-ERESTARTSYS)
@@ -350,6 +609,30 @@ int pexor_ioctl_wait_trigger(struct pexor_privdata* priv, unsigned long arg)
 }
 
 
+
+
+void pexor_sfp_reset (struct pexor_privdata* privdata)
+{
+  int i;
+  struct pexor_sfp* sfp = &(privdata->pexor.sfp);
+  pexor_dbg(KERN_NOTICE "**pexor_sfp_reset\n");
+  iowrite32 (0xF, sfp->reset);
+  mb();
+  pexor_sfp_delay()
+  ;
+  iowrite32 (0, sfp->reset);
+  mb();
+  pexor_sfp_delay()
+  ;
+  /* reset number of slaves counter for broadcast*/
+  for (i = 0; i < PEXOR_SFP_NUMBER; ++i)
+  {
+    sfp->num_slaves[i] = 0;
+  }
+
+  udelay(10000); /* wait a while after reset until sfp is ready again!*/
+
+}
 
 
 
@@ -382,8 +665,11 @@ int pexor_sfp_get_reply ( struct pexor_privdata* privdata, int ch,  u32* comm, u
 	  return -EIO;
 	}
       status= ioread32(sfp->rep_stat[ch]);
-      pexor_sfp_delay();
+      pexor_sfp_delay()
+      ;
+	  if(PEXOR_DMA_POLL_SCHEDULE) schedule(); /* probably this also may help*/
 
+	
     }
   while(((status & 0x3000) >> 12) != 0x02); /* packet received bit is set*/
 
@@ -456,7 +742,7 @@ int  pexor_sfp_init_request( struct pexor_privdata* privdata, int ch, int numsla
   if(numslaves<=0) maxslave=0; /* catch possible user workaround for changed api*/
   pexor_sfp_assert_channel(ch);
   comm = PEXOR_SFP_INI_REQ | (0x1 << (16 + sfp) );
-  pexor_dbg(KERN_NOTICE "**pexor_sfp_init_request ***\n");
+  pexor_dbg(KERN_NOTICE "**pexor_sfp_init_request for channel %d with maxslave index=%d ***\n",ch, maxslave);
   pexor_sfp_request(privdata, comm, 0, maxslave);
   if((retval=pexor_sfp_get_reply(privdata, sfp, &rstat, &radd, &rdat, 0))!=0)
     //if((retval=pexor_sfp_get_reply(privdata, sfp, &rstat, &radd, &rdat, PEXOR_SFP_PT_INI_REP))!=0)
@@ -635,7 +921,7 @@ void pexor_show_version(struct  pexor_sfp* sfp, char* buf)
 {
   /* stolen from pexor_gosip.h*/
   u32 tmp, year,month, day, version[2];
-  char txt[1024];
+  char txt[512];
   tmp=ioread32(sfp->version);
   mb();
   ndelay(20);
@@ -644,9 +930,9 @@ void pexor_show_version(struct  pexor_sfp* sfp, char* buf)
   day=(tmp&0xff00)>>8;
   version[0]=(tmp&0xf0)>>4;
   version[1]=(tmp&0xf);
-  snprintf(txt, 1024,"PEXOR FPGA code compiled at Year=%x Month=%x Date=%x Version=%x.%x \n", year,month,day,version[0],version[1]);
+  snprintf(txt, 512,"GOSIP FPGA code compiled at Year=%x Month=%x Date=%x Version=%x.%x \n", year,month,day,version[0],version[1]);
   pexor_dbg(KERN_NOTICE "%s", txt);
-  if(buf) snprintf(buf, 1024, "%s",txt);
+  if(buf) snprintf(buf, 512, "%s",txt);
 }
 
 

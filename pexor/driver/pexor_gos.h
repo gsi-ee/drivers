@@ -16,7 +16,7 @@
 #define PEXOR_WITH_SFP 1
 
 /* enable usage of TRIXOR */
-/*#define PEXOR_WITH_TRIXOR 1*/
+#define PEXOR_WITH_TRIXOR 1
 
 
 #define PEXOR_DRAM		0x100000 /* use the first SFP port for DMA testing here*/
@@ -185,7 +185,8 @@
 
 #define pexor_sfp_delay()                       \
   mb();                                         \
-  ndelay(20);
+  ndelay(200);
+
 /*udelay(10);*/
 
 
@@ -221,12 +222,16 @@ struct pexor_sfp
                                            data transfer for sfp 0...3 */
   dma_addr_t tk_mem_dma[PEXOR_SFP_NUMBER];  /* token data memory area
                                                expressed as dma bus address */
+  int num_slaves[PEXOR_SFP_NUMBER]; /* number of initialized slaves, for bus broadcast*/
 };
 
 
 void set_sfp(struct pexor_sfp *sfp, void *membase, unsigned long bar);
 void print_sfp(struct pexor_sfp *sfp);
 void pexor_show_version(struct pexor_sfp *sfp, char *buf);
+
+/* issue receive reset for all sfps*/
+void pexor_sfp_reset( struct pexor_privdata* privdata);
 
 /* send request command comm to sfp address addr with optional send data.
  * will not wait for response! */
@@ -279,6 +284,38 @@ int pexor_ioctl_wait_token(struct pexor_privdata *priv, unsigned long arg);
 /* Wait for a trigger interrupt from pexor. Will be raised from trixor board
  * and routed to pci throug pexor driver. */
 int pexor_ioctl_wait_trigger(struct pexor_privdata *priv, unsigned long arg);
+
+
+/* initialize sfp fieldbus of frontends*/
+int pexor_ioctl_init_bus(struct pexor_privdata* priv, unsigned long arg);
+
+
+/* write to sfp fieldbus of frontends*/
+int pexor_ioctl_write_bus(struct pexor_privdata* priv, unsigned long arg);
+
+/* read from sfp fieldbus of frontends*/
+int pexor_ioctl_read_bus(struct pexor_privdata* priv, unsigned long arg);
+
+/* write list of configuration parameters to frontends*/
+int pexor_ioctl_configure_bus(struct pexor_privdata* priv, unsigned long arg);
+
+/* pass information about configured slaves to user*/
+int pexor_ioctl_get_sfp_links(struct pexor_privdata* privdata, unsigned long arg);
+
+/* write values as specified in data to frontend and optionally treat broadcast write
+ * if sfp or slave numbers are negative*/
+int pexor_sfp_broadcast_write_bus(struct pexor_privdata* priv, struct pexor_bus_io* data);
+
+/* write values as specified in data to frontends*/
+int pexor_sfp_write_bus(struct pexor_privdata* priv, struct pexor_bus_io* data);
+
+/* read values as specified in data to frontends. results are in data structure*/
+int pexor_sfp_read_bus(struct pexor_privdata* priv, struct pexor_bus_io* data);
+
+
+
+
+
 
 
 

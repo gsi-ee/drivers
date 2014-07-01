@@ -9,6 +9,7 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <string>
+#include <errno.h>
 
 #include "DMA_Buffer.h"
 
@@ -23,7 +24,9 @@ Pexor::Pexor(unsigned int boardid) : Board(std::string("/dev/")),fbUseSGBuffers(
 	fDeviceName += std::string(devname);
 	PexorInfo("pexor::Pexor ctor set device name to %s \n",fDeviceName.c_str());
 	Open();
-	Reset(); // get rid of previous buffers in case of formerly crash
+	//Reset(); // get rid of previous buffers in case of formerly crash
+	           // JAM: we do not always want to have this, user must call it explicitely!
+	           // note that DMA buffers are removed anyway at Close!
 }
 
 Pexor::~Pexor()
@@ -35,19 +38,21 @@ Pexor::~Pexor()
 
 int Pexor::Reset()
 {
-        int rev=0;
+    int rev=0, errsv=0;
 	PexorDebug("Pexor::Reset()");
 	rev=ioctl(fFileHandle, PEXOR_IOC_CLEAR_RCV_BUFFERS);
-        if(rev)
-                {
-                        PexorError("Error %d clearing recive buffers PEXOR 1 !\n",rev);
-                }
+	errsv = errno;
+	if(rev)
+	{
+	  PexorError("Error %d clearing receive buffers PEXOR 1 (%s) !\n",errsv, strerror (errsv));
+	}
 	Remove_All_DMA_Pools(); // get rid of dma buffer references, since reset will cleanup all remaining ones
 
 	rev=ioctl(fFileHandle, PEXOR_IOC_RESET);
+	errsv = errno;
 	if(rev)
 		{
-			PexorError("Error %d resetting PEXOR 1 !\n",rev);
+			PexorError("Error %d (%s) resetting PEXOR 1 !\n",errsv, strerror (errsv));
 		}
 	return rev;
 
@@ -61,9 +66,10 @@ int Pexor::Register_DMA_Buffer(int* buf, size_t size)
 	descriptor.size = size;
 	PexorInfo("Pexor::Register_DMA_Buffer() is sg mapping buffer %lx", descriptor.addr);
 	int rev=::ioctl(fFileHandle, PEXOR_IOC_MAPBUFFER , &descriptor);
+	int errsv=errno;
 	if(rev)
 		{
-			PexorError("\n\nError %d sg-mapping buffer at  address %lx\n",rev,descriptor.addr);
+			PexorError("\n\nError %d sg-mapping buffer at  address %lx (%s)\n",errno,descriptor.addr, strerror (errsv));
 			//delete buffer;
 			return rev;
 		}
@@ -78,9 +84,10 @@ int Pexor::Unregister_DMA_Buffer(int* buf)
 
 	PexorInfo("Pexor::Unregister_DMA_Buffer() is sg unmapping buffer %lx", descriptor.addr);
 	rev=::ioctl(fFileHandle, PEXOR_IOC_UNMAPBUFFER , &descriptor);
+	int errsv=errno;
 	if(rev)
 		{
-			PexorError("\n\nError %d sg-unmapping buffer at  address %lx\n",rev,descriptor.addr);
+			PexorError("\n\nError %d sg-unmapping buffer at  address %lx (%s)\n",errno,descriptor.addr, strerror (errsv));
 			return rev;
 		}
 	return 0;
@@ -122,17 +129,6 @@ int* Pexor::Map_DMA_Buffer(size_t size, unsigned long physaddr)
 		{
 			// create or use user space buffer and do sg mapping in driver
 			int* buffer = new int[size/sizeof(int)];
-//			struct pexor_userbuf descriptor;
-//			descriptor.addr= (unsigned long) buffer;
-//			descriptor.size = size;
-//			PexorInfo("Pexor::Map_DMA_Buffer() is sg mapping buffer %lx", descriptor.addr);
-//			int rev=::ioctl(fFileHandle, PEXOR_IOC_MAPBUFFER , &descriptor);
-//			if(rev)
-//				{
-//					PexorError("\n\nError %d sg-mapping buffer at  address %lx\n",rev,descriptor.addr);
-//					delete buffer;
-//					return 0;
-//				}
 			if(Register_DMA_Buffer(buffer, size))
 				{
 					delete buffer;
@@ -165,14 +161,6 @@ int Pexor::Delete_DMA_Buffer(pexor::DMA_Buffer *buffer)
 
 	if(fbUseSGBuffers)
 		{
-			// unmap and delete the user space bu
-//		PexorInfo("Pexor::Delete_DMA_Buffer() is sg unmapping buffer %lx", descriptor.addr);
-//		rev=::ioctl(fFileHandle, PEXOR_IOC_UNMAPBUFFER , &descriptor);
-//		if(rev)
-//			{
-//				PexorError("\n\nError %d sg-unmapping buffer at  address %lx\n",rev,descriptor.addr);
-//				return rev;
-//			}
 		int* bufptr=(int*) (descriptor.addr);
 		rev=Unregister_DMA_Buffer(bufptr);
 		if(rev)
@@ -195,7 +183,8 @@ int Pexor::Delete_DMA_Buffer(pexor::DMA_Buffer *buffer)
 		rev=::ioctl(fFileHandle, PEXOR_IOC_DELBUFFER , &descriptor);
 		if(rev)
 			{
-				PexorError("\n\nError %d deleting buffer at  address %lx\n",rev,descriptor.addr);
+		        int er=errno;
+				PexorError("\n\nError %d deleting buffer at  address %lx (%s)\n",er,descriptor.addr, strerror(er));
 			}
 
 		}
@@ -213,7 +202,8 @@ int Pexor::Free_DMA_Buffer(pexor::DMA_Buffer* buf)
 	rev=ioctl(fFileHandle, PEXOR_IOC_FREEBUFFER, &descriptor);
 	if(rev)
 		{
-			PexorError("\n\nError %d freeing buffer at  address %lx\n",rev,descriptor.addr);
+	        int er=errno;
+			PexorError("\n\nError %d freeing buffer at  address %lx\n",er,descriptor.addr, strerror(er));
 		}
 	return rev;
 
@@ -227,7 +217,8 @@ pexor::DMA_Buffer* Pexor::Take_DMA_Buffer(bool checkpool)
 	int rev=ioctl(fFileHandle, PEXOR_IOC_USEBUFFER, &descriptor);
 	if(rev)
 		{
-			PexorError("Take_DMA_Buffer: Error %d from driver \n",rev);
+	        int er=errno;
+			PexorError("Take_DMA_Buffer: Error %d (%s) from driver \n",er, strerror(er));
 			return 0;
 		}
 
@@ -260,7 +251,8 @@ int Pexor::SetDeviceState(int state)
 	int rev=ioctl(fFileHandle, PEXOR_IOC_SETSTATE, &state);
 	if(rev)
 		{
-			PexorError("\n\nError %d setting to state %d\n",rev,state);
+	        int er=errno;
+			PexorError("\n\nError %d setting to state %d (%s)\n",er,state, strerror(er));
 		}
 	return rev;
 }
@@ -287,6 +279,7 @@ int Pexor::SetDMA(pexor::DmaMode mode)
 		case pexor::DMA_AUTO :
 		default:
 			PexorWarning("Unknown DMA mode %d for PEXOR1\n",mode);
+			break;
 	};
 return rev;
 }
@@ -309,7 +302,8 @@ pexor::DMA_Buffer* Pexor::ReceiveDMA(bool checkmempool)
 		rev=ioctl(fFileHandle, PEXOR_IOC_WAITBUFFER, &descriptor);
 		if(rev)
 			{
-				PexorError("\n\nError %d  waiting for next receive buffer\n",rev);
+		        int er=errno;
+				PexorError("\n\nError %d  (%s) waiting for next receive buffer\n",er,strerror(er));
 				return 0;
 			}
 	rcvbuffer=(int*) descriptor.addr;
@@ -358,7 +352,8 @@ int Pexor::InitBus(const unsigned long channel, const unsigned long maxdevice)
 	rev=ioctl(fFileHandle, PEXOR_IOC_INIT_BUS, &descriptor);
 	if(rev)
 		{
-			PexorError("\n\nError %d  on initializing channel %lx, maxdevices %lx - %s\n",rev,channel,maxdevice, strerror(rev));
+	        int er=errno;
+			PexorError("\n\nError %d  on initializing channel %lx, maxdevices %lx - %s\n",er,channel,maxdevice, strerror(er));
 		}
 	return rev;
 
@@ -378,7 +373,8 @@ int Pexor::WriteBus(const unsigned long address, const unsigned long value, cons
 	rev=ioctl(fFileHandle, PEXOR_IOC_WRITE_BUS, &descriptor);
 	if(rev)
 		{
-			PexorError("\n\nError %d  on writing value %lx to address %lx - %s\n",rev,value,address, strerror(rev));
+	        int er=errno;
+			PexorError("\n\nError %d  on writing value %lx to address %lx - %s\n",er,value,address, strerror(er));
 		}
 	return rev;
 }
@@ -395,7 +391,8 @@ int Pexor::ReadBus(const unsigned long address, unsigned long& value, const unsi
 	rev=ioctl(fFileHandle, PEXOR_IOC_READ_BUS, &descriptor);
 	if(rev)
 		{
-			PexorError("\n\nError %d  on reading from address %lx - %s\n",rev, address, strerror(rev));
+	        int er=errno;
+			PexorError("\n\nError %d  on reading from address %lx - %s\n",er, address, strerror(er));
 			return rev;
 		}
 	value=descriptor.value;
@@ -412,7 +409,8 @@ int  Pexor::WriteRegister(const char bar, const unsigned int address, const unsi
 	rev=ioctl(fFileHandle, PEXOR_IOC_WRITE_REGISTER, &descriptor);
 	if(rev)
 		{
-			PexorError("\n\nError %d  on writing register value %lx to address %lx - %s\n",rev,value,address, strerror(rev));
+	        int er=errno;
+			PexorError("\n\nError %d  on writing register value %lx to address %lx - %s\n",er,value,address, strerror(er));
 		}
 	return rev;
 }
@@ -427,7 +425,8 @@ int  Pexor::ReadRegister(const char bar, const unsigned int address, unsigned in
 	rev=ioctl(fFileHandle, PEXOR_IOC_READ_REGISTER, &descriptor);
 	if(rev)
 		{
-			PexorError("\n\nError %d  on reading from regsiter address %lx - %s\n",rev, address, strerror(rev));
+	        int er=errno;
+			PexorError("\n\nError %d  on reading from register address %lx - %s\n",er, address, strerror(er));
 			return rev;
 		}
 	value=descriptor.value;

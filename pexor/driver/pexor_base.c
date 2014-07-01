@@ -246,11 +246,22 @@ int pexor_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsign
 long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 #endif
 {
+  int retval = 0;
   struct pexor_privdata *privdata;
   /* here validity check for magic number etc.*/
 
   privdata= get_privdata(filp);
   if(!privdata) return -EFAULT;
+
+
+  /* use semaphore to allow multi user mode:*/
+     if (down_interruptible(&(privdata->ioctl_sem)))
+     {
+       pexor_msg((KERN_INFO "down interruptible of ioctl sem is not zero, restartsys!\n"));
+       return -ERESTARTSYS;
+     }
+
+
   /* Select the appropiate command */
   switch (cmd) {
 
@@ -258,64 +269,64 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
   case PEXOR_IOC_RESET:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl reset\n");
-    return pexor_ioctl_reset(privdata,arg);
+    retval = pexor_ioctl_reset(privdata,arg);
     break;
 
   case PEXOR_IOC_FREEBUFFER:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl free buffer\n");
-    return pexor_ioctl_freebuffer(privdata, arg);
+    retval = pexor_ioctl_freebuffer(privdata, arg);
     break;
 
   case PEXOR_IOC_DELBUFFER:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl delete buffer\n");
-    return pexor_ioctl_deletebuffer(privdata, arg);
+    retval = pexor_ioctl_deletebuffer(privdata, arg);
     break;
 
   case PEXOR_IOC_WAITBUFFER:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl waitbuffer\n");
-    return pexor_ioctl_waitreceive(privdata, arg);
+    retval = pexor_ioctl_waitreceive(privdata, arg);
     break;
 
 
   case PEXOR_IOC_USEBUFFER:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl usebuffer\n");
-    return pexor_ioctl_usebuffer(privdata, arg);
+    retval = pexor_ioctl_usebuffer(privdata, arg);
     break;
 
   case PEXOR_IOC_MAPBUFFER:
 	  pexor_dbg(KERN_NOTICE "** pexor_ioctl mapbuffer\n");
-	  return pexor_ioctl_mapbuffer(privdata, arg);
+	  retval = pexor_ioctl_mapbuffer(privdata, arg);
 	  break;
 
   case PEXOR_IOC_UNMAPBUFFER:
        pexor_dbg(KERN_NOTICE "** pexor_ioctl unmapbuffer\n");
-       return pexor_ioctl_unmapbuffer(privdata, arg);
+       retval = pexor_ioctl_unmapbuffer(privdata, arg);
        break;
 
   case PEXOR_IOC_CLEAR_RCV_BUFFERS:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl clear receive buffers\n");
-    return pexor_ioctl_clearreceivebuffers(privdata, arg);
+    retval = pexor_ioctl_clearreceivebuffers(privdata, arg);
     break;
 
   case PEXOR_IOC_SETSTATE:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl set\n");
-    return pexor_ioctl_setrunstate(privdata, arg);
+    retval = pexor_ioctl_setrunstate(privdata, arg);
     break;
 
   case PEXOR_IOC_TEST:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl test\n");
-    return pexor_ioctl_test(privdata, arg);
+    retval = pexor_ioctl_test(privdata, arg);
     break;
 
 
   case PEXOR_IOC_WRITE_REGISTER:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl write register\n");
-    return pexor_ioctl_write_register(privdata, arg);
+    retval = pexor_ioctl_write_register(privdata, arg);
     break;
 
   case PEXOR_IOC_READ_REGISTER:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl read register\n");
-    return pexor_ioctl_read_register(privdata, arg);
+    retval = pexor_ioctl_read_register(privdata, arg);
     break;
 
 
@@ -324,53 +335,67 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 #ifdef PEXOR_WITH_TRBNET
   case PEXOR_IOC_TRBNET_REQUEST:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl trbnet request \n");
-    return pexor_ioctl_trbnet_request(privdata, arg);
+    retval = pexor_ioctl_trbnet_request(privdata, arg);
     break;
 #else
 
   case PEXOR_IOC_WRITE_BUS:
      pexor_dbg(KERN_NOTICE "** pexor_ioctl write bus\n");
-     return pexor_ioctl_write_bus(privdata, arg);
+     retval = pexor_ioctl_write_bus(privdata, arg);
      break;
 
    case PEXOR_IOC_READ_BUS:
      pexor_dbg(KERN_NOTICE "** pexor_ioctl read bus\n");
-     return pexor_ioctl_read_bus(privdata, arg);
+     retval = pexor_ioctl_read_bus(privdata, arg);
      break;
 
    case PEXOR_IOC_INIT_BUS:
      pexor_dbg(KERN_NOTICE "** pexor_ioctl init bus\n");
-     return pexor_ioctl_init_bus(privdata, arg);
+     retval = pexor_ioctl_init_bus(privdata, arg);
      break;
+
+   case PEXOR_IOC_CONFIG_BUS:
+     pexor_dbg(KERN_NOTICE "** pexor_ioctl config bus\n");
+     retval = pexor_ioctl_configure_bus(privdata, arg);
+     break;
+
 
 
   case PEXOR_IOC_REQUEST_TOKEN:
      pexor_dbg(KERN_NOTICE "** pexor_ioctl request token\n");
-     return pexor_ioctl_request_token(privdata, arg);
+     retval = pexor_ioctl_request_token(privdata, arg);
      break;
 
    case PEXOR_IOC_WAIT_TOKEN:
      pexor_dbg(KERN_NOTICE "** pexor_ioctl wait token\n");
-     return pexor_ioctl_wait_token(privdata, arg);
-
+     retval = pexor_ioctl_wait_token(privdata, arg);
+     break;
    case PEXOR_IOC_WAIT_TRIGGER:
      pexor_dbg(KERN_NOTICE "** pexor_ioctl wait trigger\n");
+     up(&privdata->ioctl_sem); /* do not lock ioctl during wait*/
      return pexor_ioctl_wait_trigger(privdata, arg);
      break;
 
 #ifdef PEXOR_WITH_TRIXOR
    case	PEXOR_IOC_SET_TRIXOR:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl set trixor\n");
-    return pexor_ioctl_set_trixor(privdata, arg);
+    retval = pexor_ioctl_set_trixor(privdata, arg);
     break;
 #endif
+
+   case PEXOR_IOC_GET_SFP_LINKS:
+     pexor_dbg(KERN_NOTICE "** pexor_ioctl get sfp links\n");
+     retval = pexor_ioctl_get_sfp_links(privdata, arg);
+     break;
 
 #endif /* #ifdef PEXOR_WITH_TRBNET */
 
   default:
-    return -ENOTTY;
+    retval = -ENOTTY;
+    break;
   }
-  return -ENOTTY;
+  up(&privdata->ioctl_sem);
+  return retval;
 }
 
 
@@ -793,10 +818,16 @@ int pexor_ioctl_reset(struct pexor_privdata* priv, unsigned long arg)
 {
   pexor_dbg(KERN_NOTICE "** pexor_ioctl_reset...\n");
 
+
+  pexor_dbg(KERN_NOTICE "Clearing DMA status... \n");
+  iowrite32(0,priv->pexor.dma_control_stat);
+  mb();
+  ndelay(20);
+  udelay(10000);
+
 #ifdef PEXOR_WITH_SFP
+  pexor_sfp_reset(priv);
   pexor_sfp_clear_all(priv);
-  //pexor_sfp_clear_channel(priv, 1); // TODO: ioctl
-  //pexor_sfp_init_request(priv,1,2); // TODO: put this into ioctl with user parameters
 #endif
   cleanup_buffers(priv);
   atomic_set(&(priv->irq_count),0);
@@ -2101,14 +2132,14 @@ ssize_t pexor_sysfs_rcvbuffers_show(struct device *dev, struct device_attribute 
 
 ssize_t pexor_sysfs_codeversion_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-  char vstring[1024];
+  char vstring[512];
   ssize_t curs=0;
 #ifdef PEXOR_WITH_SFP
   struct  dev_pexor* pg;
 #endif
   struct pexor_privdata *privdata;
   privdata= (struct pexor_privdata*) dev_get_drvdata(dev);
-  curs=snprintf(vstring, 1024, "*** This is PEXOR driver version %s build on %s at %s \n\t", PEXORVERSION, __DATE__, __TIME__);
+  curs=snprintf(vstring, 512, "*** This is PEXOR driver version %s build on %s at %s \n\t", PEXORVERSION, __DATE__, __TIME__);
 #ifdef PEXOR_WITH_SFP
   pg=&(privdata->pexor);
   pexor_show_version(&(pg->sfp),vstring+curs);
@@ -2490,10 +2521,14 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
 
 #endif
 
+
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 37)
   init_MUTEX(&(privdata->ramsem));
+  init_MUTEX(&(privdata->ioctl_sem));
 #else
   sema_init(&(privdata->ramsem),1);
+  sema_init (&(privdata->ioctl_sem), 1);
 #endif
 
   /* TODO may use rw semaphore instead? init_rwsem(struct rw_semaphore *sem); */

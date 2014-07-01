@@ -13,7 +13,7 @@
 #include <linux/ioctl.h>
 
 
-#define PEXORVERSION  "1.4"
+#define PEXORVERSION  "1.5"
 
 /* identify name in dev : */
 #define PEXORNAME 		"pexor"
@@ -45,7 +45,11 @@
 #define PEXOR_IOC_TRBNET_REQUEST _IOWR(  PEXOR_IOC_MAGIC, 17, struct pexor_trbnet_io)
 #define PEXOR_IOC_MAPBUFFER   _IOW(  PEXOR_IOC_MAGIC, 18, struct pexor_userbuf)
 #define PEXOR_IOC_UNMAPBUFFER   _IOW(  PEXOR_IOC_MAGIC, 19, struct pexor_userbuf)
-#define PEXOR_IOC_MAXNR 20
+#define PEXOR_IOC_CONFIG_BUS       _IOWR(  PEXOR_IOC_MAGIC, 20, struct pexor_bus_config)
+#define PEXOR_IOC_GET_SFP_LINKS    _IOR(  PEXOR_IOC_MAGIC, 21, struct pexor_sfp_links)
+
+
+#define PEXOR_IOC_MAXNR 22
 
 /* the states:*/
 #define PEXOR_STATE_STOPPED 0 /* daq stopped*/
@@ -63,6 +67,10 @@
 #define PEXOR_TRIX_HALT         2   /* Command for ioctl set trixor to stop  acquisition  */
 #define PEXOR_TRIX_TIMESET         3   /* Command for ioctl set trixor to set trigger time windows*/
 
+#define PEXOR_SFP_NUMBER 4 /* number of used sfp connections*/
+#define PEXOR_MAXCONFIG_VALS 60 /* number of configuration commands treated by driver in a single operation*/
+
+
 
 #define PEXOR_TRBNETCOM_REG_WRITE             0   /* Command for ioctl trbnet request */
 #define PEXOR_TRBNETCOM_REG_WRITE_MEM          1   /* Command for ioctl trbnet request */
@@ -77,10 +85,21 @@ struct pexor_userbuf {
 
 
 struct pexor_bus_io {
-	unsigned long sfp;		/* sfp link id 0..3 (optional)*/
-	unsigned long slave;	/* slave device id at the sfp (optional)*/
+	int sfp;		/* sfp link id 0..3 (-1 for broadcast to all configured sfps)*/
+	long slave;	    /* slave device id at the sfp (-1 ato broadcast to all slaves)*/
 	unsigned long address;	/* address on the "field bus" connected to the optical links*/
 	unsigned long value;	/* value for read/write at bus address. Contains result status after write*/
+};
+
+
+struct pexor_bus_config{
+  struct pexor_bus_io param[PEXOR_MAXCONFIG_VALS]; /* array of configuration parameters*/
+  unsigned int numpars; /* number of used parameters*/
+};
+
+
+struct pexor_sfp_links{
+    int numslaves[PEXOR_SFP_NUMBER]; /* contains configured number of slaves at each sfp chain. */
 };
 
 struct pexor_token_io {

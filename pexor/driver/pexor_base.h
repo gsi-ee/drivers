@@ -78,8 +78,12 @@
 /* maximum number of devices controlled by this driver*/
 #define PEXOR_MAXDEVS 4
 
-/* timeout for ir wait queue */
+/* timeout for wait queues */
 #define PEXOR_WAIT_TIMEOUT (1*HZ)
+
+/* timeout for trigger wait queue */
+#define PEXOR_TRIG_TIMEOUT (10*HZ)
+
 /* maximum number of timeouts before wait loop terminates*/
 #define PEXOR_WAIT_MAXTIMEOUTS 20
 
@@ -87,17 +91,19 @@
 #define PEXOR_DMA_MAXPOLLS 10000
 
 /* polling delay for each cycle in ns for dma complete bit*/
-#define PEXOR_DMA_POLLDELAY 0
+#define PEXOR_DMA_POLLDELAY 20
 
 /* if set, we use a schedule() in the dma complete polling.
  * Note: according to linux kernel book, yield() will just prepare this
  * task to be scheduled in near future, but schedpriv->pexor.irq_statusule() will initiate the
  * schedule directly*/
-#define PEXOR_DMA_POLL_SCHEDULE 0
+#define PEXOR_DMA_POLL_SCHEDULE 1
 
 /* maximum number of outstandin buffers in receive queue,
    do we still need this?*/
 #define PEXOR_MAXOUTSTANDING 50
+
+
 
 
 
@@ -177,6 +183,7 @@ struct pexor_privdata
   unsigned long reglen[6];      /* contains pci resource length */
   void *iomem[6];               /* points to mapped io memory of the bars */
   struct semaphore ramsem;      /* protects read/write access to mapped ram */
+  struct semaphore ioctl_sem;      /* protects multi user ioctl access */
   struct list_head free_buffers;        /* list containing the free buffers */
   struct list_head received_buffers;    /* dma receive queue */
   struct list_head used_buffers;        /* list containing the buffers in
