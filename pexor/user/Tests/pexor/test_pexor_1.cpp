@@ -343,7 +343,7 @@ int main(int argc, char **argv)
 			pexor::DMA_Buffer* mapbuf= board.Map_Physical_DMA_Buffer(DEVMEMTEST_BASE, mysize);
 			if(mapbuf==0)
 				{
-					printf("\n\nError %d on mapping physical dma buffer 0x%x of size 0x%x:\n",DEVMEMTEST_BASE,mysize);
+					printf("\n\nError on mapping physical dma buffer 0x%x of size 0x%x:\n",DEVMEMTEST_BASE,mysize);
 					return -1;
 				}
 
