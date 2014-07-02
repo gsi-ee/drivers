@@ -14,7 +14,9 @@ BINARIES = pexortest_simple test_pexor_1 sfptest registertest polandtest
 
 .PHONY: all dirs depend clean
 
-all: dirs depend $(BINARIES)
+all: liball
+
+liball: dirs depend $(BINARIES)
 
 
 # Relate all exec names to it exec in the bin dir

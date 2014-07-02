@@ -1,5 +1,5 @@
 # this is the top level Makefile of the pexor package
-# JAM 1-Mar-2010
+# JAM 2-Jul-2014
 #
 
 	PEXORSYS ?= $(PWD)
@@ -15,9 +15,11 @@ PEXORLIBINSTALL = libpexor.so
 
 PEXORDRIVER = $(PEXORSYS)/driver
 PEXORLIB  = $(PEXORSYS)/user/Library/Pexor
+MBSPEXLIB  = $(PEXORSYS)/user/Library/mbspex
 PEXORTEST  = $(PEXORSYS)/user/Tests/pexor
 PEXORDABC =  $(PEXORSYS)/user/Dabc/plugins/pexor
 PEXORGO4 =  $(PEXORSYS)/user/Go4
+GOSIPCMD =  $(PEXORSYS)/user/gosipcmd
 
 PEXORPACKAGE = PexorDriver
 PEXORPACKDABC = PexorDABC
@@ -35,7 +37,7 @@ LIBINSTALLDIR ?= /usr/lib64
 
 .PHONY: all clean driver lib examples install uninstall driver-install driver-uninstall lib-install lib-uninstall pack
 
-all: driver lib examples 
+all: driver lib gosiplib examples gosipcmd 
 
 install: driver-install lib-install
 
@@ -43,9 +45,10 @@ uninstall: driver-uninstall lib-uninstall
 
 
 clean:
-
 	cd $(PEXORTEST); make clean
 	cd $(PEXORLIB); make clean
+	cd $(GOSIPCMD); make clean
+	cd $(MBSPEXLIB); make clean	
 	cd $(PEXORDRIVER); make clean
 	
 clean-dabc:
@@ -53,17 +56,18 @@ clean-dabc:
 	cd $(PEXORGO4); make clean
 
 driver:
-	mkdir -p $(PEXORSYS)/user/include
 	cd $(PEXORDRIVER); make all
 
 lib: driver
-	mkdir -p $(PEXORSYS)/user/lib
-	mkdir -p $(PEXORSYS)/user/depend
-	mkdir -p $(PEXORSYS)/user/obj	
 	cd $(PEXORLIB); make all
+
+gosiplib: driver
+	cd $(MBSPEXLIB); make all
+
+gosipcmd: gosiplib
+	cd $(GOSIPCMD); make all
 	
 examples: lib
-	mkdir -p $(PEXORSYS)/user/bin
 	cd $(PEXORTEST); make all
 
 driver-install:

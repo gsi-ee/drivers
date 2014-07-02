@@ -46,6 +46,9 @@ endif
 ###############################################################
 # Target definitions
 
+all: liball 
+
+
 # Create the directories if the do not exist
 dirs:
 	$(Q)mkdir -p $(BINDIR)

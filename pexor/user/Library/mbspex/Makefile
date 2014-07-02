@@ -5,12 +5,12 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC
 
 
-LIB ?= $(LIBDIR)/libpexor.so
-LIBSTATIC ?= $(LIBDIR)/libpexor.a
+LIB ?= $(LIBDIR)/libmbspex.so
+LIBSTATIC ?= $(LIBDIR)/libmbspex.a
 
 
 LDINC += -L $(LIBDIR) 
-CXXFLAGS += $(addprefix -I ,$(INCDIR))
+CFLAGS += $(addprefix -I ,$(INCDIR))
 
 ###############################################################
 # Target definitions
@@ -25,7 +25,7 @@ liball: dirs depend $(LIB) $(LIBSTATIC) install
 # Target for dynamic  library
 $(LIB): $(OBJ)
 	@echo -e "LD [.so] \t$@"
-	$(Q)$(CXX) -shared $(LDINC) $(LDFLAGS) $(CXXFLAGS) -o $@ $^
+	$(Q)$(CC) -shared $(LDINC) $(LDFLAGS) $(CFLAGS) -o $@ $^
 
 
 # Target for static the library
@@ -35,9 +35,9 @@ $(LIBSTATIC): $(OBJ)
 	$(Q)ar -s $(LIBSTATIC)
 
 install:
-	@echo "Installing pexor headers ..."
-	-$(Q)mkdir -p $(INCDIR)/pexor
-	-$(Q)cp -fu $(HDR) $(INCDIR)/pexor
+	@echo "Installing mbspex headers ..."
+	-$(Q)mkdir -p $(INCDIR)/mbspex
+	-$(Q)cp -fu $(HDR) $(INCDIR)/mbspex
 
 
 clean:
@@ -45,4 +45,4 @@ clean:
 	-$(Q)rm -f $(LIB)  $(LIBSTATIC)
 	-$(Q)rm -f $(OBJ)
 	-$(Q)rm -f $(DEPEND)
-	-$(Q)rm -rf $(INCDIR)/pexor
+	-$(Q)rm -rf $(INCDIR)/mbspex

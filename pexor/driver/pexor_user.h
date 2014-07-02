@@ -22,34 +22,7 @@
 #define KINPEXNAMEFMT   "kinpex-%d"
 
 
-/* the ioctl stuff here:*/
-#define PEXOR_IOC_MAGIC  0xE0
 
-#define PEXOR_IOC_RESET  _IO(  PEXOR_IOC_MAGIC, 0)
-#define PEXOR_IOC_FREEBUFFER  _IOW(  PEXOR_IOC_MAGIC, 1, struct pexor_userbuf)
-#define PEXOR_IOC_DELBUFFER   _IOW(  PEXOR_IOC_MAGIC, 2, struct pexor_userbuf)
-#define PEXOR_IOC_WAITBUFFER  _IOR(  PEXOR_IOC_MAGIC, 3, struct pexor_userbuf)
-#define PEXOR_IOC_USEBUFFER   _IOR(  PEXOR_IOC_MAGIC, 4, struct pexor_userbuf)
-#define PEXOR_IOC_SETSTATE    _IOR(  PEXOR_IOC_MAGIC, 5, int)
-#define PEXOR_IOC_TEST  	  _IOR(  PEXOR_IOC_MAGIC, 6, int)
-#define PEXOR_IOC_CLEAR_RCV_BUFFERS  _IO(  PEXOR_IOC_MAGIC, 7)
-#define PEXOR_IOC_WRITE_BUS   _IOWR(  PEXOR_IOC_MAGIC, 8, struct pexor_bus_io)
-#define PEXOR_IOC_READ_BUS    _IOWR(  PEXOR_IOC_MAGIC, 9, struct pexor_bus_io)
-#define PEXOR_IOC_INIT_BUS    _IOW(  PEXOR_IOC_MAGIC, 10, struct pexor_bus_io)
-#define PEXOR_IOC_WRITE_REGISTER   _IOW(  PEXOR_IOC_MAGIC, 11, struct pexor_reg_io)
-#define PEXOR_IOC_READ_REGISTER    _IOWR(  PEXOR_IOC_MAGIC, 12, struct pexor_reg_io)
-#define PEXOR_IOC_REQUEST_TOKEN    _IOWR(  PEXOR_IOC_MAGIC, 13, struct pexor_token_io)
-#define PEXOR_IOC_WAIT_TOKEN    _IOWR(  PEXOR_IOC_MAGIC, 14, struct pexor_token_io)
-#define PEXOR_IOC_WAIT_TRIGGER    _IO(  PEXOR_IOC_MAGIC, 15)
-#define PEXOR_IOC_SET_TRIXOR    _IOR(  PEXOR_IOC_MAGIC, 16, struct pexor_trixor_set)
-#define PEXOR_IOC_TRBNET_REQUEST _IOWR(  PEXOR_IOC_MAGIC, 17, struct pexor_trbnet_io)
-#define PEXOR_IOC_MAPBUFFER   _IOW(  PEXOR_IOC_MAGIC, 18, struct pexor_userbuf)
-#define PEXOR_IOC_UNMAPBUFFER   _IOW(  PEXOR_IOC_MAGIC, 19, struct pexor_userbuf)
-#define PEXOR_IOC_CONFIG_BUS       _IOWR(  PEXOR_IOC_MAGIC, 20, struct pexor_bus_config)
-#define PEXOR_IOC_GET_SFP_LINKS    _IOR(  PEXOR_IOC_MAGIC, 21, struct pexor_sfp_links)
-
-
-#define PEXOR_IOC_MAXNR 22
 
 /* the states:*/
 #define PEXOR_STATE_STOPPED 0 /* daq stopped*/
@@ -98,9 +71,16 @@ struct pexor_bus_config{
 };
 
 
+
+
+
 struct pexor_sfp_links{
     int numslaves[PEXOR_SFP_NUMBER]; /* contains configured number of slaves at each sfp chain. */
 };
+
+
+
+
 
 struct pexor_token_io {
 	unsigned char sync;		/* 1:synchronous mode, 0: asynchronous mode*/
@@ -134,6 +114,52 @@ struct pexor_trbnet_io {
  struct pexor_userbuf tkbuf[TRBNET_MAX_BUFS]; /* dma buffers with received result data*/
 };
 
+/* the ioctl stuff here:*/
+#define PEXOR_IOC_MAGIC  0xE0
+
+#define PEXOR_IOC_RESET  _IO(  PEXOR_IOC_MAGIC, 0)
+#define PEXOR_IOC_FREEBUFFER  _IOW(  PEXOR_IOC_MAGIC, 1, struct pexor_userbuf)
+#define PEXOR_IOC_DELBUFFER   _IOW(  PEXOR_IOC_MAGIC, 2, struct pexor_userbuf)
+#define PEXOR_IOC_WAITBUFFER  _IOR(  PEXOR_IOC_MAGIC, 3, struct pexor_userbuf)
+#define PEXOR_IOC_USEBUFFER   _IOR(  PEXOR_IOC_MAGIC, 4, struct pexor_userbuf)
+#define PEXOR_IOC_SETSTATE    _IOR(  PEXOR_IOC_MAGIC, 5, int)
+#define PEXOR_IOC_TEST        _IOR(  PEXOR_IOC_MAGIC, 6, int)
+#define PEXOR_IOC_CLEAR_RCV_BUFFERS  _IO(  PEXOR_IOC_MAGIC, 7)
+#define PEXOR_IOC_WRITE_BUS   _IOWR(  PEXOR_IOC_MAGIC, 8, struct pexor_bus_io)
+#define PEXOR_IOC_READ_BUS    _IOWR(  PEXOR_IOC_MAGIC, 9, struct pexor_bus_io)
+#define PEXOR_IOC_INIT_BUS    _IOW(  PEXOR_IOC_MAGIC, 10, struct pexor_bus_io)
+#define PEXOR_IOC_WRITE_REGISTER   _IOW(  PEXOR_IOC_MAGIC, 11, struct pexor_reg_io)
+#define PEXOR_IOC_READ_REGISTER    _IOWR(  PEXOR_IOC_MAGIC, 12, struct pexor_reg_io)
+#define PEXOR_IOC_REQUEST_TOKEN    _IOWR(  PEXOR_IOC_MAGIC, 13, struct pexor_token_io)
+#define PEXOR_IOC_WAIT_TOKEN    _IOWR(  PEXOR_IOC_MAGIC, 14, struct pexor_token_io)
+#define PEXOR_IOC_WAIT_TRIGGER    _IO(  PEXOR_IOC_MAGIC, 15)
+#define PEXOR_IOC_SET_TRIXOR    _IOR(  PEXOR_IOC_MAGIC, 16, struct pexor_trixor_set)
+#define PEXOR_IOC_TRBNET_REQUEST _IOWR(  PEXOR_IOC_MAGIC, 17, struct pexor_trbnet_io)
+#define PEXOR_IOC_MAPBUFFER   _IOW(  PEXOR_IOC_MAGIC, 18, struct pexor_userbuf)
+#define PEXOR_IOC_UNMAPBUFFER   _IOW(  PEXOR_IOC_MAGIC, 19, struct pexor_userbuf)
+#define PEXOR_IOC_CONFIG_BUS       _IOWR(  PEXOR_IOC_MAGIC, 20, struct pexor_bus_config)
+#define PEXOR_IOC_GET_SFP_LINKS    _IOR(  PEXOR_IOC_MAGIC, 21, struct pexor_sfp_links)
+
+
+#define PEXOR_IOC_MAXNR 22
+
+
+/* some alias ioctl definitions for goiscmd/mbspex lib:*/
+#define PEX_IOC_RESET PEXOR_IOC_RESET
+#define PEX_IOC_WRITE_BUS PEXOR_IOC_WRITE_BUS
+#define PEX_IOC_READ_BUS PEXOR_IOC_READ_BUS
+#define PEX_IOC_INIT_BUS PEXOR_IOC_INIT_BUS
+#define PEX_IOC_CONFIG_BUS PEXOR_IOC_CONFIG_BUS
+#define PEX_IOC_GET_SFP_LINKS PEXOR_IOC_GET_SFP_LINKS
+
+/*alias structure names for mbspex lib:*/
+#define pex_bus_io pexor_bus_io
+#define pex_bus_config pexor_bus_config
+#define pex_sfp_links pexor_sfp_links
+
+/* other mbspex aliases*/
+#define PEX_MAXCONFIG_VALS PEXOR_MAXCONFIG_VALS
+#define PEX_SFP_NUMBER PEXOR_SFP_NUMBER
 
 
 #endif /* PEXOR_USER_H_ */

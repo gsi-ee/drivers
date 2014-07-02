@@ -13,7 +13,7 @@ PWD       := $(shell pwd)
 all:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD)
 	@echo "Installing userheaders ..."
-	@cp -vf pexor_user.h $(INCDIR)/
+	@cp -vfu pexor_user.h $(INCDIR)/
 
 
 clean:
