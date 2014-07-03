@@ -83,14 +83,16 @@ public:
 
    /* write value to the address of the "bus" connected via the optical links.
    	 * The actual address space and range of values is reduced in this implementation.
+   	 * NOTE: negative values for channel and device can be used for broadcast feature in kernel module.
+   	 * i.e. value is send to all initialized channels and/or devices
    	 * Return value gives error code*/
-   virtual int WriteBus(const unsigned long address, const unsigned long value, const unsigned long channel, const unsigned long device);
+   virtual int WriteBus(const unsigned long address, const unsigned long value, const int channel, const long device);
 
 
 	/* reads value from the address of the "bus" connected via the optical links.
 	 * The actual address space and range of values is reduced in this implementation.
 	 * Return value gives error code.*/
-   virtual int ReadBus(const unsigned long address, unsigned long& value, const unsigned long channel, const unsigned long device);
+   virtual int ReadBus(const unsigned long address, unsigned long& value, const int channel, const long device);
 
 
 	/* initialize chain of devices connected to the "bus" at the optical links.

@@ -361,7 +361,7 @@ int Pexor::InitBus(const unsigned long channel, const unsigned long maxdevice)
 
 
 
-int Pexor::WriteBus(const unsigned long address, const unsigned long value, const unsigned long channel, const unsigned long device)
+int Pexor::WriteBus(const unsigned long address, const unsigned long value, const int channel, const long device)
 {
 	int rev=0;
 	struct pexor_bus_io descriptor;
@@ -380,7 +380,7 @@ int Pexor::WriteBus(const unsigned long address, const unsigned long value, cons
 }
 
 
-int Pexor::ReadBus(const unsigned long address, unsigned long& value, const unsigned long channel, const unsigned long device)
+int Pexor::ReadBus(const unsigned long address, unsigned long& value, const int channel, const long device)
 {
 	int rev=0;
 	struct pexor_bus_io descriptor;

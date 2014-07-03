@@ -122,13 +122,13 @@ public:
 	 * The actual address space and range of values depends on the implementation.
 	 * optional parameters channel and device can be used to partition address space
 	 * Return value gives error code*/
-	virtual int WriteBus(const unsigned long address, const unsigned long value, const unsigned long channel, const unsigned long device)=0;
+	virtual int WriteBus(const unsigned long address, const unsigned long value, const int channel, const long device)=0;
 
 	/* reads value from the address of the "bus" connected via the optical links.
 	 * The actual address space and range of values depends on the implementation.
 	 * optional parameters channel and device can be used to partition address space
 	 * Return value gives error code.*/
-	virtual int ReadBus(const unsigned long address, unsigned long& value, const unsigned long channel, const unsigned long device)=0;
+	virtual int ReadBus(const unsigned long address, unsigned long& value, const int channel, const long device)=0;
 
 	/* write value to the "register" at address of the specified PCI bar.
 	 * Return value gives error code*/
