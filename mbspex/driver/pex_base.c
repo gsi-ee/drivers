@@ -928,7 +928,7 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
                    pex_dbg(KERN_INFO " before WAIT_SEM \n");
                    up(&privdata->ioctl_sem); /* do not lock ioctl during wait for next trigger*/
                    if (down_interruptible(&(privdata->trix_sem))){
-                     //pex_msg((KERN_INFO "down interruptible of trix  sem is not zero, restartsys!\n"));
+                     pex_msg((KERN_INFO "down interruptible of trix  sem is not zero, restartsys!\n"));
                      return -ERESTARTSYS; /* JAM avoid possible hangup of m_read_meb when killed by resl*/
                     }
                      privdata->trix_val = 0;

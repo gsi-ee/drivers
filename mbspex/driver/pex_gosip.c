@@ -525,7 +525,7 @@ int pex_sfp_init_request (struct pex_privdata* privdata, int ch, int numslaves)
     maxslave = 0; /* catch possible user workaround for changed api*/
   pex_sfp_assert_channel(ch);
   comm = PEX_SFP_INI_REQ | (0x1 << (16 + sfp));
-  pex_dbg(KERN_NOTICE "**pex_sfp_init_request ***\n");
+  pex_dbg(KERN_NOTICE "**pex_sfp_init_request for sfp:%d with maxslave=%d ***\n",sfp, maxslave);
   pex_sfp_request (privdata, comm, 0, maxslave);
   if ((retval = pex_sfp_get_reply (privdata, sfp, &rstat, &radd, &rdat, 0)) != 0)
   //if((retval=pex_sfp_get_reply(privdata, sfp, &rstat, &radd, &rdat, PEX_SFP_PT_INI_REP))!=0)
