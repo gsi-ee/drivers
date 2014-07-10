@@ -1,7 +1,8 @@
-
 #include "PolandGui.h"
 
 #include <stdlib.h>
+#include <unistd.h>
+
 //#include <stdio.h>
 #include <iostream>
 //#include <QProcess>
@@ -9,6 +10,7 @@
 
 #include <QString>
 #include <QMessageBox>
+#include <QFileDialog>
 
 //#include "Riostream.h"
 //#include "Rstrstream.h"
@@ -16,8 +18,6 @@
 //#include "TCanvas.h"
 //#include "TGo4Proxy.h"
 //#include "QRootCanvas.h"
-
-
 
 #include <sstream>
 
@@ -35,296 +35,342 @@
 //
 //}
 
-
-
-
-
 // *********************************************************
-
 
 /*
  *  Constructs a PolandGui which is a child of 'parent', with the
  *  name 'name'.'
  */
-PolandGui::PolandGui( QWidget* parent)
-    : QWidget( parent ), fDebug(false), fChannel(0), fSlave(0)
+PolandGui::PolandGui (QWidget* parent) :
+    QWidget (parent), fDebug (false), fChannel (0), fSlave (0)
 {
-   setupUi(this);
+  setupUi (this);
 
-   fEnv = QProcessEnvironment::systemEnvironment(); // get PATH to gosipcmd from parent process
-   SFPspinBox->setValue(fChannel);
-   SlavespinBox->setValue(fSlave);
+  fEnv = QProcessEnvironment::systemEnvironment ();    // get PATH to gosipcmd from parent process
+  SFPspinBox->setValue (fChannel);
+  SlavespinBox->setValue (fSlave);
 
-   TextOutput->setCenterOnScroll(false);
-   ClearOutputBtn_clicked();
+  TextOutput->setCenterOnScroll (false);
+  ClearOutputBtn_clicked ();
 
-   QObject::connect(RefreshButton, SIGNAL(clicked()), this, SLOT(ShowBtn_clicked()));
-   QObject::connect(ApplyButton, SIGNAL(clicked()), this, SLOT(ApplyBtn_clicked()));
+  QObject::connect (RefreshButton, SIGNAL (clicked ()), this, SLOT (ShowBtn_clicked ()));
+  QObject::connect (ApplyButton, SIGNAL (clicked ()), this, SLOT (ApplyBtn_clicked ()));
 
-   QObject::connect(InitChainButton, SIGNAL(clicked()), this, SLOT(InitChainBtn_clicked()));
-   QObject::connect(ResetBoardButton, SIGNAL(clicked()), this, SLOT(ResetBoardBtn_clicked()));
-   QObject::connect(BroadcastButton, SIGNAL(clicked()), this, SLOT(BroadcastBtn_clicked()));
-   QObject::connect(DumpButton, SIGNAL(clicked()), this, SLOT(DumpBtn_clicked()));
-   QObject::connect(ConfigButton, SIGNAL(clicked()), this, SLOT(ConfigBtn_clicked()));
-   QObject::connect(ClearOutputButton, SIGNAL(clicked()), this, SLOT(ClearOutputBtn_clicked()));
-   QObject::connect(DebugBox, SIGNAL(stateChanged(int)), this, SLOT(DebugBox_changed(int)));
+  QObject::connect (InitChainButton, SIGNAL (clicked ()), this, SLOT (InitChainBtn_clicked ()));
+  QObject::connect (ResetBoardButton, SIGNAL (clicked ()), this, SLOT (ResetBoardBtn_clicked ()));
+  QObject::connect (BroadcastButton, SIGNAL (clicked ()), this, SLOT (BroadcastBtn_clicked ()));
+  QObject::connect (DumpButton, SIGNAL (clicked ()), this, SLOT (DumpBtn_clicked ()));
+  QObject::connect (ConfigButton, SIGNAL (clicked ()), this, SLOT (ConfigBtn_clicked ()));
+  QObject::connect (ClearOutputButton, SIGNAL (clicked ()), this, SLOT (ClearOutputBtn_clicked ()));
+  QObject::connect (OffsetButton, SIGNAL (clicked ()), this, SLOT (OffsetBtn_clicked ()));
+QObject::connect(DebugBox, SIGNAL(stateChanged(int)), this, SLOT(DebugBox_changed(int)));
+QObject::connect(SFPspinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
+QObject::connect(SlavespinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
+
+
+}
+
+PolandGui::~PolandGui ()
+{
+
+}
+
+void PolandGui::ShowBtn_clicked ()
+{
+//std::cout << "PolandGui::ShowBtn_clicked()"<< std::endl;
+EvaluateSlave ();
+GetRegisters ();
+RefreshView ();
+}
+
+void PolandGui::ApplyBtn_clicked ()
+{
+//std::cout << "PolandGui::ApplyBtn_clicked()"<< std::endl;
+EvaluateView ();
+SetRegisters ();
+}
+
+void PolandGui::InitChainBtn_clicked ()
+{
+char buffer[1024];
+EvaluateSlave ();
+//std::cout << "InitChainBtn_clicked()"<< std::endl;
+snprintf (buffer, 1024, "Really initialize SFP chain %d with %d Slaves?", fChannel, fSlave);
+if (QMessageBox::question (this, "Poland GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
+    != QMessageBox::Yes)
+{
+  //std::cout <<"QMessageBox does not return yes! "<< std::endl;
+  return;
+}
+snprintf (buffer, 1024, "gosipcmd -i %d %d", fChannel, fSlave);
+QString com (buffer);
+QString result = ExecuteGosipCmd (com);
+AppendTextWindow (result);
+
+//     QProcess proc;
+//     proc.setProcessEnvironment(fEnv);
+//     std::cout << "PolandGui::ResetBoardBtn() command:  "<< buffer << std::endl;
+//     int rev=proc.execute(com);
+//      if(rev<0)
+//      {
+//        std::cerr << "# PolandGui::WriteGosip() Error "<< rev <<" on executing "<< buffer <<" #!" << std::endl;
+//      }
+
+}
+
+void PolandGui::ResetBoardBtn_clicked ()
+{
+//std::cout << "PolandGui::ResetBoardBtn_clicked"<< std::endl;
+if (QMessageBox::question (this, "Poland GUI", "Really Reset gosip on pex board?", QMessageBox::Yes | QMessageBox::No,
+    QMessageBox::Yes) != QMessageBox::Yes)
+{
+  //std::cout <<"QMessageBox does not return yes! "<< std::endl;
+  return;
+}
+
+char buffer[1024];
+snprintf (buffer, 1024, "gosipcmd -z");
+QString com (buffer);
+QString result = ExecuteGosipCmd (com);
+AppendTextWindow (result);
+
+//    QProcess proc;
+//    proc.setProcessEnvironment(fEnv);
+//    std::cout << "PolandGui::ResetBoardBtn() command:  "<< buffer << std::endl;
+//    int rev=proc.execute(com);
+//     if(rev<0)
+//     {
+//       std::cerr << "# PolandGui::WriteGosip() Error "<< rev <<" on executing "<< buffer <<" #!" << std::endl;
+//     }
+
+}
+
+void PolandGui::OffsetBtn_clicked ()
+{
+char buffer[1024];
+EvaluateSlave ();
+snprintf (buffer, 1024, "Really scan offset for SFP chain %d, Slave %d ?", fChannel, fSlave);
+if (QMessageBox::question (this, "Poland GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
+    != QMessageBox::Yes)
+{
+  //std::cout <<"QMessageBox does not return yes! "<< std::endl;
+  return;
+}
+
+WriteGosip (fChannel, fSlave, POLAND_REG_DO_OFFSET, 1);
+AppendTextWindow ("--- Doing offset measurement... ");
+QApplication::setOverrideCursor( Qt::WaitCursor );
+
+sleep(2);
+WriteGosip (fChannel, fSlave, POLAND_REG_DO_OFFSET, 0);
+AppendTextWindow ("    ... done.");
+QApplication::restoreOverrideCursor();
 
 
 
 
 }
 
-PolandGui::~PolandGui()
+void PolandGui::BroadcastBtn_clicked ()
 {
+//std::cout << "PolandGui::BroadcastBtn_clicked"<< std::endl;
+SFPspinBox->setValue (-1);
+SlavespinBox->setValue (-1);
+}
+
+void PolandGui::DumpBtn_clicked ()
+{
+//std::cout << "PolandGui::DumpBtn_clicked"<< std::endl;
+// dump register contents from gosipcmd into TextOutput (QPlainText)
+EvaluateSlave ();
+char buffer[1024];
+AppendTextWindow ("--- Register Dump ---:");
+
+int numwords = 32 + fSetup.fSteps[0] * 32 + fSetup.fSteps[1] * 32 + fSetup.fSteps[2] * 32 + 32;
+// todo: note this will not work for broadcast mode or if show was not clicked before
+// we can live with it for the moment.
+
+snprintf (buffer, 1024, "gosipcmd -d -r -x -- %d %d 0 0x%x", fChannel, fSlave, numwords);
+QString com (buffer);
+QString result = ExecuteGosipCmd (com);
+AppendTextWindow (result);
 
 }
 
-
-void PolandGui::ShowBtn_clicked()
+void PolandGui::ClearOutputBtn_clicked ()
 {
-  //std::cout << "PolandGui::ShowBtn_clicked()"<< std::endl;
-  EvaluateSlave();
-  GetRegisters();
-  RefreshView();
-}
-
-void PolandGui::ApplyBtn_clicked()
-{
-  //std::cout << "PolandGui::ApplyBtn_clicked()"<< std::endl;
-  EvaluateView();
-  SetRegisters();
-}
-
-void  PolandGui::InitChainBtn_clicked()
-{
-  //std::cout << "InitChainBtn_clicked()"<< std::endl;
-  if(QMessageBox::question( this, "Poland GUI", "Really initialize SFP chain?",
-           QMessageBox::Yes | QMessageBox::No ,
-           QMessageBox::Yes) != QMessageBox::Yes ) {
-              //std::cout <<"QMessageBox does not return yes! "<< std::endl;
-              return;
-        }
-
-
-
-  EvaluateSlave();
-
-  // todo interface
-  // gosipcmd -i fChannel fSlave
-
-  char buffer[1024];
-     snprintf(buffer,1024,"gosipcmd -i %d %d", fChannel, fSlave);
-     QString com(buffer);
-     QProcess proc;
-     proc.setProcessEnvironment(fEnv);
-     std::cout << "PolandGui::ResetBoardBtn() command:  "<< buffer << std::endl;
-     int rev=proc.execute(com);
-      if(rev<0)
-      {
-        std::cerr << "# PolandGui::WriteGosip() Error "<< rev <<" on executing "<< buffer <<" #!" << std::endl;
-      }
-
-
+//std::cout << "PolandGui::ClearOutputBtn_clicked()"<< std::endl;
+TextOutput->clear ();
+TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.1 10-July-2014 by JAM (j.adamczewski@gsi.de)");
 
 }
 
-void  PolandGui::ResetBoardBtn_clicked()
+void PolandGui::ConfigBtn_clicked ()
 {
-  //std::cout << "PolandGui::ResetBoardBtn_clicked"<< std::endl;
-  if(QMessageBox::question( this, "Poland GUI", "Really Reset gosip on pex board?",
-             QMessageBox::Yes | QMessageBox::No ,
-             QMessageBox::Yes) != QMessageBox::Yes ) {
-                //std::cout <<"QMessageBox does not return yes! "<< std::endl;
-                return;
-          }
+//std::cout << "PolandGui::ConfigBtn_clicked" << std::endl;
 
-  char buffer[1024];
-    snprintf(buffer,1024,"gosipcmd -z");
-    QString com(buffer);
-    QProcess proc;
-    proc.setProcessEnvironment(fEnv);
-    std::cout << "PolandGui::ResetBoardBtn() command:  "<< buffer << std::endl;
-    int rev=proc.execute(com);
-     if(rev<0)
-     {
-       std::cerr << "# PolandGui::WriteGosip() Error "<< rev <<" on executing "<< buffer <<" #!" << std::endl;
-     }
+// here file requester and application of set up via gosipcmd
+QFileDialog fd (this, "Select POLAND configuration file", ".", "gosipcmd file (*.gos)");
+fd.setFileMode (QFileDialog::ExistingFile);
+if (fd.exec () != QDialog::Accepted)
+  return;
+QStringList flst = fd.selectedFiles ();
+if (flst.isEmpty ())
+  return;
+QString fileName = flst[0];
+if (!fileName.endsWith (".gos"))
+  fileName.append (".gos");
+char buffer[1024];
+snprintf (buffer, 1024, "gosipcmd -x -c %s ", fileName.toLatin1 ().constData ());
+QString com (buffer);
+QString result = ExecuteGosipCmd (com);
+AppendTextWindow (result);
 
 
 }
 
-
-void  PolandGui::BroadcastBtn_clicked()
+void PolandGui::DebugBox_changed (int on)
 {
-  //std::cout << "PolandGui::BroadcastBtn_clicked"<< std::endl;
-  SFPspinBox->setValue(-1);
-  SlavespinBox->setValue(-1);
+//std::cout << "DebugBox_changed to "<< on << std::endl;
+fDebug = on;
 }
 
-void  PolandGui::DumpBtn_clicked()
+void PolandGui::Slave_changed (int)
 {
-  //std::cout << "PolandGui::DumpBtn_clicked"<< std::endl;
-  // dump register contents from gosipcmd into TextOutput (QPlainText)
-  EvaluateSlave();
-  char buffer[1024];
-  AppendTextWindow("--- Register Dump ---:");
-  snprintf(buffer,1024,"gosipcmd -d -x -r -- %d %d 0 0 0x9f",fChannel, fSlave);
-  QString com(buffer);
-  QString result= ExecuteGosipCmd(com);
-  AppendTextWindow(result);
-
-
+//std::cout << "PolandGui::Slave_changed" << std::endl;
+EvaluateSlave ();
+bool triggerchangeable = AssertNoBroadcast (false);
+MasterTriggerBox->setEnabled (triggerchangeable);
+InternalTriggerBox->setEnabled (triggerchangeable);
+FesaModeBox->setEnabled (triggerchangeable);
 
 }
 
-void PolandGui::ClearOutputBtn_clicked()
+void PolandGui::RefreshView ()
 {
-  //std::cout << "PolandGui::ClearOutputBtn_clicked()"<< std::endl;
-  TextOutput->clear();
-  TextOutput->setPlainText("Welcome to POLAND GUI v0.1!\n");
+// display setup structure to gui:
+QString text;
+//text.setNum(fSetup.fSteps[0]);
+TSLoop1lineEdit->setText (text.setNum (fSetup.fSteps[0], 10));
+TSLoop2lineEdit->setText (text.setNum (fSetup.fSteps[1], 10));
+TSLoop3lineEdit->setText (text.setNum (fSetup.fSteps[2], 10));
+TS1TimelineEdit->setText (text.setNum (fSetup.GetStepTime(0)));
+TS2TimelineEdit->setText (text.setNum (fSetup.GetStepTime(1)));
+TS3TimelineEdit->setText (text.setNum (fSetup.GetStepTime(2)));
+MasterTriggerBox->setChecked (fSetup.IsTriggerMaster ());
+FesaModeBox->setChecked (fSetup.IsFesaMode ());
+InternalTriggerBox->setChecked (fSetup.IsInternalTrigger ());
+
+EventCounterNumber->display ((int) fSetup.fEventCounter);
+ErrorCounter1->display ((int) fSetup.fErrorCounter[0]);
+ErrorCounter2->display ((int) fSetup.fErrorCounter[1]);
+ErrorCounter3->display ((int) fSetup.fErrorCounter[2]);
+ErrorCounter4->display ((int) fSetup.fErrorCounter[3]);
+ErrorCounter5->display ((int) fSetup.fErrorCounter[4]);
+ErrorCounter6->display ((int) fSetup.fErrorCounter[5]);
+ErrorCounter7->display ((int) fSetup.fErrorCounter[6]);
+ErrorCounter8->display ((int) fSetup.fErrorCounter[7]);
 
 }
 
-
-void PolandGui::ConfigBtn_clicked()
+void PolandGui::EvaluateView ()
 {
-  std::cout << "PolandGui::ConfigBtn_clicked"<< std::endl;
+EvaluateSlave ();
+// copy widget values to structure
+fSetup.fSteps[0] = TSLoop1lineEdit->text ().toUInt (0, 0);
+fSetup.fSteps[1] = TSLoop2lineEdit->text ().toUInt (0, 0);
+fSetup.fSteps[2] = TSLoop3lineEdit->text ().toUInt (0, 0);
 
-  // here file requester and application of set up via gosipcmd
+fSetup.SetStepTime(TS1TimelineEdit->text ().toDouble (),0);
+fSetup.SetStepTime(TS2TimelineEdit->text ().toDouble (),1);
+fSetup.SetStepTime(TS3TimelineEdit->text ().toDouble (),2);
 
+
+fSetup.SetTriggerMaster (MasterTriggerBox->isChecked ());
+fSetup.SetFesaMode (FesaModeBox->isChecked ());
+fSetup.SetInternalTrigger (InternalTriggerBox->isChecked ());
 
 }
-
-void PolandGui::DebugBox_changed(int on)
+void PolandGui::EvaluateSlave ()
 {
-  //std::cout << "DebugBox_changed to "<< on << std::endl;
-  fDebug=on;
+fChannel = SFPspinBox->value ();
+fSlave = SlavespinBox->value ();
 }
 
-void PolandGui::RefreshView()
+void PolandGui::SetRegisters ()
 {
-  // display setup structure to gui:
-  QString text;
-  //text.setNum(fSetup.fSteps[0]);
-  TSLoop1lineEdit->setText("0x"+ text.setNum(fSetup.fSteps[0],16));
-  TSLoop2lineEdit->setText("0x"+ text.setNum(fSetup.fSteps[1],16));
-  TSLoop3lineEdit->setText("0x"+ text.setNum(fSetup.fSteps[2],16));
-  TS1TimelineEdit->setText("0x"+ text.setNum(fSetup.fTimes[0],16));
-  TS2TimelineEdit->setText("0x"+ text.setNum(fSetup.fTimes[1],16));
-  TS3TimelineEdit->setText("0x"+ text.setNum(fSetup.fTimes[2],16));
-  MasterTriggerBox->setChecked(fSetup.IsTriggerMaster());
-  FesaModeBox->setChecked(fSetup.IsFesaMode());
-  InternalTriggerBox->setChecked(fSetup.IsInternalTrigger());
+// write register values from strucure with gosipcmd
 
-  EventCounterNumber->display((int) fSetup.fEventCounter);
-  ErrorCounter1->display((int) fSetup.fErrorCounter[0]);
-  ErrorCounter2->display((int) fSetup.fErrorCounter[1]);
-  ErrorCounter3->display((int) fSetup.fErrorCounter[2]);
-  ErrorCounter4->display((int) fSetup.fErrorCounter[3]);
-  ErrorCounter5->display((int) fSetup.fErrorCounter[4]);
-  ErrorCounter6->display((int) fSetup.fErrorCounter[5]);
-  ErrorCounter7->display((int) fSetup.fErrorCounter[6]);
-  ErrorCounter8->display((int) fSetup.fErrorCounter[7]);
-
-
+if (AssertNoBroadcast (false))
+{
+  // update trigger modes only in single device
+  WriteGosip (fChannel, fSlave, POLAND_REG_INTERNAL_TRIGGER, fSetup.fInternalTrigger);
+  WriteGosip (fChannel, fSlave, POLAND_REG_MASTERMODE, fSetup.fTriggerMode);
 }
 
-void PolandGui::EvaluateView()
+
+
+// WriteGosip(fChannel, fSlave, POLAND_REG_TRIGCOUNT, fSetup.fEventCounter);
+
+for (int i = 0; i < POLAND_TS_NUM; ++i)
 {
-  EvaluateSlave();
-  // copy widget values to structure
-  fSetup.fSteps[0]=TSLoop1lineEdit->text().toUInt(0,0);
-  fSetup.fSteps[1]=TSLoop2lineEdit->text().toUInt(0,0);
-  fSetup.fSteps[2]=TSLoop3lineEdit->text().toUInt(0,0);
-
-   fSetup.fTimes[0]=TS1TimelineEdit->text().toUInt(0,0);
-   fSetup.fTimes[1]=TS2TimelineEdit->text().toUInt(0,0);
-   fSetup.fTimes[2]=TS3TimelineEdit->text().toUInt(0,0);
-   fSetup.SetTriggerMaster(MasterTriggerBox->isChecked());
-   fSetup.SetFesaMode( FesaModeBox->isChecked());
-   fSetup.SetInternalTrigger(InternalTriggerBox->isChecked());
-
-
-
-
-
-
+  WriteGosip (fChannel, fSlave, POLAND_REG_STEPS_BASE + 4 * i, fSetup.fSteps[i]);
+  WriteGosip (fChannel, fSlave, POLAND_REG_TIME_BASE + 4 * i, fSetup.fTimes[i]);
 }
-void PolandGui::EvaluateSlave()
-{
- fChannel=SFPspinBox->value();
- fSlave=SlavespinBox->value();
-}
-
-void PolandGui::SetRegisters()
-{
-  // write register values from strucure with gosipcmd
-
-  WriteGosip(fChannel, fSlave, POLAND_REG_INTERNAL_TRIGGER, fSetup.fInternalTrigger);
-  WriteGosip(fChannel, fSlave, POLAND_REG_MASTERMODE, fSetup.fTriggerMode);
- // WriteGosip(fChannel, fSlave, POLAND_REG_TRIGCOUNT, fSetup.fEventCounter);
-
-    for(int i=0; i<POLAND_TS_NUM;++i)
-    {
-      WriteGosip(fChannel, fSlave, POLAND_REG_STEPS_BASE + 4*i, fSetup.fSteps[i]);
-      WriteGosip(fChannel, fSlave, POLAND_REG_TIME_BASE + 4*i , fSetup.fTimes[i]);
-    }
 //    for(int e=0; e<POLAND_ERRCOUNT_NUM;++e)
 //     {
 //       WriteGosip(fChannel, fSlave, POLAND_REG_ERRCOUNT_BASE + 4*e, fSetup.fErrorCounter[e]);
 //     }
 
-  // TODO: error handling with exceptions?
+// TODO: error handling with exceptions?
 
 }
 
-void PolandGui::GetRegisters()
+void PolandGui::GetRegisters ()
 {
-  // read register values into structure with gosipcmd
+// read register values into structure with gosipcmd
 
-  if(!AssertNoBroadcast()) return;
+if (!AssertNoBroadcast ())
+  return;
 
-  fSetup.fInternalTrigger=ReadGosip(fChannel, fSlave, POLAND_REG_INTERNAL_TRIGGER);
-  fSetup.fTriggerMode=ReadGosip(fChannel, fSlave, POLAND_REG_MASTERMODE);
-  fSetup.fEventCounter=ReadGosip(fChannel, fSlave, POLAND_REG_TRIGCOUNT);
+fSetup.fInternalTrigger = ReadGosip (fChannel, fSlave, POLAND_REG_INTERNAL_TRIGGER);
+fSetup.fTriggerMode = ReadGosip (fChannel, fSlave, POLAND_REG_MASTERMODE);
+fSetup.fEventCounter = ReadGosip (fChannel, fSlave, POLAND_REG_TRIGCOUNT);
 
-  for(int i=0; i<POLAND_TS_NUM;++i)
-  {
-    fSetup.fSteps[i]=ReadGosip(fChannel, fSlave, POLAND_REG_STEPS_BASE + 4*i);
-    fSetup.fTimes[i]=ReadGosip(fChannel, fSlave, POLAND_REG_TIME_BASE + 4*i);
-  }
-  for(int e=0; e<POLAND_ERRCOUNT_NUM;++e)
-   {
-    fSetup.fErrorCounter[e]=ReadGosip(fChannel, fSlave, POLAND_REG_ERRCOUNT_BASE + 4*e);
-   }
-  //printf("GetRegisters for sfp:%d slave:%d DUMP \n",fChannel, fSlave);
-  //fSetup.Dump();
+for (int i = 0; i < POLAND_TS_NUM; ++i)
+{
+  fSetup.fSteps[i] = ReadGosip (fChannel, fSlave, POLAND_REG_STEPS_BASE + 4 * i);
+  fSetup.fTimes[i] = ReadGosip (fChannel, fSlave, POLAND_REG_TIME_BASE + 4 * i);
+}
+for (int e = 0; e < POLAND_ERRCOUNT_NUM; ++e)
+{
+  fSetup.fErrorCounter[e] = ReadGosip (fChannel, fSlave, POLAND_REG_ERRCOUNT_BASE + 4 * e);
+}
+//printf("GetRegisters for sfp:%d slave:%d DUMP \n",fChannel, fSlave);
+//fSetup.Dump();
 
-  // TODO: error handling with exceptions?
+// TODO: error handling with exceptions?
 }
 
-
-int PolandGui::ReadGosip(int sfp, int slave, int address)
+int PolandGui::ReadGosip (int sfp, int slave, int address)
 {
- int value=-1;
+int value = -1;
 
+char buffer[1024];
+//snprintf(buffer,1024,"/daq/usr/adamczew/workspace/drivers/mbspex/bin/gosipcmd -r -- %d %d 0x%x",sfp, slave, address);
+snprintf (buffer, 1024, "gosipcmd -r -- %d %d 0x%x", sfp, slave, address);
+QString com (buffer);
+QString result = ExecuteGosipCmd (com);
+if (result != "ERROR")
+{
+  DebugTextWindow (result);
+  value = result.toInt (0, 0);
+}
+else
+{
 
- char buffer[1024];
- //snprintf(buffer,1024,"/daq/usr/adamczew/workspace/drivers/mbspex/bin/gosipcmd -r -- %d %d 0x%x",sfp, slave, address);
- snprintf(buffer,1024,"gosipcmd -r -- %d %d 0x%x",sfp, slave, address);
- QString com(buffer);
- QString result=ExecuteGosipCmd(com);
- if(result!="ERROR")
- {
-   DebugTextWindow(result);
-   value=result.toInt(0,0);
- }
- else
- {
-
-   value=-1;
- }
-
+  value = -1;
+}
 
 ///////////// OLD method:
 // QProcess proc;
@@ -368,18 +414,15 @@ int PolandGui::ReadGosip(int sfp, int slave, int address)
 return value;
 }
 
-
-
-int PolandGui::WriteGosip(int sfp, int slave, int address, int value)
+int PolandGui::WriteGosip (int sfp, int slave, int address, int value)
 {
-  int rev=0;
-  char buffer[1024];
-  snprintf(buffer,1024,"gosipcmd -w -- %d %d 0x%x 0x%x",sfp, slave, address, value);
-  QString com(buffer);
-  QString result=ExecuteGosipCmd(com);
-  if(result=="ERROR")
-      rev=-1;
-
+int rev = 0;
+char buffer[1024];
+snprintf (buffer, 1024, "gosipcmd -w -- %d %d 0x%x 0x%x", sfp, slave, address, value);
+QString com (buffer);
+QString result = ExecuteGosipCmd (com);
+if (result == "ERROR")
+  rev = -1;
 
 // old interface:
 //  QProcess proc;
@@ -392,52 +435,49 @@ int PolandGui::WriteGosip(int sfp, int slave, int address, int value)
 //     std::cerr << "# PolandGui::WriteGosip() Error "<< rev <<" on executing "<< buffer <<" #!" << std::endl;
 //     AppendTextWindow("! Error on executing command!!!");
 //   }
-  return rev;
+return rev;
 }
 
-
-QString PolandGui::ExecuteGosipCmd(QString& com)
+QString PolandGui::ExecuteGosipCmd (QString& com)
 {
-  // interface to shell gosipcmd
-  // TODO optionally some remote call via ssh for Go4 gui?
-  QString result;
-  QProcess proc;
-  DebugTextWindow(com);
-  proc.setProcessEnvironment(fEnv);
-  proc.setReadChannel(QProcess::StandardOutput);
-  proc.start(com);
- // if(proc.waitForReadyRead (1000)) // will give termination warnings after leaving this function
-  if(proc.waitForFinished (5000)) // after process is finished we can still read stdio buffer
-  {
-       // read back stdout of proc here
-     result=proc.readAll();
-   }
- else
-   {
-     std::cout << " PolandGui::ExecuteGosipCmd(): gosipcmd not finished after 5 s error"<< std::endl;
-     AppendTextWindow("! Warning: ExecuteGosipCmd not finished after 5 s timeout !!!");
-     result="ERROR";
-   }
-  return result;
+// interface to shell gosipcmd
+// TODO optionally some remote call via ssh for Go4 gui?
+QString result;
+QProcess proc;
+DebugTextWindow (com);
+proc.setProcessEnvironment (fEnv);
+proc.setReadChannel (QProcess::StandardOutput);
+proc.start (com);
+// if(proc.waitForReadyRead (1000)) // will give termination warnings after leaving this function
+if (proc.waitForFinished (5000))    // after process is finished we can still read stdio buffer
+{
+  // read back stdout of proc here
+  result = proc.readAll ();
+}
+else
+{
+  std::cout << " PolandGui::ExecuteGosipCmd(): gosipcmd not finished after 5 s error" << std::endl;
+  AppendTextWindow ("! Warning: ExecuteGosipCmd not finished after 5 s timeout !!!");
+  result = "ERROR";
+}
+return result;
 }
 
-
-
-void  PolandGui::AppendTextWindow(const QString& text)
+void PolandGui::AppendTextWindow (const QString& text)
 {
-  TextOutput->appendPlainText(text);
-  TextOutput->update();
+TextOutput->appendPlainText (text);
+TextOutput->update ();
 }
 
-
-bool PolandGui::AssertNoBroadcast()
+bool PolandGui::AssertNoBroadcast (bool verbose)
 {
-  if(fChannel<0 || fSlave<0)
-   {
-     std::cerr << "# PolandGui Error: broadcast not supported here!"<< std::endl;
-     AppendTextWindow("#Error: broadcast not supported here!");
-     return false;
-   }
-  return true;
+if (fChannel < 0 || fSlave < 0)
+{
+  //std::cerr << "# PolandGui Error: broadcast not supported here!" << std::endl;
+  if (verbose)
+    AppendTextWindow ("#Error: broadcast not supported here!");
+  return false;
+}
+return true;
 }
 

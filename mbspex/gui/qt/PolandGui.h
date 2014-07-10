@@ -1,4 +1,3 @@
-
 #ifndef POLANDGUI_H
 #define POLANDGUI_H
 
@@ -22,160 +21,178 @@
 #define POLAND_TS_NUM 3
 
 #define POLAND_REG_INTERNAL_TRIGGER  0x200040
+#define POLAND_REG_DO_OFFSET  0x200044
 #define POLAND_REG_MASTERMODE  0x200048
 #define POLAND_REG_ERRCOUNT_BASE  0x200
 #define POLAND_ERRCOUNT_NUM  8
 
+/* microsecond per time register unit*/
+#define POLAND_TIME_UNIT 0.02
+
 class PolandSetup
 {
-  public:
-    unsigned int fSteps[POLAND_TS_NUM];
-    unsigned int fTimes[POLAND_TS_NUM];
-    char fInternalTrigger;
-    char fTriggerMode;
-    unsigned int fEventCounter;
-    unsigned int fErrorCounter[POLAND_ERRCOUNT_NUM];
+public:
+  unsigned int fSteps[POLAND_TS_NUM];
+  unsigned int fTimes[POLAND_TS_NUM];
+  char fInternalTrigger;
+  char fTriggerMode;
+  unsigned int fEventCounter;
+  unsigned int fErrorCounter[POLAND_ERRCOUNT_NUM];
 
-    PolandSetup(): fInternalTrigger(0),fTriggerMode(0), fEventCounter(0)
+  PolandSetup () :
+      fInternalTrigger (0), fTriggerMode (0), fEventCounter (0)
+  {
+    for (int i = 0; i < POLAND_TS_NUM; ++i)
     {
-      for(int i=0; i<POLAND_TS_NUM;++i)
-      {
-        fSteps[i]=0;
-        fTimes[i]=0;
-      }
-      for(int j=0; j<POLAND_ERRCOUNT_NUM;++j)
-            {
-              fErrorCounter[j]=0;
-            }
+      fSteps[i] = 0;
+      fTimes[i] = 0;
+    }
+    for (int j = 0; j < POLAND_ERRCOUNT_NUM; ++j)
+    {
+      fErrorCounter[j] = 0;
+    }
+  }
+
+  void SetTriggerMaster (bool on)
+  {
+    on ? (fTriggerMode |= 2) : (fTriggerMode &= ~2);
+  }
+
+  bool IsTriggerMaster ()
+  {
+    return ((fTriggerMode & 2) == 2);
+  }
+
+  void SetFesaMode (bool on)
+  {
+    on ? (fTriggerMode |= 1) : (fTriggerMode &= ~1);
+  }
+
+  bool IsFesaMode ()
+  {
+    return ((fTriggerMode & 1) == 1);
+  }
+
+  void SetInternalTrigger (bool on)
+  {
+    on ? (fInternalTrigger |= 1) : (fInternalTrigger &= ~1);
+  }
+
+  bool IsInternalTrigger ()
+  {
+    return ((fInternalTrigger & 1) == 1);
+  }
+
+  /* calculate time in us from setup value of loop */
+  double GetStepTime(int loop)
+    {
+      return ((double)  (fTimes[loop]*POLAND_TIME_UNIT));
     }
 
-    void SetTriggerMaster(bool on)
+  void SetStepTime(double us, int loop)
+  {
+    fTimes[loop]=us/POLAND_TIME_UNIT;
+  }
+
+
+
+  void Dump ()
+  {
+    printf ("-----POLAND device status dump:");
+    printf ("Trigger Master:%d, FESA:%d, Internal Trigger:%d \n", IsTriggerMaster (), IsFesaMode (),
+        IsInternalTrigger ());
+    for (int i = 0; i < POLAND_TS_NUM; ++i)
     {
-      on? (fTriggerMode |=2) : (fTriggerMode &= ~2);
+      printf ("Steps[%d]=0x%x\n ", i, fSteps[i]);
+      printf ("Times[%d]=0x%x\n ", i, fTimes[i]);
     }
-
-    bool IsTriggerMaster()
+    printf ("Trigger count: %d \n", fEventCounter);
+    for (int j = 0; j < POLAND_ERRCOUNT_NUM; ++j)
     {
-        return ((fTriggerMode & 2) == 2);
+      printf ("Errors[%d]=%d\n ", j, fErrorCounter[j]);
     }
-
-    void SetFesaMode(bool on)
-    {
-      on? (fTriggerMode |=1) : (fTriggerMode &= ~1);
-    }
-
-    bool IsFesaMode()
-      {
-          return ((fTriggerMode & 1) == 1);
-      }
-
-    void SetInternalTrigger(bool on)
-    {
-      on? (fInternalTrigger |=1) : (fTriggerMode &= ~1);
-    }
-
-    bool IsInternalTrigger()
-    {
-      return ((fInternalTrigger & 1) == 1);
-    }
-
-
-    void Dump()
-    {
-      printf("-----POLAND device status dump:");
-      printf("Trigger Master:%d, FESA:%d, Internal Trigger:%d \n",IsTriggerMaster(), IsFesaMode(), IsInternalTrigger());
-      for(int i=0; i<POLAND_TS_NUM;++i)
-           {
-             printf("Steps[%d]=0x%x\n ",i,fSteps[i]);
-             printf("Times[%d]=0x%x\n ",i,fTimes[i]);
-           }
-      printf("Trigger count: %d \n",fEventCounter);
-      for(int j=0; j<POLAND_ERRCOUNT_NUM;++j)
-                 {
-                   printf("Errors[%d]=%d\n ",j,fErrorCounter[j]);
-                 }
-    }
+  }
 
 };
 
-
-
-class PolandGui : public QWidget, public Ui::PolandGui
+class PolandGui: public QWidget, public Ui::PolandGui
 {
-    Q_OBJECT
+  Q_OBJECT
 
 public:
-    PolandGui( QWidget* parent = 0);
-    virtual ~PolandGui();
+  PolandGui (QWidget* parent = 0);
+  virtual ~PolandGui ();
 
 protected:
 
+  QProcessEnvironment fEnv;
 
-    QProcessEnvironment fEnv;
+  /* text debug mode*/
+  bool fDebug;
 
-    /* text debug mode*/
-    bool fDebug;
+  /* index of sfp channel,   -1 for broadcast */
+  int fChannel;
+  /* index of slave device , -1 for broadcast*/
+  int fSlave;
 
-    /* index of sfp channel,   -1 for broadcast */
-    int fChannel;
-    /* index of slave device , -1 for broadcast*/
-    int fSlave;
+  PolandSetup fSetup;
+  /* update register display*/
+  void RefreshView ();
 
-    PolandSetup fSetup;
-    /* update register display*/
-    void RefreshView();
+  /* copy values from gui to internal status object*/
+  void EvaluateView ();
 
-    /* copy values from gui to internal status object*/
-    void EvaluateView();
+  /* copy sfp and slave from gui to variables*/
+  void EvaluateSlave ();
 
-    /* copy sfp and slave from gui to variables*/
-    void EvaluateSlave();
+  /* set register from status structure*/
+  void SetRegisters ();
 
-    /* set register from status structure*/
-    void SetRegisters();
+  /* get register contents to status structure*/
+  void GetRegisters ();
 
-    /* get register contents to status structure*/
-     void GetRegisters();
+  /* Read from address from sfp and slave, returns value*/
+  int ReadGosip (int sfp, int slave, int address);
 
-    /* Read from address from sfp and slave, returns value*/
-    int ReadGosip(int sfp, int slave, int address);
+  /* Write value to address from sfp and slave*/
+  int WriteGosip (int sfp, int slave, int address, int value);
 
-    /* Write value to address from sfp and slave*/
-    int WriteGosip(int sfp, int slave, int address, int value);
+  /* execute gosip command in shell. Return value is output of command*/
+  QString ExecuteGosipCmd (QString& command);
 
-    /* execute gosip command in shell. Return value is output of command*/
-    QString ExecuteGosipCmd(QString& command);
+  void AppendTextWindow (const QString& text);
 
-    void AppendTextWindow(const QString& text);
+  void AppendTextWindow (const char* txt)
+  {
+    QString buf (txt);
+    AppendTextWindow (buf);
+  }
 
-    void AppendTextWindow(const char* txt)
-    {
-      QString buf(txt);
-      AppendTextWindow(buf);
-    }
-
-
-    void DebugTextWindow(const char*txt)
-    {
-      if(fDebug) AppendTextWindow(txt);
-    }
-    void DebugTextWindow(const QString& text)
-    {
-      if(fDebug) AppendTextWindow(text);
-    }
-    /* Check if broadast mode is not set. If set, returns false and prints error message*/
-    bool AssertNoBroadcast();
+  void DebugTextWindow (const char*txt)
+  {
+    if (fDebug)
+      AppendTextWindow (txt);
+  }
+  void DebugTextWindow (const QString& text)
+  {
+    if (fDebug)
+      AppendTextWindow (text);
+  }
+  /* Check if broadast mode is not set. If set, returns false and prints error message if verbose is true*/
+  bool AssertNoBroadcast (bool verbose=true);
 
 public slots:
-    virtual void ShowBtn_clicked();
-    virtual void ApplyBtn_clicked();
-    virtual void InitChainBtn_clicked();
-    virtual void ResetBoardBtn_clicked();
-    virtual void BroadcastBtn_clicked();
-    virtual void DumpBtn_clicked();
-    virtual void ClearOutputBtn_clicked();
-    virtual void ConfigBtn_clicked();
-    virtual void DebugBox_changed(int on);
+  virtual void ShowBtn_clicked();
+  virtual void ApplyBtn_clicked ();
+  virtual void InitChainBtn_clicked ();
+  virtual void ResetBoardBtn_clicked ();
+  virtual void BroadcastBtn_clicked ();
+  virtual void DumpBtn_clicked ();
+  virtual void ClearOutputBtn_clicked ();
+  virtual void ConfigBtn_clicked ();
+  virtual void OffsetBtn_clicked ();
+  virtual void DebugBox_changed (int on);
+  virtual void Slave_changed(int val);
 };
 
 #endif

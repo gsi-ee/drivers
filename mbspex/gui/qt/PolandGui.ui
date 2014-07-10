@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>POLAND GUI</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_3">
+  <layout class="QGridLayout" name="gridLayout_4">
    <item row="0" column="0" colspan="2">
     <widget class="QFrame" name="frame">
      <property name="sizePolicy">
@@ -109,6 +109,16 @@
        </spacer>
       </item>
       <item>
+       <widget class="QPushButton" name="OffsetButton">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Trigger  offset measurement at SFP with number of DEV set in spinbox&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>ScanOffset</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="InitChainButton">
         <property name="toolTip">
          <string>Initialize chain at SFP with number of DEV set in spinbox</string>
@@ -132,11 +142,10 @@
      <zorder>SFPspinBox</zorder>
      <zorder>SlavespinBox</zorder>
      <zorder>horizontalSpacer_2</zorder>
-     <zorder>RefreshButton</zorder>
-     <zorder>ApplyButton</zorder>
      <zorder>InitChainButton</zorder>
      <zorder>ResetBoardButton</zorder>
      <zorder>BroadcastButton</zorder>
+     <zorder>OffsetButton</zorder>
     </widget>
    </item>
    <item row="1" column="0">
@@ -150,8 +159,8 @@
      <property name="title">
       <string>QFW Settings</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_4">
-      <item>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="0">
        <layout class="QHBoxLayout" name="horizontalLayout_2">
         <property name="sizeConstraint">
          <enum>QLayout::SetDefaultConstraint</enum>
@@ -164,22 +173,22 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="FesaModeBox">
-          <property name="text">
-           <string>FESA Mode</string>
-          </property>
-         </widget>
-        </item>
-        <item>
          <widget class="QCheckBox" name="InternalTriggerBox">
           <property name="text">
            <string>Internal Trigger</string>
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QCheckBox" name="FesaModeBox">
+          <property name="text">
+           <string>FESA Mode</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
-      <item>
+      <item row="1" column="0">
        <layout class="QGridLayout" name="gridLayout">
         <item row="0" column="1">
          <widget class="QLabel" name="TSStepsLabe">
@@ -194,7 +203,7 @@
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of steps in timeslice loop 3&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
-           <string>0x00</string>
+           <string>0</string>
           </property>
          </widget>
         </item>
@@ -211,7 +220,7 @@
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of steps in timeslice in loop &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
-           <string>0x00</string>
+           <string>0</string>
           </property>
           <property name="placeholderText">
            <string/>
@@ -220,11 +229,17 @@
         </item>
         <item row="3" column="2">
          <widget class="QLineEdit" name="TS3TimelineEdit">
+          <property name="font">
+           <font>
+            <weight>50</weight>
+            <bold>false</bold>
+           </font>
+          </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set time of Timeslice in loop&lt;/p&gt;&lt;p&gt;Examples: 0x1F4 = 10us; 0xc350 = 1ms; 0x7a120 = 10ms; &lt;/p&gt;&lt;p&gt;0x1e8480 = 40ms; 0x4c4b40 = 100ms; 0x2faf080 = 1s&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set time of single Timeslice in loop, units microseconds&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
-           <string>0x00</string>
+           <string>0</string>
           </property>
           <property name="placeholderText">
            <string/>
@@ -234,10 +249,10 @@
         <item row="1" column="2">
          <widget class="QLineEdit" name="TS1TimelineEdit">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set time of Timeslice in loop&lt;/p&gt;&lt;p&gt;Examples: 0x1F4 = 10us; 0xc350 = 1ms; 0x7a120 = 10ms;  &lt;/p&gt;&lt;p&gt;0x1e8480 = 40ms; 0x4c4b40 = 100ms; 0x2faf080 = 1s&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set time of single Timeslice in loop, units microseconds&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
-           <string>0x00</string>
+           <string>0</string>
           </property>
           <property name="placeholderText">
            <string/>
@@ -257,17 +272,17 @@
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of steps in timeslice loop 2&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
-           <string>0x00</string>
+           <string>0</string>
           </property>
          </widget>
         </item>
         <item row="2" column="2">
          <widget class="QLineEdit" name="TS2TimelineEdit">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set time of Timeslice in loop&lt;/p&gt;&lt;p&gt;Examples: 0x1F4 = 10us; 0xc350 = 1ms; 0x7a120 = 10ms; &lt;/p&gt;&lt;p&gt;0x1e8480 = 40ms; 0x4c4b40 = 100ms; 0x2faf080 = 1s&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set time of single Timeslice in loop, units microseconds&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
-           <string>0x00</string>
+           <string>0</string>
           </property>
           <property name="placeholderText">
            <string/>
@@ -284,7 +299,7 @@
         <item row="0" column="2">
          <widget class="QLabel" name="TSTimeLabel">
           <property name="text">
-           <string>Time per Step</string>
+           <string>Time per Step [µs]</string>
           </property>
          </widget>
         </item>
@@ -584,6 +599,30 @@
   </layout>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <tabstops>
+  <tabstop>SFPspinBox</tabstop>
+  <tabstop>SlavespinBox</tabstop>
+  <tabstop>BroadcastButton</tabstop>
+  <tabstop>OffsetButton</tabstop>
+  <tabstop>InitChainButton</tabstop>
+  <tabstop>ResetBoardButton</tabstop>
+  <tabstop>MasterTriggerBox</tabstop>
+  <tabstop>InternalTriggerBox</tabstop>
+  <tabstop>FesaModeBox</tabstop>
+  <tabstop>TSLoop1lineEdit</tabstop>
+  <tabstop>TS1TimelineEdit</tabstop>
+  <tabstop>TSLoop2lineEdit</tabstop>
+  <tabstop>TS2TimelineEdit</tabstop>
+  <tabstop>TSLoop3lineEdit</tabstop>
+  <tabstop>TS3TimelineEdit</tabstop>
+  <tabstop>TextOutput</tabstop>
+  <tabstop>RefreshButton</tabstop>
+  <tabstop>ApplyButton</tabstop>
+  <tabstop>ConfigButton</tabstop>
+  <tabstop>DumpButton</tabstop>
+  <tabstop>ClearOutputButton</tabstop>
+  <tabstop>DebugBox</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
