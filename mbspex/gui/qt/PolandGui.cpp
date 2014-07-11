@@ -160,12 +160,12 @@ if (QMessageBox::question (this, "Poland GUI", QString (buffer), QMessageBox::Ye
 
 WriteGosip (fChannel, fSlave, POLAND_REG_DO_OFFSET, 1);
 AppendTextWindow ("--- Doing offset measurement... ");
-QApplication::setOverrideCursor( Qt::WaitCursor );
+//QApplication::setOverrideCursor( Qt::WaitCursor );
 
-sleep(2);
+//sleep(2);
 WriteGosip (fChannel, fSlave, POLAND_REG_DO_OFFSET, 0);
 AppendTextWindow ("    ... done.");
-QApplication::restoreOverrideCursor();
+//QApplication::restoreOverrideCursor();
 
 
 
@@ -452,6 +452,8 @@ DebugTextWindow (com);
 proc.setProcessEnvironment (fEnv);
 #endif
 proc.setReadChannel (QProcess::StandardOutput);
+QApplication::setOverrideCursor( Qt::WaitCursor );
+
 proc.start (com);
 // if(proc.waitForReadyRead (1000)) // will give termination warnings after leaving this function
 if (proc.waitForFinished (5000))    // after process is finished we can still read stdio buffer
@@ -465,6 +467,7 @@ else
   AppendTextWindow ("! Warning: ExecuteGosipCmd not finished after 5 s timeout !!!");
   result = "ERROR";
 }
+QApplication::restoreOverrideCursor();
 return result;
 }
 
