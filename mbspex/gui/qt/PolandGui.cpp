@@ -160,12 +160,17 @@ if (QMessageBox::question (this, "Poland GUI", QString (buffer), QMessageBox::Ye
 
 WriteGosip (fChannel, fSlave, POLAND_REG_DO_OFFSET, 1);
 AppendTextWindow ("--- Doing offset measurement... ");
-//QApplication::setOverrideCursor( Qt::WaitCursor );
+QApplication::setOverrideCursor( Qt::WaitCursor );
 
-//sleep(2);
 WriteGosip (fChannel, fSlave, POLAND_REG_DO_OFFSET, 0);
-AppendTextWindow ("    ... done.");
-//QApplication::restoreOverrideCursor();
+sleep(2);
+AppendTextWindow ("    ... done. Dumping offset values:");
+
+snprintf (buffer, 1024, "gosipcmd -d -r -x -- %d %d 0x%x 0x%x", fChannel, fSlave, POLAND_REG_OFFSET_BASE, 32);
+QString com (buffer);
+QString result = ExecuteGosipCmd (com);
+AppendTextWindow (result);
+QApplication::restoreOverrideCursor();
 
 
 
@@ -254,6 +259,9 @@ void PolandGui::RefreshView ()
 // display setup structure to gui:
 QString text;
 //text.setNum(fSetup.fSteps[0]);
+RefreshMode();
+
+
 TSLoop1lineEdit->setText (text.setNum (fSetup.fSteps[0], 10));
 TSLoop2lineEdit->setText (text.setNum (fSetup.fSteps[1], 10));
 TSLoop3lineEdit->setText (text.setNum (fSetup.fSteps[2], 10));
@@ -279,6 +287,7 @@ ErrorCounter8->display ((int) fSetup.fErrorCounter[7]);
 void PolandGui::EvaluateView ()
 {
 EvaluateSlave ();
+EvaluateMode  ();
 // copy widget values to structure
 fSetup.fSteps[0] = TSLoop1lineEdit->text ().toUInt (0, 0);
 fSetup.fSteps[1] = TSLoop2lineEdit->text ().toUInt (0, 0);
@@ -294,6 +303,56 @@ fSetup.SetFesaMode (FesaModeBox->isChecked ());
 fSetup.SetInternalTrigger (InternalTriggerBox->isChecked ());
 
 }
+
+
+void PolandGui::EvaluateMode()
+{
+  int index=ModeComboBox->currentIndex();
+  switch(index)
+  {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+      fSetup.fQFWMode= index;
+      break;
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+      fSetup.fQFWMode= index -4  + 16;
+    break;
+    default:
+      std::cout << "!!! Never come here - undefined mode index"<< index << std::endl;
+    break;
+  };
+}
+void PolandGui::RefreshMode()
+{
+  int index=-1;
+  switch(fSetup.fQFWMode)
+  {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+      index=fSetup.fQFWMode;
+      break;
+    case 16:
+    case 17:
+    case 18:
+    case 19:
+      index= fSetup.fQFWMode- 16 + 4;
+      break;
+    default:
+          std::cout << "!!! Never come here - undefined mode index"<< index << std::endl;
+          break;
+  };
+  if(index>=0)
+    ModeComboBox->setCurrentIndex(index);
+
+}
+
 void PolandGui::EvaluateSlave ()
 {
 fChannel = SFPspinBox->value ();
@@ -311,6 +370,7 @@ if (AssertNoBroadcast (false))
   WriteGosip (fChannel, fSlave, POLAND_REG_MASTERMODE, fSetup.fTriggerMode);
 }
 
+WriteGosip (fChannel, fSlave, POLAND_REG_QFW_MODE, fSetup.fQFWMode);
 
 
 // WriteGosip(fChannel, fSlave, POLAND_REG_TRIGCOUNT, fSetup.fEventCounter);
@@ -339,6 +399,7 @@ if (!AssertNoBroadcast ())
 fSetup.fInternalTrigger = ReadGosip (fChannel, fSlave, POLAND_REG_INTERNAL_TRIGGER);
 fSetup.fTriggerMode = ReadGosip (fChannel, fSlave, POLAND_REG_MASTERMODE);
 fSetup.fEventCounter = ReadGosip (fChannel, fSlave, POLAND_REG_TRIGCOUNT);
+fSetup.fQFWMode = ReadGosip (fChannel, fSlave, POLAND_REG_QFW_MODE);
 
 for (int i = 0; i < POLAND_TS_NUM; ++i)
 {

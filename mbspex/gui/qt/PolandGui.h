@@ -20,8 +20,12 @@
 #define POLAND_REG_TIME_TS3  0x200028
 #define POLAND_TS_NUM 3
 
+#define POLAND_REG_QFW_MODE  0x200004
+
+
 #define POLAND_REG_INTERNAL_TRIGGER  0x200040
 #define POLAND_REG_DO_OFFSET  0x200044
+#define POLAND_REG_OFFSET_BASE 0x200100
 #define POLAND_REG_MASTERMODE  0x200048
 #define POLAND_REG_ERRCOUNT_BASE  0x200
 #define POLAND_ERRCOUNT_NUM  8
@@ -36,11 +40,12 @@ public:
   unsigned int fTimes[POLAND_TS_NUM];
   char fInternalTrigger;
   char fTriggerMode;
+  char fQFWMode;
   unsigned int fEventCounter;
   unsigned int fErrorCounter[POLAND_ERRCOUNT_NUM];
 
   PolandSetup () :
-      fInternalTrigger (0), fTriggerMode (0), fEventCounter (0)
+      fInternalTrigger (0), fTriggerMode (0), fQFWMode(0), fEventCounter (0)
   {
     for (int i = 0; i < POLAND_TS_NUM; ++i)
     {
@@ -101,6 +106,7 @@ public:
     printf ("-----POLAND device status dump:");
     printf ("Trigger Master:%d, FESA:%d, Internal Trigger:%d \n", IsTriggerMaster (), IsFesaMode (),
         IsInternalTrigger ());
+    printf ("QFW Mode:0x%x", fQFWMode);
     for (int i = 0; i < POLAND_TS_NUM; ++i)
     {
       printf ("Steps[%d]=0x%x\n ", i, fSteps[i]);
@@ -145,6 +151,13 @@ protected:
 
   /* copy sfp and slave from gui to variables*/
   void EvaluateSlave ();
+
+  /* find out measurement mode from selected combobox entry*/
+  void EvaluateMode();
+
+  /* update measurement range in combobox entry*/
+    void RefreshMode();
+
 
   /* set register from status structure*/
   void SetRegisters ();
