@@ -243,6 +243,8 @@ bool triggerchangeable = AssertNoBroadcast (false);
 MasterTriggerBox->setEnabled (triggerchangeable);
 InternalTriggerBox->setEnabled (triggerchangeable);
 FesaModeBox->setEnabled (triggerchangeable);
+RefreshButton->setEnabled (triggerchangeable);
+
 
 }
 
