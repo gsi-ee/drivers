@@ -125,8 +125,9 @@ public:
 
 protected:
 
+#if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
   QProcessEnvironment fEnv;
-
+#endif
   /* text debug mode*/
   bool fDebug;
 

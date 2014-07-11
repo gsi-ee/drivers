@@ -45,8 +45,9 @@ PolandGui::PolandGui (QWidget* parent) :
     QWidget (parent), fDebug (false), fChannel (0), fSlave (0)
 {
   setupUi (this);
-
+#if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
   fEnv = QProcessEnvironment::systemEnvironment ();    // get PATH to gosipcmd from parent process
+#endif
   SFPspinBox->setValue (fChannel);
   SlavespinBox->setValue (fSlave);
 
@@ -447,7 +448,9 @@ QString PolandGui::ExecuteGosipCmd (QString& com)
 QString result;
 QProcess proc;
 DebugTextWindow (com);
+#if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
 proc.setProcessEnvironment (fEnv);
+#endif
 proc.setReadChannel (QProcess::StandardOutput);
 proc.start (com);
 // if(proc.waitForReadyRead (1000)) // will give termination warnings after leaving this function
