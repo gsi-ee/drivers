@@ -76,10 +76,10 @@ SMILIBS = $(LIB)/lib_mbs.a $(LIB)/lib_tools.a $(LIB)/lib_mbs.a $(LIB)/lib_smi.a 
           $(LIB)/libedit.a  -lnetinet
 endif
 
-PEX_INC = -I/daq/usr/adamczew/workspace/drivers/mbspex/include
-PEX_LIB = /daq/usr/adamczew/workspace/drivers/mbspex/lib/libmbspex.a
-
-
+#PEX_INC = -I/daq/usr/adamczew/workspace/drivers/mbspex/include
+#PEX_LIB = /daq/usr/adamczew/workspace/drivers/mbspex/lib/libmbspex.a
+PEX_INC = -I/mbs/driv/mbspex_$(GSI_OS_VERSION)_DEB/include
+PEX_LIB = /mbs/driv/mbspex_$(GSI_OS_VERSION)_DEB/lib/libmbspex.a
 
 endif
 
