@@ -48,6 +48,9 @@ PolandGui::PolandGui (QWidget* parent) :
 #if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
   fEnv = QProcessEnvironment::systemEnvironment ();    // get PATH to gosipcmd from parent process
 #endif
+
+  fNumberBase=10;
+
   SFPspinBox->setValue (fChannel);
   SlavespinBox->setValue (fSlave);
 
@@ -65,8 +68,11 @@ PolandGui::PolandGui (QWidget* parent) :
   QObject::connect (ClearOutputButton, SIGNAL (clicked ()), this, SLOT (ClearOutputBtn_clicked ()));
   QObject::connect (OffsetButton, SIGNAL (clicked ()), this, SLOT (OffsetBtn_clicked ()));
 QObject::connect(DebugBox, SIGNAL(stateChanged(int)), this, SLOT(DebugBox_changed(int)));
+QObject::connect(HexBox, SIGNAL(stateChanged(int)), this, SLOT(HexBox_changed(int)));
 QObject::connect(SFPspinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
 QObject::connect(SlavespinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
+
+QObject::connect(DACModeComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(DACMode_changed(int)));
 
 
 }
@@ -87,8 +93,31 @@ RefreshView ();
 void PolandGui::ApplyBtn_clicked ()
 {
 //std::cout << "PolandGui::ApplyBtn_clicked()"<< std::endl;
+
+  char buffer[1024];
+  char description[32];
+  (QFW_DAC_tabWidget->currentIndex()==0) ? snprintf (description, 32, "QFW") : snprintf (description, 32, "DAC");
+  EvaluateSlave ();
+  //std::cout << "InitChainBtn_clicked()"<< std::endl;
+  snprintf (buffer, 1024, "Really apply %s settings  to SFP %d Device %d?", description, fChannel, fSlave);
+  if (QMessageBox::question (this, "Poland GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
+      != QMessageBox::Yes)
+  {
+    return;
+  }
 EvaluateView ();
-SetRegisters ();
+EvaluateDAC();
+
+// depending on activated view, we either set qfw parameters or change DAC programming
+if(QFW_DAC_tabWidget->currentIndex()==0)
+{
+  SetRegisters ();
+}
+else if (QFW_DAC_tabWidget->currentIndex()==1)
+{
+  ApplyDAC();
+}
+
 }
 
 void PolandGui::InitChainBtn_clicked ()
@@ -135,14 +164,6 @@ QString com (buffer);
 QString result = ExecuteGosipCmd (com);
 AppendTextWindow (result);
 
-//    QProcess proc;
-//    proc.setProcessEnvironment(fEnv);
-//    std::cout << "PolandGui::ResetBoardBtn() command:  "<< buffer << std::endl;
-//    int rev=proc.execute(com);
-//     if(rev<0)
-//     {
-//       std::cerr << "# PolandGui::WriteGosip() Error "<< rev <<" on executing "<< buffer <<" #!" << std::endl;
-//     }
 
 }
 
@@ -207,7 +228,7 @@ void PolandGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "PolandGui::ClearOutputBtn_clicked()"<< std::endl;
 TextOutput->clear ();
-TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.1 10-July-2014 by JAM (j.adamczewski@gsi.de)");
+TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.3 of 16-July-2014 by JAM (j.adamczewski@gsi.de)");
 
 }
 
@@ -241,6 +262,14 @@ void PolandGui::DebugBox_changed (int on)
 fDebug = on;
 }
 
+void PolandGui::HexBox_changed(int on)
+{
+  fNumberBase= (on ? 16 :10);
+  //std::cout << "HexBox_changed set base to "<< fNumberBase << std::endl;
+  RefreshView ();
+}
+
+
 void PolandGui::Slave_changed (int)
 {
 //std::cout << "PolandGui::Slave_changed" << std::endl;
@@ -250,6 +279,18 @@ MasterTriggerBox->setEnabled (triggerchangeable);
 InternalTriggerBox->setEnabled (triggerchangeable);
 FesaModeBox->setEnabled (triggerchangeable);
 RefreshButton->setEnabled (triggerchangeable);
+//if(triggerchangeable) ShowBtn_clicked (); // automatic update of values?
+
+
+}
+
+
+void PolandGui::DACMode_changed(int ix)
+{
+  //std::cout << "PolandGui::DACMode_changed to index:"<< ix << std::endl;
+  fSetup.fDACMode= ix+1;
+  //GetRegisters();
+  RefreshDAC();
 
 
 }
@@ -262,15 +303,27 @@ QString text;
 RefreshMode();
 
 
-TSLoop1lineEdit->setText (text.setNum (fSetup.fSteps[0], 10));
-TSLoop2lineEdit->setText (text.setNum (fSetup.fSteps[1], 10));
-TSLoop3lineEdit->setText (text.setNum (fSetup.fSteps[2], 10));
+TSLoop1lineEdit->setText (text.setNum (fSetup.fSteps[0], fNumberBase));
+TSLoop2lineEdit->setText (text.setNum (fSetup.fSteps[1], fNumberBase));
+TSLoop3lineEdit->setText (text.setNum (fSetup.fSteps[2], fNumberBase));
 TS1TimelineEdit->setText (text.setNum (fSetup.GetStepTime(0)));
 TS2TimelineEdit->setText (text.setNum (fSetup.GetStepTime(1)));
 TS3TimelineEdit->setText (text.setNum (fSetup.GetStepTime(2)));
 MasterTriggerBox->setChecked (fSetup.IsTriggerMaster ());
 FesaModeBox->setChecked (fSetup.IsFesaMode ());
 InternalTriggerBox->setChecked (fSetup.IsInternalTrigger ());
+
+
+EventCounterNumber->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+ErrorCounter1->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+ErrorCounter2->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+ErrorCounter3->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+ErrorCounter4->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+ErrorCounter5->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+ErrorCounter6->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+ErrorCounter7->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+ErrorCounter8->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+
 
 EventCounterNumber->display ((int) fSetup.fEventCounter);
 ErrorCounter1->display ((int) fSetup.fErrorCounter[0]);
@@ -282,6 +335,9 @@ ErrorCounter6->display ((int) fSetup.fErrorCounter[5]);
 ErrorCounter7->display ((int) fSetup.fErrorCounter[6]);
 ErrorCounter8->display ((int) fSetup.fErrorCounter[7]);
 
+RefreshDACMode();
+RefreshDAC(); // probably this is already triggered by signal
+
 }
 
 void PolandGui::EvaluateView ()
@@ -289,9 +345,9 @@ void PolandGui::EvaluateView ()
 EvaluateSlave ();
 EvaluateMode  ();
 // copy widget values to structure
-fSetup.fSteps[0] = TSLoop1lineEdit->text ().toUInt (0, 0);
-fSetup.fSteps[1] = TSLoop2lineEdit->text ().toUInt (0, 0);
-fSetup.fSteps[2] = TSLoop3lineEdit->text ().toUInt (0, 0);
+fSetup.fSteps[0] = TSLoop1lineEdit->text ().toUInt (0, fNumberBase);
+fSetup.fSteps[1] = TSLoop2lineEdit->text ().toUInt (0, fNumberBase);
+fSetup.fSteps[2] = TSLoop3lineEdit->text ().toUInt (0, fNumberBase);
 
 fSetup.SetStepTime(TS1TimelineEdit->text ().toDouble (),0);
 fSetup.SetStepTime(TS2TimelineEdit->text ().toDouble (),1);
@@ -359,6 +415,216 @@ fChannel = SFPspinBox->value ();
 fSlave = SlavespinBox->value ();
 }
 
+
+
+void PolandGui::EvaluateDAC()
+{
+
+  if(fSetup.fDACMode==4)
+  {
+  fSetup.fDACAllValue=DACStartValueLineEdit->text ().toUInt (0, fNumberBase);
+
+  }
+  else
+  {
+    fSetup.fDACStartValue=DACStartValueLineEdit->text ().toUInt (0, fNumberBase);
+  }
+
+
+  fSetup.fDACOffset=DACOffsetLineEdit->text ().toUInt (0, fNumberBase);
+  fSetup.fDACDelta=DACDeltaOffsetLineEdit->text ().toUInt (0, fNumberBase);
+  fSetup.SetCalibrationTime(DACCalibTimeLineEdit->text ().toDouble ());
+
+
+
+if(fSetup.fDACMode==1)
+{
+  // only manual mode will refresh DAQ structure here
+  fSetup.fDACValue[0]=DAClineEdit_1->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[1]=DAClineEdit_2->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[2]=DAClineEdit_3->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[3]=DAClineEdit_4->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[4]=DAClineEdit_5->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[5]=DAClineEdit_6->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[6]=DAClineEdit_7->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[7]=DAClineEdit_8->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[8]=DAClineEdit_9->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[9]=DAClineEdit_10->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[10]=DAClineEdit_11->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[11]=DAClineEdit_12->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[12]=DAClineEdit_13->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[13]=DAClineEdit_14->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[14]=DAClineEdit_15->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[15]=DAClineEdit_16->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[16]=DAClineEdit_17->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[17]=DAClineEdit_18->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[18]=DAClineEdit_19->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[19]=DAClineEdit_20->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[20]=DAClineEdit_21->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[21]=DAClineEdit_22->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[22]=DAClineEdit_23->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[23]=DAClineEdit_24->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[24]=DAClineEdit_25->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[25]=DAClineEdit_26->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[26]=DAClineEdit_27->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[27]=DAClineEdit_28->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[28]=DAClineEdit_29->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[29]=DAClineEdit_30->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[30]=DAClineEdit_31->text ().toUInt (0, fNumberBase);
+fSetup.fDACValue[31]=DAClineEdit_32->text ().toUInt (0, fNumberBase);
+}
+
+}
+
+
+void  PolandGui::ApplyDAC()
+{
+  QApplication::setOverrideCursor( Qt::WaitCursor );
+  WriteGosip (fChannel, fSlave, POLAND_REG_DAC_MODE , fSetup.fDACMode);
+
+  switch((int) fSetup.fDACMode)
+  {
+    case 1:
+      // manual settings:
+      for (int d = 0; d < POLAND_DAC_NUM; ++d)
+      {
+        WriteGosip (fChannel, fSlave, POLAND_REG_DAC_BASE_WRITE + 4 * d, fSetup.fDACValue[d]);
+      }
+      break;
+    case 2:
+      // test structure:
+      // no more actions needed
+      break;
+    case 3:
+      // issue calibration:
+      WriteGosip (fChannel, fSlave, POLAND_REG_DAC_CAL_STARTVAL , fSetup.fDACStartValue);
+      WriteGosip (fChannel, fSlave, POLAND_REG_DAC_CAL_OFFSET ,  fSetup.fDACOffset);
+      WriteGosip (fChannel, fSlave, POLAND_REG_DAC_CAL_DELTA ,  fSetup.fDACDelta);
+      WriteGosip (fChannel, fSlave, POLAND_REG_DAC_CAL_TIME ,  fSetup.fDACCalibTime);
+
+      break;
+    case 4:
+      // all same constant value mode:
+      WriteGosip (fChannel, fSlave, POLAND_REG_DAC_ALLVAL , fSetup.fDACAllValue);
+      break;
+
+    default:
+      std::cout << "!!! ApplyDAC Never come here - undefined DAC mode"<<  fSetup.fDACMode << std::endl;
+      break;
+
+  };
+
+
+  WriteGosip (fChannel, fSlave, POLAND_REG_DAC_PROGRAM , 1);
+  WriteGosip (fChannel, fSlave, POLAND_REG_DAC_PROGRAM , 0);
+  sleep(2);
+
+  QApplication::restoreOverrideCursor();
+}
+
+void  PolandGui::RefreshDAC()
+{
+  //std::cout << "PolandGui::RefreshDAC"<< std::endl;
+  QString text;
+
+
+
+
+
+
+  DACOffsetLineEdit->setText (text.setNum (fSetup.fDACOffset, fNumberBase));
+  DACDeltaOffsetLineEdit->setText (text.setNum (fSetup.fDACDelta, fNumberBase));
+  DACCalibTimeLineEdit->setText (text.setNum (fSetup.GetCalibrationTime()));
+
+  DAClineEdit_1->setText (text.setNum (fSetup.fDACValue[0], fNumberBase));
+  DAClineEdit_2->setText (text.setNum (fSetup.fDACValue[1], fNumberBase));
+  DAClineEdit_3->setText (text.setNum (fSetup.fDACValue[2], fNumberBase));
+  DAClineEdit_4->setText (text.setNum (fSetup.fDACValue[3], fNumberBase));
+  DAClineEdit_5->setText (text.setNum (fSetup.fDACValue[4], fNumberBase));
+  DAClineEdit_6->setText (text.setNum (fSetup.fDACValue[5], fNumberBase));
+  DAClineEdit_7->setText (text.setNum (fSetup.fDACValue[6], fNumberBase));
+  DAClineEdit_8->setText (text.setNum (fSetup.fDACValue[7], fNumberBase));
+  DAClineEdit_9->setText (text.setNum (fSetup.fDACValue[8], fNumberBase));
+  DAClineEdit_10->setText (text.setNum (fSetup.fDACValue[9], fNumberBase));
+  DAClineEdit_10->setText (text.setNum (fSetup.fDACValue[10], fNumberBase));
+  DAClineEdit_12->setText (text.setNum (fSetup.fDACValue[11], fNumberBase));
+  DAClineEdit_13->setText (text.setNum (fSetup.fDACValue[12], fNumberBase));
+  DAClineEdit_14->setText (text.setNum (fSetup.fDACValue[13], fNumberBase));
+  DAClineEdit_15->setText (text.setNum (fSetup.fDACValue[14], fNumberBase));
+  DAClineEdit_16->setText (text.setNum (fSetup.fDACValue[15], fNumberBase));
+  DAClineEdit_17->setText (text.setNum (fSetup.fDACValue[16], fNumberBase));
+  DAClineEdit_18->setText (text.setNum (fSetup.fDACValue[17], fNumberBase));
+  DAClineEdit_19->setText (text.setNum (fSetup.fDACValue[18], fNumberBase));
+  DAClineEdit_20->setText (text.setNum (fSetup.fDACValue[19], fNumberBase));
+  DAClineEdit_21->setText (text.setNum (fSetup.fDACValue[20], fNumberBase));
+  DAClineEdit_22->setText (text.setNum (fSetup.fDACValue[21], fNumberBase));
+  DAClineEdit_23->setText (text.setNum (fSetup.fDACValue[22], fNumberBase));
+  DAClineEdit_24->setText (text.setNum (fSetup.fDACValue[23], fNumberBase));
+  DAClineEdit_25->setText (text.setNum (fSetup.fDACValue[24], fNumberBase));
+  DAClineEdit_26->setText (text.setNum (fSetup.fDACValue[25], fNumberBase));
+  DAClineEdit_27->setText (text.setNum (fSetup.fDACValue[26], fNumberBase));
+  DAClineEdit_28->setText (text.setNum (fSetup.fDACValue[27], fNumberBase));
+  DAClineEdit_29->setText (text.setNum (fSetup.fDACValue[28], fNumberBase));
+  DAClineEdit_30->setText (text.setNum (fSetup.fDACValue[29], fNumberBase));
+  DAClineEdit_31->setText (text.setNum (fSetup.fDACValue[30], fNumberBase));
+  DAClineEdit_32->setText (text.setNum (fSetup.fDACValue[31], fNumberBase));
+
+  // depending on DAC mode different fields are writable:
+
+  //std::cout << "!!! RefreshDAC With DAC mode="<<  (int)fSetup.fDACMode << std::endl;
+  switch((int) fSetup.fDACMode)
+  {
+    case 1:
+      // manual settings:
+      DACscrollArea->setEnabled(true);
+      DACCaliFrame->setEnabled(false);
+
+      break;
+    case 2:
+      // test structure
+      DACscrollArea->setEnabled(false);
+      DACCaliFrame->setEnabled(false);
+          break;
+    case 3:
+          // calibrate mode
+      DACscrollArea->setEnabled(false);
+      DACCaliFrame->setEnabled(true);
+      DACStartValueLineEdit->setEnabled(true);
+      DACStartValueLineEdit->setText (text.setNum (fSetup.fDACStartValue, fNumberBase));
+      DACOffsetLineEdit->setEnabled(true);
+      DACDeltaOffsetLineEdit->setEnabled(true);
+      DACCalibTimeLineEdit->setEnabled(true);
+
+          break;
+    case 4:
+          // all constant
+      DACscrollArea->setEnabled(false);
+      DACCaliFrame->setEnabled(true);
+      DACStartValueLineEdit->setEnabled(true);
+      DACStartValueLineEdit->setText (text.setNum (fSetup.fDACAllValue, fNumberBase));
+      DACOffsetLineEdit->setEnabled(false);
+      DACDeltaOffsetLineEdit->setEnabled(false);
+      DACCalibTimeLineEdit->setEnabled(false);
+
+          break;
+    default:
+      std::cout << "!!! RefreshDAC Never come here - undefined DAC mode"<<  fSetup.fDACMode << std::endl;
+      break;
+
+  };
+
+
+
+}
+
+
+void PolandGui::RefreshDACMode()
+{
+  //std::cout << "PolandGui::RefreshDACMode for mode "<< (int) fSetup.fDACMode << std::endl;
+  DACModeComboBox->setCurrentIndex((int) fSetup.fDACMode -1);
+}
+
+
 void PolandGui::SetRegisters ()
 {
 // write register values from strucure with gosipcmd
@@ -410,6 +676,21 @@ for (int e = 0; e < POLAND_ERRCOUNT_NUM; ++e)
 {
   fSetup.fErrorCounter[e] = ReadGosip (fChannel, fSlave, POLAND_REG_ERRCOUNT_BASE + 4 * e);
 }
+
+fSetup.fDACMode=ReadGosip (fChannel, fSlave, POLAND_REG_DAC_MODE);
+fSetup.fDACCalibTime=ReadGosip (fChannel, fSlave, POLAND_REG_DAC_CAL_TIME);
+fSetup.fDACOffset=ReadGosip (fChannel, fSlave, POLAND_REG_DAC_CAL_OFFSET);
+fSetup.fDACStartValue=ReadGosip (fChannel, fSlave, POLAND_REG_DAC_CAL_STARTVAL);
+
+for (int d = 0; d < POLAND_DAC_NUM; ++d)
+{
+  fSetup.fDACValue[d] = ReadGosip (fChannel, fSlave, POLAND_REG_DAC_BASE_READ + 4 * d);
+}
+
+
+
+
+
 //printf("GetRegisters for sfp:%d slave:%d DUMP \n",fChannel, fSlave);
 //fSetup.Dump();
 
@@ -436,44 +717,6 @@ else
   value = -1;
 }
 
-///////////// OLD method:
-// QProcess proc;
-// printf("PolandGui::ReadGosip() buffer:%s command: %s\n",buffer, (char*) com.data());
-//// std::cout << "PolandGui::ReadGosip() command:  "<< com.unicode() << std::endl;
-//
-// DebugTextWindow(buffer);
-// proc.setProcessEnvironment(fEnv);
-//
-//
-// proc.setReadChannel(QProcess::StandardOutput);
-// proc.start(com);
-//// if(proc.waitForReadyRead (1000)) // will give termination warnings after leaving this function
-// if(proc.waitForFinished (5000)) // after process is finished we can still read stdio buffer
-// {
-//      // read back stdout of proc here
-//    int retval=proc.readLine(buffer,1024);
-//    if(retval<0)
-//        {
-//          std::cout << "PolandGui::ReadGosip() read result error "<< retval << std::endl;
-//          return -1;
-//        }
-//    else
-//    {
-//      // TODO: how to handle broadcast results here? need array of values and list output in gui!
-//      value=atoi(buffer);
-//      std::cout << "PolandGui::ReadGosip() read value "<< value << " from buffer " << buffer << std::endl;
-//      DebugTextWindow(buffer);
-//
-//    }
-//
-//
-//  }
-//else
-//  {
-//    std::cout << "PolandGui::ReadGosip(): gosipcmd not finished after 5 s error"<< std::endl;
-//    DebugTextWindow("! Warning: command not finished after 5 s timeout !!!");
-//    return -1;
-//  }
 
 return value;
 }
@@ -487,18 +730,6 @@ QString com (buffer);
 QString result = ExecuteGosipCmd (com);
 if (result == "ERROR")
   rev = -1;
-
-// old interface:
-//  QProcess proc;
-//  proc.setProcessEnvironment(fEnv);
-//  std::cout << "PolandGui::WriteGosip() command:  "<< buffer << std::endl;
-//  DebugTextWindow(buffer);
-//  rev=proc.execute(com);
-//   if(rev<0)
-//   {
-//     std::cerr << "# PolandGui::WriteGosip() Error "<< rev <<" on executing "<< buffer <<" #!" << std::endl;
-//     AppendTextWindow("! Error on executing command!!!");
-//   }
 return rev;
 }
 
