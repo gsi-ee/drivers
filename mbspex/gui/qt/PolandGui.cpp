@@ -560,7 +560,7 @@ fNumberBase==16? pre="0x" : pre="";
   DAClineEdit_8->setText (pre+text.setNum (fSetup.fDACValue[7], fNumberBase));
   DAClineEdit_9->setText (pre+text.setNum (fSetup.fDACValue[8], fNumberBase));
   DAClineEdit_10->setText (pre+text.setNum (fSetup.fDACValue[9], fNumberBase));
-  DAClineEdit_10->setText (pre+text.setNum (fSetup.fDACValue[10], fNumberBase));
+  DAClineEdit_11->setText (pre+text.setNum (fSetup.fDACValue[10], fNumberBase));
   DAClineEdit_12->setText (pre+text.setNum (fSetup.fDACValue[11], fNumberBase));
   DAClineEdit_13->setText (pre+text.setNum (fSetup.fDACValue[12], fNumberBase));
   DAClineEdit_14->setText (pre+text.setNum (fSetup.fDACValue[13], fNumberBase));
