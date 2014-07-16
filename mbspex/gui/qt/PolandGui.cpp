@@ -11,6 +11,7 @@
 #include <QString>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QDateTime>
 
 //#include "Riostream.h"
 //#include "Rstrstream.h"
@@ -299,13 +300,17 @@ void PolandGui::RefreshView ()
 {
 // display setup structure to gui:
 QString text;
+QString pre;
+fNumberBase==16? pre="0x" : pre="";
+
+
 //text.setNum(fSetup.fSteps[0]);
 RefreshMode();
 
 
-TSLoop1lineEdit->setText (text.setNum (fSetup.fSteps[0], fNumberBase));
-TSLoop2lineEdit->setText (text.setNum (fSetup.fSteps[1], fNumberBase));
-TSLoop3lineEdit->setText (text.setNum (fSetup.fSteps[2], fNumberBase));
+TSLoop1lineEdit->setText (pre+text.setNum (fSetup.fSteps[0], fNumberBase));
+TSLoop2lineEdit->setText (pre+text.setNum (fSetup.fSteps[1], fNumberBase));
+TSLoop3lineEdit->setText (pre+text.setNum (fSetup.fSteps[2], fNumberBase));
 TS1TimelineEdit->setText (text.setNum (fSetup.GetStepTime(0)));
 TS2TimelineEdit->setText (text.setNum (fSetup.GetStepTime(1)));
 TS3TimelineEdit->setText (text.setNum (fSetup.GetStepTime(2)));
@@ -337,6 +342,14 @@ ErrorCounter8->display ((int) fSetup.fErrorCounter[7]);
 
 RefreshDACMode();
 RefreshDAC(); // probably this is already triggered by signal
+QString statustext;
+statustext.append("SFP ");
+statustext.append(text.setNum(fChannel));
+statustext.append(" DEV ");
+statustext.append(text.setNum(fSlave));
+statustext.append(" - Last refresh:");
+statustext.append(QDateTime::currentDateTime().toString(Qt::TextDate));
+StatusLabel->setText(statustext);
 
 }
 
@@ -526,48 +539,49 @@ void  PolandGui::RefreshDAC()
 {
   //std::cout << "PolandGui::RefreshDAC"<< std::endl;
   QString text;
+QString pre;
+fNumberBase==16? pre="0x" : pre="";
 
 
 
 
 
-
-  DACOffsetLineEdit->setText (text.setNum (fSetup.fDACOffset, fNumberBase));
-  DACDeltaOffsetLineEdit->setText (text.setNum (fSetup.fDACDelta, fNumberBase));
+  DACOffsetLineEdit->setText (pre+text.setNum (fSetup.fDACOffset, fNumberBase));
+  DACDeltaOffsetLineEdit->setText (pre+text.setNum (fSetup.fDACDelta, fNumberBase));
   DACCalibTimeLineEdit->setText (text.setNum (fSetup.GetCalibrationTime()));
 
-  DAClineEdit_1->setText (text.setNum (fSetup.fDACValue[0], fNumberBase));
-  DAClineEdit_2->setText (text.setNum (fSetup.fDACValue[1], fNumberBase));
-  DAClineEdit_3->setText (text.setNum (fSetup.fDACValue[2], fNumberBase));
-  DAClineEdit_4->setText (text.setNum (fSetup.fDACValue[3], fNumberBase));
-  DAClineEdit_5->setText (text.setNum (fSetup.fDACValue[4], fNumberBase));
-  DAClineEdit_6->setText (text.setNum (fSetup.fDACValue[5], fNumberBase));
-  DAClineEdit_7->setText (text.setNum (fSetup.fDACValue[6], fNumberBase));
-  DAClineEdit_8->setText (text.setNum (fSetup.fDACValue[7], fNumberBase));
-  DAClineEdit_9->setText (text.setNum (fSetup.fDACValue[8], fNumberBase));
-  DAClineEdit_10->setText (text.setNum (fSetup.fDACValue[9], fNumberBase));
-  DAClineEdit_10->setText (text.setNum (fSetup.fDACValue[10], fNumberBase));
-  DAClineEdit_12->setText (text.setNum (fSetup.fDACValue[11], fNumberBase));
-  DAClineEdit_13->setText (text.setNum (fSetup.fDACValue[12], fNumberBase));
-  DAClineEdit_14->setText (text.setNum (fSetup.fDACValue[13], fNumberBase));
-  DAClineEdit_15->setText (text.setNum (fSetup.fDACValue[14], fNumberBase));
-  DAClineEdit_16->setText (text.setNum (fSetup.fDACValue[15], fNumberBase));
-  DAClineEdit_17->setText (text.setNum (fSetup.fDACValue[16], fNumberBase));
-  DAClineEdit_18->setText (text.setNum (fSetup.fDACValue[17], fNumberBase));
-  DAClineEdit_19->setText (text.setNum (fSetup.fDACValue[18], fNumberBase));
-  DAClineEdit_20->setText (text.setNum (fSetup.fDACValue[19], fNumberBase));
-  DAClineEdit_21->setText (text.setNum (fSetup.fDACValue[20], fNumberBase));
-  DAClineEdit_22->setText (text.setNum (fSetup.fDACValue[21], fNumberBase));
-  DAClineEdit_23->setText (text.setNum (fSetup.fDACValue[22], fNumberBase));
-  DAClineEdit_24->setText (text.setNum (fSetup.fDACValue[23], fNumberBase));
-  DAClineEdit_25->setText (text.setNum (fSetup.fDACValue[24], fNumberBase));
-  DAClineEdit_26->setText (text.setNum (fSetup.fDACValue[25], fNumberBase));
-  DAClineEdit_27->setText (text.setNum (fSetup.fDACValue[26], fNumberBase));
-  DAClineEdit_28->setText (text.setNum (fSetup.fDACValue[27], fNumberBase));
-  DAClineEdit_29->setText (text.setNum (fSetup.fDACValue[28], fNumberBase));
-  DAClineEdit_30->setText (text.setNum (fSetup.fDACValue[29], fNumberBase));
-  DAClineEdit_31->setText (text.setNum (fSetup.fDACValue[30], fNumberBase));
-  DAClineEdit_32->setText (text.setNum (fSetup.fDACValue[31], fNumberBase));
+  DAClineEdit_1->setText (pre+text.setNum (fSetup.fDACValue[0], fNumberBase));
+  DAClineEdit_2->setText (pre+text.setNum (fSetup.fDACValue[1], fNumberBase));
+  DAClineEdit_3->setText (pre+text.setNum (fSetup.fDACValue[2], fNumberBase));
+  DAClineEdit_4->setText (pre+text.setNum (fSetup.fDACValue[3], fNumberBase));
+  DAClineEdit_5->setText (pre+text.setNum (fSetup.fDACValue[4], fNumberBase));
+  DAClineEdit_6->setText (pre+text.setNum (fSetup.fDACValue[5], fNumberBase));
+  DAClineEdit_7->setText (pre+text.setNum (fSetup.fDACValue[6], fNumberBase));
+  DAClineEdit_8->setText (pre+text.setNum (fSetup.fDACValue[7], fNumberBase));
+  DAClineEdit_9->setText (pre+text.setNum (fSetup.fDACValue[8], fNumberBase));
+  DAClineEdit_10->setText (pre+text.setNum (fSetup.fDACValue[9], fNumberBase));
+  DAClineEdit_10->setText (pre+text.setNum (fSetup.fDACValue[10], fNumberBase));
+  DAClineEdit_12->setText (pre+text.setNum (fSetup.fDACValue[11], fNumberBase));
+  DAClineEdit_13->setText (pre+text.setNum (fSetup.fDACValue[12], fNumberBase));
+  DAClineEdit_14->setText (pre+text.setNum (fSetup.fDACValue[13], fNumberBase));
+  DAClineEdit_15->setText (pre+text.setNum (fSetup.fDACValue[14], fNumberBase));
+  DAClineEdit_16->setText (pre+text.setNum (fSetup.fDACValue[15], fNumberBase));
+  DAClineEdit_17->setText (pre+text.setNum (fSetup.fDACValue[16], fNumberBase));
+  DAClineEdit_18->setText (pre+text.setNum (fSetup.fDACValue[17], fNumberBase));
+  DAClineEdit_19->setText (pre+text.setNum (fSetup.fDACValue[18], fNumberBase));
+  DAClineEdit_20->setText (pre+text.setNum (fSetup.fDACValue[19], fNumberBase));
+  DAClineEdit_21->setText (pre+text.setNum (fSetup.fDACValue[20], fNumberBase));
+  DAClineEdit_22->setText (pre+text.setNum (fSetup.fDACValue[21], fNumberBase));
+  DAClineEdit_23->setText (pre+text.setNum (fSetup.fDACValue[22], fNumberBase));
+  DAClineEdit_24->setText (pre+text.setNum (fSetup.fDACValue[23], fNumberBase));
+  DAClineEdit_25->setText (pre+text.setNum (fSetup.fDACValue[24], fNumberBase));
+  DAClineEdit_26->setText (pre+text.setNum (fSetup.fDACValue[25], fNumberBase));
+  DAClineEdit_27->setText (pre+text.setNum (fSetup.fDACValue[26], fNumberBase));
+  DAClineEdit_28->setText (pre+text.setNum (fSetup.fDACValue[27], fNumberBase));
+  DAClineEdit_29->setText (pre+text.setNum (fSetup.fDACValue[28], fNumberBase));
+  DAClineEdit_30->setText (pre+text.setNum (fSetup.fDACValue[29], fNumberBase));
+  DAClineEdit_31->setText (pre+text.setNum (fSetup.fDACValue[30], fNumberBase));
+  DAClineEdit_32->setText (pre+text.setNum (fSetup.fDACValue[31], fNumberBase));
 
   // depending on DAC mode different fields are writable:
 
@@ -590,7 +604,7 @@ void  PolandGui::RefreshDAC()
       DACscrollArea->setEnabled(false);
       DACCaliFrame->setEnabled(true);
       DACStartValueLineEdit->setEnabled(true);
-      DACStartValueLineEdit->setText (text.setNum (fSetup.fDACStartValue, fNumberBase));
+      DACStartValueLineEdit->setText (pre+text.setNum (fSetup.fDACStartValue, fNumberBase));
       DACOffsetLineEdit->setEnabled(true);
       DACDeltaOffsetLineEdit->setEnabled(true);
       DACCalibTimeLineEdit->setEnabled(true);
@@ -601,7 +615,7 @@ void  PolandGui::RefreshDAC()
       DACscrollArea->setEnabled(false);
       DACCaliFrame->setEnabled(true);
       DACStartValueLineEdit->setEnabled(true);
-      DACStartValueLineEdit->setText (text.setNum (fSetup.fDACAllValue, fNumberBase));
+      DACStartValueLineEdit->setText (pre+text.setNum (fSetup.fDACAllValue, fNumberBase));
       DACOffsetLineEdit->setEnabled(false);
       DACDeltaOffsetLineEdit->setEnabled(false);
       DACCalibTimeLineEdit->setEnabled(false);
