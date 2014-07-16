@@ -30,6 +30,7 @@ elif [ -e "/dev/${pexorname}0" ]
 elif [ -e "/dev/${kinpexname}0" ] 
 	then
 	device=${kinpexname}0
+	ln -sf /dev/${device} /dev/pexor0
 elif [ -e "/dev/${pexarianame}0"] 
  	then
  	device=${pexarianame}0
@@ -40,5 +41,7 @@ fi
 echo "found device /dev/${device}"
 chmod a+rw /dev/${device}
 ln -sf /dev/${device} /dev/${class}
+ln -sf /dev/${device} /dev/pexor
+
 ls -l /dev/*pex*
 
