@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>723</width>
-    <height>595</height>
+    <height>612</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -121,7 +121,7 @@
       <item>
        <widget class="QPushButton" name="InitChainButton">
         <property name="toolTip">
-         <string>Initialize chain at SFP with number of DEV set in spinbox</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Initialize chain of slaves at SFP as set in spinbox&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>InitChain</string>
@@ -770,8 +770,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>542</width>
-            <height>236</height>
+            <width>558</width>
+            <height>238</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout">
@@ -1241,7 +1241,7 @@
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Dump main register contents of selected device&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
-         <string>RegisterDump</string>
+         <string>DataDump</string>
         </property>
        </widget>
       </item>

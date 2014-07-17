@@ -67,7 +67,7 @@ public:
   unsigned int fDACCalibTime;
 
   PolandSetup () :
-      fInternalTrigger (0), fTriggerMode (0), fQFWMode(0),fEventCounter (0), fDACMode(0),fDACAllValue(0), fDACStartValue(0),
+      fInternalTrigger (0), fTriggerMode (0), fQFWMode(0),fEventCounter (0), fDACMode(1),fDACAllValue(0), fDACStartValue(0),
       fDACOffset(0),fDACDelta(0),fDACCalibTime(0)
   {
     for (int i = 0; i < POLAND_TS_NUM; ++i)

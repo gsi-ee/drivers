@@ -11,6 +11,7 @@
 #include <QString>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QInputDialog>
 #include <QDateTime>
 
 //#include "Riostream.h"
@@ -75,7 +76,7 @@ QObject::connect(SlavespinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_chang
 
 QObject::connect(DACModeComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(DACMode_changed(int)));
 
-
+show();
 }
 
 PolandGui::~PolandGui ()
@@ -126,14 +127,25 @@ void PolandGui::InitChainBtn_clicked ()
 char buffer[1024];
 EvaluateSlave ();
 //std::cout << "InitChainBtn_clicked()"<< std::endl;
-snprintf (buffer, 1024, "Really initialize SFP chain %d with %d Slaves?", fChannel, fSlave);
-if (QMessageBox::question (this, "Poland GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
-    != QMessageBox::Yes)
+//snprintf (buffer, 1024, "Really initialize SFP chain %d with %d Slaves?", fChannel, fSlave);
+//if (QMessageBox::question (this, "Poland GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
+//    != QMessageBox::Yes)
+//{
+//  //std::cout <<"QMessageBox does not return yes! "<< std::endl;
+//  return;
+//}
+
+bool ok;
+snprintf (buffer, 1024, "Please specify NUMBER OF DEVICES to initialize at SFP %d ?", fChannel);
+int numslaves = QInputDialog::getInt(this, tr("Number of Slaves?"),
+                                 tr(buffer), 1, 1, 1024, 1, &ok);
+if (!ok) return;
+if(fChannel<0)
 {
-  //std::cout <<"QMessageBox does not return yes! "<< std::endl;
-  return;
+    AppendTextWindow ("--- Error: Broadcast not allowed for init chain!");
+    return;
 }
-snprintf (buffer, 1024, "gosipcmd -i %d %d", fChannel, fSlave);
+snprintf (buffer, 1024, "gosipcmd -i  %d %d", fChannel, numslaves);
 QString com (buffer);
 QString result = ExecuteGosipCmd (com);
 AppendTextWindow (result);
@@ -229,7 +241,7 @@ void PolandGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "PolandGui::ClearOutputBtn_clicked()"<< std::endl;
 TextOutput->clear ();
-TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.3 of 16-July-2014 by JAM (j.adamczewski@gsi.de)");
+TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.4 of 17-July-2014 by JAM (j.adamczewski@gsi.de)");
 
 }
 
