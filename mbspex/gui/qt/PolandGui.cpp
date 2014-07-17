@@ -64,6 +64,7 @@ PolandGui::PolandGui (QWidget* parent) :
 
   QObject::connect (InitChainButton, SIGNAL (clicked ()), this, SLOT (InitChainBtn_clicked ()));
   QObject::connect (ResetBoardButton, SIGNAL (clicked ()), this, SLOT (ResetBoardBtn_clicked ()));
+  QObject::connect (ResetSlaveButton, SIGNAL (clicked ()), this, SLOT (ResetSlaveBtn_clicked ()));
   QObject::connect (BroadcastButton, SIGNAL (clicked ()), this, SLOT (BroadcastBtn_clicked ()));
   QObject::connect (DumpButton, SIGNAL (clicked ()), this, SLOT (DumpBtn_clicked ()));
   QObject::connect (ConfigButton, SIGNAL (clicked ()), this, SLOT (ConfigBtn_clicked ()));
@@ -127,14 +128,6 @@ void PolandGui::InitChainBtn_clicked ()
 char buffer[1024];
 EvaluateSlave ();
 //std::cout << "InitChainBtn_clicked()"<< std::endl;
-//snprintf (buffer, 1024, "Really initialize SFP chain %d with %d Slaves?", fChannel, fSlave);
-//if (QMessageBox::question (this, "Poland GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
-//    != QMessageBox::Yes)
-//{
-//  //std::cout <<"QMessageBox does not return yes! "<< std::endl;
-//  return;
-//}
-
 bool ok;
 snprintf (buffer, 1024, "Please specify NUMBER OF DEVICES to initialize at SFP %d ?", fChannel);
 int numslaves = QInputDialog::getInt(this, tr("Number of Slaves?"),
@@ -150,14 +143,6 @@ QString com (buffer);
 QString result = ExecuteGosipCmd (com);
 AppendTextWindow (result);
 
-//     QProcess proc;
-//     proc.setProcessEnvironment(fEnv);
-//     std::cout << "PolandGui::ResetBoardBtn() command:  "<< buffer << std::endl;
-//     int rev=proc.execute(com);
-//      if(rev<0)
-//      {
-//        std::cerr << "# PolandGui::WriteGosip() Error "<< rev <<" on executing "<< buffer <<" #!" << std::endl;
-//      }
 
 }
 
@@ -179,6 +164,25 @@ AppendTextWindow (result);
 
 
 }
+
+void PolandGui::ResetSlaveBtn_clicked ()
+{
+  char buffer[1024];
+  EvaluateSlave ();
+  snprintf (buffer, 1024, "Really reset logic on POLAND device at SFP %d, Slave %d ?", fChannel, fSlave);
+  if (QMessageBox::question (this, "Poland GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
+      != QMessageBox::Yes)
+  {
+    //std::cout <<"QMessageBox does not return yes! "<< std::endl;
+    return;
+  }
+
+  AppendTextWindow ("--- Resetting logic on POLAND... ");
+  WriteGosip (fChannel, fSlave, POLAND_REG_RESET, 0);
+  WriteGosip (fChannel, fSlave, POLAND_REG_RESET, 1);
+
+}
+
 
 void PolandGui::OffsetBtn_clicked ()
 {
@@ -241,7 +245,7 @@ void PolandGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "PolandGui::ClearOutputBtn_clicked()"<< std::endl;
 TextOutput->clear ();
-TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.4 of 17-July-2014 by JAM (j.adamczewski@gsi.de)");
+TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.42 of 17-July-2014 by JAM (j.adamczewski@gsi.de)");
 
 }
 

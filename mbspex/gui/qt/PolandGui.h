@@ -9,6 +9,7 @@
 
 #define POLAND_REG_TRIGCOUNT 0x0
 
+#define POLAND_REG_RESET 0x200000
 #define POLAND_REG_STEPS_BASE   0x200014
 #define POLAND_REG_STEPS_TS1    0x200014
 #define POLAND_REG_STEPS_TS2    0x200018
@@ -269,6 +270,7 @@ public slots:
   virtual void ApplyBtn_clicked ();
   virtual void InitChainBtn_clicked ();
   virtual void ResetBoardBtn_clicked ();
+  virtual void ResetSlaveBtn_clicked ();
   virtual void BroadcastBtn_clicked ();
   virtual void DumpBtn_clicked ();
   virtual void ClearOutputBtn_clicked ();

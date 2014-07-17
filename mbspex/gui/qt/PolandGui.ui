@@ -129,12 +129,22 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="ResetSlaveButton">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reset logic on chosen POLAND device&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Reset</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="ResetBoardButton">
         <property name="toolTip">
          <string>Reset sfp engine on pex board</string>
         </property>
         <property name="text">
-         <string>Reset</string>
+         <string>Reset PEX</string>
         </property>
        </widget>
       </item>
@@ -146,6 +156,7 @@
      <zorder>ResetBoardButton</zorder>
      <zorder>BroadcastButton</zorder>
      <zorder>OffsetButton</zorder>
+     <zorder>ResetSlaveButton</zorder>
     </widget>
    </item>
    <item row="1" column="0">
