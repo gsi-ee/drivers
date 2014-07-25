@@ -39,7 +39,7 @@
 #define POLAND_REG_DO_OFFSET            0x200044
 #define POLAND_REG_OFFSET_BASE          0x200100
 #define POLAND_REG_MASTERMODE           0x200048
-#define POLAND_REG_ERRCOUNT_BASE        0x200
+//#define POLAND_REG_ERRCOUNT_BASE        0x200
 #define POLAND_ERRCOUNT_NUM             8
 #define POLAND_DAC_NUM                  32
 

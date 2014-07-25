@@ -245,7 +245,7 @@ void PolandGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "PolandGui::ClearOutputBtn_clicked()"<< std::endl;
 TextOutput->clear ();
-TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.42 of 17-July-2014 by JAM (j.adamczewski@gsi.de)");
+TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.43 of 25-July-2014 by JAM (j.adamczewski@gsi.de)");
 
 }
 
@@ -702,9 +702,13 @@ for (int i = 0; i < POLAND_TS_NUM; ++i)
   fSetup.fSteps[i] = ReadGosip (fChannel, fSlave, POLAND_REG_STEPS_BASE + 4 * i);
   fSetup.fTimes[i] = ReadGosip (fChannel, fSlave, POLAND_REG_TIME_BASE + 4 * i);
 }
+
+// for errorcounters we have to scan token payload:
+int errcountstart = 4*(32 + fSetup.fSteps[0] * 32 + fSetup.fSteps[1] * 32 + fSetup.fSteps[2] * 32);
+
 for (int e = 0; e < POLAND_ERRCOUNT_NUM; ++e)
 {
-  fSetup.fErrorCounter[e] = ReadGosip (fChannel, fSlave, POLAND_REG_ERRCOUNT_BASE + 4 * e);
+  fSetup.fErrorCounter[e] = ReadGosip (fChannel, fSlave, errcountstart + 4 * e);
 }
 
 fSetup.fDACMode=ReadGosip (fChannel, fSlave, POLAND_REG_DAC_MODE);
