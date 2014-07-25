@@ -17,4 +17,5 @@ ena tcp
 x "sleep 1" 
 
 set fl 1
+set stream 1
 sta ac

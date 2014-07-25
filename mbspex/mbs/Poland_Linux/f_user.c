@@ -69,11 +69,14 @@
 
 // nr of slaves on SFP 0  1  2  3
 //                     |  |  |  |
-#define NR_SLAVES     {1, 1, 0, 0} 
+#define NR_SLAVES     {2, 0, 0, 0}
 
 #define STATISTIC   2000000
 
 #define DEBUG 1
+
+#define OFFSET_TRIGGER_TYPE 14         // trigger type that is used to read out offset registers
+
 
 #define WAIT_FOR_DATA_READY_TOKEN 1    // - waits until data is ready before
                                        //   sending data to PEXOR
@@ -116,6 +119,8 @@
 #define MAX_PAGE          10
 
 #define REG_CTRL       0x200000
+
+#define REG_QFW_OFFSET_BASE 0x200100
 
 #define RON  "\x1B[7m"
 #define RES  "\x1B[0m"
@@ -637,6 +642,11 @@ int f_user_readout (unsigned char   bh_trig_typ,
       }// for
       #endif // else SEQUENTIAL_TOKEN_SEND := parallel token send
 
+
+
+
+
+
       #ifndef DIRECT_DMA
       // read exploder/qfw data (sent by token mode to the pexor)
       // from pexor the pexor memory 
@@ -652,7 +662,10 @@ int f_user_readout (unsigned char   bh_trig_typ,
 
 #endif
           l_dat_len_sum[l_i] += 4; // wg. shizu !!??
-      
+
+          //printm (">>> token data len sum(sfp_%d)=%d bytes\n",l_i, l_dat_len_sum[l_i]);
+
+
           #ifdef PEXOR_PC_DRAM_DMA
 
           // choose burst size to accept max. 20% padding size
@@ -693,7 +706,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
 
           // setup DMA
           *pl_dma_burst_size  = l_burst_size;                          // in bytes
-
+          //printm (">>> burst size=%d bytes\n",l_burst_size);
           // transfer size must be adjusted to burst size
           if ( (l_dat_len_sum[l_i] % l_burst_size) != 0)
           {  
@@ -704,6 +717,8 @@ int f_user_readout (unsigned char   bh_trig_typ,
           {
             l_dma_trans_size = l_dat_len_sum[l_i];
           }      
+          //printm (">>> DMA transfer size=%d bytes\n",l_dma_trans_size);
+
           *pl_dma_trans_size  =  l_dma_trans_size;   
 
           // source address is (must be) adjusted to burst size ! 
@@ -719,6 +734,8 @@ int f_user_readout (unsigned char   bh_trig_typ,
           {
             *pl_dma_target_base = (long) pl_dat + l_diff_pipe_phys_virt;
           }
+//          printm (">>> Padding length (sfp_%d)=%d bytes\n",l_i,l_padd[l_i]);
+//          printm (">>> DMA target address =  0x%x bus (0x%x virt.)\n",*pl_dma_target_base, *pl_dma_target_base - l_diff_pipe_phys_virt);
 
           // do dma transfer pexor memory -> pc dram (sub-event pipe)
           *pl_dma_stat = 1;    // start dma
@@ -754,13 +771,16 @@ int f_user_readout (unsigned char   bh_trig_typ,
           l_padd[l_i] = l_padd[l_i] >> 2;                  // now in 4 bytes (longs) 
           for (l_k=0; l_k<l_padd[l_i]; l_k++)
           {
+             //printm (">>> Fill padding pattern at 0x%x with 0x%x ,l_k=%d times\n",pl_dat, l_padd[l_i],l_k);
             //*pl_dat++ = 0xadd00000 + (l_i*0x1000) + l_k;
             *pl_dat++ = 0xadd00000 + (l_padd[l_i]<<8) + l_k;
+
           }
           // increment pl_dat with true transfer size (not dma transfer size)
           // true transfer size expected and must be 4 bytes aligned
           l_dat_len_sum_long[l_i] = (l_dat_len_sum[l_i] >> 2);
-          pl_dat += l_dat_len_sum_long[l_i];      
+          pl_dat += l_dat_len_sum_long[l_i];
+          //printm (">>> Incremented pl_dat with 0x%x words to 0x%x \n",l_dat_len_sum_long[l_i], pl_dat);
 
           #else // PEXOR_PC_DRAM_DMA 
 
@@ -825,12 +845,12 @@ int f_user_readout (unsigned char   bh_trig_typ,
     while (pl_tmp < pl_dat)
     {
       //sleep (1);
-      //printm ("             while start \n");
+    //printm ("             while start \n");
       l_dat = *pl_tmp++;   // must be padding word or channel header
       //printm ("l_dat 0x%x \n", l_dat);
       if ( (l_dat & 0xfff00000) == 0xadd00000 ) // begin of padding 4 byte words
       {
-        //printm ("padding found \n");
+       // printm ("padding found \n");
         l_dat = (l_dat & 0xff00) >> 8;
         pl_tmp += l_dat - 1;  // increment by pointer by nr. of padding  4byte words 
       }
@@ -891,6 +911,35 @@ bad_event:
       l_check_err--;
     }  
     break;
+
+    case OFFSET_TRIGGER_TYPE:
+      // for the moment we use start acq trigger 14 here
+
+      for (l_i = 0; l_i < MAX_SFP; l_i++)
+      {
+        // read registers to subevent:
+        for (l_j = 0; l_j < l_sfp_slaves[l_i]; l_j++)
+        {
+          // put header here to indicate sfp and slave:
+             printm ("oooooooo Offest readout for spf:%d slave:%d\n", l_i, l_j);
+             l_cha_head=0x42 + (l_i << 12) + (l_j << 16) + (bh_trig_typ << 8);
+              printm ("oooooooo Use data header :0x%x \n", l_cha_head);
+            *pl_dat++= l_cha_head;
+          for (l_k = 0; l_k < 32; l_k++)
+          {
+            l_stat = f_pex_slave_rd (l_i, l_j, REG_QFW_OFFSET_BASE + 4*l_k, pl_dat++);
+            printm ("oooooooo Read offset %d: 0x%x \n", l_k, *(pl_dat - 1));
+          }
+        }
+      }
+      *l_se_read_len = (long)pl_dat - (long)pl_dat_save;
+
+      break;
+
+
+
+
+
 
     case 15:
     l_tog = 1;
