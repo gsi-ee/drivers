@@ -19,7 +19,7 @@ static DEVICE_ATTR(dmaregs, S_IRUGO, pex_sysfs_dmaregs_show, NULL);
 static DEVICE_ATTR(sfpregs, S_IRUGO, pex_sysfs_sfpregs_show, NULL);
 #endif
 
-/* hold full device number */
+/** hold full device number */
 static dev_t pex_devt;
 static atomic_t pex_numdevs=ATOMIC_INIT(0);
 static int my_major_nr = 0;
@@ -819,13 +819,14 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 #endif
 
     struct pex_privdata *privdata;
-    pex_dbg((KERN_INFO "BEGIN pex_ioctl \n"));
+
     privdata = (struct pex_privdata*) filp->private_data;
+     pex_dbg((KERN_INFO "BEGIN pex_ioctl... \n"));
 
     /* use semaphore to allow multi user mode:*/
     if (down_interruptible(&(privdata->ioctl_sem)))
     {
-      pex_msg((KERN_INFO "down interruptible of ioctl sem is not zero, restartsys!\n"));
+      pex_dbg((KERN_INFO "down interruptible of ioctl sem is not zero, restartsys!\n"));
       return -ERESTARTSYS;
     }
     switch (cmd)
@@ -927,12 +928,13 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         case PEX_IOC_WAIT_SEM:
                    pex_dbg(KERN_INFO " before WAIT_SEM \n");
                    up(&privdata->ioctl_sem); /* do not lock ioctl during wait for next trigger*/
+                   pex_dbg(KERN_INFO " after up ioctl_sem WAIT_SEM \n");
                    if (down_interruptible(&(privdata->trix_sem))){
-                     pex_msg((KERN_INFO "down interruptible of trix  sem is not zero, restartsys!\n"));
+                     pex_dbg((KERN_INFO "down interruptible of trix  sem is not zero, restartsys!\n"));
                      return -ERESTARTSYS; /* JAM avoid possible hangup of m_read_meb when killed by resl*/
                     }
                      privdata->trix_val = 0;
-                   pex_dbg((KERN_INFO " after  WAIT_SEM \n"));
+                   pex_dbg((KERN_INFO " after  WAIT_SEM, returning now\n"));
                    return retval;
                    break;
         case POLL_SEM:
@@ -982,6 +984,7 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         }
     pex_dbg((KERN_INFO "END   pex_ioctl \n"));
     up(&privdata->ioctl_sem);
+
     return retval;
 }
 

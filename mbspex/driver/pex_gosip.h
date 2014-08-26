@@ -1,4 +1,4 @@
-/*
+/** \file
  * pex_gosip.h
  *
  *      definitions and functions for pex boards with trixor and gosip protocol
@@ -84,9 +84,9 @@
 #define PEX_SFP_TK_MEM_2 0x180000
 #define PEX_SFP_TK_MEM_3 0x1c0000
 
-#define PEX_SFP_TK_MEM_RANGE 0xFFFC /* length of each sfp port mem*/
+#define PEX_SFP_TK_MEM_RANGE 0xFFFC /**< length of each sfp port mem*/
 
-/* command and reply masks:*/
+/** command and reply masks:*/
 #define PEX_SFP_PT_AD_R_REQ 0x240
 #define PEX_SFP_PT_AD_W_REQ 0x644
 
@@ -123,36 +123,36 @@
 
 
 
-/* this structure contains pointers to sfp registers:*/
+/** this structure contains pointers to sfp registers:*/
 struct pex_sfp
 {
-  u32 *version;                 /* Program date and version */
-  u32 *req_comm;                /* Request command */
-  u32 *req_addr;                /* Request address */
-  u32 *req_data;                /* Request data */
-  u32 *rep_stat_clr;            /* Reply status flags and clear for all sfp */
-  u32 *rep_stat[PEX_SFP_NUMBER];      /* Reply status for sfp 0...3 */
-  u32 *rep_addr[PEX_SFP_NUMBER];      /* Reply adresses for sfp 0...3 */
-  u32 *rep_data[PEX_SFP_NUMBER];      /* Reply data for sfp 0...3 */
-  u32 *rx_moni;                 /* Receive monitor */
-  u32 *tx_stat;                 /* Transmit status */
-  u32 *reset;                   /* rx/tx reset */
-  u32 *disable;                 /* disable sfps */
-  u32 *fault;                   /* fault flags */
-  u32 *fifo[PEX_SFP_NUMBER];  /* debug access to fifos of sfp 0...3 */
-  u32 *tk_stat[PEX_SFP_NUMBER];       /* token reply status of sfp 0...3 */
-  u32 *tk_head[PEX_SFP_NUMBER];       /* token reply header of sfp 0...3 */
-  u32 *tk_foot[PEX_SFP_NUMBER];       /* token reply footer of sfp 0...3 */
-  u32 *tk_dsize[PEX_SFP_NUMBER];      /* token datasize(byte) of sfp 0...3 */
-  u32 *tk_dsize_sel[PEX_SFP_NUMBER];  /* selects slave module ID in sfp 0...3
+  u32 *version;                 /**< Program date and version */
+  u32 *req_comm;                /**< Request command */
+  u32 *req_addr;                /**< Request address */
+  u32 *req_data;                /**< Request data */
+  u32 *rep_stat_clr;            /**< Reply status flags and clear for all sfp */
+  u32 *rep_stat[PEX_SFP_NUMBER];      /**< Reply status for sfp 0...3 */
+  u32 *rep_addr[PEX_SFP_NUMBER];      /**< Reply adresses for sfp 0...3 */
+  u32 *rep_data[PEX_SFP_NUMBER];      /**< Reply data for sfp 0...3 */
+  u32 *rx_moni;                 /**< Receive monitor */
+  u32 *tx_stat;                 /**< Transmit status */
+  u32 *reset;                   /**< rx/tx reset */
+  u32 *disable;                 /**< disable sfps */
+  u32 *fault;                   /**< fault flags */
+  u32 *fifo[PEX_SFP_NUMBER];  /**< debug access to fifos of sfp 0...3 */
+  u32 *tk_stat[PEX_SFP_NUMBER];       /**< token reply status of sfp 0...3 */
+  u32 *tk_head[PEX_SFP_NUMBER];       /**< token reply header of sfp 0...3 */
+  u32 *tk_foot[PEX_SFP_NUMBER];       /**< token reply footer of sfp 0...3 */
+  u32 *tk_dsize[PEX_SFP_NUMBER];      /**< token datasize(byte) of sfp 0...3 */
+  u32 *tk_dsize_sel[PEX_SFP_NUMBER];  /**< selects slave module ID in sfp 0...3
                                            for reading token datasize */
-  u32 *tk_memsize[PEX_SFP_NUMBER];    /* memory size filled by token
+  u32 *tk_memsize[PEX_SFP_NUMBER];    /**< memory size filled by token
                                            data transfer for sfp 0...3 */
-  u32 *tk_mem[PEX_SFP_NUMBER];        /* memory area filled by token
+  u32 *tk_mem[PEX_SFP_NUMBER];        /**< memory area filled by token
                                            data transfer for sfp 0...3 */
-  dma_addr_t tk_mem_dma[PEX_SFP_NUMBER];  /* token data memory area
+  dma_addr_t tk_mem_dma[PEX_SFP_NUMBER];  /**< token data memory area
                                                expressed as dma bus address */
-  int num_slaves[PEX_SFP_NUMBER]; /* number of initialized slaves, for bus broadcast*/
+  int num_slaves[PEX_SFP_NUMBER]; /**< number of initialized slaves, for bus broadcast*/
 };
 
 
@@ -160,47 +160,47 @@ void set_sfp(struct pex_sfp *sfp, void *membase, unsigned long bar);
 void print_sfp(struct pex_sfp *sfp);
 void pex_show_version(struct pex_sfp *sfp, char *buf);
 
-/* issue receive reset for all sfps*/
+/** issue receive reset for all sfps*/
 void pex_sfp_reset( struct pex_privdata* privdata);
 
-/* send request command comm to sfp address addr with optional send data.
+/** send request command comm to sfp address addr with optional send data.
  * will not wait for response! */
 void pex_sfp_request(struct pex_privdata *privdata, u32 comm, u32 addr,
                        u32 data);
 
-/* wait for sfp reply on channel ch.
+/** wait for sfp reply on channel ch.
  * return values are put into comm, addr, and data.
  * checkvalue specifies which return type is expected;
  * will return error if not matching */
 int pex_sfp_get_reply(struct pex_privdata *privdata, int ch, u32 * comm,
                         u32 * addr, u32 * data, u32 checkvalue);
 
-/* wait for sfp token reply on channel ch.
+/** wait for sfp token reply on channel ch.
  * return values are put into stat, head, and foot. */
 int pex_sfp_get_token_reply(struct pex_privdata *privdata, int ch,
                               u32 * stat, u32 * head, u32 * foot);
 
 
 
-/* initialize the connected slaves on sfp channel ch */
+/** initialize the connected slaves on sfp channel ch */
 int pex_sfp_init_request(struct pex_privdata *privdata, int ch,
                            int numslaves);
 
 
-/* clear all sfp connections and wait until complete.
+/** clear all sfp connections and wait until complete.
  * return value specifies error if not 0 */
 int pex_sfp_clear_all(struct pex_privdata *privdata);
 
-/* clear sfp channel ch and wait for success
+/** clear sfp channel ch and wait for success
  * return value specifies error if not 0 */
 int pex_sfp_clear_channel(struct pex_privdata *privdata, int ch);
 
-/* clear sfp channel pattern pat before broadcast and wait for success
+/** clear sfp channel pattern pat before broadcast and wait for success
  * return value specifies error if not 0 */
 int pex_sfp_clear_channelpattern(struct pex_privdata *privdata, int pat);
 
 
-/* Initiate reading a token buffer from sfp front end hardware.
+/** Initiate reading a token buffer from sfp front end hardware.
  * In synchronous mode, will block until transfer is done and delivers back dma buffer with token data.
  * In asynchronous mode, function returns immediately after token request;
  * user needs to ioctl a wait token afterwards.
@@ -208,36 +208,36 @@ int pex_sfp_clear_channelpattern(struct pex_privdata *privdata, int pat);
 int pex_ioctl_request_token(struct pex_privdata *priv, unsigned long arg);
 
 
-/* Waits for a token to arrive previously requested by
+/** Waits for a token to arrive previously requested by
  * an asynchronous ioctl request token
  * Setup and data contained in user arg structure */
 int pex_ioctl_wait_token(struct pex_privdata *priv, unsigned long arg);
 
 
-/* initialize sfp fieldbus of frontends*/
+/** initialize sfp fieldbus of frontends*/
 int pex_ioctl_init_bus(struct pex_privdata* priv, unsigned long arg);
 
 
-/* write to sfp fieldbus of frontends*/
+/** write to sfp fieldbus of frontends*/
 int pex_ioctl_write_bus(struct pex_privdata* priv, unsigned long arg);
 
-/* read from sfp fieldbus of frontends*/
+/** read from sfp fieldbus of frontends*/
 int pex_ioctl_read_bus(struct pex_privdata* priv, unsigned long arg);
 
-/* write list of configuration parameters to frontends*/
+/** write list of configuration parameters to frontends*/
 int pex_ioctl_configure_bus(struct pex_privdata* priv, unsigned long arg);
 
-/* pass information about configured slaves to user*/
+/** pass information about configured slaves to user*/
 int pex_ioctl_get_sfp_links(struct pex_privdata* privdata, unsigned long arg);
 
-/* write values as specified in data to frontend and optionally treat broadcast write
+/** write values as specified in data to frontend and optionally treat broadcast write
  * if sfp or slave numbers are negative*/
 int pex_sfp_broadcast_write_bus(struct pex_privdata* priv, struct pex_bus_io* data);
 
-/* write values as specified in data to frontends*/
+/** write values as specified in data to frontends*/
 int pex_sfp_write_bus(struct pex_privdata* priv, struct pex_bus_io* data);
 
-/* read values as specified in data to frontends. results are in data structure*/
+/** read values as specified in data to frontends. results are in data structure*/
 int pex_sfp_read_bus(struct pex_privdata* priv, struct pex_bus_io* data);
 
 

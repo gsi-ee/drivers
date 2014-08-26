@@ -1,4 +1,4 @@
-/*
+/***
  * pexor_common.h
  *
  *  Created on: 08.04.2014
@@ -28,7 +28,7 @@
 
 #include <linux/wait.h>
 
-/*
+/**
 #include <asm/uaccess.h>
 #include <asm/atomic.h>
 #include <asm/io.h>
@@ -41,7 +41,7 @@
 
 #include "pex_user.h"
 
-/* ids for pexor card:*/
+/** ids for pexor card:*/
 #define PEXOR_VENDOR_ID 0x1204
 #define PEXOR_DEVICE_ID 0x5303
 
@@ -63,12 +63,12 @@
 //#define PEX_DEBUGPRINT 1
 
 
-/* maximum number of devices controlled by this driver*/
+/** maximum number of devices controlled by this driver*/
 #define PEX_MAXDEVS 4
 
 ///////////////////////////////////77
 
-/* enable usage of TRIXOR */
+/** enable usage of TRIXOR */
 #define PEX_WITH_TRIXOR 1
 
 
@@ -78,18 +78,18 @@
 
 
 
-/* timeout for ir wait queue, set to 5 s for slow poland tests */
+/** timeout for ir wait queue, set to 5 s for slow poland tests */
 #define PEX_WAIT_TIMEOUT (5*HZ)
-/* maximum number of timeouts before wait loop terminates*/
+/** maximum number of timeouts before wait loop terminates*/
 #define PEX_WAIT_MAXTIMEOUTS 20
 
-/* maximum number of polling cycles for dma complete bit*/
+/** maximum number of polling cycles for dma complete bit*/
 #define PEX_DMA_MAXPOLLS 10000
 
-/* polling delay for each cycle in ns for dma complete bit*/
+/** polling delay for each cycle in ns for dma complete bit*/
 #define PEX_DMA_POLLDELAY 20
 
-/* if set, we use a schedule() in the dma complete polling.
+/** if set, we use a schedule() in the dma complete polling.
  * Note: according to linux kernel book, yield() will just prepare this
  * task to be scheduled in near future, but schedule() will initiate the
  * schedule directly*/
@@ -100,10 +100,10 @@
 
 #define PEX_ENABLE_IRQ 1
 
-/* use waitqueue after isr instead of semaphore
+/** use waitqueue after isr instead of semaphore
  * NOTE: this does not make sense with mbs/pipe, because we do
  * not have automatic dma readout to kernel buffer queue as in dabc driver here!*/
-/*#define PEX_IRQ_WAITQUEUE 1*/
+/**#define PEX_IRQ_WAITQUEUE 1*/
 
 #define PEX_SYSFS_ENABLE 1
 
