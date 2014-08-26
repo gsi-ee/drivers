@@ -17,7 +17,7 @@ namespace pexor {
 class Buffer {
 public:
 
-	/* specify buffer length in bytes here
+	/** specify buffer length in bytes here
 	 * Note that all pexor buffers will be set to multiples of system PAGESIZE (4k)
 	 * so actual size is probably larger than constructor parameter*/
 	Buffer(size_t bytes);
@@ -25,11 +25,11 @@ public:
 
 	virtual ~Buffer();
 
-	/* utility to calculate size of next memory page above bytes.*/
+	/** utility to calculate size of next memory page above bytes.*/
 	static size_t NextPageSize(size_t bytes);
 
 
-	/* return pointer into buffer at position (integer counts)
+	/** return pointer into buffer at position (integer counts)
 	 * returns 0 if position is out of range
 	 * TODO: exceptions?*/
 	int* Cursor(int position)
@@ -73,7 +73,7 @@ public:
 
 
 
-     /* buffer compare operator. Each mismatching buffer element (integer) will store its index
+     /** buffer compare operator. Each mismatching buffer element (integer) will store its index
       * in error indices list, thus incrementing error counter=length of this list*/
      bool operator==(const pexor::Buffer &other);
 
@@ -83,28 +83,28 @@ public:
     		 }
 
 
-     /* Returns number of errors found in the previous compare operation by operator== .
+     /** Returns number of errors found in the previous compare operation by operator== .
       * if printstats is true, will print info about error statistics to current logger*/
      int ShowCompareErrors(bool printstats=true);
 
 
-     /* assignment operator for deep copy of contents*/
+     /** assignment operator for deep copy of contents*/
     pexor::Buffer  &operator=(const pexor::Buffer &source);
 
 
 
 protected:
 
-	/* begin of Data field*/
+	/** begin of Data field*/
 	int* fData;
 
-	/* allocated size in bytes*/
+	/** allocated size in bytes*/
 	size_t fSize;
 
-	/* optional used size */
+	/** optional used size */
 	size_t fUsedSize;
 
-	/* indices of mismatching data elements from last compare operation.
+	/** indices of mismatching data elements from last compare operation.
 	 * size is number of errors*/
 	std::vector<int> fErrorIndices;
 

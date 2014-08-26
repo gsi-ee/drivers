@@ -1,4 +1,5 @@
-/*
+/**
+ * \file
  * DMA_Buffer.h
  *
  *  Created on: 27.01.2010
@@ -19,10 +20,10 @@ class DMA_Buffer: public pexor::Buffer
 {
 public:
 
-	/* need reference to device that maps the buffers*/
+	/** need reference to device that maps the buffers*/
 	DMA_Buffer(pexor::Board* device, size_t length);
 
-	/* construct just a wrapper for already dma mapped sg buffer.
+	/** construct just a wrapper for already dma mapped sg buffer.
 	 * Avoid managing everything with pexor pools by this*/
 	DMA_Buffer(int* ptr, size_t length);
 

@@ -1,4 +1,5 @@
 /*
+ * \file
  * pexor_common.h
  *
  *  Created on: 08.02.2011

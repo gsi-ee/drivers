@@ -1,4 +1,5 @@
 /*
+ * \file
  * pexor_gos.h
  *
  *      definitions and functions for pexor with trixor and gosip protocol
@@ -12,31 +13,31 @@
 
 #ifndef PEXOR_WITH_TRBNET
 
-/* enable usage of SFP */
+/** enable usage of SFP */
 #define PEXOR_WITH_SFP 1
 
-/* enable usage of TRIXOR */
-#define PEXOR_WITH_TRIXOR 1
+/** enable usage of TRIXOR */
+/*#define PEXOR_WITH_TRIXOR 1*/
 
 
-#define PEXOR_DRAM		0x100000 /* use the first SFP port for DMA testing here*/
-#define PEXOR_RAMSIZE   0xFFFC  /* test covers first sfp port range here*/
+#define PEXOR_DRAM		0x100000 /**< use the first SFP port for DMA testing here*/
+#define PEXOR_RAMSIZE   0xFFFC  /**< test covers first sfp port range here*/
 
 
 #define PEXOR_BURST			0x80
 #define PEXOR_BURST_MIN		0x10
 
-/* DMA registers and commands:*/
+/** DMA registers and commands:*/
 #define PEXOR_DMA_BASE      	0x20000
 #define PEXOR_DMA_SRC			0x00
 #define PEXOR_DMA_DEST			0x04
 #define PEXOR_DMA_LEN			0x08
 #define PEXOR_DMA_BURSTSIZE		0x0C
-#define PEXOR_DMA_CTRLSTAT		0x10 /* control, 1:-start*/
+#define PEXOR_DMA_CTRLSTAT		0x10 /**< control, 1:-start*/
 
 
 
- /*OLD REGISTERS pexor 1*/
+ /**OLD REGISTERS pexor 1*/
 
 #define PEXOR_IRQ_CTRL			PEXOR_DMA_BASE + 0x14
 #define PEXOR_IRQ_STAT		        PEXOR_DMA_BASE + 0x18
@@ -49,10 +50,10 @@
 #define PEXOR_TRIX_FCTI 0x08
 #define PEXOR_TRIX_CVTI 0x0C
 
-/* definitions for TRIXOR status and control register
+/** definitions for TRIXOR status and control register
  * taken from mbs driver trig_cam.h*/
 
-/*--- status register bits ---------*/
+/**--- status register bits ---------*/
 #define TRIX_DT_CLEAR     0x00000020
 #define TRIX_IRQ_CLEAR    0x00001000
 #define TRIX_DI_CLEAR     0x00002000
@@ -60,7 +61,7 @@
 #define TRIX_EON          0x00008000
 #define TRIX_FC_PULSE     0x00000010
 
-/*--- control register bits --------*/
+/**--- control register bits --------*/
 #define TRIX_MASTER     0x00000004
 #define TRIX_SLAVE      0x00000020
 #define TRIX_HALT       0x00000010
@@ -82,8 +83,8 @@
 
 #define PEXOR_IRQ_USER_BIT TRIX_EON
 
-/* SFP registers and commands:*/
-#define PEXOR_SFP_NUMBER 4 /* number of used sfp connections*/
+/** SFP registers and commands:*/
+#define PEXOR_SFP_NUMBER 4 /**< number of used sfp connections*/
 
 #define PEXOR_SFP_BASE 0x21000
 
@@ -155,7 +156,7 @@
 #define PEXOR_SFP_TK_MEM_2 0x180000
 #define PEXOR_SFP_TK_MEM_3 0x1c0000
 
-#define PEXOR_SFP_TK_MEM_RANGE 0xFFFC /* length of each sfp port mem*/
+#define PEXOR_SFP_TK_MEM_RANGE 0xFFFC /**< length of each sfp port mem*/
 
 /* command and reply masks:*/
 #define PEXOR_SFP_PT_AD_R_REQ 0x240
@@ -196,33 +197,33 @@
 /* this structure contains pointers to sfp registers:*/
 struct pexor_sfp
 {
-  u32 *version;                 /* Program date and version */
-  u32 *req_comm;                /* Request command */
-  u32 *req_addr;                /* Request address */
-  u32 *req_data;                /* Request data */
-  u32 *rep_stat_clr;            /* Reply status flags and clear for all sfp */
-  u32 *rep_stat[PEXOR_SFP_NUMBER];      /* Reply status for sfp 0...3 */
-  u32 *rep_addr[PEXOR_SFP_NUMBER];      /* Reply adresses for sfp 0...3 */
-  u32 *rep_data[PEXOR_SFP_NUMBER];      /* Reply data for sfp 0...3 */
-  u32 *rx_moni;                 /* Receive monitor */
-  u32 *tx_stat;                 /* Transmit status */
-  u32 *reset;                   /* rx/tx reset */
-  u32 *disable;                 /* disable sfps */
-  u32 *fault;                   /* fault flags */
-  u32 *fifo[PEXOR_SFP_NUMBER];  /* debug access to fifos of sfp 0...3 */
-  u32 *tk_stat[PEXOR_SFP_NUMBER];       /* token reply status of sfp 0...3 */
-  u32 *tk_head[PEXOR_SFP_NUMBER];       /* token reply header of sfp 0...3 */
-  u32 *tk_foot[PEXOR_SFP_NUMBER];       /* token reply footer of sfp 0...3 */
-  u32 *tk_dsize[PEXOR_SFP_NUMBER];      /* token datasize(byte) of sfp 0...3 */
-  u32 *tk_dsize_sel[PEXOR_SFP_NUMBER];  /* selects slave module ID in sfp 0...3
+  u32 *version;                 /**< Program date and version */
+  u32 *req_comm;                /**< Request command */
+  u32 *req_addr;                /**< Request address */
+  u32 *req_data;                /**< Request data */
+  u32 *rep_stat_clr;            /**< Reply status flags and clear for all sfp */
+  u32 *rep_stat[PEXOR_SFP_NUMBER];      /**< Reply status for sfp 0...3 */
+  u32 *rep_addr[PEXOR_SFP_NUMBER];      /**< Reply adresses for sfp 0...3 */
+  u32 *rep_data[PEXOR_SFP_NUMBER];      /**< Reply data for sfp 0...3 */
+  u32 *rx_moni;                 /**< Receive monitor */
+  u32 *tx_stat;                 /**< Transmit status */
+  u32 *reset;                   /**< rx/tx reset */
+  u32 *disable;                 /**< disable sfps */
+  u32 *fault;                   /**< fault flags */
+  u32 *fifo[PEXOR_SFP_NUMBER];  /**< debug access to fifos of sfp 0...3 */
+  u32 *tk_stat[PEXOR_SFP_NUMBER];       /**< token reply status of sfp 0...3 */
+  u32 *tk_head[PEXOR_SFP_NUMBER];       /**< token reply header of sfp 0...3 */
+  u32 *tk_foot[PEXOR_SFP_NUMBER];       /**< token reply footer of sfp 0...3 */
+  u32 *tk_dsize[PEXOR_SFP_NUMBER];      /**< token datasize(byte) of sfp 0...3 */
+  u32 *tk_dsize_sel[PEXOR_SFP_NUMBER];  /**< selects slave module ID in sfp 0...3
                                            for reading token datasize */
-  u32 *tk_memsize[PEXOR_SFP_NUMBER];    /* memory size filled by token
+  u32 *tk_memsize[PEXOR_SFP_NUMBER];    /**< memory size filled by token
                                            data transfer for sfp 0...3 */
-  u32 *tk_mem[PEXOR_SFP_NUMBER];        /* memory area filled by token
+  u32 *tk_mem[PEXOR_SFP_NUMBER];        /**< memory area filled by token
                                            data transfer for sfp 0...3 */
-  dma_addr_t tk_mem_dma[PEXOR_SFP_NUMBER];  /* token data memory area
+  dma_addr_t tk_mem_dma[PEXOR_SFP_NUMBER];  /**< token data memory area
                                                expressed as dma bus address */
-  int num_slaves[PEXOR_SFP_NUMBER]; /* number of initialized slaves, for bus broadcast*/
+  int num_slaves[PEXOR_SFP_NUMBER]; /**< number of initialized slaves, for bus broadcast*/
 };
 
 
@@ -230,44 +231,44 @@ void set_sfp(struct pexor_sfp *sfp, void *membase, unsigned long bar);
 void print_sfp(struct pexor_sfp *sfp);
 void pexor_show_version(struct pexor_sfp *sfp, char *buf);
 
-/* issue receive reset for all sfps*/
+/** issue receive reset for all sfps*/
 void pexor_sfp_reset( struct pexor_privdata* privdata);
 
-/* send request command comm to sfp address addr with optional send data.
+/** send request command comm to sfp address addr with optional send data.
  * will not wait for response! */
 void pexor_sfp_request(struct pexor_privdata *privdata, u32 comm, u32 addr,
                        u32 data);
 
-/* wait for sfp reply on channel ch.
+/** wait for sfp reply on channel ch.
  * return values are put into comm, addr, and data.
  * checkvalue specifies which return type is expected;
  * will return error if not matching */
 int pexor_sfp_get_reply(struct pexor_privdata *privdata, int ch, u32 * comm,
                         u32 * addr, u32 * data, u32 checkvalue);
 
-/* wait for sfp token reply on channel ch.
+/** wait for sfp token reply on channel ch.
  * return values are put into stat, head, and foot. */
 int pexor_sfp_get_token_reply(struct pexor_privdata *privdata, int ch,
                               u32 * stat, u32 * head, u32 * foot);
 
 
 
-/* initialize the connected slaves on sfp channel ch */
+/** initialize the connected slaves on sfp channel ch */
 int pexor_sfp_init_request(struct pexor_privdata *privdata, int ch,
                            int numslaves);
 
 
-/* clear all sfp connections and wait until complete.
+/** clear all sfp connections and wait until complete.
  * return value specifies error if not 0 */
 int pexor_sfp_clear_all(struct pexor_privdata *privdata);
 
-/* clear sfp channel ch and wait for success
+/** clear sfp channel ch and wait for success
  * return value specifies error if not 0 */
 int pexor_sfp_clear_channel(struct pexor_privdata *privdata, int ch);
 
 
 
-/* Initiate reading a token buffer from sfp front end hardware.
+/** Initiate reading a token buffer from sfp front end hardware.
  * In synchronous mode, will block until transfer is done and delivers back dma buffer with token data.
  * In asynchronous mode, function returns immediately after token request;
  * user needs to ioctl a wait token afterwards.
@@ -275,41 +276,41 @@ int pexor_sfp_clear_channel(struct pexor_privdata *privdata, int ch);
 int pexor_ioctl_request_token(struct pexor_privdata *priv, unsigned long arg);
 
 
-/* Waits for a token to arrive previously requested by
+/** Waits for a token to arrive previously requested by
  * an asynchronous ioctl request token
  * Setup and data contained in user arg structure */
 int pexor_ioctl_wait_token(struct pexor_privdata *priv, unsigned long arg);
 
 
-/* Wait for a trigger interrupt from pexor. Will be raised from trixor board
+/** Wait for a trigger interrupt from pexor. Will be raised from trixor board
  * and routed to pci throug pexor driver. */
 int pexor_ioctl_wait_trigger(struct pexor_privdata *priv, unsigned long arg);
 
 
-/* initialize sfp fieldbus of frontends*/
+/** initialize sfp fieldbus of frontends*/
 int pexor_ioctl_init_bus(struct pexor_privdata* priv, unsigned long arg);
 
 
-/* write to sfp fieldbus of frontends*/
+/** write to sfp fieldbus of frontends*/
 int pexor_ioctl_write_bus(struct pexor_privdata* priv, unsigned long arg);
 
-/* read from sfp fieldbus of frontends*/
+/** read from sfp fieldbus of frontends*/
 int pexor_ioctl_read_bus(struct pexor_privdata* priv, unsigned long arg);
 
-/* write list of configuration parameters to frontends*/
+/** write list of configuration parameters to frontends*/
 int pexor_ioctl_configure_bus(struct pexor_privdata* priv, unsigned long arg);
 
-/* pass information about configured slaves to user*/
+/** pass information about configured slaves to user*/
 int pexor_ioctl_get_sfp_links(struct pexor_privdata* privdata, unsigned long arg);
 
-/* write values as specified in data to frontend and optionally treat broadcast write
+/** write values as specified in data to frontend and optionally treat broadcast write
  * if sfp or slave numbers are negative*/
 int pexor_sfp_broadcast_write_bus(struct pexor_privdata* priv, struct pexor_bus_io* data);
 
-/* write values as specified in data to frontends*/
+/** write values as specified in data to frontends*/
 int pexor_sfp_write_bus(struct pexor_privdata* priv, struct pexor_bus_io* data);
 
-/* read values as specified in data to frontends. results are in data structure*/
+/** read values as specified in data to frontends. results are in data structure*/
 int pexor_sfp_read_bus(struct pexor_privdata* priv, struct pexor_bus_io* data);
 
 
@@ -320,7 +321,7 @@ int pexor_sfp_read_bus(struct pexor_privdata* priv, struct pexor_bus_io* data);
 
 
 #ifdef PEXOR_WITH_TRIXOR
-/* set acquisition state of trixor trigger module extension.
+/** set acquisition state of trixor trigger module extension.
  * used to clear deadtime flag from user program and start/stop acquisition mode, etc.*/
 int pexor_ioctl_set_trixor(struct pexor_privdata* priv, unsigned long arg);
 #endif

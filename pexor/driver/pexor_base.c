@@ -1,9 +1,9 @@
 #include "pexor_base.h"
 
-/* hold full device number */
+/** hold full device number */
 static dev_t pexor_devt;
 
-/* counts number of probed pexor devices */
+/** counts number of probed pexor devices */
 /*static atomic_t pexor_numdevs;*/
 
 
@@ -2028,13 +2028,13 @@ int pexor_wait_dma_buffer(struct pexor_privdata* priv, struct pexor_dmabuf* resu
   /**
    * wait_event_interruptible_timeout - sleep until a condition gets true or a timeout elapses
    * The process is put to sleep (TASK_INTERRUPTIBLE) until the
-   * @condition evaluates to true or a signal is received.
-   * The @condition is checked each time the waitqueue @wq is woken up.
+   * condition evaluates to true or a signal is received.
+   * The condition is checked each time the waitqueue wq is woken up.
    *
    * wake_up() has to be called after changing any variable that could
    * change the result of the wait condition.
    *
-   * The function returns 0 if the @timeout elapsed, -ERESTARTSYS if it
+   * The function returns 0 if the timeout elapsed, -ERESTARTSYS if it
    * was interrupted by a signal, and the remaining jiffies otherwise
    * if the condition evaluated to true before the timeout elapsed.
    */

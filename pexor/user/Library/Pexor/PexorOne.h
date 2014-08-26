@@ -1,4 +1,5 @@
 /*
+ * \file
  * PexorOne.h
  *
  *  Created on: 27.01.2010
@@ -13,7 +14,7 @@
 
 namespace pexor {
 
-/*
+/**
  * Implements reduced functionality for the PEXOR 1 board
  * In principle no extras to the base functionality
  * */

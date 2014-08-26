@@ -1,4 +1,5 @@
-/*
+/**
+ * \file
  * Mutex.h
  *
  *  Created on: 02.02.2010
@@ -8,7 +9,7 @@
 #ifndef PEXOR_MUTEX_H_
 #define PEXOR_MUTEX_H_
 
-/*
+/**
  * These utility classes are for convenience, to provide an independent basic thread safety for object lists.
  * The code is completely taken from a part of the dabc/threads implementation.
  * If pexor is compiled together with dabc later, we replace pexor mutex and lockguard by typedefs to dabc classes.

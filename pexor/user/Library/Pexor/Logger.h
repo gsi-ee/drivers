@@ -1,4 +1,5 @@
-/*
+/**
+ * \file
  * Logger.h
  *
  *  Created on: 28.01.2010
@@ -53,7 +54,7 @@ MSG_WARN  = 2, 	// show warnings and errors only
 MSG_ERR = 3		// show errors only
 };
 
-/*
+/**
  * Interface for all debug and logging output
  * */
 class Logger {

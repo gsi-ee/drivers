@@ -1,4 +1,5 @@
 /*
+ * \file
  * Benchmark.h
  *
  *  Created on: 27.01.2010
@@ -32,7 +33,7 @@
 
 namespace pexor {
 
-/*
+/**
  * Contains collection of timer and clock tools for performance measurements
  */
 class Benchmark {
@@ -43,22 +44,22 @@ public:
 
 
 
-/* Inits and calibrates timer*/
+/** Inits and calibrates timer*/
 void TimerInit();
 
 
-/* resets start time value*/
+/** resets start time value*/
 void TimerStart();
 
-/* return value is seconds since TimerStart*/
+/** return value is seconds since TimerStart*/
 double TimerDelta();
 
 
 
-/* resets start time value of system realtime clock*/
+/** resets start time value of system realtime clock*/
 void ClockStart();
 
-/* return value is seconds since ClockStart*/
+/** return value is seconds since ClockStart*/
 double ClockDelta();
 
 

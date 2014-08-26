@@ -1,4 +1,5 @@
 /*
+ * \file
  * PexorTwo.h
  *
  *  Created on: 27.01.2010
@@ -13,7 +14,7 @@
 
 namespace pexor {
 
-/*
+/**
  * Implements functionality for the PEXOR 2/3 board
  * will add sfp related functionality for exploder etc.
  * */
@@ -28,7 +29,7 @@ public:
 	virtual ~PexorTwo();
 
 
-	/* Request next token buffer from all connected devices on channel.
+	/** Request next token buffer from all connected devices on channel.
 	 * bufid (0,1) will switch the double buffer id on frontends
 	 * if sync is true, method blocks until dma is complete and returns filled dma buffer
 	 * if sync is false, method returns before buffer is complete
@@ -38,7 +39,7 @@ public:
    pexor::DMA_Buffer* RequestToken(const unsigned long channel, const int bufid, bool sync=0, int* dmabuf=0, unsigned int woffset=0);
 
 
-   /* Wait until next token buffer has arrived for sfp channel
+   /** Wait until next token buffer has arrived for sfp channel
     * needs a previous RequestToken in async mode
     * For sg DMA, optionally we can specify pointer to desired receive buffer and a write offset within
 	 * this buffer to skip the mbs event headers in the DMA*/
@@ -46,29 +47,29 @@ public:
 
 
 
-   /* Wait until a trigger interrupt occurs, indicating that there is new data on the frontends
+   /** Wait until a trigger interrupt occurs, indicating that there is new data on the frontends
     * Returns true if trigger was fired within the timeout interval specified in the driver
     * Returns false if timeout was expired without getting trigger interrupt*/
     bool  WaitForTrigger();
 
-    /* Enable trigger module acquisition (send GO)*/
+    /** Enable trigger module acquisition (send GO)*/
     bool StartAcquisition();
 
-    /* Disable trigger module acquisition (send HALT)*/
+    /** Disable trigger module acquisition (send HALT)*/
     bool StopAcquisition();
 
-    /* reset trixor, i.e. clear deadtime flag of trigger module. After this call DAQ
+    /** reset trixor, i.e. clear deadtime flag of trigger module. After this call DAQ
      * will accept a new trigger*/
     bool ResetTrigger();
 
-    /* Set time windows for trigger module:
+    /** Set time windows for trigger module:
      * fast clear time, conversion time, see Trixor manual*/
     bool SetTriggerTimes(unsigned short fctime, unsigned short cvtime);
 
 
 protected:
 
-    /* utility to convert driver descriptor to matching pexor dma buffer container*/
+    /** utility to convert driver descriptor to matching pexor dma buffer container*/
     pexor::DMA_Buffer* PrepareReceivedBuffer(struct pexor_token_io & descriptor, int* dmabuf=0);
 
 
