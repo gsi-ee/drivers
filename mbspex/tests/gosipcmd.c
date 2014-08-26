@@ -1,8 +1,11 @@
-/*
- * Command line interface for gosip io protocol with mbxpex library
- * J.Adamczewski-Musch, gsi, 26-May_2014
+/**
+ * \file
+ *  Command line interface for gosip io protocol with mbxpex library
+ * \author J.Adamczewski-Musch (j.adamczewski@gsi.de)
+ * \date 26-Aug_2014
  *
  */
+
 
 #include "gosipcmd.h"
 #include <string.h>
