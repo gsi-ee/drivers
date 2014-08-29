@@ -32,23 +32,6 @@ pexorplugin::Input::~Input()
 
 }
 
-//void pexorplugin::Input::StartTransport()
-//{
-//	DOUT1(("StartTransport() %p\n", thread().GetObject()));
-//	fPexorDevice->StartTrigger();
-//	dabc::DataTransport::StartTransport();
-//
-//}
-//
-//void pexorplugin::Transport::StopTransport()
-//{
-//	DOUT1(("StopTransport() %p\n", thread().GetObject()));
-//	fPexorDevice->StopTrigger();
-//	dabc::DataTransport::StopTransport();
-//	DOUT1(("\npexorplugin::Transport stopped. total number of token errors: %7ld in %e s\n",  fErrorRate.GetNumOper(),  fErrorRate.GetTotalTime()));
-//
-//
-//}
 
 unsigned pexorplugin::Input::Read_Size()
 {
@@ -63,21 +46,25 @@ unsigned pexorplugin::Input::Read_Start(dabc::Buffer& buf)
 {
 	  DOUT2("Read_Start() with bufsize %d\n",buf.GetTotalSize());
 
-  if (fPexorDevice->IsTriggeredRead() || fPexorDevice->IsSynchronousRead())
-    {
-      return dabc::di_Ok; // synchronous mode, all handled in Read_Complete
-    }
-  else
-    {
-      int res = 0;
-      if (fPexorDevice->IsParallelRead())
-        {
-          res = fPexorDevice->RequestAllTokens(buf, false);
-        }
-      else
-        {
-          res = fPexorDevice->RequestToken(buf, false);
-        } // if parallel
+	 unsigned res=fPexorDevice->Read_Start(buf);
+
+
+//  if (fPexorDevice->IsTriggeredRead() || fPexorDevice->IsSynchronousRead())
+//    {
+//      return dabc::di_Ok; // synchronous mode, all handled in Read_Complete
+//    }
+//  else
+//    {
+//      int res = 0;
+////      if (fPexorDevice->IsParallelRead())
+////        {
+//      // on trigger, we always read all sfp channels! so always "parallel" mode for dabc
+//          res = fPexorDevice->RequestAllTokens(buf, false);
+//        }
+//      else
+//        {
+//          res = fPexorDevice->RequestToken(buf, false);
+//        } // if parallel
 
 // note: Read_Start() currently does not support skipping buffers or timeout
 //      if ((unsigned) res == dabc::di_SkipBuffer)
@@ -92,7 +79,7 @@ unsigned pexorplugin::Input::Read_Start(dabc::Buffer& buf)
 //             }
 
       return ((unsigned) res == dabc::di_Ok) ? dabc::di_Ok : dabc::di_Error;
-    } // if synchronous
+//    } // if synchronous
 
 }
 
@@ -100,31 +87,40 @@ unsigned pexorplugin::Input::Read_Start(dabc::Buffer& buf)
 unsigned pexorplugin::Input::Read_Complete(dabc::Buffer& buf)
 {
 	DOUT2("Read_Complete()\n");
-  int res = 0;
-  if (fPexorDevice->IsParallelRead())
-    {
-      if (fPexorDevice->IsTriggeredRead() || fPexorDevice->IsSynchronousRead())
-        {
-          res = fPexorDevice->RequestAllTokens(buf, false); // for parallel read, we need async request before polling
-          res = fPexorDevice->ReceiveAllTokenBuffer(buf);
-        }
-      else
-        {
-          res = fPexorDevice->ReceiveAllTokenBuffer(buf);
-        }
-    }
-  else
-    {
-      if (fPexorDevice->IsTriggeredRead() || fPexorDevice->IsSynchronousRead())
-        {
-          res = fPexorDevice->RequestToken(buf, true);
-        }
-      else
-        {
-          res = fPexorDevice->ReceiveTokenBuffer(buf);
-        }
-    }
-  if ((unsigned) res == dabc::di_SkipBuffer)
+/////////////////// Moved to device class //////////////////////////////////////////////////
+//  int res = 0;
+////  if (fPexorDevice->IsParallelRead())
+////    {
+//
+//    // on trigger, we always read all sfp channels! so always "parallel" mode for dabc
+//      if (fPexorDevice->IsTriggeredRead() || fPexorDevice->IsSynchronousRead())
+//        {
+//          res = fPexorDevice->RequestAllTokens(buf, false); // for parallel read, we need async request before polling
+//          res = fPexorDevice->ReceiveAllTokenBuffer(buf);
+//        }
+//      else
+//        {
+//          res = fPexorDevice->ReceiveAllTokenBuffer(buf);
+//        }
+/////////////////
+//    }
+//  else
+//    {
+//      if (fPexorDevice->IsTriggeredRead() || fPexorDevice->IsSynchronousRead())
+//        {
+//          res = fPexorDevice->RequestToken(buf, true);
+//        }
+//      else
+//        {
+//          res = fPexorDevice->ReceiveTokenBuffer(buf);
+//        }
+//    }
+
+
+
+      unsigned res=fPexorDevice->Read_Complete(buf);
+
+      if ((unsigned) res == dabc::di_SkipBuffer)
     {
       fErrorRate.Packet(buf.GetTotalSize());
       return dabc::di_SkipBuffer;

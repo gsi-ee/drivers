@@ -41,15 +41,11 @@ namespace pexorplugin {
 
          virtual double Read_Timeout() { return 10; }
 
-         //virtual void ProcessPoolChanged(dabc::MemoryPool* pool);
 
-         Device* fPexorDevice;
+         Device* fPexorDevice; //< reference to device object that does all actions
 
          dabc::Ratemeter      fErrorRate;
 
-         //virtual void StartTransport();
-
-         //virtual void StopTransport();
 
    };
 }
