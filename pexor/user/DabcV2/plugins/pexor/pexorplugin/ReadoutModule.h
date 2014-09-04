@@ -18,42 +18,29 @@
 
 #include "dabc/statistic.h"
 
-namespace pexorplugin {
+namespace pexorplugin
+{
 
-   class ReadoutModule : public dabc::ModuleAsync {
+class ReadoutModule: public dabc::ModuleAsync
+{
 
-      public:
+public:
 
-         ReadoutModule(const std::string name, dabc::Command cmd);
+  ReadoutModule (const std::string name, dabc::Command cmd);
 
-        virtual void BeforeModuleStart();
-        virtual void AfterModuleStop();
+  virtual void BeforeModuleStart ();
+  virtual void AfterModuleStop ();
 
-        virtual void ProcessInputEvent(unsigned port);
-        virtual void ProcessOutputEvent(unsigned port);
+  virtual void ProcessInputEvent (unsigned port);
+  virtual void ProcessOutputEvent (unsigned port);
 
+protected:
 
+  void DoPexorReadout ();
+  std::string fEventRateName;
+  std::string fDataRateName;
 
-
-      protected:
-
-
-
-		void DoPexorReadout();
-
-
-
-//         dabc::PoolHandle*    fInPool;
-//         dabc::PoolHandle*    fOutPool;
-
-         std::string        fEventRateName;
-         std::string        fDataRateName;
-
-//         bool fBnetMode;
-//         dabc::BufferSize_t   fBufferSize;
-
-
-   };
+};
 }
 
 #endif

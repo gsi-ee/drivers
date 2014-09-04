@@ -17,22 +17,24 @@
 #include "dabc/Factory.h"
 #include "pexorplugin/Commands.h"
 
+namespace pexorplugin
+{
 
-namespace pexorplugin {
+class Factory: public dabc::Factory
+{
+public:
 
-   class Factory: public dabc::Factory  {
-      public:
+  Factory (const std::string name) :
+      dabc::Factory (name)
+  {
+  }
 
-         Factory(const std::string name) : dabc::Factory(name) {}
+  virtual dabc::Module* CreateModule (const std::string& classname, const std::string& modulename, dabc::Command cmd);
 
-         //virtual dabc::Application* CreateApplication(const std::string classname, dabc::Command cmd);
+  virtual dabc::Device* CreateDevice (const std::string& classname, const std::string& devname, dabc::Command com);
+};
 
-         virtual dabc::Module* CreateModule(const std::string& classname, const std::string& modulename, dabc::Command cmd);
-
-         virtual dabc::Device* CreateDevice(const std::string& classname, const std::string& devname, dabc::Command com);
-   };
-
-}// namespace
+}    // namespace
 
 #endif
 

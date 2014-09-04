@@ -17,42 +17,34 @@
 #include "dabc/DataTransport.h"
 #include "dabc/statistic.h"
 
-namespace pexorplugin {
+namespace pexorplugin
+{
 
-   class Device;
-   class Input;
+class Device;
+class Input;
 
-   class Transport : public dabc::InputTransport {
-      friend class Device;
-      friend class Input;
+class Transport: public dabc::InputTransport
+{
+  friend class Device;
+  friend class Input;
 
-      public:
-         Transport(pexorplugin::Device*, pexorplugin::Input* inp, dabc::Command cmd, const dabc::PortRef& inpport);
-         virtual ~Transport();
+public:
+  Transport (pexorplugin::Device*, pexorplugin::Input* inp, dabc::Command cmd, const dabc::PortRef& inpport);
+  virtual ~Transport ();
 
-      protected:
+protected:
 
-//         virtual unsigned Read_Size();
-//
-//         virtual unsigned Read_Start(dabc::Buffer& buf);
-//
-//         virtual unsigned Read_Complete(dabc::Buffer& buf);
-//
-//         virtual double Read_Timeout() { return 10; }
+  virtual void ProcessPoolChanged (dabc::MemoryPool* pool);
 
-         virtual void ProcessPoolChanged(dabc::MemoryPool* pool);
+  pexorplugin::Device* fPexorDevice;
 
-         pexorplugin::Device* fPexorDevice;
+  pexorplugin::Input* fPexorInput;
 
-         pexorplugin::Input* fPexorInput;
+  virtual bool StartTransport ();
 
-//         dabc::Ratemeter      fErrorRate;
+  virtual bool StopTransport ();
 
-         virtual bool StartTransport();
-
-         virtual bool StopTransport();
-
-   };
+};
 }
 
 #endif

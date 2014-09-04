@@ -17,37 +17,38 @@
 #include "dabc/DataIO.h"
 #include "dabc/statistic.h"
 
-namespace pexorplugin {
+namespace pexorplugin
+{
 
-   class Device;
+class Device;
 
-   class Input : public dabc::DataInput {
-      friend class Device;
-      friend class Transport;
+class Input: public dabc::DataInput
+{
+  friend class Device;
+  friend class Transport;
 
-      public:
-         Input(pexorplugin::Device*);
-         virtual ~Input();
+public:
+  Input (pexorplugin::Device*);
+  virtual ~Input ();
 
+protected:
 
+  virtual unsigned Read_Size ();
 
-      protected:
+  virtual unsigned Read_Start (dabc::Buffer& buf);
 
-         virtual unsigned Read_Size();
+  virtual unsigned Read_Complete (dabc::Buffer& buf);
 
-         virtual unsigned Read_Start(dabc::Buffer& buf);
+  virtual double Read_Timeout ()
+  {
+    return 10;
+  }
 
-         virtual unsigned Read_Complete(dabc::Buffer& buf);
+  Device* fPexorDevice;    //< reference to device object that does all actions
 
-         virtual double Read_Timeout() { return 10; }
+  dabc::Ratemeter fErrorRate;
 
-
-         Device* fPexorDevice; //< reference to device object that does all actions
-
-         dabc::Ratemeter      fErrorRate;
-
-
-   };
+};
 }
 
 #endif

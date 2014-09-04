@@ -16,9 +16,6 @@
 
 #include "pexorplugin/Device.h"
 
-
-
-
 /** number of connected sfps*/
 #define PEXORPLUGIN_NUMSFP 4
 
@@ -35,38 +32,26 @@
 /** number of peaks in random spectrum*/
 #define NUM_PEAK 5
 
+namespace explodertest
+{
 
+extern const char* xmlExploderSubmem;    // exploder submem size for testbuffer
 
-namespace explodertest {
+class Device: public pexorplugin::Device
+{
 
-extern const char* xmlExploderSubmem; // exploder submem size for testbuffer
+public:
 
+  Device (const std::string& name, dabc::Command cmd);
+  virtual ~Device ();
 
+  virtual const char* ClassName () const
+  {
+    return "explodertest::Device";
+  }
+  virtual int ExecuteCommand (dabc::Command cmd);
 
-
-   class Device : public pexorplugin::Device {
-
-      public:
-
-         Device(const std::string& name, dabc::Command cmd);
-         virtual ~Device();
-
-
-
-
-
-         virtual const char* ClassName() const { return "explodertest::Device"; }
-
-
-
-         virtual int ExecuteCommand(dabc::Command cmd);
-
-
-
-
-
-
- /** Forwarded interface for user defined readout:
+  /** Forwarded interface for user defined readout:
    * User code may overwrite the default behaviour (gosip token dma)
    * For example, optionally some register settings may be added to buffer contents*/
   virtual unsigned Read_Start (dabc::Buffer& buf);
@@ -76,36 +61,33 @@ extern const char* xmlExploderSubmem; // exploder submem size for testbuffer
    * For example, optionally some register settings may be added to buffer contents*/
   virtual unsigned Read_Complete (dabc::Buffer& buf);
 
-      protected:
+protected:
 
-         /** fill token buffers of all slave devices with test event data*/
-         bool WriteTestBuffers();
+  /** fill token buffers of all slave devices with test event data*/
+  bool WriteTestBuffers ();
 
+  /** random event functions stolen from TGo4MbsRandom code:*/
+  double gauss_rnd (double mean, double sigma);
+  /** random event functions stolen from TGo4MbsRandom code:*/
+  double get_int (double low, double high);
+  /** random event functions stolen from TGo4MbsRandom code:*/
+  unsigned long Random_Event (int choice);
 
-         /** random event functions stolen from TGo4MbsRandom code:*/
-         double  gauss_rnd(double mean, double sigma);
-         double  get_int(double low, double high);
-         unsigned long  Random_Event(int choice);
+private:
 
+  /** fill token buffers of all slaves with generated test data*/
+  bool fTestData;
 
-      private:
+  /** size of each exploder submemory (byte). for test buffer set up*/
+  unsigned int fSubmemSize;
 
+  static double fgdPeak[];
+  static double fgdSigma[];
 
-      /** fill token buffers of all slaves with generated test data*/
-      bool fTestData;
+  unsigned int fuSeed;
 
-      /** size of each exploder submemory (byte). for test buffer set up*/
-      unsigned int fSubmemSize;
+};
 
-      static double fgdPeak[];
-      static double fgdSigma[];
-
-      unsigned int fuSeed;
-
-
-
-   };
-
-} // namespace
+}    // namespace
 
 #endif
