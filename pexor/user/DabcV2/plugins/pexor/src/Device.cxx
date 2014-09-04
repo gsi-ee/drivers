@@ -16,7 +16,7 @@
 #include "dabc/Manager.h"
 #include "dabc/Application.h"
 
-#include "mbs/MbsTypeDefs.h"
+//#include "mbs/MbsTypeDefs.h"
 //#include "mbs/Factory.h"
 
 //#include "dabc/MemoryPool.h"
@@ -41,27 +41,35 @@
 
 
 
-const char* pexorplugin::xmlPexorID    = "PexorID"; // id number N of pexor device file /dev/pexor-N
-const char* pexorplugin::xmlPexorSFPSlaves	= "PexorNumSlaves_"; // prefix for the sfp numbers 0,1,2,3 indicating how many slaves are connected input
-const char* pexorplugin::xmlRawFile    = "PexorOutFile"; // name of output lmd file
-const char* pexorplugin::xmlDMABufLen	= "PexorDMALen"; // length of DMA buffers to allocate in driver
-const char* pexorplugin::xmlDMABufNum	= "PexorDMABuffers"; // number of DMA buffers to allocate in driver
-const char* pexorplugin::xmlDMAScatterGatherMode ="PexorDMAScatterGather"; // sg mode switch
-const char* pexorplugin::xmlDMAZeroCopy ="PexorDMAZeroCopy"; // sg mode switch
-const char* pexorplugin::xmlFormatMbs	= "PexorFormatMbs"; // switch Mbs formating already in transport buffer
-const char* pexorplugin::xmlSyncRead	= "PexorSyncReadout"; // switch readout sync mode
-//onst char* pexorplugin::xmlParallelRead	= "PexorParallelReadout"; // switch readout parallel token mode
-const char* pexorplugin::xmlTriggeredRead        = "PexorUseTrigger"; // switch trigger mode
-const char* pexorplugin::xmlTrixorConvTime      = "TrixorConversionTime"; // conversion time of TRIXOR module
-const char* pexorplugin::xmlTrixorFastClearTime = "TrixorFastClearTime"; // fast clear time of TRIXOR module
+const char* pexorplugin::xmlPexorID    = "PexorID"; //< id number N of pexor device file /dev/pexor-N
+const char* pexorplugin::xmlPexorSFPSlaves	= "PexorNumSlaves_"; //<  prefix for the sfp numbers 0,1,2,3 indicating how many slaves are connected input
+const char* pexorplugin::xmlRawFile    = "PexorOutFile"; //<  name of output lmd file
+const char* pexorplugin::xmlDMABufLen	= "PexorDMALen"; //<  length of DMA buffers to allocate in driver
+const char* pexorplugin::xmlDMABufNum	= "PexorDMABuffers"; //<  number of DMA buffers to allocate in driver
+const char* pexorplugin::xmlDMAScatterGatherMode ="PexorDMAScatterGather"; //<  sg mode switch
+const char* pexorplugin::xmlDMAZeroCopy ="PexorDMAZeroCopy"; //<  sg mode switch
+const char* pexorplugin::xmlFormatMbs	= "PexorFormatMbs"; //<  switch Mbs formating already in transport buffer
+const char* pexorplugin::xmlSingleMbsSubevt   = "PexorSingleMbsSubevent"; //<  use one single subevent for all sfps
+const char* pexorplugin::xmlMbsSubevtCrate   = "PexorMbsSubcrate"; //<  define crate number for subevent header
+const char* pexorplugin::xmlMbsSubevtControl   = "PexorMbsControl"; //<  define crate number for subevent header
+const char* pexorplugin::xmlMbsSubevtProcid   = "PexorMbsProcid"; //<  define procid number for subevent header
 
 
-//const char* pexorplugin::xmlExploderSubmem	= "ExploderSubmemSize"; // size of exploder submem test buffer
+const char* pexorplugin::xmlSyncRead	= "PexorSyncReadout"; //<  switch readout sync mode
+//onst char* pexorplugin::xmlParallelRead	= "PexorParallelReadout"; //<  switch readout parallel token mode
+const char* pexorplugin::xmlTriggeredRead        = "PexorUseTrigger"; //<  switch trigger mode
+const char* pexorplugin::xmlTrixorConvTime      = "TrixorConversionTime"; //<  conversion time of TRIXOR module
+const char* pexorplugin::xmlTrixorFastClearTime = "TrixorFastClearTime"; //<  fast clear time of TRIXOR module
 
-const char* pexorplugin::xmlModuleName	= "PexorModuleName"; // Name of readout module instance
-const char* pexorplugin::xmlModuleThread	= "PexorModuleThread"; // Name of thread for readout module
+
+
+
+//const char* pexorplugin::xmlExploderSubmem	= "ExploderSubmemSize"; //<  size of exploder submem test buffer
+
+const char* pexorplugin::xmlModuleName	= "PexorModuleName"; //<  Name of readout module instance
+const char* pexorplugin::xmlModuleThread	= "PexorModuleThread"; //< Name of thread for readout module
 const char* pexorplugin::xmlDeviceName		= "PexorDeviceName";
-const char* pexorplugin::xmlDeviceThread	= "PexorDeviceThread"; // Name of thread for readout module
+const char* pexorplugin::xmlDeviceThread	= "PexorDeviceThread"; //<  Name of thread for readout module
 
 const char* pexorplugin::nameReadoutAppClass   = "pexorplugin::ReadoutApplication";
 const char* pexorplugin::nameDeviceClass   = "pexorplugin::Device";
@@ -71,29 +79,21 @@ const char* pexorplugin::nameInputPool   =    "PexorInputPool";
 const char* pexorplugin::nameOutputPool   =    "PexorOutputPool";
 
 
-
-//double pexorplugin::Device::fgdPeak[NUM_PEAK]   = { 200., 400., 653., 1024., 2800.};
-//double pexorplugin::Device::fgdSigma[NUM_PEAK]  = {  10.,  5., 153.,  104.,   38.};
-
-
-
-
 unsigned int pexorplugin::Device::fgThreadnum=0;
 
 
 
 pexorplugin::Device::Device(const std::string& name, dabc::Command cmd):
-dabc::Device(name), fBoard(0),fMbsFormat(true), //fTestData(true),
-fSynchronousRead(true), //fParallelRead(true),
+dabc::Device(name), fBoard(0),fMbsFormat(true),
+fSingleSubevent(false), fSubeventSubcrate(0), fSubeventProcid(0), fSubeventControl(0),
+fSynchronousRead(true),
 fTriggeredRead(false), fMemoryTest(false),fSkipRequest(false),
 fCurrentSFP(0),fReadLength(0),
-//fSubmemSize(3600),
 fTrixConvTime(0x20), fTrixFClearTime(0x10),
 fInitDone(false),fNumEvents(0)
-//,fuSeed(0)
 
 {
-	fDeviceNum = Cfg(pexorplugin::xmlPexorID,cmd).AsInt(0);//GetCfgInt(pexorplugin::xmlPexorID, 0, cmd);
+	fDeviceNum = Cfg(pexorplugin::xmlPexorID,cmd).AsInt(0);
 	fBoard=new pexor::PexorTwo(fDeviceNum);
 	if(!fBoard->IsOpen())
 			{
@@ -101,9 +101,9 @@ fInitDone(false),fNumEvents(0)
 				delete fBoard;
 				return;
 			}
-	fZeroCopyMode=Cfg(pexorplugin::xmlDMAZeroCopy,cmd).AsBool(false); //GetCfgBool(pexorplugin::xmlDMAZeroCopy,false, cmd);
+	fZeroCopyMode=Cfg(pexorplugin::xmlDMAZeroCopy,cmd).AsBool(false);
 	DOUT1("Setting zero copy mode to %d\n", fZeroCopyMode);
-	bool sgmode=Cfg(pexorplugin::xmlDMAScatterGatherMode, cmd).AsBool(false); //GetCfgBool(pexorplugin::xmlDMAScatterGatherMode,false, cmd);
+	bool sgmode=Cfg(pexorplugin::xmlDMAScatterGatherMode, cmd).AsBool(false);
 	fBoard->SetScatterGatherMode(sgmode);
 	DOUT1("Setting scatter gather mode to %d\n", sgmode);
 	// initialize here the connected channels:
@@ -111,7 +111,7 @@ fInitDone(false),fNumEvents(0)
 	 for (int sfp=0; sfp<PEXORPLUGIN_NUMSFP; sfp++)
 		 {
 
-			 fNumSlavesSFP[sfp]=Cfg(dabc::format("%s%d",xmlPexorSFPSlaves, sfp), cmd).AsInt(0);//GetCfgInt(FORMAT(("%s%d",xmlPexorSFPSlaves, sfp)), false,cmd);
+			 fNumSlavesSFP[sfp]=Cfg(dabc::format("%s%d",xmlPexorSFPSlaves, sfp), cmd).AsInt(0);
 			 fEnabledSFP[sfp] = fNumSlavesSFP[sfp]>0 ? true : false;
 			 DOUT1("Sfp %d is %s with %d slave devices.\n", sfp, (fEnabledSFP[sfp] ? "enabled" : "disabled"),  fNumSlavesSFP[sfp]);
 			 if(fEnabledSFP[sfp])
@@ -126,14 +126,14 @@ fInitDone(false),fNumEvents(0)
 					 fDoubleBufID[sfp]=0;
 				 }
 		 }
-	unsigned int size=Cfg(pexorplugin::xmlDMABufLen,cmd).AsInt(4096); //GetCfgInt(pexorplugin::xmlDMABufLen,4096, cmd);
+	unsigned int size=Cfg(pexorplugin::xmlDMABufLen,cmd).AsInt(4096);
     fReadLength=size; // initial value is maximum length of dma buffer
 	//fReadLength=33000;
     if(fZeroCopyMode)
     {
     	// TODO: map here dabc memory pool completely to driver
     	// we do nothing here, all is done when ProcessPoolChanged is invoked
-
+        // NOTE: zero copy not working anymore
     }
     else
     {
@@ -145,27 +145,16 @@ fInitDone(false),fNumEvents(0)
 				return;
 			}
     }
-   fMbsFormat=Cfg(pexorplugin::xmlFormatMbs,cmd).AsBool(true);//GetCfgBool(pexorplugin::xmlFormatMbs,true, cmd);
-
-
+   fMbsFormat=Cfg(pexorplugin::xmlFormatMbs,cmd).AsBool(true);
+   fSingleSubevent=Cfg(pexorplugin::xmlSingleMbsSubevt,cmd).AsBool(false);
+   fSubeventSubcrate=Cfg(pexorplugin::xmlMbsSubevtCrate,cmd).AsInt(0);
+   fSubeventProcid=Cfg(pexorplugin::xmlMbsSubevtProcid,cmd).AsInt(fDeviceNum);
+   fSubeventControl=Cfg(pexorplugin::xmlMbsSubevtControl,cmd).AsInt(0);
+   DOUT1("Setting mbsformat=%d, singlesubevent=%d, with subcrate:%d, procid:%d, control:%d\n",
+       fMbsFormat,fSingleSubevent, fSubeventSubcrate,fSubeventProcid, fSubeventControl);
    DOUT1("Created PEXOR device %d\n", fDeviceNum);
-   //fTestData=true; // TODO: configure this from XML once we have read data to fetch
-   //fTestData=GetCfgBool(pexorplugin::xml????,20, cmd);
-//   fSubmemSize=Cfg(pexorplugin::xmlExploderSubmem,cmd).AsInt(3600); //GetCfgInt(pexorplugin::xmlExploderSubmem,3600, cmd);
-//   if(fTestData)
-//	   {
-//		   if(!WriteTestBuffers())
-//		   {
-//			   EOUT("\n\nError writing token test buffers to pexor device %d \n",fDeviceNum);
-//			    return;
-//		   }
-//		   DOUT1(("Wrote Test data to slaves."));
-//	   }
 
    fSynchronousRead=Cfg(pexorplugin::xmlSyncRead,cmd).AsBool(true); //GetCfgBool(pexorplugin::xmlSyncRead,true, cmd);
-
-//   fParallelRead=Cfg(pexorplugin::xmlParallelRead,cmd).AsBool(false); //GetCfgBool(pexorplugin::xmlParallelRead,false, cmd);
-
    fTriggeredRead=Cfg(pexorplugin::xmlTriggeredRead,cmd).AsBool(false); //GetCfgBool(pexorplugin::xmlTriggeredRead,false, cmd);
 
    fTrixConvTime=Cfg(pexorplugin::xmlTrixorConvTime,cmd).AsInt(0x200);//GetCfgInt(pexorplugin::xmlTrixorConvTime,0x200, cmd)
@@ -177,7 +166,7 @@ fInitDone(false),fNumEvents(0)
    fMemoryTest=false; // put this to true to make memcopy performance test between driver buffer and dabc buffer
    fSkipRequest=false;
 
-   fInitDone=true;
+   //fInitDone=true; // do this in subclass after constructor has finnished.
 }
 
 pexorplugin::Device::~Device()
@@ -305,7 +294,6 @@ int pexorplugin::Device::ExecuteCommand(dabc::Command cmd)
 }
 
 dabc::Transport*  pexorplugin::Device::CreateTransport(dabc::Command cmd, const dabc::Reference& port)
-//int pexorplugin::Device::CreateTransport(dabc::Command* cmd, dabc::Port* port)
 {
    if(!fInitDone) return 0;
    //   dabc::Url url(typ);
@@ -493,17 +481,19 @@ int  pexorplugin::Device::CopyOutputBuffer(pexor::DMA_Buffer* tokbuf, dabc::Buff
   unsigned int filled_size = 0, used_size = 0;
   if (fMbsFormat)
     {
-
-      mbs::EventHeader* evhdr = (mbs::EventHeader*) ptr();
-      evhdr->Init(fNumEvents);
-      ptr.shift(sizeof(mbs::EventHeader));
+        mbs::EventHeader* evhdr=PutMbsEventHeader(ptr, fNumEvents);
+//      mbs::EventHeader* evhdr = (mbs::EventHeader*) ptr();
+//      evhdr->Init(fNumEvents);
+//      ptr.shift(sizeof(mbs::EventHeader));
       used_size += sizeof(mbs::EventHeader);
-      mbs::SubeventHeader* subhdr = (mbs::SubeventHeader*) ptr();
-      subhdr->Init();
-      subhdr->iProcId = fDeviceNum;
-      subhdr->iSubcrate = fCurrentSFP;
-      subhdr->iControl = 0;
-      ptr.shift(sizeof(mbs::SubeventHeader));
+      mbs::SubeventHeader* subhdr=PutMbsSubeventHeader(ptr,(fSingleSubevent ? fSubeventSubcrate : fCurrentSFP), fSubeventControl, fSubeventProcid);
+
+
+//      mbs::SubeventHeader* subhdr = (mbs::SubeventHeader*) ptr();
+//      subhdr->Init();
+//      subhdr->iProcId =   fSubeventProcid; //default: fDeviceNum;
+//      subhdr->iSubcrate = (fSingleSubevent ? fSubeventSubcrate : fCurrentSFP);
+//      subhdr->iControl = fSubeventControl;
       filled_size += sizeof(mbs::SubeventHeader);
       used_size += sizeof(mbs::SubeventHeader);
 
@@ -560,12 +550,30 @@ int  pexorplugin::Device::CombineTokenBuffers(pexor::DMA_Buffer** src, dabc::Buf
   DOUT3("pexorplugin::Device::CombineTokenBuffers initial pointer is 0x%x", ptr.ptr());
   unsigned int filled_size = 0, used_size = 0;
   mbs::EventHeader* evhdr=0;
+  mbs::SubeventHeader* subhdr=0;
   if (fMbsFormat)
     {
-      evhdr = (mbs::EventHeader*) ptr();
-      evhdr->Init(fNumEvents);
-      ptr.shift(sizeof(mbs::EventHeader));
+//      evhdr = (mbs::EventHeader*) ptr();
+//      evhdr->Init(fNumEvents);
+//      ptr.shift(sizeof(mbs::EventHeader));
+//
+      evhdr=PutMbsEventHeader(ptr,fNumEvents); // TODO: get current trigger type from trixor and set
       used_size += sizeof(mbs::EventHeader);
+      if(fSingleSubevent)
+      {
+          // one common subevent for data of all sfps:
+          subhdr=PutMbsSubeventHeader(ptr, fSubeventSubcrate, fSubeventControl, fSubeventProcid);
+          used_size   += sizeof(mbs::SubeventHeader);
+          filled_size += sizeof(mbs::SubeventHeader);
+          // here account for zero copy alignment: headers+int give 32 bytes before payload
+          // necessary for the explodertest unpacker up to now
+          ptr.shift(sizeof(int));
+          used_size   += sizeof(int);
+          filled_size += sizeof(int);
+          // TODO: do we need some padding words here for mbs tailored unpacker?
+          // TODO: can we switch this behaviour by parameter
+
+      }
     }
   DOUT3("pexorplugin::Device::CombineTokenBuffers output pointer after mbs header is 0x%x", ptr.ptr());
   for (int sfp = 0; sfp < PEXORPLUGIN_NUMSFP; ++sfp)
@@ -581,13 +589,12 @@ int  pexorplugin::Device::CombineTokenBuffers(pexor::DMA_Buffer** src, dabc::Buf
         }
   if (fMbsFormat)
       {
+        if(fSingleSubevent) subhdr->SetRawDataSize(filled_size - sizeof(mbs::SubeventHeader));
         evhdr->SetSubEventsSize(filled_size);
         buf.SetTypeId(mbs::mbt_MbsEvents);
       }
   buf.SetTotalSize(used_size);
   fNumEvents++;
-  //fReadLength = used_size; //adjust read length for next buffer to real token length
-  //return -5; // debug
   return used_size;
 
 }
@@ -597,15 +604,20 @@ int  pexorplugin::Device::CopySubevent(pexor::DMA_Buffer* tokbuf, dabc::Pointer&
 {
 	unsigned int filled_size=0;
 	DOUT2("pexorplugin::Device::CopySubevent has dma buffer 0x%x for sfp %d, output cursor pointer :0x%x", tokbuf, (int) sfpnum, cursor.ptr());
-	if(fMbsFormat)
+	if(fMbsFormat && !fSingleSubevent)
           {
-                  mbs::SubeventHeader* subhdr = (mbs::SubeventHeader*) cursor();
-                  subhdr->Init();
-                  subhdr->iProcId =   fDeviceNum;
-                  subhdr->iSubcrate = sfpnum;
-                  subhdr->iControl = 0;
-                  cursor.shift(sizeof(mbs::SubeventHeader));
-                  filled_size+=sizeof(mbs::SubeventHeader);
+	             mbs::SubeventHeader* subhdr=PutMbsSubeventHeader(cursor, sfpnum, fSubeventControl, fSubeventProcid);
+
+
+
+//                  mbs::SubeventHeader* subhdr = (mbs::SubeventHeader*) cursor();
+//                  subhdr->Init();
+//                  subhdr->iProcId =   fSubeventProcid; //default: fDeviceNum;
+//                  subhdr->iSubcrate = (fSingleSubevent ? fSubeventSubcrate : sfpnum);
+//                  subhdr->iControl = fSubeventControl;
+//                  cursor.shift(sizeof(mbs::SubeventHeader));
+
+	             filled_size+=sizeof(mbs::SubeventHeader);
                   // here account for zero copy alignment: headers+int give 32 bytes before payload
                   cursor.shift(sizeof(int));
                   filled_size += sizeof(int);
@@ -621,6 +633,28 @@ int  pexorplugin::Device::CopySubevent(pexor::DMA_Buffer* tokbuf, dabc::Pointer&
 
 	return filled_size;
 }
+
+mbs::EventHeader* pexorplugin::Device::PutMbsEventHeader(dabc::Pointer& ptr, mbs::EventNumType eventnumber, uint16_t trigger)
+{
+  mbs::EventHeader* evhdr= (mbs::EventHeader*) ptr();
+  evhdr->Init(eventnumber);
+  ptr.shift(sizeof(mbs::EventHeader));
+  return evhdr;
+}
+
+mbs::SubeventHeader* pexorplugin::Device::PutMbsSubeventHeader(dabc::Pointer& ptr, int8_t subcrate, int8_t control, int16_t procid)
+{
+  mbs::SubeventHeader* subhdr = (mbs::SubeventHeader*) ptr();
+  subhdr->Init();
+  subhdr->iProcId =   procid;
+  subhdr->iSubcrate = subcrate;
+  subhdr->iControl = control;
+  ptr.shift(sizeof(mbs::SubeventHeader));
+  return subhdr;
+}
+
+
+
 
 
 
@@ -659,7 +693,7 @@ unsigned pexorplugin::Device::Read_Complete (dabc::Buffer& buf)
        }
      else
        {
-       fReadLength= ReceiveAllTokenBuffer(buf);
+         fReadLength= ReceiveAllTokenBuffer(buf);
        }
    return (unsigned) res;
 }
@@ -669,198 +703,5 @@ unsigned pexorplugin::Device::Read_Complete (dabc::Buffer& buf)
 
 
 
-//bool  pexorplugin::Device::WriteTestBuffers()
-//{
-//	fuSeed=time(0);
-//	srand48(fuSeed);
-//	// loop over all connected sfps
-//	for(int ch=0; ch<PEXORPLUGIN_NUMSFP; ++ch)
-//	{
-//		if(!fEnabledSFP[ch]) continue;
-//		// loop over all slaves
-//		DOUT1("Writing test data for sfp %x ...\n", ch);
-//		for(unsigned int sl=0;sl<fNumSlavesSFP[ch];++sl)
-//		{
-//			int werrors=0;
-//			// get submemory addresses
-//			unsigned long base_dbuf0=0, base_dbuf1=0;
-//			unsigned long num_submem=0, submem_offset=0;
-//			unsigned long datadepth=fSubmemSize; // bytes per submemory
-//			int rev=fBoard->ReadBus(REG_BUF0, base_dbuf0, ch,sl);
-//			if(rev==0)
-//				{
-//				   DOUT1("Slave %x: Base address for Double Buffer 0  0x%x  \n", sl,base_dbuf0 );
-//				}
-//			else
-//				{
-//					EOUT("\n\ntoken Error %d in ReadBus: slave %x addr %x (double buffer 0 address)\n", rev, sl, REG_BUF0);
-//					return false;
-//				}
-//			rev=fBoard->ReadBus(REG_BUF1,base_dbuf1,ch,sl);
-//			if(rev==0)
-//				{
-//				   DOUT1("Slave %x: Base address for Double Buffer 1  0x%x  \n", sl,base_dbuf1 );
-//				}
-//			else
-//				{
-//				   EOUT("\n\ntoken Error %d in ReadBus: slave %x addr %x (double buffer 1 address)\n", rev, sl, REG_BUF1);
-//				   return false;
-//				}
-//			rev=fBoard->ReadBus(REG_SUBMEM_NUM,num_submem,ch,sl);
-//			if(rev==0)
-//				{
-//				   DOUT1("Slave %x: Number of SubMemories  0x%x  \n", sl,num_submem );
-//				}
-//		   else
-//			   {
-//				   EOUT("\n\ntoken Error %d in ReadBus: slave %x addr %x (num submem)\n", rev, sl, REG_SUBMEM_NUM);
-//				   return false;
-//			   }
-//		  rev=fBoard->ReadBus(REG_SUBMEM_OFF,submem_offset,ch,sl);
-//		  if(rev==0)
-//			  {
-//				   DOUT1("Slave %x: Offset of SubMemories to the Base address  0x%x  \n", sl,submem_offset );
-//			  }
-//		  else
-//			  {
-//				   EOUT("\n\ncheck_token Error %d in ReadBus: slave %x addr %x (submem offset)\n", rev, sl, REG_SUBMEM_OFF);
-//				   return false;
-//			  }
-//		rev=fBoard->WriteBus(REG_DATA_LEN,datadepth,ch,sl);
-//		if(rev)
-//				{
-//					 EOUT("\n\nError %d in WriteBus setting datadepth %d\n",rev,datadepth);
-//					 return false;
-//				}
-//
-//		// write test data to submem
-//		for(unsigned int submem=0;submem<num_submem;++submem)
-//		 {
-//			 unsigned long submembase0=base_dbuf0+ submem*submem_offset;
-//			 unsigned long submembase1=base_dbuf1+ submem*submem_offset;
-//			 for(unsigned int i=0; i<datadepth/sizeof(int) ;++i)
-//				{
-//					int rev= fBoard->WriteBus( submembase0 + i*4 , Random_Event(submem) , ch, sl);
-//					if(rev)
-//						{
-//							EOUT("Error %d in WriteBus for submem %d of buffer 0, wordcount %d\n",rev,submem,i);
-//							werrors++;
-//							continue;
-//							//break;
-//						}
-//
-//					rev= fBoard->WriteBus( submembase1 + i*4 , Random_Event(submem) , ch, sl);
-//					if(rev)
-//						{
-//							EOUT("Error %d in WriteBus for submem %d of buffer 1, wordcount %d\n",rev,submem,i);
-//							werrors++;
-//							continue;
-//							//break;
-//						}
-//				} // datadepth
-//
-//		 } // submem
-//		printf("\nSlave %d has %d write errors on setting random event data.\n",sl,werrors);
-//	} // slaves
-//
-//	} // channels
-//	return true;
-//}
-
-
-
-
-
-//double  pexorplugin::Device::gauss_rnd(double mean, double sigma)
-//{
-//  static int iset=0;
-//  static double gset;
-//  double v1, v2, s, u1;
-//
-//  if(sigma < 0.)
-//    {
-//      v1 = drand48();
-//      return (log(1-v1)/sigma + mean);
-//    }
-//  else
-//    {
-//      if(iset == 0)
-//   {
-//     do
-//       {
-//         v1 = 2.*drand48()-1.;
-//         v2 = 2.*drand48()-1.;
-//
-//         //v1 = 2.*gRandom->Rndm()-1.;
-//         //v2 = 2.*gRandom->Rndm()-1.;
-//
-//         s = v1*v1+v2*v2;
-//       } while (s >= 1.0 || s == 0.0);
-//
-//     u1 = sigma*v1*(sqrt(-2.*log(s)/s)) + mean;
-//     gset = u1;
-//     iset = 1;
-//
-//     return (sigma*v2*(sqrt(-2.*log(s)/s)) + mean);
-//   }
-//      else
-//   {
-//     iset = 0;
-//     return gset;
-//   }
-//    }
-//}
-//
-//
-//double  pexorplugin::Device::get_int(double low, double high)
-//{
-//  return ((high-low)*drand48()+low);
-//   //return ((high-low)*gRandom->Rndm()+low);
-//}
-//
-//
-//unsigned long  pexorplugin::Device::Random_Event(int choice)
-//{
-//
-//int cnt;
-//  switch(choice)
-//  {
-//     case 1:
-//        cnt = (int)(get_int(0., (double)NUM_PEAK));
-//        return ((unsigned long)(gauss_rnd(fgdPeak[cnt], fgdSigma[cnt])));
-//        break;
-//     case 2:
-//        cnt = (int)(get_int(0., (double)NUM_PEAK));
-//        return ((unsigned long)(p_dNormal(fgdPeak[cnt], fgdSigma[cnt], &fuSeed)));
-//        break;
-//     case 3:
-//        return ((unsigned long)(4096*p_dUniform(&fuSeed)));
-//        break;
-//     case 4:
-//        return ((unsigned long)(gauss_rnd(0., -.001)));
-//        break;
-//     case 5:
-//        return ((unsigned long)(p_dExponential(100., &fuSeed)));
-//        break;
-//     case 6:
-//        cnt = (int)(get_int(0., (double)NUM_PEAK));
-//        return ((unsigned long)((p_dExponential(200., &fuSeed)) + gauss_rnd(fgdPeak[cnt], fgdSigma[cnt])));
-//        break;
-//     case 7:
-//        cnt = (int)(get_int(3., (double)NUM_PEAK));
-//        return ((unsigned long)((4096*p_dUniform(&fuSeed)) + gauss_rnd(fgdPeak[cnt], fgdSigma[cnt])));
-//        break;
-//
-//     default:
-//        return 0;
-//        break;
-//  }
-//
-//
-//
-//
-//   return 0;
-//}
-//
 
 

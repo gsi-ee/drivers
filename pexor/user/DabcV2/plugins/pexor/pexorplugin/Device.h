@@ -24,6 +24,8 @@
 
 #include "pexor/PexorTwo.h"
 
+#include "mbs/MbsTypeDefs.h"
+
 
 /** number of connected sfps*/
 #define PEXORPLUGIN_NUMSFP 4
@@ -46,25 +48,27 @@
 namespace pexorplugin {
 
 
-extern const char* xmlPexorID; // id number N of pexor device file /dev/pexor-N
-  extern const char* xmlPexorSFPSlaves; // prefix for the sfp numbers 0,1,2,3 indicating number of slave devices connected
-  extern const char* xmlRawFile; // name of output lmd file
-  extern const char* xmlDMABufLen; // length of DMA buffers to allocate in driver
-  extern const char* xmlDMABufNum; 	// number of DMA buffers
-  extern const char* xmlDMAScatterGatherMode; // switch scatter gather dma on/off
-  extern const char* xmlDMAZeroCopy; // switch zero copy scatter gather dma on/off
-  extern const char* xmlExploderSubmem; // exploder submem size for testbuffer
-  extern const char* xmlFormatMbs; // enable mbs formating already in device transport
-  extern const char* xmlSyncRead; // switch synchronous or asynchronous token dma
-//  extern const char* xmlParallelRead; // switch parallel or serial token readout
-  extern const char* xmlTriggeredRead; // switch triggered or polling mode readout
-  extern const char* xmlTrixorConvTime; // conversion time of TRIXOR module
-  extern const char* xmlTrixorFastClearTime; // fast clear time of TRIXOR module
-
-  extern const char* xmlModuleName; // Name of readout module instance
-  extern const char* xmlModuleThread; // Name of readout thread
-  extern const char* xmlDeviceName; // Name of device instance
-  extern const char* xmlDeviceThread; // Name of readout thread
+extern const char* xmlPexorID; //< id number N of pexor device file /dev/pexor-N
+  extern const char* xmlPexorSFPSlaves; //< prefix for the sfp numbers 0,1,2,3 indicating number of slave devices connected
+  extern const char* xmlRawFile; //< name of output lmd file
+  extern const char* xmlDMABufLen; //< length of DMA buffers to allocate in driver
+  extern const char* xmlDMABufNum; 	//< number of DMA buffers
+  extern const char* xmlDMAScatterGatherMode; //< switch scatter gather dma on/off
+  extern const char* xmlDMAZeroCopy; //< switch zero copy scatter gather dma on/off
+  extern const char* xmlExploderSubmem; //< exploder submem size for testbuffer
+  extern const char* xmlFormatMbs; //< enable mbs formating already in device transport
+  extern const char* xmlSingleMbsSubevt; //<  use one single subevent for all sfps
+  extern const char* xmlMbsSubevtCrate; //<  define crate number for subevent header
+  extern const char* xmlMbsSubevtControl; //<  define crate number for subevent header
+  extern const char* xmlMbsSubevtProcid; //<  define procid number for subevent header
+  extern const char* xmlSyncRead; //< switch synchronous or asynchronous token dma
+  extern const char* xmlTriggeredRead; //< switch triggered or polling mode readout
+  extern const char* xmlTrixorConvTime; //< conversion time of TRIXOR module
+  extern const char* xmlTrixorFastClearTime; //< fast clear time of TRIXOR module
+  extern const char* xmlModuleName; //< Name of readout module instance
+  extern const char* xmlModuleThread; //< Name of readout thread
+  extern const char* xmlDeviceName; //< Name of device instance
+  extern const char* xmlDeviceThread; //< Name of readout thread
 
   extern const char* nameReadoutAppClass;
   extern const char* nameDeviceClass;
@@ -151,6 +155,20 @@ extern const char* xmlPexorID; // id number N of pexor device file /dev/pexor-N
          virtual void ObjectCleanup();
 
 
+         /** Insert mbs event header at location ptr in external buffer. Eventnumber will define event
+          * sequence number, trigger marks current trigger type.
+          * ptr is shifted to place after event header afterwards.
+          * Return value is handle to event header structure
+          * */
+         mbs::EventHeader* PutMbsEventHeader(dabc::Pointer& ptr, mbs::EventNumType eventnumber, uint16_t trigger=mbs::tt_Event);
+
+         /** Insert mbs subevent header at location ptr in external buffer. Id number subcrate, control nd procid
+          * can be defined.ptr is shifted to place after subevent header afterwards.
+          * Return value is handle to subevent header structure
+          */
+         mbs::SubeventHeader* PutMbsSubeventHeader(dabc::Pointer& ptr, int8_t subcrate, int8_t control, int16_t procid);
+
+
 
          /** copy contents of received dma buffer and optionally format for mbs*/
          int CopyOutputBuffer(pexor::DMA_Buffer* src, dabc::Buffer& dest);
@@ -188,6 +206,24 @@ extern const char* xmlPexorID; // id number N of pexor device file /dev/pexor-N
       /** if true we put mbs headers already into transport buffer.
        * will contain subevents for each connected sfp*/
       bool fMbsFormat;
+
+      /** For mbsformat: if true, use a single mbs subevent containing data of all sfps.
+       * Subevent identifier (subcrate, procid, control) is configured by user via paramters.
+       * Otherwise (default) buffer will contain one mbs subevent for each sfp, with sfpnumber labelling the
+       * subcrate number.*/
+      bool fSingleSubevent;
+
+      /** For mbsformat: defines subevent subcrate id for case fSingleSubevent=true*/
+      unsigned int fSubeventSubcrate;
+
+      /** For mbsformat: defines subevent procid*/
+      unsigned int fSubeventProcid;
+
+      /** For mbsformat: defines subevent control*/
+      unsigned int fSubeventControl;
+
+
+
 
 //      /** fill token buffers of all slaves with generated test data*/
 //      bool fTestData;

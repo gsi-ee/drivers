@@ -57,8 +57,8 @@ pexorplugin::Device(name, cmd), fSubmemSize(3600), fuSeed(0)
 {
 
 
-   DOUT1("Created PEXOR device %d\n", fDeviceNum);
-   fTestData=true; // TODO: configure this from XML once we have read data to fetch
+   DOUT1("Constructing explodertest::Device...\n");
+   fTestData=true; // TODO: configure this from XML once we have read data to fetch? optional, this is test class anyway
    //fTestData=GetCfgBool(explodertest::xml????,20, cmd);
 
    fSubmemSize=Cfg(explodertest::xmlExploderSubmem,cmd).AsInt(3600);

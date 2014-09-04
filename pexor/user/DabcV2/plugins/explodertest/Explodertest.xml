@@ -3,6 +3,7 @@
 
 <Context host="localhost" name="Explodertest">
 		<Run>
+			<lib value="libDabcHttp.so"/>
 			<lib value="libDabcMbs.so" />
 			<lib value="libDabcPexor.so" />
 			<lib value="libDabcExploderTest.so" />
@@ -40,6 +41,10 @@
 			<PexorDMAZeroCopy value="false" />
 			<ExploderSubmemSize value="24000" />
 			<PexorFormatMbs value="true" />
+			<PexorSingleMbsSubevent value="false"/>
+			<PexorMbsSubcrate  value="0"/>
+			<PexorMbsControl  value="1"/>
+			<PexorMbsProcid   value="3"/>			
 			<PexorSyncReadout value="true" />
 			<PexorUseTrigger value="false" />
 			<TrixorConversionTime value="50" />
