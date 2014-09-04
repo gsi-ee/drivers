@@ -113,12 +113,19 @@ Bool_t TPexorMonProc::BuildEvent(TGo4EventElement* target)
       Int_t sfp=psubevt->GetSubcrate();
       if(sfp<0 || sfp>=PEXOR_SFP_NUM)
 		  {
-			  cout << "**** TPexorMonProc: Found invalid sfp number, skip event" << endl;
-			  return kFALSE;
+		    GO4_SKIP_EVENT_MESSAGE("############ TPexorMonProc: Found invalid sfp number %d , skip event\n",sfp);
+//			  cout << "**** TPexorMonProc: Found invalid sfp number, skip event" << endl;
+//			  return kFALSE;
 
 		  }
 
-
+      if(TPexorMonProc::fNumSlavesSFP[sfp]==0)
+      {
+	cout << "**** TPexorMonProc: Skipping not configured sfp number"<<sfp<<" ..." <<endl;
+	continue;
+      }
+	
+	
       // scan data for each submem and fill:
       UInt_t slave=0;
       bool isheaderread=false,isdsizeread=false;
