@@ -65,13 +65,14 @@ void pexorplugin::ReadoutModule::DoPexorReadout ()
     {
       if (!CanSendToAllOutputs ())
       {
-        DOUT3 (("pexorplugin::ReadoutModule::DoPexorReadout - can not send to all outputs. skip event \n"));
+        DOUT3 ("pexorplugin::ReadoutModule::DoPexorReadout - can not send to all outputs. skip event \n");
         return;
       }
       ref = Recv ();
       if (!ref.null ())
       {
-        Par (fDataRateName).SetValue (ref.GetTotalSize () / 1024. / 1024.);
+        Par (fDataRateName).SetValue ((double)(ref.GetTotalSize ()) / 1024. / 1024.);
+        DOUT3 ("pexorplugin::ReadoutModule::DoPexorReadout - has buffer size: total %d bytes  \n",ref.GetTotalSize ());
         SendToAllOutputs (ref);
         Par (fEventRateName).SetValue (1);
       }

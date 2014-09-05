@@ -84,8 +84,11 @@ pexorplugin::Device::Device(const std::string& name, dabc::Command cmd):
   {
     EOUT (("**** Could not open pexor board!\n"));
     delete fBoard;
-    return;
+    exit(1);
   }
+  // JAM workaround:
+  fBoard->Reset(); // get rid of previous buffers of not properly closed run!
+  // JAM
   fZeroCopyMode = Cfg (pexorplugin::xmlDMAZeroCopy, cmd).AsBool (false);
   DOUT1 ("Setting zero copy mode to %d\n", fZeroCopyMode);
   bool sgmode = Cfg (pexorplugin::xmlDMAScatterGatherMode, cmd).AsBool (false);
@@ -157,7 +160,15 @@ pexorplugin::Device::Device(const std::string& name, dabc::Command cmd):
 
 pexorplugin::Device::~Device ()
 {
-  fBoard->Reset ();    // throw away optionally user buffer mappings hee
+  DOUT1 ("DDDDDDDDDDd pexorplugin::Device destructor \n");
+  if (fTriggeredRead)
+  {
+    fBoard->StopAcquisition ();
+    fBoard->ResetTrigger ();
+  }
+  fBoard->Reset ();    // throw away optionally user buffer mappings here
+  DOUT1 ("DDDDDDDDDDd pexorplugin::Device destructor did board reset\n");
+  printf("\nppppppppp dtor of pexorplugin::Device::~Device ()\n");
   delete fBoard;
 }
 
@@ -377,6 +388,7 @@ int pexorplugin::Device::ReceiveTokenBuffer (dabc::Buffer& buf)
 
 int pexorplugin::Device::RequestAllTokens (dabc::Buffer& buf, bool synchronous)
 {
+  DOUT3 ("pexorplugin::Device::RequestAllTokens with synchronous=%d ", synchronous);
 
   static pexor::DMA_Buffer* tokbuf[PEXORPLUGIN_NUMSFP];
   if (fTriggeredRead)
@@ -386,6 +398,7 @@ int pexorplugin::Device::RequestAllTokens (dabc::Buffer& buf, bool synchronous)
     {
       // case of timeout, need dabc retry?
       EOUT (("**** Timout of trigger, retry dabc request.. \n"));
+      fBoard->ResetTrigger ();
       return dabc::di_RepeatTimeOut;
     }
   }
@@ -404,7 +417,7 @@ int pexorplugin::Device::RequestAllTokens (dabc::Buffer& buf, bool synchronous)
       if ((long int) tokbuf[fCurrentSFP] == -1)    // TODO: handle error situations by exceptions later!
       {
         EOUT ("**** Error in PEXOR Token Request from sfp %d !\n", fCurrentSFP);
-        return dabc::di_SkipBuffer;
+        return dabc::di_Error;
       }
       fDoubleBufID[fCurrentSFP] = fDoubleBufID[fCurrentSFP] == 0 ? 1 : 0;
     }
@@ -419,6 +432,7 @@ int pexorplugin::Device::RequestAllTokens (dabc::Buffer& buf, bool synchronous)
 
 int pexorplugin::Device::ReceiveAllTokenBuffer (dabc::Buffer& buf)
 {
+  DOUT3 ("pexorplugin::Device::ReceiveAllTokenBuffer...\n");
   static pexor::DMA_Buffer* tokbuf[PEXORPLUGIN_NUMSFP];
   static int oldbuflen = 0;
   for (int sfp = 0; sfp < PEXORPLUGIN_NUMSFP; ++sfp)
@@ -448,8 +462,10 @@ int pexorplugin::Device::ReceiveAllTokenBuffer (dabc::Buffer& buf)
     fSkipRequest = true;    // switch off all subsequent requests after the first
 
   if (fTriggeredRead)
-    fBoard->ResetTrigger ();
-
+    {
+      fBoard->ResetTrigger ();
+      DOUT3 ("RRRRRRRRRRRRRRRR pexorplugin::Device::ReceiveAllTokenBuffer has reset trigger!\n");
+  }
   return (CombineTokenBuffers (tokbuf, buf));
 }
 
@@ -461,6 +477,8 @@ int pexorplugin::Device::CopyOutputBuffer (pexor::DMA_Buffer* tokbuf, dabc::Buff
   {
     mbs::EventHeader* evhdr = PutMbsEventHeader (ptr, fNumEvents);
     used_size += sizeof(mbs::EventHeader);
+
+
     mbs::SubeventHeader* subhdr = PutMbsSubeventHeader (ptr, (fSingleSubevent ? fSubeventSubcrate : fCurrentSFP),
         fSubeventControl, fSubeventProcid);
 
@@ -468,7 +486,9 @@ int pexorplugin::Device::CopyOutputBuffer (pexor::DMA_Buffer* tokbuf, dabc::Buff
     used_size += sizeof(mbs::SubeventHeader);
 
     // here account for zero copy alignment: headers+int give 32 bytes before payload
-    ptr.shift (sizeof(int));
+    // fill padding space with pattern like in mbs:
+    if(PutMbsPaddingWords(ptr, 1)<0)
+                 return dabc::di_SkipBuffer;
     filled_size += sizeof(int);
     used_size += sizeof(int);
     // UsedSize contains the real received token data length, as set by driver
@@ -520,21 +540,24 @@ int pexorplugin::Device::CombineTokenBuffers (pexor::DMA_Buffer** src, dabc::Buf
   if (fMbsFormat)
   {
     evhdr = PutMbsEventHeader (ptr, fNumEvents);    // TODO: get current trigger type from trixor and set
+    if(evhdr==0)  return dabc::di_SkipBuffer; // buffer too small error
     used_size += sizeof(mbs::EventHeader);
     if (fSingleSubevent)
     {
       // one common subevent for data of all sfps:
       subhdr = PutMbsSubeventHeader (ptr, fSubeventSubcrate, fSubeventControl, fSubeventProcid);
+      if(subhdr==0)
+        return dabc::di_SkipBuffer; // buffer too small error
       used_size += sizeof(mbs::SubeventHeader);
       filled_size += sizeof(mbs::SubeventHeader);
       // here account for zero copy alignment: headers+int give 32 bytes before payload
       // necessary for the explodertest unpacker up to now
-      ptr.shift (sizeof(int));
+      // we need some padding words here for mbs tailored unpacker:
+      if(PutMbsPaddingWords(ptr, 1)<0)
+          return dabc::di_SkipBuffer;
       used_size += sizeof(int);
       filled_size += sizeof(int);
-      // TODO: do we need some padding words here for mbs tailored unpacker?
-      // TODO: can we switch this behaviour by parameter
-
+      // TODO: can we switch padding behaviour by parameter?
     }
   }
   DOUT3 ("pexorplugin::Device::CombineTokenBuffers output pointer after mbs header is 0x%x", ptr.ptr ());
@@ -543,8 +566,7 @@ int pexorplugin::Device::CombineTokenBuffers (pexor::DMA_Buffer** src, dabc::Buf
     if (src[sfp] == 0)
       continue;
     int increment = CopySubevent (src[sfp], ptr, sfp);
-    if (increment < 0)
-      continue;    // TODO: some error handling here
+    if (increment < 0) return increment; // error on copy, propagate error type upwards
     used_size += increment;
     filled_size += increment;
     DOUT3 ("pexorplugin::Device::CombineTokenBuffers after sfp %d : used size:%d filled size:%d", (int) sfp, used_size,
@@ -571,10 +593,15 @@ int pexorplugin::Device::CopySubevent (pexor::DMA_Buffer* tokbuf, dabc::Pointer&
   if (fMbsFormat && !fSingleSubevent)
   {
     mbs::SubeventHeader* subhdr = PutMbsSubeventHeader (cursor, sfpnum, fSubeventControl, fSubeventProcid);
+    if(subhdr==0)
+      return dabc::di_SkipBuffer; // buffer too small error
+
+
     filled_size += sizeof(mbs::SubeventHeader);
     // here account for zero copy alignment: headers+int give 32 bytes before payload
-    // TODO: do we need padding word descriptor like in mbs?
-    cursor.shift (sizeof(int));
+    // fill with padding word descriptor like in mbs:
+    if(PutMbsPaddingWords(cursor, 1)<0)
+              return dabc::di_SkipBuffer;
     filled_size += sizeof(int);
     subhdr->SetRawDataSize (tokbuf->UsedSize () + sizeof(int));
   }
@@ -592,6 +619,12 @@ int pexorplugin::Device::CopySubevent (pexor::DMA_Buffer* tokbuf, dabc::Pointer&
 mbs::EventHeader* pexorplugin::Device::PutMbsEventHeader (dabc::Pointer& ptr, mbs::EventNumType eventnumber,
     uint16_t trigger)
 {
+    // check if header would exceed buffer length.
+  if (ptr.rawsize() < sizeof(mbs::EventHeader)) {
+       DOUT0("pexorplugin::Device::PutMbsEventHeader fails because no more space in buffer, restsize=%d bytes", ptr.rawsize());
+       return 0;
+    }
+
   mbs::EventHeader* evhdr = (mbs::EventHeader*) ptr ();
   evhdr->Init (eventnumber);
   ptr.shift (sizeof(mbs::EventHeader));
@@ -601,6 +634,10 @@ mbs::EventHeader* pexorplugin::Device::PutMbsEventHeader (dabc::Pointer& ptr, mb
 mbs::SubeventHeader* pexorplugin::Device::PutMbsSubeventHeader (dabc::Pointer& ptr, int8_t subcrate, int8_t control,
     int16_t procid)
 {
+  if (ptr.rawsize() < sizeof(mbs::SubeventHeader)) {
+        DOUT0("pexorplugin::Device::PutMbsSubeventHeader fails because no more space in buffer, restsize=%d bytes", ptr.rawsize());
+        return 0;
+     }
   mbs::SubeventHeader* subhdr = (mbs::SubeventHeader*) ptr ();
   subhdr->Init ();
   subhdr->iProcId = procid;
@@ -609,6 +646,31 @@ mbs::SubeventHeader* pexorplugin::Device::PutMbsSubeventHeader (dabc::Pointer& p
   ptr.shift (sizeof(mbs::SubeventHeader));
   return subhdr;
 }
+
+int pexorplugin::Device::PutMbsPaddingWords(dabc::Pointer& ptr, uint8_t num)
+{
+// TODO: check if padding words would exceed buffer length.
+  if (ptr.rawsize() < num*sizeof(int)) {
+          DOUT0("pexorplugin::Device::PutMbsPaddingWords fails because no more space in buffer, restsize=%d bytes, paddingwords=%d", ptr.rawsize(), num);
+          return -1;
+       }
+
+  for (uint8_t k=0; k<num; k++)
+  {
+    int* pl_dat= (int*) ptr();
+    *pl_dat = 0xadd00000 + (num<<8) + k;
+    ptr.shift (sizeof(int));
+  }
+  //              l_padd[l_i] = l_padd[l_i] >> 2;                  // now in 4 bytes (longs)
+  //              for (l_k=0; l_k<l_padd[l_i]; l_k++)
+  //              {
+  //                //*pl_dat++ = 0xadd00000 + (l_i*0x1000) + l_k;
+  //                *pl_dat++ = 0xadd00000 + (l_padd[l_i]<<8) + l_k;
+  //              }
+  //
+  return num;
+}
+
 
 bool pexorplugin::Device::NextSFP ()
 {
@@ -639,16 +701,21 @@ unsigned pexorplugin::Device::Read_Start (dabc::Buffer& buf)
 unsigned pexorplugin::Device::Read_Complete (dabc::Buffer& buf)
 {
   int res = dabc::di_Ok;
+  int retsize=0;
   // on trigger, we always read all sfp channels! so always "parallel" mode for dabc
   if (IsTriggeredRead () || IsSynchronousRead ())
   {
     res = RequestAllTokens (buf, false);    // for parallel read, we need async request before polling
-    fReadLength = ReceiveAllTokenBuffer (buf);
+    if((unsigned) res !=dabc::di_Ok) return (unsigned) res; // propagate error type
+    retsize= ReceiveAllTokenBuffer (buf);
+
   }
   else
   {
-    fReadLength = ReceiveAllTokenBuffer (buf);
+    retsize= ReceiveAllTokenBuffer (buf);
   }
+  if (retsize<0) return retsize;
+  fReadLength=retsize;
   return (unsigned) res;
 }
 

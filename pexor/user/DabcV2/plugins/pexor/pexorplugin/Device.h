@@ -149,6 +149,10 @@ protected:
    */
   mbs::SubeventHeader* PutMbsSubeventHeader (dabc::Pointer& ptr, int8_t subcrate, int8_t control, int16_t procid);
 
+  /** Insert num padding words at location of ptr and increment ptr.
+   * Padding words are formatted in mbs convention like 0xaddNNII*/
+  int PutMbsPaddingWords(dabc::Pointer& ptr, uint8_t num);
+
   /** copy contents of received dma buffer and optionally format for mbs*/
   int CopyOutputBuffer (pexor::DMA_Buffer* src, dabc::Buffer& dest);
 

@@ -39,24 +39,22 @@
 #define REG_MEM_FLAG_0      0xFFFFB8  // read only:
 #define REG_MEM_FLAG_1      0xFFFFBc  // read only:
 
-
 #define REG_BUF0_DATA_LEN     0xFFFD00  // buffer 0 submemory data length
 #define REG_BUF1_DATA_LEN     0xFFFE00  // buffer 1 submemory data length
-
 
 #define REG_DATA_REDUCTION  0xFFFFB0  // Nth bit = 1 enable data reduction of  Nth channel from block transfer readout. (bit0:time, bit1-8:adc)
 #define REG_MEM_DISABLE     0xFFFFB4  // Nth bit =1  disable Nth channel from block transfer readout.(bit0:time, bit1-8:adc)
 #define REG_MEM_FLAG_0      0xFFFFB8  // read only:
 #define REG_MEM_FLAG_1      0xFFFFBc  // read only:
-
 #define REG_RST 0xFFFFF4
 #define REG_LED 0xFFFFF8
 #define REG_VERSION 0xFFFFFC
 
-
+// qfw specific registers:
+#define REG_CTRL       0x200000
+#define REG_QFW_OFFSET_BASE 0x200100
 
 //const char* poland::xmlExploderSubmem = "ExploderSubmemSize";    // size of exploder submem test buffer
-
 
 poland::Device::Device (const std::string& name, dabc::Command cmd) :
     pexorplugin::Device (name, cmd)
@@ -64,11 +62,11 @@ poland::Device::Device (const std::string& name, dabc::Command cmd) :
 {
 
   DOUT1 ("Constructing poland::Device...\n");
-  if (!InitQFWs())
-    {
-      EOUT ("\n\nError initializing QFWs at pexor device %d \n", fDeviceNum);
-      return;
-    }
+  if (!InitQFWs ())
+  {
+    EOUT ("\n\nError initializing QFWs at pexor device %d \n", fDeviceNum);
+    exit(1); // TODO: how to tell DABC to shutdown properly?
+  }
 
   fInitDone = true;
 }
@@ -117,129 +115,138 @@ unsigned poland::Device::Read_Complete (dabc::Buffer& buf)
   return pexorplugin::Device::Read_Complete (buf);
   // here it is possible to fill different values into buffer as composed from gosip token readout
 
-
-
   // TODO: check meta data
-
-
-
 
 }
 
 bool poland::Device::InitQFWs ()
 {
-// TODO
-//  void f_qfw_init ()
-//
-//  {
-//  #ifndef USE_MBSPEX_LIB
-//    PEXOR_Port_Monitor (&sPEXOR);
-//  #endif
-//    for (l_i=0; l_i<MAX_SFP; l_i++)
-//    {
-//      if (l_sfp_slaves[l_i] != 0)
-//      {
-//        l_stat = f_pex_slave_init (l_i, l_sfp_slaves[l_i]);
-//        if (l_stat == -1)
-//        {
-//          printm (RON"ERROR>>"RES" slave address initialization failed \n");
-//          printm ("exiting...\n");
-//          exit (-1);
-//        }
-//      }
-//      printm ("");
-//    }
-//
-//    //sleep (1);
-//
-//    if (l_first == 0)
-//    {
-//      l_first = 1;
-//      for (l_i=0; l_i<MAX_TRIG_TYPE; l_i++)
-//      {
-//        l_tr_ct[l_i] = 0;
-//      }
-//    }
-//
-//    for (l_i=0; l_i<MAX_SFP; l_i++)
-//    {
-//      if (l_sfp_slaves[l_i] != 0)
-//      {
-//        for (l_j=0; l_j<l_sfp_slaves[l_i]; l_j++)
-//        {
-//          // needed for check of meta data, read it in any case
-//          printm ("SFP: %d, OFW/EXPLODER: %d \n", l_i, l_j);
-//          // get address offset of qfw buffer 0,1 for each qfw/exploder
-//          l_stat = f_pex_slave_rd (l_i, l_j, REG_BUF0, &(l_qfw_buf_off[l_i][l_j][0]));
-//          l_stat = f_pex_slave_rd (l_i, l_j, REG_BUF1, &(l_qfw_buf_off[l_i][l_j][1]));
-//          // get nr. of channels per qfw
-//          l_stat = f_pex_slave_rd (l_i, l_j, REG_SUBMEM_NUM, &(l_qfw_n_chan[l_i][l_j]));
-//          // get buffer per channel offset
-//          l_stat = f_pex_slave_rd (l_i, l_j, REG_SUBMEM_OFF, &(l_qfw_chan_off[l_i][l_j]));
-//
-//          printm ("addr offset: buf0: 0x%x, buf1: 0x%x \n",
-//                  l_qfw_buf_off[l_i][l_j][0], l_qfw_buf_off[l_i][l_j][1]);
-//          printm ("No. channels: %d \n", l_qfw_n_chan[l_i][l_j]);
-//          printm ("channel addr offset: 0x%x \n", l_qfw_chan_off[l_i][l_j]);
-//
-//          // disable test data length
-//          l_stat = f_pex_slave_wr (l_i, l_j, REG_DATA_LEN, 0x10000000);
-//          if (l_stat == -1)
-//          {
-//            printm (RON"ERROR>>"RES" disabling test data length failed\n");
-//            l_err_prot_ct++;
-//          }
-//
-//          // disable trigger acceptance in exploder2a
-//          l_stat = f_pex_slave_wr (l_i, l_j, REG_CTRL, 0);
-//          if (l_stat == -1)
-//    {
-//            printm (RON"ERROR>>"RES" PEXOR slave write REG_FEB_CTRL failed\n");
-//            l_err_prot_ct++;
-//          }
-//          l_stat = f_pex_slave_rd (l_i, l_j, REG_CTRL, &l_qfw_ctrl);
-//          if ( (l_qfw_ctrl & 0x1) != 0)
-//          {
-//            printm (RON"ERROR>>"RES" disabling trigger acceptance in qfw failed, exiting \n");
-//            l_err_prot_ct++;
-//            exit (0);
-//          }
-//
-//          // enable trigger acceptance in exploder2a
-//
-//          l_stat = f_pex_slave_wr (l_i, l_j, REG_CTRL, 1);
-//          if (l_stat == -1)
-//    {
-//            printm (RON"ERROR>>"RES" PEXOR slave write REG_FEB_CTRL failed\n");
-//            l_err_prot_ct++;
-//          }
-//          l_stat = f_pex_slave_rd (l_i, l_j, REG_CTRL, &l_qfw_ctrl);
-//          if ( (l_qfw_ctrl & 0x1) != 1)
-//    {
-//            printm (RON"ERROR>>"RES" enabling trigger acceptance in qfw failed, exiting \n");
-//            l_err_prot_ct++;
-//            exit (0);
-//     }
-//
-//          // write SFP id for channel header
-//          l_stat = f_pex_slave_wr (l_i, l_j, REG_HEADER, l_i);
-//          if (l_stat == -1)
-//          {
-//            printm (RON"ERROR>>"RES" PEXOR slave write REG_HEADER  failed\n");
-//            l_err_prot_ct++;
-//          }
-//
-//          l_stat = f_pex_slave_wr (l_i, l_j, REG_RST, 1);
-//          if (l_stat == -1)
-//          {
-//            printm (RON"ERROR>>"RES" PEXOR slave write REG_HEADER  failed\n");
-//            l_err_prot_ct++;
-//          }
-//        }
-//      }
-//    }
-//  }
-//
+
+  for (int sfp = 0; sfp < PEXORPLUGIN_NUMSFP; sfp++)
+  {
+
+    if (!fEnabledSFP[sfp])
+      continue;
+    for (unsigned int sl = 0; sl < fNumSlavesSFP[sfp]; ++sl)
+    {
+      // get submemory addresses to check setup:
+      unsigned long base_dbuf0 = 0, base_dbuf1 = 0;
+      unsigned long num_submem = 0, submem_offset = 0;
+      unsigned long qfw_ctrl = 0;
+
+      int rev = fBoard->ReadBus (REG_BUF0, base_dbuf0, sfp, sl);
+      if (rev == 0)
+      {
+        DOUT1 ("Slave %x: Base address for Double Buffer 0  0x%x  \n", sl, base_dbuf0);
+      }
+      else
+      {
+        EOUT ("\n\ntoken Error %d in ReadBus: slave %x addr %x (double buffer 0 address)\n", rev, sl, REG_BUF0);
+        return false;
+      }
+      rev = fBoard->ReadBus (REG_BUF1, base_dbuf1, sfp, sl);
+      if (rev == 0)
+      {
+        DOUT1 ("Slave %x: Base address for Double Buffer 1  0x%x  \n", sl, base_dbuf1);
+      }
+      else
+      {
+        EOUT ("\n\ntoken Error %d in ReadBus: slave %x addr %x (double buffer 1 address)\n", rev, sl, REG_BUF1);
+        return false;
+      }
+      rev = fBoard->ReadBus (REG_SUBMEM_NUM, num_submem, sfp, sl);
+      if (rev == 0)
+      {
+        DOUT1 ("Slave %x: Number of Channels  0x%x  \n", sl, num_submem);
+      }
+      else
+      {
+        EOUT ("\n\ntoken Error %d in ReadBus: slave %x addr %x (num submem)\n", rev, sl, REG_SUBMEM_NUM);
+        return false;
+      }
+      rev = fBoard->ReadBus (REG_SUBMEM_OFF, submem_offset, sfp, sl);
+      if (rev == 0)
+      {
+        DOUT1 ("Slave %x: Offset of Channel to the Base address  0x%x  \n", sl, submem_offset);
+      }
+      else
+      {
+        EOUT ("\n\ncheck_token Error %d in ReadBus: slave %x addr %x (submem offset)\n", rev, sl, REG_SUBMEM_OFF);
+        return false;
+      }
+
+      // disable test data length:
+      rev = fBoard->WriteBus (REG_DATA_LEN, 0x10000000, sfp, sl);
+      if (rev)
+      {
+        EOUT ("\n\nError %d in WriteBus disabling test data length !\n", rev);
+        return false;
+      }
+
+      // disable trigger acceptance in exploder2a
+
+      rev = fBoard->WriteBus (REG_CTRL, 0, sfp, sl);
+      if (rev)
+      {
+        EOUT ("\n\nError %d in WriteBus disabling  trigger acceptance (sfp:%d, device:%d)!\n", rev, sfp, sl);
+        return false;
+      }
+      rev = fBoard->ReadBus (REG_CTRL, qfw_ctrl, sfp, sl);
+      if (rev == 0)
+      {
+        if ((qfw_ctrl & 0x1) != 0)
+        {
+          EOUT ("Disabling trigger acceptance in qfw failed for sfp:%d device:%d!!!!!\n", sfp, sl);
+          return false;
+        }
+      }
+      else
+      {
+        EOUT ("\n\nError %d in ReadBus: disabling  trigger acceptance (sfp:%d, device:%d)\n", rev, sfp, sl);
+        return false;
+      }
+
+      // enable trigger acceptance in exploder2a:
+      rev = fBoard->WriteBus (REG_CTRL, 1, sfp, sl);
+      if (rev)
+      {
+        EOUT ("\n\nError %d in WriteBus enabling  trigger acceptance (sfp:%d, device:%d)!\n", rev, sfp, sl);
+        return false;
+      }
+      rev = fBoard->ReadBus (REG_CTRL, qfw_ctrl, sfp, sl);
+      if (rev == 0)
+      {
+        if ((qfw_ctrl & 0x1) != 1)
+        {
+          EOUT ("Enabling trigger acceptance in qfw failed for sfp:%d device:%d!!!!!\n", sfp, sl);
+          return false;
+        }
+        DOUT1 ("Trigger acceptance is enabled for sfp:%d device:%d  \n", sfp, sl);
+      }
+      else
+      {
+        EOUT ("\n\nError %d in ReadBus: enabling  trigger acceptance (sfp:%d, device:%d)\n", rev, sfp, sl);
+        return false;
+      }
+
+      // write SFP id for channel header:
+      rev = fBoard->WriteBus (REG_HEADER, sfp, sfp, sl);
+      if (rev)
+      {
+        EOUT ("\n\nError %d in WriteBus writing channel header (sfp:%d, device:%d)!\n", rev, sfp, sl);
+        return false;
+      }
+
+      // enable frontend logic:
+      // ? do we need setting to 0 before as in poland scripts?
+      rev = fBoard->WriteBus (REG_RST, 1, sfp, sl);
+      if (rev)
+      {
+        EOUT ("\n\nError %d in WriteBus resetting qfw (sfp:%d, device:%d)!\n", rev, sfp, sl);
+        return false;
+      }
+    }    // for slaves
+  }    // for (int sfp = 0;
 
   return true;
 }
