@@ -102,7 +102,7 @@ pexor::DMA_Buffer* PexorTwo::PrepareReceivedBuffer(struct pexor_token_io & descr
 
 bool  PexorTwo::WaitForTrigger()
 {
-	int rev=ioctl(fFileHandle, PEXOR_IOC_WAIT_TRIGGER);
+	int rev=ioctl(fFileHandle, PEXOR_IOC_WAIT_TRIGGER, &fLastTriggerStatus);
 	if(rev==PEXOR_TRIGGER_FIRED)
 		return true;
 	if(rev==PEXOR_TRIGGER_TIMEOUT)
@@ -111,6 +111,14 @@ bool  PexorTwo::WaitForTrigger()
 	PexorWarning("\nWaitForTrigger returned error %d  -  %s\n",er, strerror(errno));
 	return false; // error or signal abort from ioctl
 
+}
+
+
+bool PexorTwo::DumpTriggerStatus()
+{
+  PexorInfo("Last Trigger type:0x%x, LocalEventCounter:0x%x, SubevtInvalid:0x%x, TrigMismatch:0x%x, DelayInterruptLine:0x%x, TotalDeadTime:0x%x, DataReady:0x%x",
+      GetTriggerType(), GetLocalEventCounter(),GetSubeventInvalid(),GetTriggerMismatch(), GetDelayInterruptLine(), GetTotalDeadTime(), GetDataReady());
+  return true;
 }
 
 
@@ -133,6 +141,7 @@ bool PexorTwo::StartAcquisition()
     desc.command=PEXOR_TRIX_HALT;
     int rev=ioctl(fFileHandle, PEXOR_IOC_SET_TRIXOR, &desc);
     int er=errno;
+    sleep(2); // try to give system time to receive stop trigger
     if(rev==0)
         return true;
     else

@@ -16,8 +16,8 @@
 		</Run>
 
 		<MemoryPool name="Pool">
-			<BufferSize value="400000" />
-			<NumBuffers value="100" />
+			<BufferSize value="65000" />
+			<NumBuffers value="1000" />
 		</MemoryPool>
 
 
@@ -27,7 +27,7 @@
 		</HttpServer>
 
 
-
+  		<Publisher name="publ" manager="true"/>
 
 
 		<Device name="PexorDevice" class="poland::Device">
@@ -37,7 +37,7 @@
 			<PexorNumSlaves_1 value="0" />
 			<PexorNumSlaves_2 value="0" />
 			<PexorNumSlaves_3 value="0" />
-			<PexorDMALen value="262144" />
+			<PexorDMALen value="32768" />
 			<PexorDMABuffers value="50" />
 			<PexorDMAScatterGather value="false" />
 			<PexorDMAZeroCopy value="false" />

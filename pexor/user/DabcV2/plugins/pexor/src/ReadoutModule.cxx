@@ -26,7 +26,7 @@ pexorplugin::ReadoutModule::ReadoutModule (const std::string name, dabc::Command
   fEventRateName = ratesprefix + "Events";
   fDataRateName = ratesprefix + "Data";
   CreatePar (fEventRateName).SetRatemeter (false, 3.).SetUnits ("Ev");
-  CreatePar (fDataRateName).SetRatemeter (false, 1.).SetUnits ("Mb");
+  CreatePar (fDataRateName).SetRatemeter (false, 3.).SetUnits ("Mb");
 
   Par (fDataRateName).SetDebugLevel (1);
   Par (fEventRateName).SetDebugLevel (1);

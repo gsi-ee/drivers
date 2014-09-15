@@ -381,6 +381,7 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     pexor_dbg(KERN_NOTICE "** pexor_ioctl set trixor\n");
     retval = pexor_ioctl_set_trixor(privdata, arg);
     break;
+
 #endif
 
    case PEXOR_IOC_GET_SFP_LINKS:
@@ -1435,8 +1436,9 @@ void set_pexor(struct  dev_pexor* pg, void* membase, unsigned long bar)
 
 irqreturn_t pexor_isr( int irq, void *dev_id)
 {
-  u32 irtype;
+  u32 irtype, irstat;
   int state;
+  struct pexor_trigger_buf* trigstat;
   struct pexor_privdata *privdata;
   /*static int count=0;*/
   /*int i=0;
@@ -1457,9 +1459,12 @@ irqreturn_t pexor_isr( int irq, void *dev_id)
   irtype=ioread32(privdata->pexor.irq_status);
   mb();
   ndelay(20);
+  pexor_dbg(KERN_NOTICE "pexor driver interrupt handler with interrupt status 0x%x!\n",irtype);
   if(irtype & (TRIX_EV_IRQ_CLEAR | TRIX_DT_CLEAR)) /* test bits */
     {
       /* prepare for trixor interrupts here:*/
+      irstat= (irtype << 16) & 0xffff0000;
+        /*< shift trigger status bits to upper words to be compatible for historic mbs mapping definitions later*/
       irtype = TRIX_EV_IRQ_CLEAR | TRIX_IRQ_CLEAR;
       iowrite32(irtype, privdata->pexor.irq_status);   /*reset interrupt source*/
       mb();
@@ -1473,6 +1478,23 @@ irqreturn_t pexor_isr( int irq, void *dev_id)
 	  state=PEXOR_STATE_STOPPED;
 	  atomic_set(&(privdata->state),state);
 	}
+
+      /* TODO: put current irtype to queue for consumer evaluation: */
+      trigstat= kmalloc(sizeof(struct pexor_trigger_buf), GFP_ATOMIC);
+      if(!trigstat)
+      {
+        pexor_dbg(KERN_ERR "pexor_isr: could not alloc triggger status buffer! \n");
+        return IRQ_HANDLED;
+      }
+      memset(trigstat, 0, sizeof(struct pexor_trigger_buf));
+      trigstat->trixorstat=irstat;
+      pexor_dbg(KERN_NOTICE "pexor driver interrupt handler has triggerstatus 0x%x!\n",trigstat->trixorstat);
+      INIT_LIST_HEAD(&(trigstat->queue_list));
+      spin_lock( &(privdata->trigstat_lock) );
+      list_add_tail( &(trigstat->queue_list), &(privdata->trig_status));
+      spin_unlock( &(privdata->trigstat_lock) );
+
+
 
       /* trigger interrupt from trixor. wake up waiting application if any:*/
       /* pexor_dbg(KERN_NOTICE "pexor driver interrupt handler sees trigger ir!\n"); */
@@ -1500,6 +1522,7 @@ irqreturn_t pexor_isr( int irq, void *dev_id)
 
       /* OLD for pexor 1*/
       mb();
+      irstat=irtype;
       irtype &= ~(PEXOR_IRQ_USER_BIT);
       iowrite32(irtype, privdata->pexor.irq_control);  /*reset interrupt source*/
       iowrite32(irtype, privdata->pexor.irq_status);   /*reset interrupt source*/
@@ -2157,7 +2180,7 @@ ssize_t pexor_sysfs_dmaregs_show(struct device *dev, struct device_attribute *at
   pg=&(privdata->pexor);
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "*** PEXOR dma/irq register dump:\n");
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t dma control/status: 0x%x\n", readl(pg->dma_control_stat));
-  curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t irq/trixor stat: 0x%x\n", readl(pg->irq_status));
+  curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t irq/trixor stat  0x%x\n", readl(pg->irq_status));
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t irq/trixor ctrl: 0x%x\n", readl(pg->irq_control));
 #ifdef PEXOR_WITH_TRIXOR
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t trixor fcti: 0x%x\n", readl(pg->trix_fcti));
@@ -2544,6 +2567,9 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
   atomic_set(&(privdata->dma_outstanding), 0);
   init_waitqueue_head(&(privdata->irq_trig_queue));
   atomic_set(&(privdata->trig_outstanding), 0);
+  spin_lock_init(&(privdata->trigstat_lock));
+  INIT_LIST_HEAD(&(privdata->trig_status));
+
   tasklet_init(&(privdata->irq_bottomhalf), pexor_irq_tasklet,
 	       (unsigned long) privdata);
   spin_lock_init(&(privdata->dma_lock));

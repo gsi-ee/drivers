@@ -67,10 +67,52 @@ public:
     bool SetTriggerTimes(unsigned short fctime, unsigned short cvtime);
 
 
+    /** Type of last received trigger. Is set by WaitForTrigger() */
+    uint8_t GetTriggerType(){
+        return fLastTriggerStatus.typ;
+    }
+
+    /** Event counter word of last received trigger. Is set by WaitForTrigger() */
+    uint8_t GetLocalEventCounter(){
+            return fLastTriggerStatus.lec;
+    }
+
+    /** Subevent invalid  state of last received trigger. Is set by WaitForTrigger() */
+    uint8_t GetSubeventInvalid(){
+      return fLastTriggerStatus.si;
+    }
+
+    /** Trigger mismatch state of last received trigger. Is set by WaitForTrigger() */
+    uint8_t GetTriggerMismatch(){
+         return fLastTriggerStatus.mis;
+    }
+
+    /** Delay interrupt line  of last received trigger. Is set by WaitForTrigger() */
+    uint8_t GetDelayInterruptLine(){
+            return fLastTriggerStatus.di;
+       }
+
+    /** Total dead time on/off  of last received trigger. Is set by WaitForTrigger() */
+    uint8_t GetTotalDeadTime(){
+               return fLastTriggerStatus.tdt;
+          }
+
+    /** Data ready state of last received trigger. Is set by WaitForTrigger() */
+    uint8_t GetDataReady(){
+                   return fLastTriggerStatus.eon;
+              }
+    /** print out most recent trigger status values*/
+    bool DumpTriggerStatus();
+
+
 protected:
 
     /** utility to convert driver descriptor to matching pexor dma buffer container*/
     pexor::DMA_Buffer* PrepareReceivedBuffer(struct pexor_token_io & descriptor, int* dmabuf=0);
+
+
+    /** keep status variables of most recent trigger*/
+    struct pexor_trigger_status fLastTriggerStatus;
 
 
 };

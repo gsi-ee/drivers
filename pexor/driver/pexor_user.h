@@ -36,6 +36,13 @@
 #define PEXOR_TRIGGER_FIRED  0/**< return value from wait trigger to inform that trigger ir was fired reached */
 #define PEXOR_TRIGGER_TIMEOUT 1 /**< return value from wait trigger to inform that wait timeout was reached */
 
+
+
+#define PEXOR_TRIGTYPE_START 14 /**< start acquisition trigger type like in mbs */
+#define PEXOR_TRIGTYPE_STOP  15 /**< stop acquisition trigger type like in mbs */
+
+
+
 #define PEXOR_TRIX_RES          0   /**< Command for ioctl set trixor to reset trigger - clear dt flag */
 #define PEXOR_TRIX_GO           1   /**< Command for ioctl set trixor to start acquisition  */
 #define PEXOR_TRIX_HALT         2   /**< Command for ioctl set trixor to stop  acquisition  */
@@ -105,6 +112,24 @@ struct pexor_trixor_set {
         unsigned int cvt;     /**< optional argument for trixor settings (conversion time)*/
 };
 
+
+/** contains decoded information of trixor status register
+ * at corresponding trigger interrupt.
+ * These are compatible with mbs definitions */
+struct pexor_trigger_status {
+        unsigned char typ;      /**<  trigger type */
+        unsigned char lec;      /**<  local event counter */
+        unsigned char si;       /**< sub event invalid  */
+        unsigned char mis;      /**< trigger mismatch condition */
+        unsigned char di;       /**< delay interrupt line  */
+        unsigned char tdt;      /**< total dead time on/off */
+        unsigned char eon;      /**< data ready for readout*/
+};
+
+
+
+
+
 #define TRBNET_MAX_BUFS 64
 
 struct pexor_trbnet_io {
@@ -133,8 +158,8 @@ struct pexor_trbnet_io {
 #define PEXOR_IOC_READ_REGISTER    _IOWR(  PEXOR_IOC_MAGIC, 12, struct pexor_reg_io)
 #define PEXOR_IOC_REQUEST_TOKEN    _IOWR(  PEXOR_IOC_MAGIC, 13, struct pexor_token_io)
 #define PEXOR_IOC_WAIT_TOKEN    _IOWR(  PEXOR_IOC_MAGIC, 14, struct pexor_token_io)
-#define PEXOR_IOC_WAIT_TRIGGER    _IO(  PEXOR_IOC_MAGIC, 15)
-#define PEXOR_IOC_SET_TRIXOR    _IOR(  PEXOR_IOC_MAGIC, 16, struct pexor_trixor_set)
+#define PEXOR_IOC_WAIT_TRIGGER    _IOR(  PEXOR_IOC_MAGIC, 15, struct pexor_trigger_status)
+#define PEXOR_IOC_SET_TRIXOR    _IOW(  PEXOR_IOC_MAGIC, 16, struct pexor_trixor_set)
 #define PEXOR_IOC_TRBNET_REQUEST _IOWR(  PEXOR_IOC_MAGIC, 17, struct pexor_trbnet_io)
 #define PEXOR_IOC_MAPBUFFER   _IOW(  PEXOR_IOC_MAGIC, 18, struct pexor_userbuf)
 #define PEXOR_IOC_UNMAPBUFFER   _IOW(  PEXOR_IOC_MAGIC, 19, struct pexor_userbuf)

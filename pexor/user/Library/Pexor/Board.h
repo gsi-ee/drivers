@@ -15,6 +15,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdint.h>
 
 #include "Logger.h"
 #include "DMA_Pool.h"

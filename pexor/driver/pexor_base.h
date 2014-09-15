@@ -167,6 +167,12 @@ struct pexor_dmabuf
 };
 
 
+struct pexor_trigger_buf
+{
+  struct list_head queue_list;    /**< linked into queue list */
+  u32 trixorstat;      /**< trixor status register related at trigger interrupt  time*/
+
+};
 
 struct pexor_privdata
 {
@@ -192,6 +198,7 @@ struct pexor_privdata
 
   spinlock_t buffers_lock;      /**< protect any buffer lists operations */
   spinlock_t dma_lock;		/**< protects DMA Buffer */
+  spinlock_t trigstat_lock;       /**< protects trigger status queue */
 
   atomic_t irq_count;           /**< counter for irqs */
   spinlock_t irq_lock;         /**< optional lock between top and bottom half? */
@@ -203,6 +210,7 @@ struct pexor_privdata
   wait_queue_head_t irq_trig_queue;     /**< wait queue between bottom half
                                            and user wait trigger ioctl */
   atomic_t trig_outstanding;    /**< outstanding triggers counter */
+  struct list_head trig_status; /**< list (queue) of trigger status words corresponding to interrupts*/
 };
 
 

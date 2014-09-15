@@ -227,7 +227,7 @@ void pexorplugin::Device::InitTrixor ()
 //
   if (fTriggeredRead)
   {
-    fBoard->StopAcquisition ();
+    //fBoard->StopAcquisition (); // do not send stop trigger interrupt
     // TODO: setters to disable irqs in non trigger mode
     fBoard->SetTriggerTimes (fTrixConvTime, fTrixFClearTime);
     fBoard->ResetTrigger ();
@@ -257,6 +257,17 @@ void pexorplugin::Device::ObjectCleanup ()
 
 int pexorplugin::Device::ExecuteCommand (dabc::Command cmd)
 {
+  // TODO: implement generic commands for:
+  // start stop acquisition
+  // open close file
+  // enable/disable trigger
+  // reset pexor/frontends (with virtual methods for user)
+  // init frontends (with virtual methods for user)
+
+
+
+
+
 //   if (cmd->IsName(DABC_PCI_COMMAND_SET_READ_REGION) && fInitDone)
 //      {
 //          unsigned int bar=cmd->GetInt(DABC_PCI_COMPAR_BAR,1);
@@ -401,7 +412,35 @@ int pexorplugin::Device::RequestAllTokens (dabc::Buffer& buf, bool synchronous)
       fBoard->ResetTrigger ();
       return dabc::di_RepeatTimeOut;
     }
+    // trigger is received, optionally dump something:
+    fBoard->DumpTriggerStatus();
+
+    // do not read out for start or stop trigger:
+    if(fBoard->GetTriggerType()==PEXOR_TRIGTYPE_START)
+    {
+      DOUT1 ("pexorplugin::Device::RequestAllTokens finds start trigger :%d !!", fBoard->GetTriggerType());
+      fBoard->ResetTrigger ();
+      // TODO: do not repeat with timeout, but return event buffer with start trigger type to data stream
+      return dabc::di_SkipBuffer;
+      //return dabc::di_RepeatTimeOut;
+    }
+    if(fBoard->GetTriggerType()==PEXOR_TRIGTYPE_STOP)
+    {
+      DOUT1 ("pexorplugin::Device::RequestAllTokens finds stop trigger :%d !!", fBoard->GetTriggerType());
+      fBoard->ResetTrigger ();
+      // TODO: do not repeat with timeout, but return event buffer with start trigger type to data stream
+      return dabc::di_SkipBuffer;
+      //return dabc::di_RepeatTimeOut;
+    }
+
+
+
   }
+  // <------
+  // TODO: put wait for trigger outside the request all tokens section.
+  // this is  better for optional user implementations later.
+  // should be separate method to be used in ReadStart or ReadComplete.
+
 
   if ((fMemoryTest && !fSkipRequest) || (!fMemoryTest))
   {
@@ -627,6 +666,10 @@ mbs::EventHeader* pexorplugin::Device::PutMbsEventHeader (dabc::Pointer& ptr, mb
 
   mbs::EventHeader* evhdr = (mbs::EventHeader*) ptr ();
   evhdr->Init (eventnumber);
+  // put here trigger type
+  evhdr->iTrigger=fBoard->GetTriggerType();
+
+
   ptr.shift (sizeof(mbs::EventHeader));
   return evhdr;
 }
