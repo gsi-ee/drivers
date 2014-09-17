@@ -12,6 +12,7 @@
 			<!-- <runtime value="20"/> -->
 			<debuglevel value="1"/>
 			<control value="true"/>
+			<halttime value="20"/>
 			
 		</Run>
 

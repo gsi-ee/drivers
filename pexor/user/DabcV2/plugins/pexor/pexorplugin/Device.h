@@ -57,6 +57,10 @@ extern const char* nameReadoutModuleClass;
 extern const char* nameInputPool;
 extern const char* nameOutputPool;
 
+extern const char* commandStartAcq;
+extern const char* commandStopAcq;
+
+
 class Device: public dabc::Device
 {
 
@@ -65,15 +69,25 @@ public:
   Device (const std::string& name, dabc::Command cmd);
   virtual ~Device ();
 
-  /** for zero copy DMA: map complete dabc pool for sg DMA of driver*/
+  /** here we may insert some actions to the device cleanup methods*/
+  virtual bool DestroyByOwnThread();
+
+  /** for zero copy DMA: map complete dabc pool for sg DMA of driver
+   * NOTE: currently not used for standard daq, deprecated function of previous tests with emulated sg dma.
+   * For pexor direct token dma mode, sg emulation is not applicable!*/
   void MapDMAMemoryPool (dabc::MemoryPool* pool);
 
   /** Request token from current sfp. If synchronous is true, fill output buffer.
    * if mbs formating is enabled, put mbs headers into buffer
    * If synchronous mode false, return before getting dma buffer,
-   * needs to call ReceivetokenBuffer afterwards.*/
+   * needs to call ReceivetokenBuffer afterwards.
+   * NOTE: this method is not used for default daq case, kept for user convencience to be called
+   * in optional reimplementation of ReadStart/ReadComplete interface*/
   virtual int RequestToken (dabc::Buffer& buf, bool synchronous = true);
 
+  /** Receive token buffer of currently active sfp after asynchronous RequestToken call.
+   * NOTE: this method is not used for default daq case, kept for user convencience to be called
+   * in optional reimplementation of ReadStart/ReadComplete interface */
   int ReceiveTokenBuffer (dabc::Buffer& buf);
 
   /** for parallel readout mode: send request to all connected sfp chains in parallel.
@@ -82,7 +96,11 @@ public:
    * for synchronous mode true, fill one dabc buffer with subevents of different channels*/
   int RequestAllTokens (dabc::Buffer& buf, bool synchronous = true);
 
-  int ReceiveAllTokenBuffer (dabc::Buffer& buf);
+
+  /** Receive dma buffers from token request on all channels and copy to dabc buffer buf.
+   * Optionally data is formatted with mbs event and subevent headers. MBS trigger type may be specified
+   * depending on trixor trigger or triggerless readout.*/
+  int ReceiveAllTokenBuffer (dabc::Buffer& buf, uint16_t trigtype=mbs::tt_Event);
 
   virtual const char* ClassName () const
   {
@@ -117,10 +135,15 @@ public:
   void InitTrixor ();
 
   /** start data taking with trigger*/
-  void StartTrigger ();
+  bool StartAcquisition ();
 
   /** stop data taking with trigger*/
-  void StopTrigger ();
+  bool StopAcquisition ();
+
+  bool IsAcquisitionRunning()
+  {
+    return fAqcuisitionRunning;
+  }
 
   /** Forwarded interface for user defined readout:
    * User code may overwrite the default behaviour (gosip token dma)
@@ -131,6 +154,12 @@ public:
    * User code may overwrite the default behaviour (gosip token dma)
    * For example, optionally some register settings may be added to buffer contents*/
   virtual unsigned Read_Complete (dabc::Buffer& buf);
+
+
+  /** interface for user subclass to implement different readout variants depending on the triggertype.
+   * The default implementation will issue retry/timeout on start/stop acquisition trigger and
+   * a standard token request with direct dma for all other trigger types*/
+  virtual int User_Readout(dabc::Buffer& buf, uint8_t trigtype);
 
 protected:
   virtual void ObjectCleanup ();
@@ -153,17 +182,20 @@ protected:
    * Padding words are formatted in mbs convention like 0xaddNNII*/
   int PutMbsPaddingWords(dabc::Pointer& ptr, uint8_t num);
 
-  /** copy contents of received dma buffer and optionally format for mbs*/
+  /** copy contents of received dma buffer and optionally format for mbs.
+   * NOTE: for single sfp request only, not used in default daq implementation*/
   int CopyOutputBuffer (pexor::DMA_Buffer* src, dabc::Buffer& dest);
 
-  /** copy contents of received dma buffers src to destination buffer and optionally format for mbs*/
-  int CombineTokenBuffers (pexor::DMA_Buffer** src, dabc::Buffer& dest);
+  /** copy contents of received dma buffers src to destination buffer and optionally format for mbs.
+   * mbs style trigger type can be set for event header.*/
+  int CombineTokenBuffers (pexor::DMA_Buffer** src, dabc::Buffer& dest, uint16_t trigtype=mbs::tt_Event);
 
   /** copy contents of dma token buffers src to subevent field pointed at by coursor; optionally format for mbs
    * returns increment of used size in target buffer. Use sfpnum as subevent identifier*/
   int CopySubevent (pexor::DMA_Buffer* src, dabc::Pointer& cursor, char sfpnum);
 
-  /** switch sfp input index to next enabled one. returns false if no sfp is enabled in setup*/
+  /** switch sfp input index to next enabled one. returns false if no sfp is enabled in setup.
+   * For round robin readout of single sfps. Not used for default triggered daq implementation.*/
   bool NextSFP ();
 
 protected:
@@ -191,6 +223,9 @@ protected:
 
   /** For mbsformat: defines subevent control*/
   unsigned int fSubeventControl;
+
+  /** flag for aquisition running state*/
+  bool fAqcuisitionRunning;
 
   /** if true, use synchrounous readout of token and dma. otherwise, decouple token request
    * from DMA buffer receiving*/

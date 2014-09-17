@@ -837,11 +837,14 @@ int pexor_ioctl_reset(struct pexor_privdata* priv, unsigned long arg)
   atomic_set(&(priv->state),PEXOR_STATE_STOPPED);
 #ifdef PEXOR_WITH_TRIXOR
   pexor_dbg(KERN_NOTICE "Initalizing TRIXOR... \n");
-  atomic_set(&(priv->trig_outstanding), 0);
+
 
   iowrite32(TRIX_EV_IRQ_CLEAR | TRIX_IRQ_CLEAR, priv->pexor.irq_status);   /*reset interrupt source*/
   mb();
   ndelay(20);
+
+   atomic_set(&(priv->trig_outstanding), 0);
+   // clear interrupt type queue:
 
 
   iowrite32(TRIX_BUS_DISABLE, priv->pexor.irq_control);
@@ -908,6 +911,9 @@ int pexor_ioctl_clearreceivebuffers(struct pexor_privdata* priv, unsigned long a
   unsigned long wjifs=0;
   struct pexor_dmabuf* cursor;
   struct pexor_dmabuf* next;
+#ifdef PEXOR_WITH_TRIXOR
+  struct pexor_trigger_buf* trigstat;
+#endif
   pexor_dbg(KERN_NOTICE "** pexor_ioctl_clearreceivebuffers...\n");
   spin_lock( &(priv->buffers_lock) );
   list_for_each_entry_safe(cursor, next, &(priv->received_buffers), queue_list)
@@ -951,7 +957,21 @@ int pexor_ioctl_clearreceivebuffers(struct pexor_privdata* priv, unsigned long a
 	  return -EFAULT;
 	}
       atomic_dec(&(priv->trig_outstanding));
-    }
+      spin_lock( &(priv->trigstat_lock) );
+        if(list_empty(&(priv->trig_status)))
+            {
+              spin_unlock( &(priv->trigstat_lock) );
+              pexor_msg(KERN_ERR "pexor_ioctl_clearreceivebuffers never come here - list of trigger type buffers is empty! \n");
+              return -EFAULT;
+            }
+        trigstat=list_first_entry(&(priv->trig_status), struct pexor_trigger_buf, queue_list);
+        list_del(&(trigstat->queue_list));
+        spin_unlock( &(priv->trigstat_lock));
+        pexor_dbg(KERN_NOTICE "pexor_ioctl_clearreceivebuffers has eaten old trigger type 0x%x ",(trigstat->trixorstat &  SEC__MASK_TRG_TYP) >> 16);
+        kfree(trigstat);
+    } // for outstandingbuffers
+
+
 
 #endif
   return 0;

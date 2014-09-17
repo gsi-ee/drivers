@@ -54,7 +54,6 @@
 #define REG_CTRL       0x200000
 #define REG_QFW_OFFSET_BASE 0x200100
 
-//const char* poland::xmlExploderSubmem = "ExploderSubmemSize";    // size of exploder submem test buffer
 
 poland::Device::Device (const std::string& name, dabc::Command cmd) :
     pexorplugin::Device (name, cmd)

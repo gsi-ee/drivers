@@ -34,6 +34,15 @@
 
 //#include "pexorplugin/random-coll.h"
 
+
+/** check if device object is valid. may specify return value depending on function where it is used: */
+#define PEXORPLUGIN_ASSERT_DEVICEINIT(ret)  \
+  if (!fInitDone){ \
+      EOUT ("**** PEXORPLUGIN Device is not initialized!\n"); \
+      return ret; }
+
+
+
 const char* pexorplugin::xmlPexorID = "PexorID";    //< id number N of pexor device file /dev/pexor-N
 const char* pexorplugin::xmlPexorSFPSlaves = "PexorNumSlaves_";    //<  prefix for the sfp numbers 0,1,2,3 indicating how many slaves are connected input
 const char* pexorplugin::xmlRawFile = "PexorOutFile";    //<  name of output lmd file
@@ -67,13 +76,18 @@ const char* pexorplugin::nameReadoutModuleClass = "pexorplugin::ReadoutModule";
 const char* pexorplugin::nameInputPool = "PexorInputPool";
 const char* pexorplugin::nameOutputPool = "PexorOutputPool";
 
+
+const char* pexorplugin::commandStartAcq = "StartAcquisition";
+const char* pexorplugin::commandStopAcq =  "StopAcquisition";
+
+
 unsigned int pexorplugin::Device::fgThreadnum = 0;
 
 
 
 pexorplugin::Device::Device(const std::string& name, dabc::Command cmd):
     dabc::Device (name), fBoard (0), fMbsFormat (true), fSingleSubevent (false), fSubeventSubcrate (0),
-        fSubeventProcid (0), fSubeventControl (0), fSynchronousRead (true), fTriggeredRead (false), fMemoryTest (false),
+        fSubeventProcid (0), fSubeventControl (0), fAqcuisitionRunning(false), fSynchronousRead (true), fTriggeredRead (false), fMemoryTest (false),
         fSkipRequest (false), fCurrentSFP (0), fReadLength (0), fTrixConvTime (0x20), fTrixFClearTime (0x10),
         fInitDone (false), fNumEvents (0)
 
@@ -149,6 +163,13 @@ pexorplugin::Device::Device(const std::string& name, dabc::Command cmd):
   fTrixConvTime = Cfg (pexorplugin::xmlTrixorConvTime, cmd).AsInt (0x200);    //GetCfgInt(pexorplugin::xmlTrixorConvTime,0x200, cmd)
   fTrixFClearTime = Cfg (pexorplugin::xmlTrixorFastClearTime, cmd).AsInt (0x100);    //GetCfgInt(pexorplugin::xmlTrixorFastClearTime,0x100, cmd);
 
+  CreateCmdDef(pexorplugin::commandStartAcq);
+  CreateCmdDef(pexorplugin::commandStopAcq);
+
+ // CreatePar ("DeviceDataRate").SetRatemeter (false, 3.).SetUnits ("bytes");
+
+  PublishPars("$CONTEXT$/PexDevice");
+
   InitTrixor ();
 
   // here the memory copy test switches:
@@ -161,22 +182,24 @@ pexorplugin::Device::Device(const std::string& name, dabc::Command cmd):
 pexorplugin::Device::~Device ()
 {
   DOUT1 ("DDDDDDDDDDd pexorplugin::Device destructor \n");
-  if (fTriggeredRead)
-  {
-    fBoard->StopAcquisition ();
-    fBoard->ResetTrigger ();
-  }
-  fBoard->Reset ();    // throw away optionally user buffer mappings here
-  DOUT1 ("DDDDDDDDDDd pexorplugin::Device destructor did board reset\n");
-  printf("\nppppppppp dtor of pexorplugin::Device::~Device ()\n");
-  delete fBoard;
+  // NOTE: all time consuming cleanups and delete board is moved to object cleanup due to dabc shutdown mechanisms
 }
+
+bool pexorplugin::Device::DestroyByOwnThread()
+{
+  if (fBoard->IsOpen ())
+    {
+      if(fTriggeredRead) fBoard->StopAcquisition (); // issue trigger 15, get out of wait for trigger
+    }
+  DOUT1 ("DDDDDDDDDDd pexorplugin::Device DestroyByOwnThread()was called \n");
+  return dabc::Device::DestroyByOwnThread();
+}
+
 
 void pexorplugin::Device::MapDMAMemoryPool (dabc::MemoryPool* pool)
 {
+  PEXORPLUGIN_ASSERT_DEVICEINIT();
   if (!fZeroCopyMode)
-    return;
-  if (!fInitDone)
     return;
   DOUT1 ("SSSSSSS Starting MapDMAMemoryPool for pool:%s", pool->GetName ());
   // first clean up all previos buffers
@@ -234,69 +257,84 @@ void pexorplugin::Device::InitTrixor ()
   }
 }
 
-void pexorplugin::Device::StartTrigger ()
+bool pexorplugin::Device::StartAcquisition ()
 {
+  DOUT1 ("pexorplugin::Device - Start Acquisition...");
+  PEXORPLUGIN_ASSERT_DEVICEINIT(false);
+  if (IsAcquisitionRunning())
+    {
+      DOUT1 ("pexorplugin::Device - Aqcuisition is already running, do not start again.");
+      return true;
+    }
+  fAqcuisitionRunning=true;
   if (fTriggeredRead)
-    fBoard->StartAcquisition ();
-
+    return (fBoard->StartAcquisition ());
+  return false;
 }
 
-void pexorplugin::Device::StopTrigger ()
+bool pexorplugin::Device::StopAcquisition ()
 {
+  DOUT1 ("pexorplugin::Device - Stop Acquisition...");
+  PEXORPLUGIN_ASSERT_DEVICEINIT(false);
+  if (!IsAcquisitionRunning())
+     {
+       DOUT1 ("pexorplugin::Device - Aqcuisition is already stopped, do not stop again.");
+       return true;
+     }
+  fAqcuisitionRunning=false;
   if (fTriggeredRead)
-    fBoard->StopAcquisition ();
-
+    return(fBoard->StopAcquisition ());
+return false;
 }
 
 void pexorplugin::Device::ObjectCleanup ()
 {
   DOUT1 ("_______pexorplugin::Device::ObjectCleanup...");
-  //if(fInitDone) fBoard->Reset();
+  if (fTriggeredRead)
+   {
+     fBoard->StopAcquisition ();
+//     DOUT1 ("DDDDDDDDDDd pexorplugin::ObjectCleanup did stop acquisition\n");
+     fBoard->ResetTrigger ();
+//     DOUT1 ("DDDDDDDDDDd pexorplugin::ObjectCleanup did reset trigger\n");
+   }
+   fBoard->Reset ();    // throw away optionally user buffer mappings here
+//   DOUT1 ("DDDDDDDDDDd pexorplugin::ObjectCleanup did board reset\n");
+   fInitDone=false;
+   delete fBoard;
   dabc::Device::ObjectCleanup ();
+  DOUT1 ("_______pexorplugin::Device::ObjectCleanup leaving.");
 }
 
 int pexorplugin::Device::ExecuteCommand (dabc::Command cmd)
 {
   // TODO: implement generic commands for:
   // start stop acquisition
-  // open close file
+  // open close file -> to readout module
   // enable/disable trigger
   // reset pexor/frontends (with virtual methods for user)
   // init frontends (with virtual methods for user)
 
-
-
-
-
-//   if (cmd->IsName(DABC_PCI_COMMAND_SET_READ_REGION) && fInitDone)
-//      {
-//          unsigned int bar=cmd->GetInt(DABC_PCI_COMPAR_BAR,1);
-//          unsigned int address=cmd->GetInt(DABC_PCI_COMPAR_ADDRESS, (0x8000 >> 2));
-//          unsigned int length=cmd->GetInt(DABC_PCI_COMPAR_SIZE, 1024);
-//          SetReadBuffer(bar, address, length);
-//          DOUT1(("Command %s  sets PCI READ region to bar:%d, address:%p, length:%d",DABC_PCI_COMMAND_SET_READ_REGION,bar,address,length));
-//          return cmd_true;
-//      }
-//    else if (cmd->IsName(DABC_PCI_COMMAND_SET_WRITE_REGION) && fInitDone)
-//      {
-//          unsigned int bar=cmd->GetInt(DABC_PCI_COMPAR_BAR,1);
-//          unsigned int address=cmd->GetInt(DABC_PCI_COMPAR_ADDRESS, (0x8000 >> 2));
-//          unsigned int length=cmd->GetInt(DABC_PCI_COMPAR_SIZE, 1024);
-//          SetWriteBuffer(bar, address, length);
-//          DOUT1(("Command %s  sets PCI WRITE region to bar:%d, address:%p, length:%d",DABC_PCI_COMMAND_SET_READ_REGION,bar,address,length));
-//          return cmd_true;
-//     }
-//    else // TODO: reset board buffers here!
-
-  DOUT1 ("pexorplugin::Device::ExecuteCommand-  %s", cmd.GetName ());
-
-  return dabc::Device::ExecuteCommand (cmd);
+   //DOUT1 ("pexorplugin::Device::ExecuteCommand-  %s", cmd.GetName ());
+  bool res=false;
+  if (cmd.IsName(pexorplugin::commandStartAcq))
+        {
+            DOUT1("Executing Command %s  ",pexorplugin::commandStartAcq);
+            res=StartAcquisition();
+            return cmd_bool(res);;
+        }
+  else if (cmd.IsName(pexorplugin::commandStopAcq))
+          {
+              DOUT1("Executing Command %s  ",pexorplugin::commandStartAcq);
+              res=StopAcquisition();
+              return cmd_bool(res);;
+          }
+  else
+    return dabc::Device::ExecuteCommand (cmd);
 }
 
 dabc::Transport* pexorplugin::Device::CreateTransport (dabc::Command cmd, const dabc::Reference& port)
 {
-  if (!fInitDone)
-    return 0;
+  PEXORPLUGIN_ASSERT_DEVICEINIT(0);
   //   dabc::Url url(typ);
   //
   dabc::PortRef portref = port;
@@ -312,8 +350,7 @@ dabc::Transport* pexorplugin::Device::CreateTransport (dabc::Command cmd, const 
 
 int pexorplugin::Device::RequestToken (dabc::Buffer& buf, bool synchronous)
 {
-  if (!fInitDone)
-    return dabc::di_Error;
+  PEXORPLUGIN_ASSERT_DEVICEINIT(dabc::di_Error);
   DOUT3 ("RequestToken is called");
 
   if (!NextSFP ())
@@ -400,48 +437,7 @@ int pexorplugin::Device::ReceiveTokenBuffer (dabc::Buffer& buf)
 int pexorplugin::Device::RequestAllTokens (dabc::Buffer& buf, bool synchronous)
 {
   DOUT3 ("pexorplugin::Device::RequestAllTokens with synchronous=%d ", synchronous);
-
   static pexor::DMA_Buffer* tokbuf[PEXORPLUGIN_NUMSFP];
-  if (fTriggeredRead)
-  {
-    // wait for trigger fired before fetching data:
-    if (!fBoard->WaitForTrigger ())
-    {
-      // case of timeout, need dabc retry?
-      EOUT (("**** Timout of trigger, retry dabc request.. \n"));
-      fBoard->ResetTrigger ();
-      return dabc::di_RepeatTimeOut;
-    }
-    // trigger is received, optionally dump something:
-    fBoard->DumpTriggerStatus();
-
-    // do not read out for start or stop trigger:
-    if(fBoard->GetTriggerType()==PEXOR_TRIGTYPE_START)
-    {
-      DOUT1 ("pexorplugin::Device::RequestAllTokens finds start trigger :%d !!", fBoard->GetTriggerType());
-      fBoard->ResetTrigger ();
-      // TODO: do not repeat with timeout, but return event buffer with start trigger type to data stream
-      return dabc::di_SkipBuffer;
-      //return dabc::di_RepeatTimeOut;
-    }
-    if(fBoard->GetTriggerType()==PEXOR_TRIGTYPE_STOP)
-    {
-      DOUT1 ("pexorplugin::Device::RequestAllTokens finds stop trigger :%d !!", fBoard->GetTriggerType());
-      fBoard->ResetTrigger ();
-      // TODO: do not repeat with timeout, but return event buffer with start trigger type to data stream
-      return dabc::di_SkipBuffer;
-      //return dabc::di_RepeatTimeOut;
-    }
-
-
-
-  }
-  // <------
-  // TODO: put wait for trigger outside the request all tokens section.
-  // this is  better for optional user implementations later.
-  // should be separate method to be used in ReadStart or ReadComplete.
-
-
   if ((fMemoryTest && !fSkipRequest) || (!fMemoryTest))
   {
     for (fCurrentSFP = 0; fCurrentSFP < PEXORPLUGIN_NUMSFP; ++fCurrentSFP)
@@ -464,12 +460,13 @@ int pexorplugin::Device::RequestAllTokens (dabc::Buffer& buf, bool synchronous)
   }
   if (!synchronous)
     return dabc::di_Ok;
+  // NOTE: synchronous driver request is not used for standard daq case
   fSkipRequest = true;
   return (CombineTokenBuffers (tokbuf, buf));
 
 }
 
-int pexorplugin::Device::ReceiveAllTokenBuffer (dabc::Buffer& buf)
+int pexorplugin::Device::ReceiveAllTokenBuffer (dabc::Buffer& buf, uint16_t trigtype)
 {
   DOUT3 ("pexorplugin::Device::ReceiveAllTokenBuffer...\n");
   static pexor::DMA_Buffer* tokbuf[PEXORPLUGIN_NUMSFP];
@@ -505,7 +502,7 @@ int pexorplugin::Device::ReceiveAllTokenBuffer (dabc::Buffer& buf)
       fBoard->ResetTrigger ();
       DOUT3 ("RRRRRRRRRRRRRRRR pexorplugin::Device::ReceiveAllTokenBuffer has reset trigger!\n");
   }
-  return (CombineTokenBuffers (tokbuf, buf));
+  return (CombineTokenBuffers (tokbuf, buf, trigtype));
 }
 
 int pexorplugin::Device::CopyOutputBuffer (pexor::DMA_Buffer* tokbuf, dabc::Buffer& buf)
@@ -568,7 +565,7 @@ int pexorplugin::Device::CopyOutputBuffer (pexor::DMA_Buffer* tokbuf, dabc::Buff
 
 }
 
-int pexorplugin::Device::CombineTokenBuffers (pexor::DMA_Buffer** src, dabc::Buffer& buf)
+int pexorplugin::Device::CombineTokenBuffers (pexor::DMA_Buffer** src, dabc::Buffer& buf, uint16_t trigtype)
 {
 
   dabc::Pointer ptr (buf);
@@ -578,7 +575,7 @@ int pexorplugin::Device::CombineTokenBuffers (pexor::DMA_Buffer** src, dabc::Buf
   mbs::SubeventHeader* subhdr = 0;
   if (fMbsFormat)
   {
-    evhdr = PutMbsEventHeader (ptr, fNumEvents);    // TODO: get current trigger type from trixor and set
+    evhdr = PutMbsEventHeader (ptr, fNumEvents, trigtype);    // TODO: get current trigger type from trixor and set
     if(evhdr==0)  return dabc::di_SkipBuffer; // buffer too small error
     used_size += sizeof(mbs::EventHeader);
     if (fSingleSubevent)
@@ -667,7 +664,8 @@ mbs::EventHeader* pexorplugin::Device::PutMbsEventHeader (dabc::Pointer& ptr, mb
   mbs::EventHeader* evhdr = (mbs::EventHeader*) ptr ();
   evhdr->Init (eventnumber);
   // put here trigger type
-  evhdr->iTrigger=fBoard->GetTriggerType();
+  evhdr->iTrigger=trigger;
+      //fBoard->GetTriggerType();
 
 
   ptr.shift (sizeof(mbs::EventHeader));
@@ -704,13 +702,6 @@ int pexorplugin::Device::PutMbsPaddingWords(dabc::Pointer& ptr, uint8_t num)
     *pl_dat = 0xadd00000 + (num<<8) + k;
     ptr.shift (sizeof(int));
   }
-  //              l_padd[l_i] = l_padd[l_i] >> 2;                  // now in 4 bytes (longs)
-  //              for (l_k=0; l_k<l_padd[l_i]; l_k++)
-  //              {
-  //                //*pl_dat++ = 0xadd00000 + (l_i*0x1000) + l_k;
-  //                *pl_dat++ = 0xadd00000 + (l_padd[l_i]<<8) + l_k;
-  //              }
-  //
   return num;
 }
 
@@ -731,34 +722,144 @@ bool pexorplugin::Device::NextSFP ()
 
 unsigned pexorplugin::Device::Read_Start (dabc::Buffer& buf)
 {
+  PEXORPLUGIN_ASSERT_DEVICEINIT(dabc::di_Error);
   if (IsTriggeredRead () || IsSynchronousRead ())
   {
     return dabc::di_Ok;    // synchronous mode, all handled in Read_Complete
   }
   else
   {
+    if(!IsAcquisitionRunning())
+    {
+      DOUT0("pexorplugin::Device::Read_Start: acquisition is stopped, transport timeout...\n");
+      return dabc::di_RepeatTimeOut;
+    }
     return (unsigned) (RequestAllTokens (buf, false));
   }
 }
 
 unsigned pexorplugin::Device::Read_Complete (dabc::Buffer& buf)
 {
+  PEXORPLUGIN_ASSERT_DEVICEINIT(dabc::di_Error);
+  if(!IsAcquisitionRunning())
+      {
+        DOUT0("pexorplugin::Device::Read_Complete: acquisition is stopped, transport timeout...\n");
+        return dabc::di_RepeatTimeOut;
+      }
   int res = dabc::di_Ok;
   int retsize=0;
   // on trigger, we always read all sfp channels! so always "parallel" mode for dabc
+
   if (IsTriggeredRead () || IsSynchronousRead ())
   {
-    res = RequestAllTokens (buf, false);    // for parallel read, we need async request before polling
-    if((unsigned) res !=dabc::di_Ok) return (unsigned) res; // propagate error type
-    retsize= ReceiveAllTokenBuffer (buf);
+    // TODO: take out trigger actions from request/receive methods!
+    uint8_t trigtype;
+    if (IsTriggeredRead ())
+     {
+       // wait for trigger fired before fetching data:
+       if (!fBoard->WaitForTrigger ())
+       {
+         // case of timeout, need dabc retry?
+         EOUT (("**** Timout of trigger, retry dabc request.. \n"));
+         fBoard->ResetTrigger ();
+         return dabc::di_RepeatTimeOut;
+       }
 
+       // trigger is received, optionally dump something:
+       fBoard->DumpTriggerStatus();
+       trigtype=fBoard->GetTriggerType();
+     }
+    else
+    {
+      trigtype=PEXOR_TRIGTYPE_NONE;
+    }
+    retsize=User_Readout(buf, trigtype);
   }
   else
   {
+    // asynchronous dabc readout without trigger - special case not used for standard daq
     retsize= ReceiveAllTokenBuffer (buf);
   }
   if (retsize<0) return retsize;
-  fReadLength=retsize;
+  //Par("DeviceDataRate").SetValue (retsize);
+  //fReadLength=retsize;
   return (unsigned) res;
 }
+
+
+
+int pexorplugin::Device::User_Readout(dabc::Buffer& buf, uint8_t trigtype)
+{
+  int res = dabc::di_Ok;
+  int retsize=0;
+  unsigned int filled_size = 0, used_size = 0;
+  mbs::EventHeader* evhdr = 0;
+  mbs::SubeventHeader* subhdr = 0;
+  switch(trigtype)
+  {
+
+  // do not read out for start or stop trigger:
+    case PEXOR_TRIGTYPE_START:
+        {
+          DOUT1 ("pexorplugin::Device::User_Readout finds start trigger :%d !!", trigtype);
+          fBoard->ResetTrigger ();
+          if (fMbsFormat)
+            {
+              // as default, we deliver empty event and subevent just marking trigger type and ids:
+              dabc::Pointer ptr (buf);
+              evhdr = PutMbsEventHeader (ptr, fNumEvents, trigtype);    // TODO: get current trigger type from trixor and set
+              if(evhdr==0)  return dabc::di_SkipBuffer; // buffer too small error
+              used_size += sizeof(mbs::EventHeader);
+              subhdr = PutMbsSubeventHeader (ptr, fSubeventSubcrate, fSubeventControl, fSubeventProcid);
+              if(subhdr==0)
+              return dabc::di_SkipBuffer; // buffer too small error
+              used_size += sizeof(mbs::SubeventHeader);
+              filled_size += sizeof(mbs::SubeventHeader);
+              /////////////
+              // put some dummy payload data here:
+//              if(PutMbsPaddingWords(ptr, 1)<0)
+//                return dabc::di_SkipBuffer;
+//              used_size += sizeof(int);
+//              filled_size += sizeof(int);
+              /////////////
+              subhdr->SetRawDataSize (filled_size - sizeof(mbs::SubeventHeader));
+              evhdr->SetSubEventsSize (filled_size);
+              buf.SetTypeId (mbs::mbt_MbsEvents);
+              buf.SetTotalSize (used_size);
+              retsize=used_size;
+            }
+          else
+          {
+            // no mbs format (very hypothetical): just skip buffer
+            return dabc::di_SkipBuffer;
+          }
+          //return dabc::di_RepeatTimeOut;
+        }
+        break;
+
+    case PEXOR_TRIGTYPE_STOP:
+        {
+          DOUT1 ("pexorplugin::Device::User_Readout finds stop trigger :%d !!", trigtype);
+          fBoard->ResetTrigger ();
+          // TODO: do not repeat with timeout, but return event buffer with start trigger type to data stream
+          //return dabc::di_SkipBuffer;
+          return dabc::di_RepeatTimeOut; // need this timeout for proper shutdown?
+        }
+        break;
+
+    case PEXOR_TRIGTYPE_NONE: // we may put different behaviour for triggerless readout here
+      trigtype=mbs::tt_Event; // for the moment, triggerless events are marked as regular data events
+    default:
+      {
+       res = RequestAllTokens (buf, false);    // for parallel read, we need async request before polling
+       if((unsigned) res !=dabc::di_Ok) return res; // propagate error type
+       retsize= ReceiveAllTokenBuffer (buf, trigtype);
+       fReadLength=retsize; //? do we want to adjust expected readsize dynamically here?
+       //////////////////////////////// trigger reset is optionally done in receive before buffer combining/copying
+      }
+     break;
+  }; // switch
+  return retsize;
+}
+
 

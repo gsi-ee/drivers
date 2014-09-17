@@ -38,6 +38,8 @@
 
 
 
+#define PEXOR_TRIGTYPE_NONE 0 /**< triggerless readout */
+#define PEXOR_TRIGTYPE_DATA 1 /**< regular data trigger */
 #define PEXOR_TRIGTYPE_START 14 /**< start acquisition trigger type like in mbs */
 #define PEXOR_TRIGTYPE_STOP  15 /**< stop acquisition trigger type like in mbs */
 

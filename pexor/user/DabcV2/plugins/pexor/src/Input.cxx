@@ -21,7 +21,7 @@ pexorplugin::Input::Input (pexorplugin::Device* dev) :
 // provide input and output buffers
 {
   DOUT2 ("Created new pexorplugin::Input\n");
-
+  fErrorRate.Reset();
 }
 
 pexorplugin::Input::~Input ()

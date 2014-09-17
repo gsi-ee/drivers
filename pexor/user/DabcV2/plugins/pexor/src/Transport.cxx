@@ -35,7 +35,7 @@ pexorplugin::Transport::~Transport()
 bool pexorplugin::Transport::StartTransport()
 {
 	DOUT1("StartTransport() %p\n", thread().GetObject());
-	fPexorDevice->StartTrigger();
+	fPexorDevice->StartAcquisition();
 	return dabc::InputTransport::StartTransport();
 
 }
@@ -43,7 +43,7 @@ bool pexorplugin::Transport::StartTransport()
 bool pexorplugin::Transport::StopTransport()
 {
 	DOUT1("StopTransport() %p\n", thread().GetObject());
-	fPexorDevice->StopTrigger();
+	fPexorDevice->StopAcquisition();
 	bool rev=dabc::InputTransport::StopTransport();
 	DOUT1("\npexorplugin::Transport stopped with result %d. Total number of token errors: %7ld in %e s\n",  rev, fPexorInput->fErrorRate.GetNumOper(),  fPexorInput->fErrorRate.GetTotalTime());
 	return rev;
