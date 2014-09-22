@@ -1,2 +1,4 @@
 #/bin/bash
- /daq/usr/adamczew/workspace/drivers/mbspex/bin/gosipcmd -x -i  $*
+/mbs/driv/mbspex_3.2_DEB/bin/gosipcmd -x -i  $*
+# /daq/usr/adamczew/workspace/drivers/mbspex/bin/gosipcmd -x -i  $*
+
