@@ -22,6 +22,7 @@
 #define POLAND_TS_NUM           3
 
 #define POLAND_REG_QFW_MODE         0x200004
+#define POLAND_REG_QFW_PRG          0x200008
 
 #define POLAND_REG_DAC_MODE         0x20002c
 #define POLAND_REG_DAC_PROGRAM      0x200030
@@ -200,6 +201,14 @@ protected:
   /* index of slave device , -1 for broadcast*/
   int fSlave;
 
+  /* remember sfp channel to recover after broadcast*/
+  int fChannelSave;
+
+  /* remember slave channel to recover after broadcast*/
+  int fSlaveSave;
+
+
+
   PolandSetup fSetup;
   /* update register display*/
   void RefreshView ();
@@ -271,7 +280,7 @@ public slots:
   virtual void InitChainBtn_clicked ();
   virtual void ResetBoardBtn_clicked ();
   virtual void ResetSlaveBtn_clicked ();
-  virtual void BroadcastBtn_clicked ();
+  virtual void BroadcastBtn_clicked (bool checked);
   virtual void DumpBtn_clicked ();
   virtual void ClearOutputBtn_clicked ();
   virtual void ConfigBtn_clicked ();

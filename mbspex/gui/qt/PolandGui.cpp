@@ -44,7 +44,7 @@
  *  name 'name'.'
  */
 PolandGui::PolandGui (QWidget* parent) :
-    QWidget (parent), fDebug (false), fChannel (0), fSlave (0)
+    QWidget (parent), fDebug (false), fChannel (0), fSlave (0), fChannelSave (0), fSlaveSave (0)
 {
   setupUi (this);
 #if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
@@ -65,7 +65,7 @@ PolandGui::PolandGui (QWidget* parent) :
   QObject::connect (InitChainButton, SIGNAL (clicked ()), this, SLOT (InitChainBtn_clicked ()));
   QObject::connect (ResetBoardButton, SIGNAL (clicked ()), this, SLOT (ResetBoardBtn_clicked ()));
   QObject::connect (ResetSlaveButton, SIGNAL (clicked ()), this, SLOT (ResetSlaveBtn_clicked ()));
-  QObject::connect (BroadcastButton, SIGNAL (clicked ()), this, SLOT (BroadcastBtn_clicked ()));
+  QObject::connect (BroadcastButton, SIGNAL (clicked (bool)), this, SLOT (BroadcastBtn_clicked (bool)));
   QObject::connect (DumpButton, SIGNAL (clicked ()), this, SLOT (DumpBtn_clicked ()));
   QObject::connect (ConfigButton, SIGNAL (clicked ()), this, SLOT (ConfigBtn_clicked ()));
   QObject::connect (ClearOutputButton, SIGNAL (clicked ()), this, SLOT (ClearOutputBtn_clicked ()));
@@ -215,11 +215,22 @@ QApplication::restoreOverrideCursor();
 
 }
 
-void PolandGui::BroadcastBtn_clicked ()
+void PolandGui::BroadcastBtn_clicked (bool checked)
 {
-//std::cout << "PolandGui::BroadcastBtn_clicked"<< std::endl;
-SFPspinBox->setValue (-1);
-SlavespinBox->setValue (-1);
+//std::cout << "PolandGui::BroadcastBtn_clicked with checked="<<checked<< std::endl;
+  if (checked)
+  {
+    fChannelSave = SFPspinBox->value ();
+    fSlaveSave = SlavespinBox->value ();
+    SFPspinBox->setValue (-1);
+    SlavespinBox->setValue (-1);
+  }
+  else
+  {
+    SFPspinBox->setValue (fChannelSave);
+    SlavespinBox->setValue (fSlaveSave);
+
+  }
 }
 
 void PolandGui::DumpBtn_clicked ()
@@ -245,7 +256,7 @@ void PolandGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "PolandGui::ClearOutputBtn_clicked()"<< std::endl;
 TextOutput->clear ();
-TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.43 of 25-July-2014 by JAM (j.adamczewski@gsi.de)");
+TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.44 of 22-September-2014 by JAM (j.adamczewski@gsi.de)");
 
 }
 
@@ -667,6 +678,11 @@ if (AssertNoBroadcast (false))
 }
 
 WriteGosip (fChannel, fSlave, POLAND_REG_QFW_MODE, fSetup.fQFWMode);
+
+// following is required to really activate qfw mode (thanks Sven Loechner for fixing):
+WriteGosip (fChannel, fSlave, POLAND_REG_QFW_PRG, 1);
+WriteGosip (fChannel, fSlave, POLAND_REG_QFW_PRG, 0);
+
 
 
 // WriteGosip(fChannel, fSlave, POLAND_REG_TRIGCOUNT, fSetup.fEventCounter);
