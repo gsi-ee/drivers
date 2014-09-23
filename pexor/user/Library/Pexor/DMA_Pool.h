@@ -20,6 +20,9 @@ class Board;
  * */
 
 class DMA_Pool: public pexor::BufferPool {
+
+  friend class DMA_Buffer; //< buffer destructor may do bookkeeping of dma memory here
+
 public:
 	DMA_Pool(pexor::Board* owner, size_t buflen, int numbufs, const std::string name);
 	virtual ~DMA_Pool();

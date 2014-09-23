@@ -57,9 +57,9 @@ int pexor_ioctl_set_trixor(struct pexor_privdata* priv, unsigned long arg)
 
 
       // taken from corresonding section of mbs m_read_meb:
-      iowrite32(TRIX_EV_IRQ_CLEAR | TRIX_IRQ_CLEAR , priv->pexor.irq_status);
-      mb();
-      ndelay(20);
+//      iowrite32(TRIX_EV_IRQ_CLEAR | TRIX_IRQ_CLEAR , priv->pexor.irq_status);
+//      mb();
+//      ndelay(20);
 // ? ? do not clear interrupts here, already done in irq handler
 
 //      iowrite32(TRIX_BUS_DISABLE, priv->pexor.irq_control);
@@ -78,7 +78,7 @@ int pexor_ioctl_set_trixor(struct pexor_privdata* priv, unsigned long arg)
       ndelay(20);
 
 
-
+      pexor_dbg(KERN_ERR "pexor_ioctl_set_trixor did reset trigger!");
 
       break;
 
@@ -108,7 +108,8 @@ int pexor_ioctl_set_trixor(struct pexor_privdata* priv, unsigned long arg)
       // test: put trigger type 14 for start acquisition
       iowrite32(TRIX_HALT, priv->pexor.irq_control);
       mb();
-      ndelay(20);
+//      ndelay(20);
+      udelay (1000); // do we need this not to hang up trixor?
       iowrite32(TRIX_CLEAR, priv->pexor.irq_control); // this will also clear local event counter
       mb();
       ndelay(20);
@@ -179,7 +180,7 @@ int pexor_ioctl_set_trixor(struct pexor_privdata* priv, unsigned long arg)
       mb();
       ndelay(20);
       // TODO: check for last trigger event finished like in mbs? only for multi branches...
-
+      udelay (10000); // do we need this not to hang up trixor?
 
       iowrite32(TRIX_CLEAR , priv->pexor.irq_control);
       mb();
@@ -760,11 +761,11 @@ int pexor_ioctl_wait_trigger(struct pexor_privdata* priv, unsigned long arg)
   {
     iowrite32(TRIX_HALT , priv->pexor.irq_control);
     mb();
-    ndelay(20);
+    udelay (10000); // do we need this not to hang up trixor?
     iowrite32(TRIX_CLEAR, priv->pexor.irq_control);
     mb();
     ndelay(20);
-    pexor_dbg(KERN_NOTICE "pexor_ioctl_wait_trigger has trigger 0x%x, do trixor halt and clear!\n",PEXOR_TRIGTYPE_STOP);
+    pexor_dbg(KERN_NOTICE "pexor_ioctl_wait_trigger has trigger 0x%x, did trixor halt and clear!\n",PEXOR_TRIGTYPE_STOP);
     // to do: in this case, we have to discard all entries in interrupt queue, since they will be never read out!?
     // do we want to immediately read out old data when start acquisition occurs?
     // or wait for new trigger interrupts?

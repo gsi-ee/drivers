@@ -35,7 +35,8 @@ pexorplugin::Transport::~Transport()
 bool pexorplugin::Transport::StartTransport()
 {
 	DOUT1("StartTransport() %p\n", thread().GetObject());
-	fPexorDevice->StartAcquisition();
+	// start/stop acquisition (trigger) is independent of dabc running state!
+	//fPexorDevice->StartAcquisition();
 	return dabc::InputTransport::StartTransport();
 
 }
@@ -43,7 +44,8 @@ bool pexorplugin::Transport::StartTransport()
 bool pexorplugin::Transport::StopTransport()
 {
 	DOUT1("StopTransport() %p\n", thread().GetObject());
-	fPexorDevice->StopAcquisition();
+	//fPexorDevice->StopAcquisition();
+	// start/stop acquisition (trigger) is independent of dabc running state!
 	bool rev=dabc::InputTransport::StopTransport();
 	DOUT1("\npexorplugin::Transport stopped with result %d. Total number of token errors: %7ld in %e s\n",  rev, fPexorInput->fErrorRate.GetNumOper(),  fPexorInput->fErrorRate.GetTotalTime());
 	return rev;

@@ -60,6 +60,7 @@ extern const char* nameOutputPool;
 extern const char* commandStartAcq;
 extern const char* commandStopAcq;
 
+extern const char* parDeviceDRate;
 
 class Device: public dabc::Device
 {

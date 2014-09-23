@@ -833,7 +833,8 @@ int pexor_ioctl_reset(struct pexor_privdata* priv, unsigned long arg)
   cleanup_buffers(priv);
   atomic_set(&(priv->irq_count),0);
 
-  atomic_set(&(priv->dma_outstanding), 0);
+  pexor_ioctl_clearreceivebuffers(priv,arg); // this will cleanup dma and irtype queues
+
   atomic_set(&(priv->state),PEXOR_STATE_STOPPED);
 #ifdef PEXOR_WITH_TRIXOR
   pexor_dbg(KERN_NOTICE "Initalizing TRIXOR... \n");
@@ -843,7 +844,7 @@ int pexor_ioctl_reset(struct pexor_privdata* priv, unsigned long arg)
   mb();
   ndelay(20);
 
-   atomic_set(&(priv->trig_outstanding), 0);
+  // atomic_set(&(priv->trig_outstanding), 0);
    // clear interrupt type queue:
 
 
@@ -913,6 +914,7 @@ int pexor_ioctl_clearreceivebuffers(struct pexor_privdata* priv, unsigned long a
   struct pexor_dmabuf* next;
 #ifdef PEXOR_WITH_TRIXOR
   struct pexor_trigger_buf* trigstat;
+  struct pexor_trigger_buf* trigstat_next;
 #endif
   pexor_dbg(KERN_NOTICE "** pexor_ioctl_clearreceivebuffers...\n");
   spin_lock( &(priv->buffers_lock) );
@@ -950,15 +952,15 @@ int pexor_ioctl_clearreceivebuffers(struct pexor_privdata* priv, unsigned long a
 	  pexor_msg(KERN_NOTICE "** pexor_ioctl_clearreceivebuffers TIMEOUT %d jiffies expired on wait_event_interruptible_timeout for trigger queue... \n",PEXOR_WAIT_TIMEOUT);
 	  if(innerwaitcount++ > PEXOR_WAIT_MAXTIMEOUTS) return -EFAULT;
 	}
-      pexor_dbg(KERN_NOTICE "** pexor_ioctl_clearreceivebuffers after wait_event_interruptible_timeout with TIMEOUT %d, waitjiffies=%ld, outstanding=%d \n",PEXOR_WAIT_TIMEOUT, wjifs, atomic_read( &(priv->dma_outstanding)));
+      pexor_dbg(KERN_NOTICE "** pexor_ioctl_clearreceivebuffers after wait_event_interruptible_timeout for trigger queue, with TIMEOUT %d, waitjiffies=%ld, outstanding=%d \n",PEXOR_WAIT_TIMEOUT, wjifs, atomic_read( &(priv->trig_outstanding)));
       if(wjifs==-ERESTARTSYS)
 	{
-	  pexor_msg(KERN_NOTICE "** pexor_ioctl_clearreceivebuffers after wait_event_interruptible_timeout woken by signal. abort wait\n");
+	  pexor_msg(KERN_NOTICE "** pexor_ioctl_clearreceivebuffers after wait_event_interruptible_timeout for trigger queue woken by signal. abort wait\n");
 	  return -EFAULT;
 	}
       atomic_dec(&(priv->trig_outstanding));
       spin_lock( &(priv->trigstat_lock) );
-        if(list_empty(&(priv->trig_status)))
+      if(list_empty(&(priv->trig_status)))
             {
               spin_unlock( &(priv->trigstat_lock) );
               pexor_msg(KERN_ERR "pexor_ioctl_clearreceivebuffers never come here - list of trigger type buffers is empty! \n");
@@ -1466,13 +1468,9 @@ irqreturn_t pexor_isr( int irq, void *dev_id)
 
   privdata=(struct pexor_privdata *) dev_id;
 
-
+//  disable_irq_nosync(irq);
+//  ndelay(1000);
 #ifdef PEXOR_SHARED_IRQ
-
-
-
-
-
 
 #ifdef PEXOR_WITH_TRIXOR
   /* check if this interrupt was raised by our device*/
@@ -1504,6 +1502,7 @@ irqreturn_t pexor_isr( int irq, void *dev_id)
       if(!trigstat)
       {
         pexor_dbg(KERN_ERR "pexor_isr: could not alloc triggger status buffer! \n");
+        //enable_irq(irq);
         return IRQ_HANDLED;
       }
       memset(trigstat, 0, sizeof(struct pexor_trigger_buf));
@@ -1529,6 +1528,11 @@ irqreturn_t pexor_isr( int irq, void *dev_id)
 	 iowrite32(irtype, privdata->pexor.irq_status);   clear deadtime flag TODO: later in application
 	 mb();
 	 ndelay(20);*/
+
+//      ndelay(1000);
+//      enable_irq(irq);
+
+
       return IRQ_HANDLED;
     }
 #else
@@ -1556,6 +1560,8 @@ irqreturn_t pexor_isr( int irq, void *dev_id)
 	  pexor_msg(KERN_NOTICE "pexor driver interrupt handler sees ir test!\n");
 	  state=PEXOR_STATE_STOPPED;
 	  atomic_set(&(privdata->state),state);
+//	  ndelay(1000);
+//	  enable_irq(irq);
 	  return IRQ_HANDLED;
 	}
       /*else
@@ -1578,13 +1584,13 @@ irqreturn_t pexor_isr( int irq, void *dev_id)
   else
     {
       pexor_dbg(KERN_NOTICE "pexor test driver interrupt handler sees unknown ir type %x !\n",irtype);
+//      ndelay(1000);
+//      enable_irq(irq);
       return IRQ_NONE;
     }
 
-
-
-
-
+//  ndelay(1000);
+//  enable_irq(irq);
   return IRQ_HANDLED;
 
 

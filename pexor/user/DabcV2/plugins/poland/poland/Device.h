@@ -21,7 +21,8 @@
 namespace poland
 {
 
-extern const char* xmlExploderSubmem;    // exploder submem size for testbuffer
+extern const char* xmlOffsetTriggerType;    //< trigger type to read out frontend offfset values
+
 
 class Device: public pexorplugin::Device
 {
@@ -35,22 +36,32 @@ public:
   {
     return "explodertest::Device";
   }
-  virtual int ExecuteCommand (dabc::Command cmd);
+ // virtual int ExecuteCommand (dabc::Command cmd);
 
-  /** Forwarded interface for user defined readout:
-   * User code may overwrite the default behaviour (gosip token dma)
-   * For example, optionally some register settings may be added to buffer contents*/
-  virtual unsigned Read_Start (dabc::Buffer& buf);
+//  /** Forwarded interface for user defined readout:
+//   * User code may overwrite the default behaviour (gosip token dma)
+//   * For example, optionally some register settings may be added to buffer contents*/
+//  virtual unsigned Read_Start (dabc::Buffer& buf);
+//
+//  /** Forwarded interface for user defined readout:
+//   * User code may overwrite the default behaviour (gosip token dma)
+//   * For example, optionally some register settings may be added to buffer contents*/
+//  virtual unsigned Read_Complete (dabc::Buffer& buf);
 
-  /** Forwarded interface for user defined readout:
-   * User code may overwrite the default behaviour (gosip token dma)
-   * For example, optionally some register settings may be added to buffer contents*/
-  virtual unsigned Read_Complete (dabc::Buffer& buf);
+  /** interface for user subclass to implement different readout variants depending on the triggertype.
+    * The default implementation will issue retry/timeout on start/stop acquisition trigger and
+    * a standard token request with direct dma for all other trigger types.
+    * Return value should be size of received buffer in bytes.*/
+   virtual int User_Readout(dabc::Buffer& buf, uint8_t trigtype);
+
 
 protected:
 
   /** fill token buffers of all slave devices with test event data*/
   bool InitQFWs ();
+
+  /** trigger type to read out offset trigger */
+  uint8_t fOffsetTrigType;
 
 
 private:
