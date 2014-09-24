@@ -40,11 +40,12 @@
 #define POLAND_REG_DO_OFFSET            0x200044
 #define POLAND_REG_OFFSET_BASE          0x200100
 #define POLAND_REG_MASTERMODE           0x200048
-//#define POLAND_REG_ERRCOUNT_BASE        0x200
+#define POLAND_REG_TRIG_ON              0x20004C
+
 #define POLAND_ERRCOUNT_NUM             8
 #define POLAND_DAC_NUM                  32
 
-/* microsecond per time register unit*/
+/** microsecond per time register unit*/
 #define POLAND_TIME_UNIT                0.02
 
 class PolandSetup
@@ -55,6 +56,9 @@ public:
   char fInternalTrigger;
   char fTriggerMode;
   char fQFWMode;
+
+  /** toggle trigger acceptance of all frontends*/
+  char fTriggerOn;
 
   unsigned int fEventCounter;
   unsigned int fErrorCounter[POLAND_ERRCOUNT_NUM];
@@ -69,7 +73,7 @@ public:
   unsigned int fDACCalibTime;
 
   PolandSetup () :
-      fInternalTrigger (0), fTriggerMode (0), fQFWMode(0),fEventCounter (0), fDACMode(1),fDACAllValue(0), fDACStartValue(0),
+      fInternalTrigger (0), fTriggerMode (0), fQFWMode(0),fTriggerOn(0),fEventCounter (0), fDACMode(1),fDACAllValue(0), fDACStartValue(0),
       fDACOffset(0),fDACDelta(0),fDACCalibTime(0)
   {
     for (int i = 0; i < POLAND_TS_NUM; ++i)
@@ -96,6 +100,16 @@ public:
   {
     return ((fTriggerMode & 2) == 2);
   }
+
+  void SetTriggerOn (bool on)
+   {
+     on ? (fTriggerOn = 1) : (fTriggerOn =0);
+   }
+
+   bool IsTriggerOn ()
+   {
+     return (fTriggerOn == 1);
+   }
 
   void SetFesaMode (bool on)
   {
@@ -145,8 +159,8 @@ public:
   void Dump ()
   {
     printf ("-----POLAND device status dump:");
-    printf ("Trigger Master:%d, FESA:%d, Internal Trigger:%d \n", IsTriggerMaster (), IsFesaMode (),
-        IsInternalTrigger ());
+    printf ("Trigger Master:%d, FESA:%d, Internal Trigger:%d Trigger Enabled:%d\n", IsTriggerMaster (), IsFesaMode (),
+        IsInternalTrigger (), IsTriggerOn());
     printf ("QFW Mode:0x%x", fQFWMode);
     for (int i = 0; i < POLAND_TS_NUM; ++i)
     {
@@ -190,67 +204,72 @@ protected:
 #if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
   QProcessEnvironment fEnv;
 #endif
-  /* text debug mode*/
+  /** text debug mode*/
   bool fDebug;
 
-  /* base for number display (10 or 16)*/
+  /** base for number display (10 or 16)*/
   int fNumberBase;
 
-  /* index of sfp channel,   -1 for broadcast */
+  /** index of sfp channel,   -1 for broadcast */
   int fChannel;
-  /* index of slave device , -1 for broadcast*/
+  /** index of slave device , -1 for broadcast*/
   int fSlave;
 
-  /* remember sfp channel to recover after broadcast*/
+  /** remember sfp channel to recover after broadcast*/
   int fChannelSave;
 
-  /* remember slave channel to recover after broadcast*/
+  /** remember slave channel to recover after broadcast*/
   int fSlaveSave;
 
 
+  /** toggle general trigger state*/
+  bool fTriggerOn;
+
 
   PolandSetup fSetup;
-  /* update register display*/
+  /** update register display*/
   void RefreshView ();
 
-  /* copy values from gui to internal status object*/
+  /** copy values from gui to internal status object*/
   void EvaluateView ();
 
-  /* copy sfp and slave from gui to variables*/
+  /** copy sfp and slave from gui to variables*/
   void EvaluateSlave ();
 
-  /* find out measurement mode from selected combobox entry*/
+  /** find out measurement mode from selected combobox entry*/
   void EvaluateMode();
 
-  /* update measurement range in combobox entry*/
+  /** update measurement range in combobox entry*/
     void RefreshMode();
 
+    /** refresh view of general trigger state*/
+    void RefreshTrigger();
 
-  /* set register from status structure*/
+  /** set register from status structure*/
   void SetRegisters ();
 
-  /* get register contents to status structure*/
+  /** get register contents to status structure*/
   void GetRegisters ();
 
-  /* Apply DAC setup to frontends*/
+  /** Apply DAC setup to frontends*/
   void ApplyDAC();
 
-  /* Refresh view of DAC contents*/
+  /** Refresh view of DAC contents*/
   void RefreshDAC();
 
-  /* Refresh view of DAC mode*/
+  /** Refresh view of DAC mode*/
   void RefreshDACMode();
 
-  /* copy gui contents of DAC tab to setup structure*/
+  /** copy gui contents of DAC tab to setup structure*/
   void EvaluateDAC();
 
-  /* Read from address from sfp and slave, returns value*/
+  /** Read from address from sfp and slave, returns value*/
   int ReadGosip (int sfp, int slave, int address);
 
-  /* Write value to address from sfp and slave*/
+  /** Write value to address from sfp and slave*/
   int WriteGosip (int sfp, int slave, int address, int value);
 
-  /* execute gosip command in shell. Return value is output of command*/
+  /** execute gosip command in shell. Return value is output of command*/
   QString ExecuteGosipCmd (QString& command);
 
   void AppendTextWindow (const QString& text);
@@ -271,7 +290,7 @@ protected:
     if (fDebug)
       AppendTextWindow (text);
   }
-  /* Check if broadast mode is not set. If set, returns false and prints error message if verbose is true*/
+  /** Check if broadast mode is not set. If set, returns false and prints error message if verbose is true*/
   bool AssertNoBroadcast (bool verbose=true);
 
 public slots:
@@ -289,6 +308,7 @@ public slots:
   virtual void HexBox_changed(int on);
   virtual void Slave_changed(int val);
   virtual void DACMode_changed(int ix);
+  virtual void TriggerBtn_clicked ();
 };
 
 #endif

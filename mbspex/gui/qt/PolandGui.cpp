@@ -44,7 +44,7 @@
  *  name 'name'.'
  */
 PolandGui::PolandGui (QWidget* parent) :
-    QWidget (parent), fDebug (false), fChannel (0), fSlave (0), fChannelSave (0), fSlaveSave (0)
+    QWidget (parent), fDebug (false), fChannel (0), fSlave (0), fChannelSave (0), fSlaveSave (0), fTriggerOn(true)
 {
   setupUi (this);
 #if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
@@ -70,6 +70,8 @@ PolandGui::PolandGui (QWidget* parent) :
   QObject::connect (ConfigButton, SIGNAL (clicked ()), this, SLOT (ConfigBtn_clicked ()));
   QObject::connect (ClearOutputButton, SIGNAL (clicked ()), this, SLOT (ClearOutputBtn_clicked ()));
   QObject::connect (OffsetButton, SIGNAL (clicked ()), this, SLOT (OffsetBtn_clicked ()));
+  QObject::connect (TriggerButton, SIGNAL (clicked ()), this, SLOT (TriggerBtn_clicked ()));
+
 QObject::connect(DebugBox, SIGNAL(stateChanged(int)), this, SLOT(DebugBox_changed(int)));
 QObject::connect(HexBox, SIGNAL(stateChanged(int)), this, SLOT(HexBox_changed(int)));
 QObject::connect(SFPspinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
@@ -215,6 +217,43 @@ QApplication::restoreOverrideCursor();
 
 }
 
+void PolandGui::TriggerBtn_clicked ()
+{
+  //std::cout << "PolandGui::TriggerBtn_clicked"<< std::endl;
+  char buffer[1024];
+  fTriggerOn ?   snprintf (buffer, 1024, "Really disable Frontend Trigger acceptance?") : snprintf (buffer, 1024, "Really enable Frontend Trigger acceptance?");
+
+  if (QMessageBox::question (this, "Poland GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
+      != QMessageBox::Yes)
+  {
+    //std::cout <<"QMessageBox does not return yes! "<< std::endl;
+    return;
+  }
+
+  fTriggerOn ? fTriggerOn=false: fTriggerOn=true;
+
+
+  int value = (fTriggerOn ? 1 : 0);
+  QString state= (fTriggerOn ? "ON" : "OFF");
+  WriteGosip (-1, -1, POLAND_REG_TRIG_ON, value); // send broadcast of register to all slaves.
+  QString msg="--- Set all devices trigger acceptance to ";
+  AppendTextWindow (msg+state);
+  RefreshTrigger();
+
+
+}
+
+void PolandGui::RefreshTrigger()
+{
+   // todo: modify label
+  QString labelprefix="<html><head/><body><p>Trigger";
+  QString labelstate = fTriggerOn ? " <span style=\" font-weight:600; color:#00ff00;\">ON </span></p></body></html>" :
+      " <span style=\" font-weight:600; color:#ff0000;\">OFF</span></p></body></html>" ;
+  TriggerLabel->setText(labelprefix+labelstate);
+
+}
+
+
 void PolandGui::BroadcastBtn_clicked (bool checked)
 {
 //std::cout << "PolandGui::BroadcastBtn_clicked with checked="<<checked<< std::endl;
@@ -256,7 +295,7 @@ void PolandGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "PolandGui::ClearOutputBtn_clicked()"<< std::endl;
 TextOutput->clear ();
-TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.44 of 22-September-2014 by JAM (j.adamczewski@gsi.de)");
+TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.50 of 24-September-2014 by JAM (j.adamczewski@gsi.de)");
 
 }
 
@@ -369,6 +408,10 @@ ErrorCounter8->display ((int) fSetup.fErrorCounter[7]);
 
 RefreshDACMode();
 RefreshDAC(); // probably this is already triggered by signal
+
+RefreshTrigger(); // show real trigger register as read back from actual device
+
+
 QString statustext;
 statustext.append("SFP ");
 statustext.append(text.setNum(fChannel));
@@ -737,9 +780,11 @@ for (int d = 0; d < POLAND_DAC_NUM; ++d)
   fSetup.fDACValue[d] = ReadGosip (fChannel, fSlave, POLAND_REG_DAC_BASE_READ + 4 * d);
 }
 
+fSetup.fTriggerOn=ReadGosip (fChannel, fSlave, POLAND_REG_TRIG_ON);
 
-
-
+fTriggerOn=fSetup.fTriggerOn;
+// for the moment, we only refresh the general trigger flag from current frontend
+// TODO: broadcast read from all frontends and check with error
 
 //printf("GetRegisters for sfp:%d slave:%d DUMP \n",fChannel, fSlave);
 //fSetup.Dump();
