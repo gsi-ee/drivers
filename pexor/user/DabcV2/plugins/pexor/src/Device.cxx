@@ -52,6 +52,7 @@ const char* pexorplugin::xmlDMAScatterGatherMode = "PexorDMAScatterGather";    /
 const char* pexorplugin::xmlDMAZeroCopy = "PexorDMAZeroCopy";    //<  sg mode switch
 const char* pexorplugin::xmlFormatMbs = "PexorFormatMbs";    //<  switch Mbs formating already in transport buffer
 const char* pexorplugin::xmlSingleMbsSubevt = "PexorSingleMbsSubevent";    //<  use one single subevent for all sfps
+const char* pexorplugin::xmlMultichannelRequest = "PexorMultiTokenDMA";    //<  enable channelpattern request with combined dma for multiple sfps
 const char* pexorplugin::xmlMbsSubevtCrate = "PexorMbsSubcrate";    //<  define crate number for subevent header
 const char* pexorplugin::xmlMbsSubevtControl = "PexorMbsControl";    //<  define crate number for subevent header
 const char* pexorplugin::xmlMbsSubevtProcid = "PexorMbsProcid";    //<  define procid number for subevent header
@@ -79,6 +80,7 @@ const char* pexorplugin::nameOutputPool = "PexorOutputPool";
 
 const char* pexorplugin::commandStartAcq = "StartAcquisition";
 const char* pexorplugin::commandStopAcq =  "StopAcquisition";
+const char* pexorplugin::commandInitAcq =  "InitAcquisition";
 
 const char* pexorplugin::parDeviceDRate =  "DeviceReceiveRate";
 
@@ -89,7 +91,7 @@ unsigned int pexorplugin::Device::fgThreadnum = 0;
 
 pexorplugin::Device::Device(const std::string& name, dabc::Command cmd):
     dabc::Device (name), fBoard (0), fMbsFormat (true), fSingleSubevent (false), fSubeventSubcrate (0),
-        fSubeventProcid (0), fSubeventControl (0), fAqcuisitionRunning(false), fSynchronousRead (true), fTriggeredRead (false), fMemoryTest (false),
+        fSubeventProcid (0), fSubeventControl (0), fAqcuisitionRunning(false), fSynchronousRead (true), fTriggeredRead (false), fMultichannelRequest(false), fMemoryTest (false),
         fSkipRequest (false), fCurrentSFP (0), fReadLength (0), fTrixConvTime (0x20), fTrixFClearTime (0x10),
         fInitDone (false), fNumEvents (0)
 
@@ -152,6 +154,8 @@ pexorplugin::Device::Device(const std::string& name, dabc::Command cmd):
   }
   fMbsFormat = Cfg (pexorplugin::xmlFormatMbs, cmd).AsBool (true);
   fSingleSubevent = Cfg (pexorplugin::xmlSingleMbsSubevt, cmd).AsBool (false);
+  fMultichannelRequest=Cfg (pexorplugin::xmlMultichannelRequest, cmd).AsBool (true);
+
   fSubeventSubcrate = Cfg (pexorplugin::xmlMbsSubevtCrate, cmd).AsInt (0);
   fSubeventProcid = Cfg (pexorplugin::xmlMbsSubevtProcid, cmd).AsInt (fDeviceNum);
   fSubeventControl = Cfg (pexorplugin::xmlMbsSubevtControl, cmd).AsInt (0);
@@ -167,6 +171,7 @@ pexorplugin::Device::Device(const std::string& name, dabc::Command cmd):
 
   CreateCmdDef(pexorplugin::commandStartAcq);
   CreateCmdDef(pexorplugin::commandStopAcq);
+  CreateCmdDef(pexorplugin::commandInitAcq);
 
   CreatePar (pexorplugin::parDeviceDRate).SetRatemeter (false, 3.).SetUnits ("kBytes");
 
@@ -180,6 +185,13 @@ pexorplugin::Device::Device(const std::string& name, dabc::Command cmd):
 
   //fInitDone=true; // do this in subclass after constructor has finnished.
 }
+
+int pexorplugin::Device::InitDAQ()
+{
+  InitTrixor ();
+  return 0;
+}
+
 
 pexorplugin::Device::~Device ()
 {
@@ -335,6 +347,12 @@ int pexorplugin::Device::ExecuteCommand (dabc::Command cmd)
               res=StopAcquisition();
               return cmd_bool(res);;
           }
+  else if (cmd.IsName(pexorplugin::commandInitAcq))
+           {
+               DOUT1("Executing Command %s  ",pexorplugin::commandInitAcq);
+               res=InitDAQ();
+               return cmd_bool(res==0);
+           }
   else
     return dabc::Device::ExecuteCommand (cmd);
 }
@@ -416,6 +434,39 @@ int pexorplugin::Device::RequestToken (dabc::Buffer& buf, bool synchronous)
   return (CopyOutputBuffer (tokbuf, buf));
 
 }
+
+
+int pexorplugin::Device::RequestMultiToken (dabc::Buffer& buf, bool synchronous)
+{
+  DOUT3 ("pexorplugin::Device::RequestMultiToken with synchronous=%d ", synchronous);
+  pexor::DMA_Buffer* tokbuf=0;
+  unsigned int channelmask=0;
+    for (int ix = 0; ix < PEXORPLUGIN_NUMSFP; ++ix)
+    {
+      if (fEnabledSFP[ix]) channelmask |= (1 << ix);
+    }
+    DOUT1 ("pexorplugin::Device::RequestMultiToken with channelmask:0x%x", channelmask);
+      tokbuf = fBoard->RequestMultiToken (channelmask, fDoubleBufID[0], synchronous);    // synchronous dma mode here
+      DOUT3 ("pexorplugin::Device::RequestAllTokens gets dma buffer 0x%x for sfp:%d ", tokbuf,
+          fCurrentSFP);
+
+      if ((long int) tokbuf== -1)    // TODO: handle error situations by exceptions later!
+      {
+        EOUT ("**** Error in PEXOR Multi Token Request with mask %x !\n", channelmask);
+        return dabc::di_Error;
+      }
+    fDoubleBufID[0] = fDoubleBufID[0] == 0 ? 1 : 0; // in this mode, we only use double buffer id of first sfp
+
+
+  if (!synchronous)
+    return dabc::di_Ok;
+  if (fTriggeredRead)
+      fBoard->ResetTrigger ();
+  return (CopyOutputBuffer (tokbuf, buf));
+
+}
+
+
 
 int pexorplugin::Device::ReceiveTokenBuffer (dabc::Buffer& buf)
 {
@@ -522,7 +573,7 @@ int pexorplugin::Device::CopyOutputBuffer (pexor::DMA_Buffer* tokbuf, dabc::Buff
     used_size += sizeof(mbs::EventHeader);
 
 
-    mbs::SubeventHeader* subhdr = PutMbsSubeventHeader (ptr, (fSingleSubevent ? fSubeventSubcrate : fCurrentSFP),
+    mbs::SubeventHeader* subhdr = PutMbsSubeventHeader (ptr, ((fSingleSubevent || fMultichannelRequest) ? fSubeventSubcrate : fCurrentSFP),
         fSubeventControl, fSubeventProcid);
 
     filled_size += sizeof(mbs::SubeventHeader);
@@ -535,9 +586,11 @@ int pexorplugin::Device::CopyOutputBuffer (pexor::DMA_Buffer* tokbuf, dabc::Buff
     filled_size += sizeof(int);
     used_size += sizeof(int);
     // UsedSize contains the real received token data length, as set by driver
-    subhdr->SetRawDataSize (tokbuf->UsedSize () + sizeof(int));
+    //subhdr->SetRawDataSize (tokbuf->UsedSize () + sizeof(int));
     filled_size += tokbuf->UsedSize ();
     evhdr->SetSubEventsSize (filled_size);
+    subhdr->SetRawDataSize (filled_size - sizeof(mbs::SubeventHeader));
+
     buf.SetTypeId (mbs::mbt_MbsEvents);
   }
   DOUT2 ("Token buffer size:%d, used size%d, target buffer size:%d\n", tokbuf->Size (), tokbuf->UsedSize (),
@@ -565,9 +618,24 @@ int pexorplugin::Device::CopyOutputBuffer (pexor::DMA_Buffer* tokbuf, dabc::Buff
   {
     delete tokbuf;    // for zero copy mode, this is just a temporary wrapper. Will be freed before request
   }
+
+//  if (fMbsFormat)
+//    {
+//      if (fSingleSubevent)
+//        subhdr->SetRawDataSize (filled_size - sizeof(mbs::SubeventHeader));
+//      evhdr->SetSubEventsSize (filled_size);
+//      buf.SetTypeId (mbs::mbt_MbsEvents);
+//    }
+//    buf.SetTotalSize (used_size);
+//    fNumEvents++;
+//    return used_size;
+
+
+
+
   buf.SetTotalSize (used_size);
   fNumEvents++;
-  fReadLength = used_size;    //adjust read length for next buffer to real token length
+  //fReadLength = used_size;    //adjust read length for next buffer to real token length
   return used_size;
 
 }
@@ -861,11 +929,21 @@ int pexorplugin::Device::User_Readout(dabc::Buffer& buf, uint8_t trigtype)
       trigtype=mbs::tt_Event; // for the moment, triggerless events are marked as regular data events
     default:
       {
-       res = RequestAllTokens (buf, false);    // for parallel read, we need async request before polling
-       if((unsigned) res !=dabc::di_Ok) return res; // propagate error type
-       retsize= ReceiveAllTokenBuffer (buf, trigtype);
-       //fReadLength=retsize; //? do we want to adjust expected readsize dynamically here?
-       //////////////////////////////// trigger reset is optionally done in receive before buffer combining/copying
+        if (IsMultichannelMode ())
+        {
+          retsize = RequestMultiToken (buf, true);    // synchronous, atomic dma request concerning driver ioctl
+        }
+        else
+        {
+          // driver async round-robin request and receiving of separate buffers (old way)
+          // problematic since driver access is not atomic with respect to gosipcmd io
+          res = RequestAllTokens (buf, false);    // for parallel read, we need async request before polling
+          if ((unsigned) res != dabc::di_Ok)
+            return res;    // propagate error type
+          retsize = ReceiveAllTokenBuffer (buf, trigtype);
+          //fReadLength=retsize; //? do we want to adjust expected readsize dynamically here?
+          //////////////////////////////// trigger reset is optionally done in receive before buffer combining/copying
+        }
       }
      break;
   }; // switch

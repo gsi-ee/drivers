@@ -22,7 +22,7 @@ namespace poland
 {
 
 extern const char* xmlOffsetTriggerType;    //< trigger type to read out frontend offfset values
-
+extern const char* commandReadOffsets ;
 
 class Device: public pexorplugin::Device
 {
@@ -36,7 +36,8 @@ public:
   {
     return "explodertest::Device";
   }
- // virtual int ExecuteCommand (dabc::Command cmd);
+
+  virtual int ExecuteCommand (dabc::Command cmd);
 
 //  /** Forwarded interface for user defined readout:
 //   * User code may overwrite the default behaviour (gosip token dma)
@@ -55,10 +56,18 @@ public:
    virtual int User_Readout(dabc::Buffer& buf, uint8_t trigtype);
 
 
+   /** generic initialization function for daq and frontends.
+     * To be overwritten in subclass and callable by command interactively, without shutting down
+     * application.*/
+    virtual int InitDAQ();
+
 protected:
 
   /** fill token buffers of all slave devices with test event data*/
   bool InitQFWs ();
+
+  /** initiate read out of poland offset registers */
+  int SendOffsetTrigger();
 
   /** trigger type to read out offset trigger */
   uint8_t fOffsetTrigType;

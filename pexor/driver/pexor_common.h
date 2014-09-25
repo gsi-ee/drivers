@@ -57,7 +57,7 @@
 #define BOARDTYPE_KINPEX 2
 
 
-#define PEXOR_DEBUGPRINT 1
+//#define PEXOR_DEBUGPRINT 1
 
 // this will enable mode where pexor on board memory is not used as buffer
 // instead, data from sfp token request will be directly streamed to host dma buffer.

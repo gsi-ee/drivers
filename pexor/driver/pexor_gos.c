@@ -533,7 +533,8 @@ int pexor_sfp_read_bus (struct pexor_privdata* priv, struct pexor_bus_io* descri
 int pexor_ioctl_request_token(struct pexor_privdata* priv, unsigned long arg)
 {
   int retval=0;
-  u32 comm=0, chan=0, bufid=0;
+  u32 comm=0, chan=0, chanpattern, bufid=0;
+  u32 channelmask = 0;
   /*u32 rstat=0, radd=0, rdat=0;*/
   /*u32 tkreply=0, tkhead=0, tkfoot =0;*/
   /*u32 dmasize=0,oldsize=0;
@@ -544,7 +545,7 @@ int pexor_ioctl_request_token(struct pexor_privdata* priv, unsigned long arg)
     u32 woffset;
     unsigned long dmabufid=0;
     /*struct pexor_dmabuf dmabuf;*/
-    u32 channelmask=0;
+    //u32 channelmask=0;
 #endif
 
   /*
@@ -554,7 +555,8 @@ int pexor_ioctl_request_token(struct pexor_privdata* priv, unsigned long arg)
   */
   retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pexor_token_io));
   if(retval) return retval;
-  chan  = (u32) descriptor.sfp;
+  chan = ((u32) descriptor.sfp) & 0xFFFF;
+  chanpattern = (((u32) descriptor.sfp) & 0xFFFF0000) >> 16; /* optionally use sfp pattern in upper bytes*/
   bufid = (u32) descriptor.bufid;
   /* send token request
      pexor_msg(KERN_NOTICE "** pexor_ioctl_request_token from_sfp 0x%x, bufid 0x%x\n",chan,bufid);*/
@@ -564,8 +566,16 @@ int pexor_ioctl_request_token(struct pexor_privdata* priv, unsigned long arg)
   // TODO: setup here dma targets in direct dma mode before initiating gosip transfer
     dmabufid=descriptor.tkbuf.addr;
     woffset=descriptor.offset;
-    channelmask= 1 << (chan+1);// select SFP for PCI Express DMA
-    pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_token uses dma buffer 0x%lx with write offset  0x%x\n",dmabufid,woffset);
+    if (chanpattern != 0)
+    {
+        channelmask=(chanpattern << 1);
+    }
+    else
+    {
+        channelmask= 1 << (chan+1);// select SFP for PCI Express DMA
+    }
+      pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_token uses dma buffer 0x%lx with write offset  0x%x, channelmask=0x%x\n",
+        dmabufid,woffset,channelmask);
 
 
     atomic_set(&(priv->state),PEXOR_STATE_DMA_SINGLE);
@@ -584,8 +594,20 @@ int pexor_ioctl_request_token(struct pexor_privdata* priv, unsigned long arg)
 
 
 #endif
-  comm = PEXOR_SFP_PT_TK_R_REQ | (0x1 << (16+ chan) );
-  pexor_sfp_clear_channel(priv,chan);
+
+    if (chanpattern != 0)
+    {
+      pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_token with channelpattern 0x%x\n", (unsigned) chanpattern);
+      comm = PEXOR_SFP_PT_TK_R_REQ | (chanpattern << 16); /* token broadcast mode*/
+      pexor_sfp_clear_channelpattern (priv, chanpattern);
+    }
+    else
+    {
+      pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_token for channel 0x%x\n", (unsigned) chan);
+      comm = PEXOR_SFP_PT_TK_R_REQ | (0x1 << (16 + chan)); /* single sfp token mode*/
+      pexor_sfp_clear_channel (priv, chan);
+    }
+
   pexor_sfp_request(priv, comm, bufid, 0); /* note: slave is not specified; the chain of all slaves will send everything to receive buffer*/
   if(descriptor.sync != 0)
     {
@@ -595,12 +617,73 @@ int pexor_ioctl_request_token(struct pexor_privdata* priv, unsigned long arg)
   return retval;
 }
 
-
+//int pex_ioctl_request_token (struct pex_privdata* priv, unsigned long arg)
+//{
+//  int retval = 0;
+//  u32 comm = 0, chan = 0, chanpattern, bufid = 0;
+//  struct pex_token_io descriptor;
+//
+//  dma_addr_t dmatarget = 0;
+//  u32 dmalen = 0, dmaburst = 0;
+//  u32 channelmask = 0;
+//
+//  retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_token_io));
+//  if (retval)
+//    return retval;
+//  chan = ((u32) descriptor.sfp) & 0xFFFF;
+//  chanpattern = (((u32) descriptor.sfp) & 0xFFFF0000) >> 16; /* optionally use sfp pattern in upper bytes*/
+//  bufid = (u32) descriptor.bufid;
+//
+//  /* send token request
+//   pex_msg(KERN_NOTICE "** pex_ioctl_request_token from_sfp 0x%x, bufid 0x%x\n",chan,bufid);*/
+//  pex_sfp_assert_channel(chan);
+//
+//  if (descriptor.directdma)
+//  {
+//    // setup here dma targets in direct dma mode before initiating gosip transfer
+//    dmatarget = (dma_addr_t) descriptor.dmatarget;
+//    dmalen = (u32) descriptor.dmasize;
+//    dmaburst = (u32) descriptor.dmaburst;
+//    channelmask = 1 << (chan + 1);    // select SFP for PCI Express DMA
+//    pex_dbg(
+//        KERN_NOTICE "** pex_ioctl_request_token uses dma target 0x%x, channelmask=0x%x\n", (unsigned) dmatarget, channelmask);
+//    retval = pex_start_dma (priv, 0, dmatarget, 0, channelmask, dmaburst);
+//    if (retval)
+//    {
+//      /* error handling, e.g. no more dma buffer available*/
+//      pex_dbg(KERN_ERR "pex_ioctl_read_token error %d from startdma\n", retval);
+//      return retval;
+//    }
+//
+//  }    // if directdma
+//
+//  if (chanpattern != 0)
+//  {
+//    pex_dbg(KERN_NOTICE "** pex_ioctl_request_token with channelpattern 0x%x\n", (unsigned) chanpattern);
+//    comm = PEX_SFP_PT_TK_R_REQ | (chanpattern << 16); /* token broadcast mode*/
+//    pex_sfp_clear_channelpattern (priv, chanpattern);
+//  }
+//  else
+//  {
+//    pex_dbg(KERN_NOTICE "** pex_ioctl_request_token for channel 0x%x\n", (unsigned) chan);
+//    comm = PEX_SFP_PT_TK_R_REQ | (0x1 << (16 + chan)); /* single sfp token mode*/
+//    pex_sfp_clear_channel (priv, chan);
+//  }
+//
+//  pex_sfp_request (priv, comm, bufid, 0); /* note: slave is not specified; the chain of all slaves will send everything to receive buffer*/
+//  if (descriptor.sync != 0)
+//  {
+//    /* only wait here for dma buffer if synchronous*/
+//    return (pex_ioctl_wait_token (priv, arg));
+//  }
+//  return retval;
+//}
+//
 
 int pexor_ioctl_wait_token(struct pexor_privdata* priv, unsigned long arg)
 {
   int retval=0;
-  u32 chan=0;
+  u32 chan=0, chanpattern=0, ci=0;
   u32 rstat=0, radd=0, rdat=0;
   /*u32 tkreply=0, tkhead=0, tkfoot =0;*/
   u32 dmasize=0;
@@ -617,24 +700,44 @@ int pexor_ioctl_wait_token(struct pexor_privdata* priv, unsigned long arg)
   retval=copy_from_user(&descriptor, (void __user *) arg, sizeof(struct pexor_token_io));
   if(retval) return retval;
   chan  = (u32) descriptor.sfp;
+
+  chan = ((u32) descriptor.sfp) & 0xFFFF;
+  chanpattern = (((u32) descriptor.sfp) & 0xFFFF0000) >> 16; /* optionally use sfp pattern in upper bytes*/
+
   //bufid = (u32) descriptor.bufid;
   /* send token request
      pexor_msg(KERN_NOTICE "** pexor_ioctl_request_token from_sfp 0x%x, bufid 0x%x\n",chan,bufid);*/
-  pexor_sfp_assert_channel(chan);
 
+  if (chanpattern > 0)
+  {
+    pexor_dbg(KERN_NOTICE "** pexor_ioctl_wait_token with channel pattern 0x%x \n",chanpattern);
+    // here evaluate replies of all channels belonging to pattern
+     for(ci=0; ci<PEXOR_SFP_NUMBER; ++ci)
+     {
+       if((chanpattern & (1 << ci)) ==0) continue;
+       if ((retval = pexor_sfp_get_reply (priv, ci, &rstat, &radd, &rdat, 0)) != 0)    // debug: do not check reply status
+       //if((retval=pexor_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEXOR_SFP_PT_TK_R_REP))!=0)
+       {
+         pexor_msg(KERN_ERR "** pexor_ioctl_wait_token: error %d at sfp_%d reply \n",retval,ci);
+         pexor_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
+         return -EIO;
+       }
+     }
+  }
+  else
+  {
 
+    pexor_dbg(KERN_NOTICE "** pexor_ioctl_wait_token with channel0x%x \n",chan);
+    pexor_sfp_assert_channel(chan);
 
-
-
-
-  if((retval=pexor_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, 0))!=0) // debug: do not check reply status
+    if ((retval = pexor_sfp_get_reply (priv, chan, &rstat, &radd, &rdat, 0)) != 0)    // debug: do not check reply status
     //if((retval=pexor_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEXOR_SFP_PT_TK_R_REP))!=0)
     {
-      pexor_msg(KERN_ERR "** pexor_ioctl_request_token: error %d at sfp_reply \n",retval);
+      pexor_msg(KERN_ERR "** pexor_ioctl_wait_token: error %d at sfp_%d reply \n",retval,chan);
       pexor_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
-	return -EIO;
+      return -EIO;
     }
-
+  }    // end wait for channelpattern reply
 
 
 
@@ -649,7 +752,11 @@ int pexor_ioctl_wait_token(struct pexor_privdata* priv, unsigned long arg)
 
 
 #ifndef  PEXOR_DIRECT_DMA
-
+  if (chanpattern > 0)
+    {
+      pexor_msg(KERN_ERR "** pexor_ioctl_wait_token: channel pattern mode not supported without direct dma enabled! \n",retval,chan);
+      return -EFAULT;
+    }
 
   /* issue DMA of token data from pexor to dma buffer */
   /* find out real package length :*/
@@ -997,6 +1104,35 @@ int pexor_sfp_clear_channel( struct pexor_privdata* privdata, int ch )
   return 0;
 }
 
+int pexor_sfp_clear_channelpattern (struct pexor_privdata* privdata, int pat)
+{
+  u32 repstatus = 0, loopcount = 0, clrval, mask;
+  struct pexor_sfp* sfp = &(privdata->pexor.sfp);
+  pexor_dbg(KERN_NOTICE "**pexor_sfp_clear_channel pattern 0x%x ***\n", pat);
+  clrval = pat;
+  mask = (pat << 8) | (pat << 4) | pat;
+  do
+  {
+    if (loopcount++ > 1000000)
+    {
+      pexor_msg(
+          KERN_WARNING "**pex_sfp_clear_channelpattern 0x%x tried %d x 20 ns without success, abort\n", pat, loopcount);
+      print_register (" ... reply status after FAILED pex_sfp_clear_channelpattern:", sfp->rep_stat_clr);
+      return -EIO;
+    }
+    iowrite32 (clrval, sfp->rep_stat_clr);
+    pexor_sfp_delay()
+    ;
+    repstatus = ioread32 (sfp->rep_stat_clr) & mask;
+    pexor_sfp_delay()
+    ;
+
+  } while ((repstatus != 0x0));
+
+  pexor_dbg(KERN_INFO "**after pex_sfp_clear_channelpattern 0x%x : loopcount:%d \n", pat, loopcount);
+  /*print_register(" ... reply status:", sfp->rep_stat_clr); */
+  return 0;
+}
 
 
 

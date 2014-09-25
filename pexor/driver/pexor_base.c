@@ -254,13 +254,13 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
   if(!privdata) return -EFAULT;
 
 
+
   /* use semaphore to allow multi user mode:*/
      if (down_interruptible(&(privdata->ioctl_sem)))
      {
        pexor_msg((KERN_INFO "down interruptible of ioctl sem is not zero, restartsys!\n"));
        return -ERESTARTSYS;
      }
-
 
   /* Select the appropiate command */
   switch (cmd) {

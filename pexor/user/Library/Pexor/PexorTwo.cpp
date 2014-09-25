@@ -53,6 +53,33 @@ pexor::DMA_Buffer* PexorTwo::RequestToken(const unsigned long channel, const int
 }
 
 
+
+pexor::DMA_Buffer* PexorTwo::RequestMultiToken(const unsigned long channelmask, const int bufid, bool sync)
+{
+  PexorDebug("PexorTwo::RequestMultiToken with channelmask 0x%x", channelmask);
+      int rev=0;
+      struct pexor_token_io descriptor;
+      descriptor.bufid=bufid;
+      descriptor.sfp= (channelmask << 16); // upper bytes expected as sfp pattern by driver
+      descriptor.sync=0;
+      descriptor.tkbuf.addr=0;
+      descriptor.offset=0;
+      if(sync) descriptor.sync=1;
+      rev=ioctl(fFileHandle, PEXOR_IOC_REQUEST_TOKEN, &descriptor);
+      if(rev)
+          {
+              int er=errno;
+              PexorError("\n\nError %d on token request from channelmask 0x%x bufid:0x%x sync:%d- %s\n",
+                  er, channelmask, bufid, sync, strerror(er));
+              return (pexor::DMA_Buffer*) -1;
+          }
+      if(!sync) return 0;
+      return (PrepareReceivedBuffer(descriptor, 0));
+
+}
+
+
+
 pexor::DMA_Buffer* PexorTwo::WaitForToken(const unsigned long channel, int* dmabuf, unsigned int woffset)
 {
 	int rev=0;

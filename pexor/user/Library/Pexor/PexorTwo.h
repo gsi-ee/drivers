@@ -39,6 +39,18 @@ public:
    pexor::DMA_Buffer* RequestToken(const unsigned long channel, const int bufid, bool sync=0, int* dmabuf=0, unsigned int woffset=0);
 
 
+   /** Request next token buffer from all connected devices on all sfps specified bitwise by channelmask:
+    *  1: sfp 0, 2: sfp 1, 4: sfp 2, 8: sfp 3, 0xf: all four SFPs
+    * This feature requires pexor driver with "direct dma" mode enabled (default)
+    * bufid (0,1) will switch the double buffer id on frontends
+    * if sync is true, method blocks until dma is complete and returns filled dma buffer
+    * if sync is false, method returns before buffer is complete
+    * and user must call WaitForToken() subsequently to get token buffer
+    * NOTE: sg DMA emulation is not supported here due to direct dma mode to coherent host buffer)*/
+   pexor::DMA_Buffer* RequestMultiToken(const unsigned long channelmask, const int bufid, bool sync=0);
+
+
+
    /** Wait until next token buffer has arrived for sfp channel
     * needs a previous RequestToken in async mode
     * For sg DMA, optionally we can specify pointer to desired receive buffer and a write offset within

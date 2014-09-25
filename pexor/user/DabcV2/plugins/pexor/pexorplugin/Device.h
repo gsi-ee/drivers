@@ -38,6 +38,7 @@ extern const char* xmlDMAZeroCopy;    //< switch zero copy scatter gather dma on
 extern const char* xmlExploderSubmem;    //< exploder submem size for testbuffer
 extern const char* xmlFormatMbs;    //< enable mbs formating already in device transport
 extern const char* xmlSingleMbsSubevt;    //<  use one single subevent for all sfps
+extern const char* xmlMultichannelRequest;  //<  enable channelpattern request with combined dma for multiple sfps
 extern const char* xmlMbsSubevtCrate;    //<  define crate number for subevent header
 extern const char* xmlMbsSubevtControl;    //<  define crate number for subevent header
 extern const char* xmlMbsSubevtProcid;    //<  define procid number for subevent header
@@ -59,6 +60,7 @@ extern const char* nameOutputPool;
 
 extern const char* commandStartAcq;
 extern const char* commandStopAcq;
+extern const char* commandInitAcq;
 
 extern const char* parDeviceDRate;
 
@@ -85,6 +87,13 @@ public:
    * NOTE: this method is not used for default daq case, kept for user convencience to be called
    * in optional reimplementation of ReadStart/ReadComplete interface*/
   virtual int RequestToken (dabc::Buffer& buf, bool synchronous = true);
+
+
+  /** Request tokens from all enabled sfp by channelpattern. If synchronous is true, fill output buffer.
+     * if mbs formating is enabled, put mbs headers into buffer
+     * If synchronous mode false, return before getting dma buffer,
+     * needs to call ReceivetokenBuffer afterwards.*/
+   virtual int RequestMultiToken (dabc::Buffer& buf, bool synchronous = true);
 
   /** Receive token buffer of currently active sfp after asynchronous RequestToken call.
    * NOTE: this method is not used for default daq case, kept for user convencience to be called
@@ -132,6 +141,11 @@ public:
     return fTriggeredRead;
   }
 
+  bool IsMultichannelMode()
+  {
+    return fMultichannelRequest;
+  }
+
   /** initialize trixor depending on the setup*/
   void InitTrixor ();
 
@@ -145,6 +159,12 @@ public:
   {
     return fAqcuisitionRunning;
   }
+
+
+  /** generic initialization function for daq and frontends.
+   * To be overwritten in subclass and callable by command interactively, without shutting down
+   * application.*/
+  virtual int InitDAQ();
 
   /** Forwarded interface for user defined readout:
    * User code may overwrite the default behaviour (gosip token dma)
@@ -235,6 +255,12 @@ protected:
   /** if true, request data only when trigger interrupt was received.
    * Otherwise request data immediately (polling mode)*/
   bool fTriggeredRead;
+
+  /** if true, data is requested by frontends with sfp channel pattern
+   * and driver-intrinsic filling of dma buffer from all channels.
+   * Otherwise, use sequential round-robin token request with separate dma buffers combined in application.
+   * The latter may also separate different mbs subvevents for each sfp.*/
+  bool fMultichannelRequest;
 
   /** flag to switch on memory speed measurements without acquisition*/
   bool fMemoryTest;

@@ -54,6 +54,7 @@
 #define REG_QFW_OFFSET_BASE 0x200100
 
 const char* poland::xmlOffsetTriggerType = "PolandOffsetReadTrigger";    //< trigger type to read out frontend offfset values
+const char* poland::commandReadOffsets = "PolandReadOffset"; //< command to initiate software offset trigger
 
 poland::Device::Device (const std::string& name, dabc::Command cmd) :
     pexorplugin::Device (name, cmd), fOffsetTrigType (0)
@@ -67,7 +68,8 @@ poland::Device::Device (const std::string& name, dabc::Command cmd) :
     exit (1);    // TODO: how to tell DABC to shutdown properly?
   }
   fOffsetTrigType = Cfg (poland::xmlOffsetTriggerType, cmd).AsInt (14);
-
+  CreateCmdDef(poland::commandReadOffsets);
+  PublishPars("$CONTEXT$/PolandDevice");
   fInitDone = true;
    // initial start acquisition here, not done from transport start anymore:
   StartAcquisition();
@@ -77,6 +79,16 @@ poland::Device::Device (const std::string& name, dabc::Command cmd) :
 poland::Device::~Device ()
 {
 }
+
+int poland::Device::InitDAQ()
+{
+  pexorplugin::Device::InitDAQ(); // call everything that is necessary for basic init, i.e. trixor setup
+  if(!InitQFWs()) return -1;
+  return 0;
+}
+
+
+
 
 int poland::Device::User_Readout (dabc::Buffer& buf, uint8_t trigtype)
 {
@@ -88,13 +100,7 @@ int poland::Device::User_Readout (dabc::Buffer& buf, uint8_t trigtype)
     DOUT1("poland::Device::User_Readout finds offset trigger :%d !!", trigtype);
     fBoard->ResetTrigger ();
 
-    // this is nasty workaround since polands do not issue interrupts anymore
-    // after stop acquisition interrupt. Note that mbs f_user.c for poland does the same!
-    if (!InitQFWs ())
-    {
-      EOUT("\n\nError initializing QFWs  after start acquisition\n", fDeviceNum);
-      exit (1);    // TODO: how to tell DABC to shutdown properly?
-    }
+
 
     if (fMbsFormat)
     {
@@ -154,11 +160,31 @@ int poland::Device::User_Readout (dabc::Buffer& buf, uint8_t trigtype)
       buf.SetTypeId (mbs::mbt_MbsEvents);
       buf.SetTotalSize (used_size);
       retsize = used_size;
+
+
+
+
+
     }
     else
     {
-      return dabc::di_SkipBuffer;
+      retsize = dabc::di_SkipBuffer;
     }
+
+    // it can be that offset trigger type is same as start acquisition (as in mbs kludge implemntation)
+        // so also do reinit frontends here:
+        if(trigtype == 14)
+          {
+        // this is nasty workaround since polands do not issue interrupts anymore
+        // after stop acquisition interrupt. Note that mbs f_user.c for poland does the same!
+          if (!InitQFWs ())
+          {
+            EOUT("\n\nError initializing QFWs  after start acquisition\n", fDeviceNum);
+            exit (1);    // TODO: how to tell DABC to shutdown properly?
+          }
+        }
+
+
   }
   else
   {
@@ -170,11 +196,29 @@ int poland::Device::User_Readout (dabc::Buffer& buf, uint8_t trigtype)
 
 }
 
-//int poland::Device::ExecuteCommand (dabc::Command cmd)
-//{
-//  DOUT1("poland::Device::ExecuteCommand-  %s", cmd.GetName ());
-//  return pexorplugin::Device::ExecuteCommand (cmd);
-//}
+int poland::Device::ExecuteCommand (dabc::Command cmd)
+{
+  DOUT3("poland::Device::ExecuteCommand-  %s", cmd.GetName ());
+
+  if (cmd.IsName(poland::commandReadOffsets))
+            {
+                DOUT1("Executing Command %s  ",poland::commandReadOffsets);
+                int res=SendOffsetTrigger();
+                return cmd_bool(res==0);
+            }
+    else
+      return pexorplugin::Device::ExecuteCommand (cmd);
+}
+
+
+int poland::Device::SendOffsetTrigger()
+{
+  DOUT1("poland::Device::SendOffsetTrigger - not implemented yet!\n");
+ // todo: need method in PexorTwo board and driver to initiate a software trigger!
+  return 0;
+}
+
+
 //
 //unsigned poland::Device::Read_Start (dabc::Buffer& buf)
 //{

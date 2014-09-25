@@ -30,6 +30,7 @@ pexorplugin::ReadoutModule::ReadoutModule (const std::string name, dabc::Command
 
   Par (fDataRateName).SetDebugLevel (1);
   Par (fEventRateName).SetDebugLevel (1);
+  PublishPars("$CONTEXT$/PexReadout");
 
 }
 

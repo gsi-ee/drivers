@@ -289,7 +289,9 @@ int pexor_sfp_clear_all(struct pexor_privdata *privdata);
  * return value specifies error if not 0 */
 int pexor_sfp_clear_channel(struct pexor_privdata *privdata, int ch);
 
-
+/** clear sfp channelpattern ch and wait for success
+ * return value specifies error if not 0 */
+int pexor_sfp_clear_channelpattern (struct pexor_privdata* privdata, int pat);
 
 /** Initiate reading a token buffer from sfp front end hardware.
  * In synchronous mode, will block until transfer is done and delivers back dma buffer with token data.
