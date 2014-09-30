@@ -12,6 +12,7 @@
  * in LICENSE.txt file which is part of the distribution.
  ********************************************************************/
 #include "pexorplugin/Device.h"
+#include "dabc/logging.h"
 #include "dabc/Command.h"
 #include "dabc/Manager.h"
 #include "dabc/Application.h"
@@ -445,7 +446,7 @@ int pexorplugin::Device::RequestMultiToken (dabc::Buffer& buf, bool synchronous)
     {
       if (fEnabledSFP[ix]) channelmask |= (1 << ix);
     }
-    DOUT1 ("pexorplugin::Device::RequestMultiToken with channelmask:0x%x", channelmask);
+    DOUT2 ("pexorplugin::Device::RequestMultiToken with channelmask:0x%x", channelmask);
       tokbuf = fBoard->RequestMultiToken (channelmask, fDoubleBufID[0], synchronous);    // synchronous dma mode here
       DOUT3 ("pexorplugin::Device::RequestAllTokens gets dma buffer 0x%x for sfp:%d ", tokbuf,
           fCurrentSFP);
@@ -841,7 +842,8 @@ unsigned pexorplugin::Device::Read_Complete (dabc::Buffer& buf)
        }
 
        // trigger is received, optionally dump something:
-       fBoard->DumpTriggerStatus();
+       if(dabc::lgr()->GetDebugLevel()>1)
+         fBoard->DumpTriggerStatus();
        trigtype=fBoard->GetTriggerType();
      }
     else

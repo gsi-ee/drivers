@@ -33,7 +33,7 @@ unsigned pexorplugin::Input::Read_Size ()
 {
   //return dabc::di_Error;
   int res = fPexorDevice->GetReadLength ();
-  DOUT1 ("Read_Size()=%d\n", res);
+  DOUT3 ("Read_Size()=%d\n", res);
 
   return res > 0 ? res : dabc::di_Error;
 }

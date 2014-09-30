@@ -23,18 +23,21 @@
 #define PEXOR_SHARED_IRQ 1
 
 
+/** use disable_irq_nosync and enable_irq in isr.*/
+#define PEXOR_DISABLE_IRQ_ISR 1
+
 /* modes of interrupt complete handling: */
 
 /** polling mode in the wait ioctl. if not set, we wait on the event queue
  * of the tasklet which is executed by ir. */
 #define DMA_WAITPOLLING 1
 
-/* test: use spinlock to protect dma engine vs buffers. do we need this?
+/** test: use spinlock to protect dma engine vs buffers. do we need this?
  * rather bad idea*/
 /*#define DMA_SPINLOCK 1 */
 
 
-/* polling mode in the nextdma function, raising ir when dma is done to
+/** polling mode in the nextdma function, raising ir when dma is done to
  * test subsequent handlers. if not set, polling mode in
  * nextdma will schedule tasklet directly */
 
@@ -105,7 +108,8 @@
 #define PEXOR_MAXOUTSTANDING 50
 
 
-
+/** size of interrupt status ringbuffer */
+#define PEXOR_IRSTATBUFFER_SIZE 50
 
 
 
