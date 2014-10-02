@@ -34,15 +34,15 @@
 		<Device name="PexorDevice" class="poland::Device">
 
 			<PexorID value="0" />
-			<PexorNumSlaves_0 value="2" />
-			<PexorNumSlaves_1 value="0" />
+			<PexorNumSlaves_0 value="1" />
+			<PexorNumSlaves_1 value="1" />
 			<PexorNumSlaves_2 value="0" />
 			<PexorNumSlaves_3 value="0" />
 			<PexorDMALen value="32768" />
 			<PexorDMABuffers value="50" />
 			<PexorDMAScatterGather value="false" />
 			<PexorDMAZeroCopy value="false" />
-			<PexorMultiTokenDMA  value="true" />
+			<PexorMultiTokenDMA  value="false" />
 			<PexorFormatMbs value="true" />
 			<PexorSingleMbsSubevent value="true"/>
 			<PexorMbsSubcrate  value="0"/>

@@ -437,7 +437,7 @@ int pexorplugin::Device::RequestToken (dabc::Buffer& buf, bool synchronous)
 }
 
 
-int pexorplugin::Device::RequestMultiToken (dabc::Buffer& buf, bool synchronous)
+int pexorplugin::Device::RequestMultiToken (dabc::Buffer& buf, bool synchronous, uint16_t trigtype)
 {
   DOUT3 ("pexorplugin::Device::RequestMultiToken with synchronous=%d ", synchronous);
   pexor::DMA_Buffer* tokbuf=0;
@@ -448,8 +448,7 @@ int pexorplugin::Device::RequestMultiToken (dabc::Buffer& buf, bool synchronous)
     }
     DOUT2 ("pexorplugin::Device::RequestMultiToken with channelmask:0x%x", channelmask);
       tokbuf = fBoard->RequestMultiToken (channelmask, fDoubleBufID[0], synchronous);    // synchronous dma mode here
-      DOUT3 ("pexorplugin::Device::RequestAllTokens gets dma buffer 0x%x for sfp:%d ", tokbuf,
-          fCurrentSFP);
+      DOUT3 ("pexorplugin::Device::RequestAllTokens gets dma buffer 0x%x", tokbuf);
 
       if ((long int) tokbuf== -1)    // TODO: handle error situations by exceptions later!
       {
@@ -463,7 +462,7 @@ int pexorplugin::Device::RequestMultiToken (dabc::Buffer& buf, bool synchronous)
     return dabc::di_Ok;
   if (fTriggeredRead)
       fBoard->ResetTrigger ();
-  return (CopyOutputBuffer (tokbuf, buf));
+  return (CopyOutputBuffer (tokbuf, buf, trigtype));
 
 }
 
@@ -493,7 +492,7 @@ int pexorplugin::Device::ReceiveTokenBuffer (dabc::Buffer& buf)
 
 }
 
-int pexorplugin::Device::RequestAllTokens (dabc::Buffer& buf, bool synchronous)
+int pexorplugin::Device::RequestAllTokens (dabc::Buffer& buf, bool synchronous, uint16_t trigtype)
 {
   DOUT3 ("pexorplugin::Device::RequestAllTokens with synchronous=%d ", synchronous);
   static pexor::DMA_Buffer* tokbuf[PEXORPLUGIN_NUMSFP];
@@ -519,9 +518,14 @@ int pexorplugin::Device::RequestAllTokens (dabc::Buffer& buf, bool synchronous)
   }
   if (!synchronous)
     return dabc::di_Ok;
-  // NOTE: synchronous driver request is not used for standard daq case
   fSkipRequest = true;
-  return (CombineTokenBuffers (tokbuf, buf));
+  if (fTriggeredRead)
+     {
+       fBoard->ResetTrigger ();
+       DOUT3 ("RRRRRRRRRRRRRRRR pexorplugin::Device::RequestAllTokens has reset trigger!\n");
+   }
+
+  return (CombineTokenBuffers (tokbuf, buf,trigtype));
 
 }
 
@@ -564,13 +568,13 @@ int pexorplugin::Device::ReceiveAllTokenBuffer (dabc::Buffer& buf, uint16_t trig
   return (CombineTokenBuffers (tokbuf, buf, trigtype));
 }
 
-int pexorplugin::Device::CopyOutputBuffer (pexor::DMA_Buffer* tokbuf, dabc::Buffer& buf)
+int pexorplugin::Device::CopyOutputBuffer (pexor::DMA_Buffer* tokbuf, dabc::Buffer& buf, uint16_t trigtype)
 {
   dabc::Pointer ptr (buf);
   unsigned int filled_size = 0, used_size = 0;
   if (fMbsFormat)
   {
-    mbs::EventHeader* evhdr = PutMbsEventHeader (ptr, fNumEvents);
+    mbs::EventHeader* evhdr = PutMbsEventHeader (ptr, fNumEvents, trigtype);
     used_size += sizeof(mbs::EventHeader);
 
 
@@ -933,16 +937,29 @@ int pexorplugin::Device::User_Readout(dabc::Buffer& buf, uint8_t trigtype)
       {
         if (IsMultichannelMode ())
         {
-          retsize = RequestMultiToken (buf, true);    // synchronous, atomic dma request concerning driver ioctl
+        // NOTE: asynchronous channelmask request does not work principally with direct DMA to host buffer!
+        // leads to severe machine crash due to pexor dma (all sfp will do dma to first buffer simultaneously?)
+          // this mode is not reasonable!!!!!!
+//          res = RequestMultiToken (buf, false );    // does not work as synchronous request! dma buffers are still separately send
+//          if ((unsigned) res != dabc::di_Ok)
+//                     return res;    // propagate error type
+//          retsize = ReceiveAllTokenBuffer (buf, trigtype);
+          EOUT("pexorplugin::Device::  PexorMultiTokenDMA Mode is not valid anymore! Please change config.\n");
+          exit(1);
         }
         else
         {
+
+          retsize= RequestAllTokens (buf, true, trigtype); // need also synchronous mode here, otherwise mixup between sfps and dma buffer contents!
+
+
+          // OLD and buggy:
           // driver async round-robin request and receiving of separate buffers (old way)
           // problematic since driver access is not atomic with respect to gosipcmd io
-          res = RequestAllTokens (buf, false);    // for parallel read, we need async request before polling
-          if ((unsigned) res != dabc::di_Ok)
-            return res;    // propagate error type
-          retsize = ReceiveAllTokenBuffer (buf, trigtype);
+//          res = RequestAllTokens (buf, false);    // for parallel read, we need async request before polling
+//          if ((unsigned) res != dabc::di_Ok)
+//            return res;    // propagate error type
+//          retsize = ReceiveAllTokenBuffer (buf, trigtype);
           //fReadLength=retsize; //? do we want to adjust expected readsize dynamically here?
           //////////////////////////////// trigger reset is optionally done in receive before buffer combining/copying
         }

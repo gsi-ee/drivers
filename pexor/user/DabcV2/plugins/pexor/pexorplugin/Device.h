@@ -93,7 +93,7 @@ public:
      * if mbs formating is enabled, put mbs headers into buffer
      * If synchronous mode false, return before getting dma buffer,
      * needs to call ReceivetokenBuffer afterwards.*/
-   virtual int RequestMultiToken (dabc::Buffer& buf, bool synchronous = true);
+   virtual int RequestMultiToken (dabc::Buffer& buf, bool synchronous = true, uint16_t trigtype=mbs::tt_Event);
 
   /** Receive token buffer of currently active sfp after asynchronous RequestToken call.
    * NOTE: this method is not used for default daq case, kept for user convencience to be called
@@ -104,7 +104,7 @@ public:
    * If synchronous mode false, return before getting dma buffer,
    * needs to call ReceiveAllTokenBuffer afterwards
    * for synchronous mode true, fill one dabc buffer with subevents of different channels*/
-  int RequestAllTokens (dabc::Buffer& buf, bool synchronous = true);
+  int RequestAllTokens (dabc::Buffer& buf, bool synchronous = true, uint16_t trigtype=mbs::tt_Event);
 
 
   /** Receive dma buffers from token request on all channels and copy to dabc buffer buf.
@@ -203,9 +203,8 @@ protected:
    * Padding words are formatted in mbs convention like 0xaddNNII*/
   int PutMbsPaddingWords(dabc::Pointer& ptr, uint8_t num);
 
-  /** copy contents of received dma buffer and optionally format for mbs.
-   * NOTE: for single sfp request only, not used in default daq implementation*/
-  int CopyOutputBuffer (pexor::DMA_Buffer* src, dabc::Buffer& dest);
+  /** copy contents of received dma buffer and optionally format for mbs.*/
+  int CopyOutputBuffer (pexor::DMA_Buffer* src, dabc::Buffer& dest, uint16_t trigtype=mbs::tt_Event);
 
   /** copy contents of received dma buffers src to destination buffer and optionally format for mbs.
    * mbs style trigger type can be set for event header.*/

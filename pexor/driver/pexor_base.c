@@ -29,21 +29,14 @@ static DEVICE_ATTR(sfpregs, S_IRUGO, pexor_sysfs_sfpregs_show, NULL);
 #endif
 #endif /* SYSFS_ENABLE*/
 
-
-static struct file_operations pexor_fops = {
-  .owner =	THIS_MODULE,
-  .llseek =   pexor_llseek,
-  .read =       	pexor_read,
-  .write =      	pexor_write,
+static struct file_operations pexor_fops = { .owner = THIS_MODULE, .llseek = pexor_llseek, .read = pexor_read, .write =
+    pexor_write,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
     .ioctl = pexor_ioctl,
 #else
     .unlocked_ioctl = pexor_ioctl,
 #endif
-  .mmap  = 		pexor_mmap,
-  .open =       	pexor_open,
-  .release =    	pexor_release,
-};
+    .mmap = pexor_mmap, .open = pexor_open, .release = pexor_release, };
 
 static int my_major_nr = 0;
 
@@ -138,8 +131,7 @@ ssize_t pexor_read (struct file *filp, char __user *buf, size_t count, loff_t *f
   /* try to use intermediate kernel buffer here:*/
   pexor_dbg(KERN_NOTICE "** pexor_read begins io loop at memstart=%lx\n", (long) memstart);
   /*wmb();
-   memcpy_fromio(&kbuf, memstart, count);*/
-   mb();
+   memcpy_fromio(&kbuf, memstart, count);*/mb();
   for (i = 0; i < lcount; ++i)
   {
     /*pexor_dbg(KERN_NOTICE "%x from %lx..", i,memstart+(i<<2));*/
@@ -559,7 +551,7 @@ int pexor_ioctl_freebuffer (struct pexor_privdata* priv, unsigned long arg)
 	}
 
     }
-  		  spin_unlock( &(priv->buffers_lock));
+  		      spin_unlock( &(priv->buffers_lock));
   return -EFAULT;
 }
 
@@ -1404,7 +1396,8 @@ privdata = (struct pexor_privdata *) dev_id;
     //disable_irq(irq);  // disable and spinlock until any isr of that irq has been finished -> deadlock!
 disable_irq_nosync (irq);    // disable irq line
 #endif
-ndelay(1000); // need this here?
+ndelay(1000);
+    // need this here?
 #ifdef PEXOR_SHARED_IRQ
 
 #ifdef PEXOR_WITH_TRIXOR
@@ -1436,10 +1429,10 @@ atomic_set(&(privdata->state), state);
 // use first unassigned entry in ring buffer:
 spin_lock( &(privdata->trigstat_lock));
 list_for_each_entry(trigstat, &(privdata->trig_status), queue_list)
-    {
-    if(trigstat->trixorstat == 0)
-    break;
-    }
+{
+if(trigstat->trixorstat == 0)
+break;
+}
     // todo: handle case where ringbuffer is full, i.e. there is no entry marked with zero status
     // in the above case we would overwrite the last (oldest) entry
 trigstat->trixorstat = irstat;    // change of entry state is also inside the list lock!
@@ -1956,7 +1949,9 @@ if (PEXOR_DMA_POLLDELAY)
 ndelay(PEXOR_DMA_POLLDELAY);
 if (PEXOR_DMA_POLL_SCHEDULE)
 schedule ();
-};pexor_dma_unlock((&(priv->dma_lock)));
+}; // while
+
+pexor_dma_unlock((&(priv->dma_lock)));
     //spin_unlock(&(priv->dma_lock));
 return 0;
 }
@@ -2285,11 +2280,11 @@ void cleanup_device (struct pexor_privdata* priv)
   // here remove trigger status objects:
   spin_lock( &(priv->trigstat_lock));
   list_for_each_entry_safe(trigstat, nexttrigstat, &(priv->trig_status), queue_list)
-      {
+{
         list_del(&(trigstat->queue_list)); /* put out of list*/
         kfree(trigstat);
       }
-   		  spin_unlock( &(priv->trigstat_lock));
+   		      spin_unlock( &(priv->trigstat_lock));
 
   for (j = 0; j < 6; ++j)
   {

@@ -569,8 +569,10 @@ int pexor_ioctl_request_token (struct pexor_privdata* priv, unsigned long arg)
   }
 
   pexor_sfp_request (priv, comm, bufid, 0); /* note: slave is not specified; the chain of all slaves will send everything to receive buffer*/
+   ndelay(10000); /* give pexor time to evaluate requests?*/
   if (descriptor.sync != 0)
   {
+
     /* only wait here for dma buffer if synchronous*/
     return (pexor_ioctl_wait_token (priv, arg));
   }
@@ -614,8 +616,10 @@ int pexor_ioctl_wait_token (struct pexor_privdata* priv, unsigned long arg)
     // here evaluate replies of all channels belonging to pattern
     for (ci = 0; ci < PEXOR_SFP_NUMBER; ++ci)
     {
+      pexor_dbg(KERN_NOTICE "** pexor_ioctl_wait_token at ci=0x%x ,mask=0x%x\n",ci, (1 << ci));
       if ((chanpattern & (1 << ci)) == 0)
         continue;
+      pexor_dbg(KERN_NOTICE "** pexor_ioctl_wait_token waits for reply of ci=0x%x\n",ci);
       if ((retval = pexor_sfp_get_reply (priv, ci, &rstat, &radd, &rdat, 0)) != 0)    // debug: do not check reply status
       //if((retval=pexor_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEXOR_SFP_PT_TK_R_REP))!=0)
       {
@@ -623,7 +627,9 @@ int pexor_ioctl_wait_token (struct pexor_privdata* priv, unsigned long arg)
         pexor_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
         return -EIO;
       }
-    }
+       pexor_dbg(KERN_NOTICE "** pexor_ioctl_wait_token succeeds with reply of ci=0x%x\n",ci);
+       ndelay(1000);
+    } // for
   }
   else
   {
@@ -638,6 +644,7 @@ int pexor_ioctl_wait_token (struct pexor_privdata* priv, unsigned long arg)
       pexor_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
       return -EIO;
     }
+    ndelay(1000);
   }    // end wait for channelpattern reply
 
   /* poll for return status: not necessary, since token request command is synchronous
@@ -838,7 +845,7 @@ int pexor_sfp_get_reply (struct pexor_privdata* privdata, int ch, u32* comm, u32
 
   do
   {
-    if (loopcount++ > 1000000)/* 1000000*/
+    if (loopcount++ > 1000)/* 1000000*/
     {
       pexor_msg(KERN_WARNING "**pexor_sfp_get_reply polled %d x without success, abort\n",loopcount);
       print_register (" ... status after FAILED pexor_sfp_get_reply:", sfp->rep_stat[ch]);
@@ -847,20 +854,26 @@ int pexor_sfp_get_reply (struct pexor_privdata* privdata, int ch, u32* comm, u32
     status = ioread32 (sfp->rep_stat[ch]);
     pexor_sfp_delay()
     ;
-    if (PEXOR_DMA_POLL_SCHEDULE)
-      schedule (); /* probably this also may help*/
+
+    pexor_dbg(KERN_NOTICE "**pexor_sfp_get_reply in loop, count=%d \n",loopcount);
+//    if (PEXOR_DMA_POLL_SCHEDULE)
+//      schedule (); /* probably this also may help*/
+    pexor_dbg(KERN_NOTICE "**pexor_sfp_get_reply NO schedule\n",loopcount);
 
   } while (((status & 0x3000) >> 12) != 0x02); /* packet received bit is set*/
-
+  pexor_dbg(KERN_NOTICE "**pexor_sfp_get_reply after while loop\n");
   *comm = ioread32 (sfp->rep_stat[ch]);
   pexor_sfp_delay()
   ;
+  pexor_dbg(KERN_NOTICE "**pexor_sfp_get_reply after reading comm \n");
   *addr = ioread32 (sfp->rep_addr[ch]);
   pexor_sfp_delay()
   ;
+  pexor_dbg(KERN_NOTICE "**pexor_sfp_get_reply after reading addr \n");
   *data = ioread32 (sfp->rep_data[ch]);
   pexor_sfp_delay()
   ;
+  pexor_dbg(KERN_NOTICE "**pexor_sfp_get_reply after reading dat \n");
   pexor_dbg(KERN_NOTICE "pexor_sfp_get_reply from SFP: %x got status:%x address:%x data: %x \n", ch,*comm, *addr, *data);
   if (checkvalue == 0)
     return 0;    // no check of reply structure
