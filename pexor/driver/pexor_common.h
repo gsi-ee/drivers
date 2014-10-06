@@ -2,7 +2,7 @@
  * \file
  * pexor_common.h
  *
- *  Created on: 08.02.2011
+ *  Created on: 08.02.2011 - 06.10.2014
  *      Author: J. Adamczewski-Musch, GSI
  *
  *      PEXOR driver common includes for all modules
@@ -29,16 +29,6 @@
 
 #include <linux/wait.h>
 
-/*
-#include <asm/uaccess.h>
-#include <asm/atomic.h>
-#include <asm/io.h>
-
-*/
-
-/*
-#include <asm/system.h>
-*/
 
 #include "pexor_user.h"
 
@@ -57,15 +47,8 @@
 #define BOARDTYPE_KINPEX 2
 
 
-//#define PEXOR_DEBUGPRINT 1
+#define PEXOR_DEBUGPRINT 1
 
-// this will enable mode where pexor on board memory is not used as buffer
-// instead, data from sfp token request will be directly streamed to host dma buffer.
-#define PEXOR_DIRECT_DMA 1
-
-
-/* this define will switch at compiletime between trbnet and gosip protocols*/
-//#define PEXOR_WITH_TRBNET
 
 #define PEXOR_ENABLE_IRQ 1
 

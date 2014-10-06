@@ -2,7 +2,7 @@
  * \file
  * pexor_user.h
  *
- *  Created on: 01.12.2009
+ *  Created on: 01.12.2009 - 6.10.2014
  *      Author: J. Adamczewski-Musch
  *
  *      Contains all common definitions for kernel driver and user space library
@@ -14,7 +14,7 @@
 #include <linux/ioctl.h>
 
 
-#define PEXORVERSION  "1.5"
+#define PEXORVERSION  "2.0."
 
 /** identify name in dev : */
 #define PEXORNAME 		"pexor"
@@ -32,6 +32,7 @@
 #define PEXOR_STATE_DMA_AUTO 3   /**< TODO: board fpga will automatically initate next DMA when send fifo is full*/
 #define PEXOR_STATE_DMA_SUSPENDED 4   /**< used for backpressure until free buffer list is empty no more */
 #define PEXOR_STATE_IR_TEST 5 /**< this state is used to test raising an ir manually*/
+#define PEXOR_STATE_TRIGGERED_READ 6 /**< trigger interrupt will fill dma buffer automatically with token data*/
 
 #define PEXOR_TRIGGER_FIRED  0/**< return value from wait trigger to inform that trigger ir was fired reached */
 #define PEXOR_TRIGGER_TIMEOUT 1 /**< return value from wait trigger to inform that wait timeout was reached */
@@ -55,10 +56,6 @@
 
 
 
-#define PEXOR_TRBNETCOM_REG_WRITE             0   /**< Command for ioctl trbnet request */
-#define PEXOR_TRBNETCOM_REG_WRITE_MEM          1   /**< Command for ioctl trbnet request */
-#define PEXOR_TRBNETCOM_REG_READ          2   /**< Command for ioctl trbnet request */
-#define PEXOR_TRBNETCOM_REG_READ_MEM          3   /**< Command for ioctl trbnet request */
 
 
 struct pexor_userbuf {
@@ -94,6 +91,7 @@ struct pexor_sfp_links{
 
 struct pexor_token_io {
 	unsigned char sync;		/**< 1:synchronous mode, 0: asynchronous mode*/
+    unsigned char directdma;  /**< 1: direct DMA to host on token receive, 0 explicit DMA from pex ram required*/
 	unsigned long sfp;		/**< sfp link id 0..3 */
 	unsigned long bufid;	/**< switch double buffer id on slave (1 or 0)*/
 	struct pexor_userbuf tkbuf; /**< dma buffer with received token data (on synchronous reply);
@@ -132,15 +130,6 @@ struct pexor_trigger_status {
 
 
 
-#define TRBNET_MAX_BUFS 64
-
-struct pexor_trbnet_io {
-  unsigned int command;     /**< command to issue on trbnet*/
-  unsigned short trb_address;     /**< address of board in trbnet*/
-  unsigned int reg_address;    /**< address on board*/
-  unsigned char channel;          /**< trb channel id (0...3) */
- struct pexor_userbuf tkbuf[TRBNET_MAX_BUFS]; /**< dma buffers with received result data*/
-};
 
 /* the ioctl stuff here:*/
 #define PEXOR_IOC_MAGIC  0xE0
@@ -162,14 +151,13 @@ struct pexor_trbnet_io {
 #define PEXOR_IOC_WAIT_TOKEN    _IOWR(  PEXOR_IOC_MAGIC, 14, struct pexor_token_io)
 #define PEXOR_IOC_WAIT_TRIGGER    _IOR(  PEXOR_IOC_MAGIC, 15, struct pexor_trigger_status)
 #define PEXOR_IOC_SET_TRIXOR    _IOW(  PEXOR_IOC_MAGIC, 16, struct pexor_trixor_set)
-#define PEXOR_IOC_TRBNET_REQUEST _IOWR(  PEXOR_IOC_MAGIC, 17, struct pexor_trbnet_io)
-#define PEXOR_IOC_MAPBUFFER   _IOW(  PEXOR_IOC_MAGIC, 18, struct pexor_userbuf)
-#define PEXOR_IOC_UNMAPBUFFER   _IOW(  PEXOR_IOC_MAGIC, 19, struct pexor_userbuf)
-#define PEXOR_IOC_CONFIG_BUS       _IOWR(  PEXOR_IOC_MAGIC, 20, struct pexor_bus_config)
-#define PEXOR_IOC_GET_SFP_LINKS    _IOR(  PEXOR_IOC_MAGIC, 21, struct pexor_sfp_links)
+#define PEXOR_IOC_MAPBUFFER   _IOW(  PEXOR_IOC_MAGIC, 17, struct pexor_userbuf)
+#define PEXOR_IOC_UNMAPBUFFER   _IOW(  PEXOR_IOC_MAGIC, 18, struct pexor_userbuf)
+#define PEXOR_IOC_CONFIG_BUS       _IOWR(  PEXOR_IOC_MAGIC, 19, struct pexor_bus_config)
+#define PEXOR_IOC_GET_SFP_LINKS    _IOR(  PEXOR_IOC_MAGIC, 20, struct pexor_sfp_links)
 
 
-#define PEXOR_IOC_MAXNR 22
+#define PEXOR_IOC_MAXNR 21
 
 
 /** some alias ioctl definitions for goiscmd/mbspex lib:*/

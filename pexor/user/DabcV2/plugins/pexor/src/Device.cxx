@@ -61,6 +61,8 @@ const char* pexorplugin::xmlMbsSubevtProcid = "PexorMbsProcid";    //<  define p
 const char* pexorplugin::xmlSyncRead = "PexorSyncReadout";    //<  switch readout sync mode
 //onst char* pexorplugin::xmlParallelRead	= "PexorParallelReadout"; //<  switch readout parallel token mode
 const char* pexorplugin::xmlTriggeredRead = "PexorUseTrigger";    //<  switch trigger mode
+const char* pexorplugin::xmlDmaMode = "PexorDirectDMA";    //<  switch between direct dma to host,  or token data buffering in pexor RAM
+
 const char* pexorplugin::xmlTrixorConvTime = "TrixorConversionTime";    //<  conversion time of TRIXOR module
 const char* pexorplugin::xmlTrixorFastClearTime = "TrixorFastClearTime";    //<  fast clear time of TRIXOR module
 
@@ -92,7 +94,9 @@ unsigned int pexorplugin::Device::fgThreadnum = 0;
 
 pexorplugin::Device::Device(const std::string& name, dabc::Command cmd):
     dabc::Device (name), fBoard (0), fMbsFormat (true), fSingleSubevent (false), fSubeventSubcrate (0),
-        fSubeventProcid (0), fSubeventControl (0), fAqcuisitionRunning(false), fSynchronousRead (true), fTriggeredRead (false), fMultichannelRequest(false), fMemoryTest (false),
+        fSubeventProcid (0), fSubeventControl (0), fAqcuisitionRunning(false), fSynchronousRead (true),
+        fTriggeredRead (false), fDirectDMA(true),
+        fMultichannelRequest(false), fMemoryTest (false),
         fSkipRequest (false), fCurrentSFP (0), fReadLength (0), fTrixConvTime (0x20), fTrixFClearTime (0x10),
         fInitDone (false), fNumEvents (0)
 
@@ -166,7 +170,7 @@ pexorplugin::Device::Device(const std::string& name, dabc::Command cmd):
 
   fSynchronousRead = Cfg (pexorplugin::xmlSyncRead, cmd).AsBool (true);    //GetCfgBool(pexorplugin::xmlSyncRead,true, cmd);
   fTriggeredRead = Cfg (pexorplugin::xmlTriggeredRead, cmd).AsBool (false);    //GetCfgBool(pexorplugin::xmlTriggeredRead,false, cmd);
-
+  fDirectDMA = Cfg (pexorplugin::xmlDmaMode, cmd).AsBool (true);
   fTrixConvTime = Cfg (pexorplugin::xmlTrixorConvTime, cmd).AsInt (0x200);    //GetCfgInt(pexorplugin::xmlTrixorConvTime,0x200, cmd)
   fTrixFClearTime = Cfg (pexorplugin::xmlTrixorFastClearTime, cmd).AsInt (0x100);    //GetCfgInt(pexorplugin::xmlTrixorFastClearTime,0x100, cmd);
 
@@ -419,7 +423,7 @@ int pexorplugin::Device::RequestToken (dabc::Buffer& buf, bool synchronous)
   }
 
   // now request token from board at current sfp:
-  pexor::DMA_Buffer* tokbuf = fBoard->RequestToken (fCurrentSFP, fDoubleBufID[fCurrentSFP], synchronous, bptr,
+  pexor::DMA_Buffer* tokbuf = fBoard->RequestToken (fCurrentSFP, fDoubleBufID[fCurrentSFP], synchronous, fDirectDMA, bptr,
       headeroffset);    // synchronous dma mode here
   if ((long int) tokbuf == -1)    // TODO: handle error situations by exceptions later!
   {
@@ -447,7 +451,7 @@ int pexorplugin::Device::RequestMultiToken (dabc::Buffer& buf, bool synchronous,
       if (fEnabledSFP[ix]) channelmask |= (1 << ix);
     }
     DOUT2 ("pexorplugin::Device::RequestMultiToken with channelmask:0x%x", channelmask);
-      tokbuf = fBoard->RequestMultiToken (channelmask, fDoubleBufID[0], synchronous);    // synchronous dma mode here
+      tokbuf = fBoard->RequestMultiToken (channelmask, fDoubleBufID[0], synchronous, fDirectDMA);
       DOUT3 ("pexorplugin::Device::RequestAllTokens gets dma buffer 0x%x", tokbuf);
 
       if ((long int) tokbuf== -1)    // TODO: handle error situations by exceptions later!
@@ -479,7 +483,7 @@ int pexorplugin::Device::ReceiveTokenBuffer (dabc::Buffer& buf)
     if (fMbsFormat)
       headeroffset = sizeof(mbs::EventHeader) + sizeof(mbs::SubeventHeader) + sizeof(int);
   }
-  pexor::DMA_Buffer* tokbuf = fBoard->WaitForToken (fCurrentSFP, bptr, headeroffset);
+  pexor::DMA_Buffer* tokbuf = fBoard->WaitForToken (fCurrentSFP, fDirectDMA, bptr, headeroffset);
   if (tokbuf == 0)
   {
     EOUT ("**** Error in PEXOR ReceiveTokenBuffer from sfp %d !\n", fCurrentSFP);
@@ -503,7 +507,7 @@ int pexorplugin::Device::RequestAllTokens (dabc::Buffer& buf, bool synchronous, 
       tokbuf[fCurrentSFP] = 0;
       if (!fEnabledSFP[fCurrentSFP])
         continue;
-      tokbuf[fCurrentSFP] = fBoard->RequestToken (fCurrentSFP, fDoubleBufID[fCurrentSFP], synchronous);    // synchronous dma mode here
+      tokbuf[fCurrentSFP] = fBoard->RequestToken (fCurrentSFP, fDoubleBufID[fCurrentSFP], synchronous, fDirectDMA);
       DOUT3 ("pexorplugin::Device::RequestAllTokens gets dma buffer 0x%x for sfp:%d ", tokbuf[fCurrentSFP],
           fCurrentSFP);
 
@@ -541,7 +545,7 @@ int pexorplugin::Device::ReceiveAllTokenBuffer (dabc::Buffer& buf, uint16_t trig
       continue;
     if ((fMemoryTest && !fSkipRequest) || !fMemoryTest)
     {
-      tokbuf[sfp] = fBoard->WaitForToken (sfp);
+      tokbuf[sfp] = fBoard->WaitForToken (sfp, fDirectDMA);
       if (tokbuf[sfp] == 0)
       {
         EOUT ("**** Error in PEXOR ReceiveAllTokenBuffer from sfp %d !\n", sfp);
@@ -871,7 +875,7 @@ unsigned pexorplugin::Device::Read_Complete (dabc::Buffer& buf)
 
 int pexorplugin::Device::User_Readout(dabc::Buffer& buf, uint8_t trigtype)
 {
-  int res = dabc::di_Ok;
+ // int res = dabc::di_Ok;
   int retsize=0;
   unsigned int filled_size = 0, used_size = 0;
   mbs::EventHeader* evhdr = 0;

@@ -44,6 +44,8 @@ extern const char* xmlMbsSubevtControl;    //<  define crate number for subevent
 extern const char* xmlMbsSubevtProcid;    //<  define procid number for subevent header
 extern const char* xmlSyncRead;    //< switch synchronous or asynchronous token dma
 extern const char* xmlTriggeredRead;    //< switch triggered or polling mode readout
+extern const char* xmlDmaMode;          //<  switch between direct dma to host,  or token data buffering in pexor RAM
+
 extern const char* xmlTrixorConvTime;    //< conversion time of TRIXOR module
 extern const char* xmlTrixorFastClearTime;    //< fast clear time of TRIXOR module
 extern const char* xmlModuleName;    //< Name of readout module instance
@@ -254,6 +256,12 @@ protected:
   /** if true, request data only when trigger interrupt was received.
    * Otherwise request data immediately (polling mode)*/
   bool fTriggeredRead;
+
+  /** mode how token data is put to host buffers:
+   * if true, dma of each channel's token data will be written directly to receiving buffer
+   * if false, token data will be stored in pexor memory first and then transferred to host buffers separately
+   * this mode is evaluated in kernel module*/
+  bool fDirectDMA;
 
   /** if true, data is requested by frontends with sfp channel pattern
    * and driver-intrinsic filling of dma buffer from all channels.

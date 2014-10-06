@@ -43,6 +43,7 @@
 			<PexorDMAScatterGather value="false" />
 			<PexorDMAZeroCopy value="false" />
 			<PexorMultiTokenDMA  value="false" />
+			<PexorDirectDMA  value="false" />
 			<PexorFormatMbs value="true" />
 			<PexorSingleMbsSubevent value="true"/>
 			<PexorMbsSubcrate  value="0"/>

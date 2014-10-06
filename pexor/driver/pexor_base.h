@@ -13,11 +13,7 @@
 
 #include "pexor_common.h"
 
-#ifdef PEXOR_WITH_TRBNET
-#include "pexor_trb.h"
-#else
 #include "pexor_gos.h"
-#endif
 
 
 #define PEXOR_SHARED_IRQ 1
@@ -124,11 +120,6 @@ struct dev_pexor
   u32 *dma_dest;                /**< dma destination address */
   u32 *dma_len;                 /**< dma length */
   u32 *dma_burstsize;           /**< dma burstsize, <=0x80 */
-#ifdef PEXOR_WITH_TRBNET
-  u32 *dma_statbits;            /**< optional further status bits*/
-  u32 *dma_credits;             /**< credits*/
-  u32 *dma_counts;              /**< counter values*/
-#endif
   u32 *ram_start;               /**< RAM start */
   u32 *ram_end;                 /**< RAM end */
   dma_addr_t ram_dma_base;      /**< RAM start expressed as dma address */
@@ -140,14 +131,7 @@ struct dev_pexor
     u32* trix_fcti; /**< fast clear acceptance time register */
     u32* trix_cvti; /**< conversion time register */
 #endif
-#ifdef PEXOR_WITH_TRBNET
-  u32* trbnet_sender_err[PEXOR_TRB_CHANS];
-  u32* trbnet_sender_data[PEXOR_TRB_CHANS];
-  u32* trbnet_sender_ctl[PEXOR_TRB_CHANS];
- /* u32* trbnet_dma_ctl[PEXOR_TRB_CHANS];
-  u32* trbnet_dma_add[PEXOR_TRB_CHANS];
-  u32* trbnet_dma_len[PEXOR_TRB_CHANS];*/
-#endif
+
     unsigned char init_done; /**< object is ready flag*/
 };
 
@@ -366,6 +350,12 @@ int pexor_poll_dma_complete(struct pexor_privdata *priv);
  * Return value 0 on success; it may pass on error number */
 int pexor_wait_dma_buffer(struct pexor_privdata *priv,
                           struct pexor_dmabuf *result);
+
+
+/** poll for dma completion and move received buffer into receive queue.
+ * Wake up consuming process (that should wait in call of pexor_wait_dma_buffer) */
+int pexor_receive_dma_buffer(struct pexor_privdata *priv);
+
 
 /** general cleanup function*/
 void cleanup_device(struct pexor_privdata *priv);

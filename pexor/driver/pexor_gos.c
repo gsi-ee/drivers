@@ -1,6 +1,5 @@
 #include "pexor_base.h"
 
-#ifndef PEXOR_WITH_TRBNET
 
 #ifdef PEXOR_WITH_TRIXOR
 int pexor_ioctl_set_trixor (struct pexor_privdata* priv, unsigned long arg)
@@ -500,24 +499,11 @@ int pexor_ioctl_request_token (struct pexor_privdata* priv, unsigned long arg)
   int retval = 0;
   u32 comm = 0, chan = 0, chanpattern, bufid = 0;
   u32 channelmask = 0;
-  /*u32 rstat=0, radd=0, rdat=0;*/
-  /*u32 tkreply=0, tkhead=0, tkfoot =0;*/
-  /*u32 dmasize=0,oldsize=0;
-   struct pexor_dmabuf dmabuf;*/
   struct pexor_token_io descriptor;
 
-#ifdef  PEXOR_DIRECT_DMA
   u32 woffset;
   unsigned long dmabufid = 0;
-  /*struct pexor_dmabuf dmabuf;*/
-  //u32 channelmask=0;
-#endif
 
-  /*
-   #ifdef PEXOR_WITH_SFP
-   struct pexor_sfp* sfp=&(priv->pexor.sfp);
-   #endif
-   */
   retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pexor_token_io));
   if (retval)
     return retval;
@@ -528,8 +514,8 @@ int pexor_ioctl_request_token (struct pexor_privdata* priv, unsigned long arg)
    pexor_msg(KERN_NOTICE "** pexor_ioctl_request_token from_sfp 0x%x, bufid 0x%x\n",chan,bufid);*/
   pexor_sfp_assert_channel(chan);
 
-#ifdef  PEXOR_DIRECT_DMA
-  // TODO: setup here dma targets in direct dma mode before initiating gosip transfer
+if(descriptor.directdma!=0)
+{
   dmabufid = descriptor.tkbuf.addr;
   woffset = descriptor.offset;
   if (chanpattern != 0)
@@ -552,10 +538,9 @@ int pexor_ioctl_request_token (struct pexor_privdata* priv, unsigned long arg)
     atomic_set(&(priv->state), PEXOR_STATE_STOPPED);
     return retval;
   }
+} // if directdma
 
-#endif
-
-  if (chanpattern != 0)
+if (chanpattern != 0)
   {
     pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_token with channelpattern 0x%x\n", (unsigned) chanpattern);
     comm = PEXOR_SFP_PT_TK_R_REQ | (chanpattern << 16); /* token broadcast mode*/
@@ -586,17 +571,12 @@ int pexor_ioctl_wait_token (struct pexor_privdata* priv, unsigned long arg)
   int retval = 0;
   u32 chan = 0, chanpattern = 0, ci = 0;
   u32 rstat = 0, radd = 0, rdat = 0;
-  /*u32 tkreply=0, tkhead=0, tkfoot =0;*/
-
   struct pexor_dmabuf dmabuf;
   struct pexor_token_io descriptor;
-  
-#ifndef  PEXOR_DIRECT_DMA
   u32 woffset , oldsize=0;
   u32 dmasize=0;
   unsigned long dmabufid=0;
   struct pexor_sfp* sfp=&(priv->pexor.sfp);
-#endif
 
   retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pexor_token_io));
   if (retval)
@@ -656,10 +636,11 @@ int pexor_ioctl_wait_token (struct pexor_privdata* priv, unsigned long arg)
    return -EIO;
    }*/
 
-#ifndef  PEXOR_DIRECT_DMA
+if(descriptor.directdma ==0)
+{
   if (chanpattern > 0)
   {
-    pexor_msg(KERN_ERR "** pexor_ioctl_wait_token: channel pattern mode not supported without direct dma enabled! \n",retval,chan);
+    pexor_msg(KERN_ERR "** pexor_ioctl_wait_token: channel pattern mode not supported without direct dma enabled! \n");
     return -EFAULT;
   }
 
@@ -668,6 +649,7 @@ int pexor_ioctl_wait_token (struct pexor_privdata* priv, unsigned long arg)
   dmasize = ioread32(sfp->tk_memsize[chan]);
   mb();
   ndelay(20);
+  dmasize +=4; /* like in mbs code: empirically, real token data size is 4 bytes more!*/
   if(dmasize > PEXOR_SFP_TK_MEM_RANGE)
   {
     oldsize=dmasize;
@@ -696,24 +678,34 @@ int pexor_ioctl_wait_token (struct pexor_privdata* priv, unsigned long arg)
     atomic_set(&(priv->state),PEXOR_STATE_STOPPED);
     return retval;
   }
-#endif /* not PEXOR_DIRECT_DMA*/
 
-  if ((retval = pexor_wait_dma_buffer (priv, &dmabuf)) != 0)
+}/* not PEXOR_DIRECT_DMA*/
+
+
+  /** TODO: check operation mode, if module configured as automatic triggerreceiver we must not do this*/
+  if((retval=pexor_receive_dma_buffer(priv))!=0) /* poll for dma completion and wake up "DMA wait queue""*/
+  return retval;
+
+  if ((retval = pexor_wait_dma_buffer (priv, &dmabuf)) != 0) /* evaluate wait queue of received buffers*/
   {
     pexor_msg(KERN_ERR "pexor_ioctl_read_token error %d from wait_dma_buffer\n", retval);
     return retval;
   }
   descriptor.tkbuf.addr = dmabuf.virt_addr;
 
-#ifdef  PEXOR_DIRECT_DMA 
+if(descriptor.directdma !=0)
+{
   /* find out real package length after dma has completed:*/
   descriptor.tkbuf.size = ioread32 (priv->pexor.dma_len);
   mb();
   ndelay(20);
   pexor_dbg(KERN_NOTICE "pexor_ioctl_wait_token finds token size %x bytes after direct dma\n", descriptor.tkbuf.size);
-#else
-  descriptor.tkbuf.size=dmasize; /* account used payload size disregarding offset.*/
-#endif
+}
+else
+{
+  descriptor.tkbuf.size=dmasize; /* account used payload size disregarding offset and DMA burst corrections.*/
+} // if(descriptor.directdma !=0)
+
   retval = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pexor_token_io));
 
   return retval;
@@ -856,9 +848,9 @@ int pexor_sfp_get_reply (struct pexor_privdata* privdata, int ch, u32* comm, u32
     ;
 
     pexor_dbg(KERN_NOTICE "**pexor_sfp_get_reply in loop, count=%d \n",loopcount);
-//    if (PEXOR_DMA_POLL_SCHEDULE)
-//      schedule (); /* probably this also may help*/
-    pexor_dbg(KERN_NOTICE "**pexor_sfp_get_reply NO schedule\n",loopcount);
+    if (PEXOR_DMA_POLL_SCHEDULE)
+      schedule (); /* probably this also may help*/
+    pexor_dbg(KERN_NOTICE "**pexor_sfp_get_reply after schedule\n",loopcount);
 
   } while (((status & 0x3000) >> 12) != 0x02); /* packet received bit is set*/
   pexor_dbg(KERN_NOTICE "**pexor_sfp_get_reply after while loop\n");
@@ -1183,5 +1175,4 @@ ssize_t pexor_sysfs_sfpregs_show(struct device *dev, struct device_attribute *at
 #endif
 #endif
 
-#endif /*#ifndef PEXOR_WITH_TRBNET*/
 

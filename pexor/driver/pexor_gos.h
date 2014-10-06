@@ -11,7 +11,6 @@
 
 #include "pexor_common.h"
 
-#ifndef PEXOR_WITH_TRBNET
 
 /** enable usage of SFP */
 #define PEXOR_WITH_SFP 1
@@ -21,8 +20,8 @@
 
 
 #define PEXOR_DRAM		0x100000 /**< use the first SFP port for DMA testing here*/
-#define PEXOR_RAMSIZE   0xFFFC  /**< test covers first sfp port range here*/
-
+//#define PEXOR_RAMSIZE   0xFFFC  /**< test covers first sfp port range here*/
+#define PEXOR_RAMSIZE   0x3FFF0 /**< take RAM for all sfps instead */
 
 #define PEXOR_BURST			0x80
 #define PEXOR_BURST_MIN		0x10
@@ -365,7 +364,6 @@ ssize_t pexor_sysfs_sfpregs_show(struct device *dev,
 
 
 
-#endif /* ifndef PEXOR_WITH_TRBNET*/
 
 #endif
 

@@ -304,14 +304,6 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     retval = pexor_ioctl_read_register(privdata, arg);
     break;
 
-    /* special ioctls for different protocol implementations:*/
-
-#ifdef PEXOR_WITH_TRBNET
-    case PEXOR_IOC_TRBNET_REQUEST:
-    pexor_dbg(KERN_NOTICE "** pexor_ioctl trbnet request \n");
-    retval = pexor_ioctl_trbnet_request(privdata, arg);
-    break;
-#else
 
     case PEXOR_IOC_WRITE_BUS:
     pexor_dbg(KERN_NOTICE "** pexor_ioctl write bus\n");
@@ -360,8 +352,6 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     pexor_dbg(KERN_NOTICE "** pexor_ioctl get sfp links\n");
     retval = pexor_ioctl_get_sfp_links(privdata, arg);
     break;
-
-#endif /* #ifdef PEXOR_WITH_TRBNET */
 
     default:
     retval = -ENOTTY;
@@ -1251,9 +1241,6 @@ pexor_dbg(KERN_NOTICE "%s:\taddr=%lx cont=%x\n", description, (long unsigned int
 
 void print_pexor (struct dev_pexor* pg)
 {
-#ifdef PEXOR_WITH_TRBNET
-int i=0;
-#endif
 if (pg == 0)
 return;
 pexor_dbg(KERN_NOTICE "\n##print_pexor: ###################\n");
@@ -1261,10 +1248,6 @@ pexor_dbg(KERN_NOTICE "init: \t=%x\n", pg->init_done);
 if (!pg->init_done)
 return;
 print_register ("dma control/status", pg->dma_control_stat);
-#ifndef PEXOR_WITH_TRBNET
-print_register ("irq status", pg->irq_status);
-print_register ("irq control", pg->irq_control);
-#endif
 #ifdef PEXOR_WITH_TRIXOR
 /*pexor_dbg(KERN_NOTICE "trixor control add=%x \n",pg->irq_control) ;
  pexor_dbg(KERN_NOTICE "trixor status  add =%x \n",pg->irq_status);
@@ -1280,24 +1263,10 @@ print_register ("dma dest   address", pg->dma_dest);
 print_register ("dma len   address", pg->dma_len);
 print_register ("dma burstsize", pg->dma_burstsize);
 
-#ifndef PEXOR_WITH_TRBNET
 print_register ("RAM start", pg->ram_start);
 print_register ("RAM end", pg->ram_end);
 pexor_dbg(KERN_NOTICE "RAM DMA base add=%x \n",(unsigned) pg->ram_dma_base) ;
 pexor_dbg(KERN_NOTICE "RAM DMA cursor add=%x \n",(unsigned) pg->ram_dma_cursor);
-#else
-print_register("dma statbits  address", pg->dma_statbits);
-print_register("dma credits", pg->dma_credits);
-print_register("dma counters", pg->dma_counts);
-
-for(i=0;i<PEXOR_TRB_CHANS;++i)
-{
-print_register("trb sender control",pg->trbnet_sender_ctl[i]);
-print_register("trb target data ",pg->trbnet_sender_data[i]);
-print_register("trb sender error",pg->trbnet_sender_err[i]);
-}
-
-#endif
 
 #ifdef PEXOR_WITH_SFP
 print_sfp (&(pg->sfp));
@@ -1316,9 +1285,6 @@ pexor_dbg(KERN_NOTICE "** Cleared pexor structure %lx.\n",(long unsigned int) pg
 void set_pexor (struct dev_pexor* pg, void* membase, unsigned long bar)
 {
 
-#ifdef PEXOR_WITH_TRBNET
-int i=0;
-#endif
 void* dmabase = 0;
 if (pg == 0)
 return;
@@ -1333,24 +1299,12 @@ pg->irq_control=(u32*)(membase+PEXOR_IRQ_CTRL);
 pg->irq_status=(u32*)(membase+PEXOR_IRQ_STAT);
 #endif
 
-#ifdef PEXOR_WITH_TRBNET
-pg->dma_control_stat=(u32*)(dmabase+ (PEXOR_TRB_DMA_CTL<<2));
-pg->dma_source=(u32*)(dmabase+0xFF0);
-pg->dma_dest=(u32*)(dmabase+(PEXOR_TRB_DMA_ADD<<2));
-pg->dma_len=(u32*)(dmabase+(PEXOR_TRB_DMA_LEN<<2));
-pg->dma_burstsize=(u32*)(dmabase+ (PEXOR_TRB_DMA_BST<<2));
-pg->dma_statbits=(u32*)(dmabase+ (PEXOR_TRB_DMA_STA<<2));
-pg->dma_credits=(u32*)(dmabase+ (PEXOR_TRB_DMA_CRE<<2));
-pg->dma_counts=(u32*)(dmabase+ (PEXOR_TRB_DMA_CNT<<2));
-
-#else
 pg->dma_control_stat = (u32*) (dmabase + PEXOR_DMA_CTRLSTAT);
 pg->dma_source = (u32*) (dmabase + PEXOR_DMA_SRC);
 pg->dma_dest = (u32*) (dmabase + PEXOR_DMA_DEST);
 pg->dma_len = (u32*) (dmabase + PEXOR_DMA_LEN);
 pg->dma_burstsize = (u32*) (dmabase + PEXOR_DMA_BURSTSIZE);
 
-#endif
 
 pg->ram_start = (u32*) (membase + PEXOR_DRAM);
 pg->ram_end = (u32*) (membase + PEXOR_DRAM + PEXOR_RAMSIZE);
@@ -1358,21 +1312,6 @@ pg->ram_dma_base = (dma_addr_t) (bar + PEXOR_DRAM);
 pg->ram_dma_cursor = (dma_addr_t) (bar + PEXOR_DRAM);
 #ifdef PEXOR_WITH_SFP
 set_sfp (&(pg->sfp), membase, bar);
-#endif
-#ifdef PEXOR_WITH_TRBNET
-for(i=0; i<PEXOR_TRB_CHANS;++i)
-{
-pg->trbnet_sender_err[i]=membase + ((PEXOR_TRB_SENDER_ERROR | ((i * 2 + 1) << 4)) << 2);
-pg->trbnet_sender_data[i]=membase + ((PEXOR_TRB_SENDER_DATA | ((i * 2 + 1) << 4)) << 2);
-pg->trbnet_sender_ctl[i]=membase + ((PEXOR_TRB_SENDER_CONTROL | ((i * 2 + 1) << 4)) << 2);
-/*  pg->trbnet_dma_ctl[i]= membase + (PEXOR_TRB_DMA_CTL << 2 );
- pg->trbnet_dma_add[i]= membase + (PEXOR_TRB_DMA_ADD << 2);
- pg->trbnet_dma_len[i]= membase + (PEXOR_TRB_DMA_LEN << 2);*/
-}
-/* override here standard dma registers with channel 3 */
-/*pg->dma_control_stat=pg->trbnet_dma_ctl[3];
- pg->dma_dest=pg->trbnet_dma_add[3];*/
-
 #endif
 
 pg->init_done = 0x1;
@@ -1521,9 +1460,9 @@ return IRQ_HANDLED; /* for debug*/
 
 void pexor_irq_tasklet (unsigned long arg)
 {
-int state, rev;
+//int state, rev;
 struct pexor_privdata *privdata;
-struct pexor_dmabuf* nextbuf;
+//struct pexor_dmabuf* nextbuf;
 privdata = (struct pexor_privdata*) arg;
 pexor_dbg(KERN_NOTICE "pexor_irq_tasklet is executed, irqoutstanding=%d...\n",atomic_read(&(privdata->dma_outstanding)));
 /* can we test wait queue by delaying here?*/
@@ -1537,56 +1476,73 @@ if (!atomic_dec_and_test (&(privdata->irq_count)))
 {
 pexor_msg(KERN_ALERT "pexor_irq_tasklet found more than one ir: N.C.H.\n");
 }
+
+/** TODO: put here automatic token request mode*/
+
+/* loop over all configured sfps*/
+
+/* for each do token request with direct dma*/
+
+/* receive_dma_buffer and wake up waiting queue*/
+
+/* error handling?*/
+
+/**************************************************/
+/** for the moment leave old implementation (not used!)*/
+if(pexor_receive_dma_buffer(privdata)!=0)
+return ;
+
 /* transfer buffer from free queue to receive queue*/
-spin_lock( &(privdata->buffers_lock));
-
-/* check if free list is empty <- can happen if dma flow gets suspended
- * and waitreceive is called in polling mode*/
-if (list_empty (&(privdata->free_buffers)))
-{
-spin_unlock( &(privdata->buffers_lock));
-pexor_dbg(KERN_ERR "pexor_irq_tasklet: list of free buffers is empty. no DMA could have been received!\n");
-/* return;  this would put the waitreceive into timeout, so does not try to read empty receive queue*/
-goto wakeup;
-/* to have immediate response and error from receive queue as well.*/
-}
-
-nextbuf=list_first_entry(&(privdata->free_buffers), struct pexor_dmabuf, queue_list);
-list_move_tail (&(nextbuf->queue_list), &(privdata->received_buffers));
-spin_unlock( &(privdata->buffers_lock));
-
-state = atomic_read(&(privdata->state));
-switch (state)
-{
-case PEXOR_STATE_STOPPED:
-pexor_msg(KERN_ALERT "pexor_irq_tasklet finds stopped state before reset! N.C.H.\n");
-break;
-
-case PEXOR_STATE_DMA_FLOW:
-/*if(atomic_read(&(privdata->dma_outstanding))>PEXOR_MAXOUTSTANDING)
- {
- pexor_msg(KERN_ALERT "pexor_irq_tasklet finds more than %d pending receive buffers! Emergency suspend dma flow!\n",PEXOR_MAXOUTSTANDING);
- atomic_set(&(privdata->state),PEXOR_STATE_DMA_SUSPENDED);
- break;
- }*/
-rev = pexor_next_dma (privdata, 0, 0, 0, 0, 0, 0); /* TODO: inc source address cursor? Handle sfp double buffering?*/
-if (rev)
-{
-  /* no more dma buffers at the moment: suspend flow?*/
-  atomic_set(&(privdata->state), PEXOR_STATE_DMA_SUSPENDED);
-  pexor_dbg(KERN_ALERT "pexor_irq_tasklet suspends DMA flow because no more free buffers!\n");
-}
-break;
-case PEXOR_STATE_DMA_SINGLE:
-default:
-atomic_set(&(privdata->state), PEXOR_STATE_STOPPED);
-
-};
-
-wakeup:
-/* wake up the waiting ioctl*/
-atomic_inc (&(privdata->dma_outstanding));
-wake_up_interruptible (&(privdata->irq_dma_queue));
+//spin_lock( &(privdata->buffers_lock));
+//
+//
+///* check if free list is empty <- can happen if dma flow gets suspended
+// * and waitreceive is called in polling mode*/
+//if (list_empty (&(privdata->free_buffers)))
+//{
+//spin_unlock( &(privdata->buffers_lock));
+//pexor_dbg(KERN_ERR "pexor_irq_tasklet: list of free buffers is empty. no DMA could have been received!\n");
+///* return;  this would put the waitreceive into timeout, so does not try to read empty receive queue*/
+//goto wakeup;
+///* to have immediate response and error from receive queue as well.*/
+//}
+//
+//nextbuf=list_first_entry(&(privdata->free_buffers), struct pexor_dmabuf, queue_list);
+//list_move_tail (&(nextbuf->queue_list), &(privdata->received_buffers));
+//spin_unlock( &(privdata->buffers_lock));
+//
+//state = atomic_read(&(privdata->state));
+//switch (state)
+//{
+//case PEXOR_STATE_STOPPED:
+//pexor_msg(KERN_ALERT "pexor_irq_tasklet finds stopped state before reset! N.C.H.\n");
+//break;
+//
+//case PEXOR_STATE_DMA_FLOW:
+///*if(atomic_read(&(privdata->dma_outstanding))>PEXOR_MAXOUTSTANDING)
+// {
+// pexor_msg(KERN_ALERT "pexor_irq_tasklet finds more than %d pending receive buffers! Emergency suspend dma flow!\n",PEXOR_MAXOUTSTANDING);
+// atomic_set(&(privdata->state),PEXOR_STATE_DMA_SUSPENDED);
+// break;
+// }*/
+//rev = pexor_next_dma (privdata, 0, 0, 0, 0, 0, 0); /* TODO: inc source address cursor? Handle sfp double buffering?*/
+//if (rev)
+//{
+//  /* no more dma buffers at the moment: suspend flow?*/
+//  atomic_set(&(privdata->state), PEXOR_STATE_DMA_SUSPENDED);
+//  pexor_dbg(KERN_ALERT "pexor_irq_tasklet suspends DMA flow because no more free buffers!\n");
+//}
+//break;
+//case PEXOR_STATE_DMA_SINGLE:
+//default:
+//atomic_set(&(privdata->state), PEXOR_STATE_STOPPED);
+//
+//};
+//
+//wakeup:
+///* wake up the waiting ioctl*/
+//atomic_inc (&(privdata->dma_outstanding));
+//wake_up_interruptible (&(privdata->irq_dma_queue));
 
 }
 
@@ -1668,11 +1624,17 @@ if ((dmasize == 0) || (dmasize > nextbuf->size - woffset))
 pexor_dbg(KERN_NOTICE "#### pexor_next_dma resetting old dma size %x to %lx\n",dmasize,nextbuf->size);
 dmasize = nextbuf->size - woffset;
 }
-if (priv->pexor.ram_dma_cursor + dmasize > priv->pexor.ram_dma_base + PEXOR_RAMSIZE)
-{
-pexor_dbg(KERN_NOTICE "#### pexor_next_dma resetting old dma size %x...\n",dmasize);
-dmasize = priv->pexor.ram_dma_base + PEXOR_RAMSIZE - priv->pexor.ram_dma_cursor;
-}
+
+
+// JAM NOTE: this test is only meaningfull for dma tests
+// RAMSIZE here covers only ram for sfp0, it will fail for higher sfps!
+//
+//if (priv->pexor.ram_dma_cursor + dmasize > priv->pexor.ram_dma_base + PEXOR_RAMSIZE)
+//  {
+//  pexor_dbg(KERN_NOTICE "#### pexor_next_dma resetting old dma size %x...\n",dmasize);
+//  dmasize = priv->pexor.ram_dma_base + PEXOR_RAMSIZE - priv->pexor.ram_dma_cursor;
+//  }
+
 }
 else
 {
@@ -1822,38 +1784,38 @@ return -EINVAL;
  mb();
  pexor_dbg(KERN_NOTICE "#### pexor_next_dma started dma \n");*/
 
-#ifdef DMA_BOARD_IR
-/* the dma complete is handled by ir raised from pexor board*/
-return 0;
-#endif
+//#ifdef DMA_BOARD_IR
+///* the dma complete is handled by ir raised from pexor board*/
+//return 0;
+//#endif
 
-#ifdef DMA_WAITPOLLING
+//#ifdef DMA_WAITPOLLING
 /* the polling of dma complete is done in the ioctl wait function*/
 return 0;
-#endif
+//#endif
 
 /* emulate here the completion interrupt when dma is done:*/
-if ((rev = pexor_poll_dma_complete (priv)) != 0)
-return rev;
-
-#ifndef 	DMA_EMULATE_IR
-/* schedule tasklet*/
-atomic_inc (&(priv->irq_count));
-pexor_dbg(KERN_NOTICE "pexor_next_dma schedules tasklet... \n");
-tasklet_schedule (&priv->irq_bottomhalf);
-return 0;
-
-#else
-/* raise a user interrupt to invoke our handlers manually:*/
-pexor_msg(KERN_NOTICE "#### pexor_next_dma raising user interrupt... \n");
-enable=PEXOR_IRQ_USER_BIT;
-mb();
-ndelay(20);
-iowrite32(enable, priv->pexor.irq_control);
-mb();
-ndelay(20);
-return 0;
-#endif
+//if ((rev = pexor_poll_dma_complete (priv)) != 0)
+//return rev;
+//
+//#ifndef 	DMA_EMULATE_IR
+///* schedule tasklet*/
+//atomic_inc (&(priv->irq_count));
+//pexor_dbg(KERN_NOTICE "pexor_next_dma schedules tasklet... \n");
+//tasklet_schedule (&priv->irq_bottomhalf);
+//return 0;
+//
+//#else
+///* raise a user interrupt to invoke our handlers manually:*/
+//pexor_msg(KERN_NOTICE "#### pexor_next_dma raising user interrupt... \n");
+//enable=PEXOR_IRQ_USER_BIT;
+//mb();
+//ndelay(20);
+//iowrite32(enable, priv->pexor.irq_control);
+//mb();
+//ndelay(20);
+//return 0;
+//#endif
 }
 
 int pexor_start_dma (struct pexor_privdata *priv, dma_addr_t source, dma_addr_t dest, u32 dmasize, int firstchunk,
@@ -1956,26 +1918,87 @@ pexor_dma_unlock((&(priv->dma_lock)));
 return 0;
 }
 
+
+
+int pexor_receive_dma_buffer(struct pexor_privdata *privdata)
+{
+  int state, rev = 0;
+  struct pexor_dmabuf* nextbuf;
+  if ((rev = pexor_poll_dma_complete (privdata)) != 0)
+  return rev;
+
+  /* transfer buffer from free queue to receive queue*/
+  spin_lock( &(privdata->buffers_lock));
+
+
+  /* check if free list is empty <- can happen if dma flow gets suspended
+   * and waitreceive is called in polling mode*/
+  if (list_empty (&(privdata->free_buffers)))
+  {
+  spin_unlock( &(privdata->buffers_lock));
+  pexor_dbg(KERN_ERR "pexor_irq_tasklet: list of free buffers is empty. no DMA could have been received!\n");
+  /* return;  this would put the waitreceive into timeout, so does not try to read empty receive queue*/
+  goto wakeup;
+  /* to have immediate response and error from receive queue as well.*/
+  }
+
+  nextbuf=list_first_entry(&(privdata->free_buffers), struct pexor_dmabuf, queue_list);
+  list_move_tail (&(nextbuf->queue_list), &(privdata->received_buffers));
+  spin_unlock( &(privdata->buffers_lock));
+
+
+ /** JAM TODO: do we still need dma flow states and states anyway?*/
+  state = atomic_read(&(privdata->state));
+  switch (state)
+  {
+  case PEXOR_STATE_STOPPED:
+  pexor_msg(KERN_ALERT "pexor_irq_tasklet finds stopped state before reset! N.C.H.\n");
+  break;
+
+  case PEXOR_STATE_DMA_FLOW:
+  /*if(atomic_read(&(privdata->dma_outstanding))>PEXOR_MAXOUTSTANDING)
+   {
+   pexor_msg(KERN_ALERT "pexor_irq_tasklet finds more than %d pending receive buffers! Emergency suspend dma flow!\n",PEXOR_MAXOUTSTANDING);
+   atomic_set(&(privdata->state),PEXOR_STATE_DMA_SUSPENDED);
+   break;
+   }*/
+  rev = pexor_next_dma (privdata, 0, 0, 0, 0, 0, 0); /* TODO: inc source address cursor? Handle sfp double buffering?*/
+  if (rev)
+  {
+    /* no more dma buffers at the moment: suspend flow?*/
+    atomic_set(&(privdata->state), PEXOR_STATE_DMA_SUSPENDED);
+    pexor_dbg(KERN_ALERT "pexor_irq_tasklet suspends DMA flow because no more free buffers!\n");
+  }
+  break;
+
+  case PEXOR_STATE_TRIGGERED_READ:
+
+  break;
+
+  case PEXOR_STATE_DMA_SINGLE:
+  default:
+  atomic_set(&(privdata->state), PEXOR_STATE_STOPPED);
+
+  };
+
+  wakeup:
+  /* wake up the waiting ioctl*/
+  atomic_inc (&(privdata->dma_outstanding));
+  wake_up_interruptible (&(privdata->irq_dma_queue));
+
+
+
+ return rev;
+}
+
+
+
 int pexor_wait_dma_buffer (struct pexor_privdata* priv, struct pexor_dmabuf* result)
 {
-int rev = 0, timeoutcount = 0;
+int timeoutcount = 0;
 unsigned long wjifs = 0;
 struct pexor_dmabuf* dmabuf;
-#ifdef DMA_WAITPOLLING
-/* in case of polling mode, there is no isr raised from board. we will poll
- * here on the dma complete and call ir bottom half directly which moves the
- * filled buffer into the receive queue*/
-if ((rev = pexor_poll_dma_complete (priv)) != 0)
-return rev;
-atomic_inc (&(priv->irq_count)); /* bottom half checks ir count, we emulate this*/
-/*pexor_dbg(KERN_NOTICE "pexor_ioctl_waitreceive calls tasklet... \n"); */
-pexor_irq_tasklet ((unsigned long) (priv));
-/* Note that wait_event_interruptible_timeout below will always expire immediately here,
- * since condition is true*/
 
-#endif
-
-/* NOTE: we first have to check our counters, then verify that queue is not empty!*/
 
 /**
  * wait_event_interruptible_timeout - sleep until a condition gets true or a timeout elapses

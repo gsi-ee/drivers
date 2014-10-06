@@ -36,7 +36,7 @@ public:
 	 * and user must call WaitForToken() subsequently to get token buffer
 	 * For sg DMA, optionally we can specify pointer to desired receive buffer and a write offset within
 	 * this buffer to skip the mbs event headers in the DMA*/
-   pexor::DMA_Buffer* RequestToken(const unsigned long channel, const int bufid, bool sync=0, int* dmabuf=0, unsigned int woffset=0);
+   pexor::DMA_Buffer* RequestToken(const unsigned long channel, const int bufid, bool sync=false, bool directdma=true,int* dmabuf=0, unsigned int woffset=0);
 
 
    /** Request next token buffer from all connected devices on all sfps specified bitwise by channelmask:
@@ -47,15 +47,16 @@ public:
     * if sync is false, method returns before buffer is complete
     * and user must call WaitForToken() subsequently to get token buffer
     * NOTE: sg DMA emulation is not supported here due to direct dma mode to coherent host buffer)*/
-   pexor::DMA_Buffer* RequestMultiToken(const unsigned long channelmask, const int bufid, bool sync=0);
+   pexor::DMA_Buffer* RequestMultiToken(const unsigned long channelmask, const int bufid, bool sync=false, bool directdma=true);
 
 
 
    /** Wait until next token buffer has arrived for sfp channel
     * needs a previous RequestToken in async mode
+    * directdma mode must match to that of previous RequestToken calls
     * For sg DMA, optionally we can specify pointer to desired receive buffer and a write offset within
 	 * this buffer to skip the mbs event headers in the DMA*/
-   pexor::DMA_Buffer* WaitForToken(const unsigned long channel, int* dmabuf=0, unsigned int woffset=0);
+   pexor::DMA_Buffer* WaitForToken(const unsigned long channel, bool directdma=true, int* dmabuf=0, unsigned int woffset=0);
 
 
 

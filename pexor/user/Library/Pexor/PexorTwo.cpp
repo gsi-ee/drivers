@@ -28,7 +28,7 @@ PexorTwo::~PexorTwo()
 }
 
 
-pexor::DMA_Buffer* PexorTwo::RequestToken(const unsigned long channel, const int bufid, bool sync, int* dmabuf, unsigned int woffset)
+pexor::DMA_Buffer* PexorTwo::RequestToken(const unsigned long channel, const int bufid, bool sync, bool directdma,int* dmabuf, unsigned int woffset)
 
 {
 	PexorDebug("PexorTwo::RequestToken with write offset 0x%x",woffset);
@@ -37,9 +37,11 @@ pexor::DMA_Buffer* PexorTwo::RequestToken(const unsigned long channel, const int
 	descriptor.bufid=bufid;
 	descriptor.sfp=channel;
 	descriptor.sync=0;
+	descriptor.directdma=0;
 	descriptor.tkbuf.addr= (unsigned long) dmabuf;
 	descriptor.offset=woffset;
 	if(sync) descriptor.sync=1;
+	if(directdma) descriptor.directdma=1;
 	rev=ioctl(fFileHandle, PEXOR_IOC_REQUEST_TOKEN, &descriptor);
 	if(rev)
 		{
@@ -54,7 +56,7 @@ pexor::DMA_Buffer* PexorTwo::RequestToken(const unsigned long channel, const int
 
 
 
-pexor::DMA_Buffer* PexorTwo::RequestMultiToken(const unsigned long channelmask, const int bufid, bool sync)
+pexor::DMA_Buffer* PexorTwo::RequestMultiToken(const unsigned long channelmask, const int bufid, bool sync, bool directdma)
 {
   PexorDebug("PexorTwo::RequestMultiToken with channelmask 0x%x", channelmask);
       int rev=0;
@@ -62,9 +64,11 @@ pexor::DMA_Buffer* PexorTwo::RequestMultiToken(const unsigned long channelmask, 
       descriptor.bufid=bufid;
       descriptor.sfp= (channelmask << 16); // upper bytes expected as sfp pattern by driver
       descriptor.sync=0;
+      descriptor.directdma=0;
       descriptor.tkbuf.addr=0;
       descriptor.offset=0;
       if(sync) descriptor.sync=1;
+      if(directdma) descriptor.directdma=1;
       rev=ioctl(fFileHandle, PEXOR_IOC_REQUEST_TOKEN, &descriptor);
       if(rev)
           {
@@ -80,13 +84,15 @@ pexor::DMA_Buffer* PexorTwo::RequestMultiToken(const unsigned long channelmask, 
 
 
 
-pexor::DMA_Buffer* PexorTwo::WaitForToken(const unsigned long channel, int* dmabuf, unsigned int woffset)
+pexor::DMA_Buffer* PexorTwo::WaitForToken(const unsigned long channel, bool directdma, int* dmabuf, unsigned int woffset)
 {
 	int rev=0;
 	struct pexor_token_io descriptor;
 	descriptor.sfp=channel;
 	descriptor.tkbuf.addr=(unsigned long) dmabuf;
 	descriptor.offset=woffset;
+    descriptor.directdma=0;
+    if(directdma) descriptor.directdma=1;
 	rev=ioctl(fFileHandle, PEXOR_IOC_WAIT_TOKEN, &descriptor);
 	if(rev)
 		{

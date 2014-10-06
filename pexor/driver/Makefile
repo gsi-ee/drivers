@@ -1,6 +1,6 @@
 obj-m	:= pexor.o
 
-pexor-objs := pexor_base.o pexor_gos.o pexor_trb.o 
+pexor-objs := pexor_base.o pexor_gos.o 
 
 
 
