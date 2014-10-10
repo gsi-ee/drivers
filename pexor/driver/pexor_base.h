@@ -22,25 +22,13 @@
 /** use disable_irq_nosync and enable_irq in isr.*/
 #define PEXOR_DISABLE_IRQ_ISR 1
 
-/* modes of interrupt complete handling: */
 
-/** polling mode in the wait ioctl. if not set, we wait on the event queue
- * of the tasklet which is executed by ir. */
-#define DMA_WAITPOLLING 1
 
 /** test: use spinlock to protect dma engine vs buffers. do we need this?
  * rather bad idea*/
 /*#define DMA_SPINLOCK 1 */
 
 
-/** polling mode in the nextdma function, raising ir when dma is done to
- * test subsequent handlers. if not set, polling mode in
- * nextdma will schedule tasklet directly */
-
-/*#define DMA_EMULATE_IR 1*/
-/* set this if pexor board itself raises ir after dma complete (not yet!)*/
-
-/*#define DMA_BOARD_IR 1 */
 
 
 /* switch on message signalled interrupt mode. Supported by PEXOR? maybe not*/
@@ -85,7 +73,7 @@
 #define PEXOR_TRIG_TIMEOUT (10*HZ)
 
 /** maximum number of timeouts before wait loop terminates*/
-#define PEXOR_WAIT_MAXTIMEOUTS 20
+#define PEXOR_WAIT_MAXTIMEOUTS 5
 
 /** maximum number of polling cycles for dma complete bit*/
 #define PEXOR_DMA_MAXPOLLS 10000
@@ -96,16 +84,19 @@
 /** if set, we use a schedule() in the dma complete polling.
  * Note: according to linux kernel book, yield() will just prepare this
  * task to be scheduled in near future, but schedpriv->pexor.irq_statusule() will initiate the
- * schedule directly*/
-#define PEXOR_DMA_POLL_SCHEDULE 1
+ * schedule directly
+ * this must not be enabled if dma completion is polled in interrupt tasklet*/
+//#define PEXOR_DMA_POLL_SCHEDULE 0
 
 /** maximum number of outstandin buffers in receive queue,
    do we still need this?*/
 #define PEXOR_MAXOUTSTANDING 50
 
 
-/** size of interrupt status ringbuffer */
-#define PEXOR_IRSTATBUFFER_SIZE 50
+/** size of interrupt status ringbuffer
+ * actually we only need one buffer for mbs like
+ * user readout mode! */
+#define PEXOR_IRSTATBUFFER_SIZE 10
 
 
 
@@ -142,8 +133,10 @@ struct dev_pexor
 struct pexor_dmabuf
 {
   struct list_head queue_list;  /**< linked into free or receive queue list */
-   unsigned long virt_addr;      /**< user space virtual address (=buffer id) */
+  unsigned long virt_addr;      /**< user space virtual address (=buffer id) */
   unsigned long size;           /**< buffer size in bytes */
+  unsigned long used_size;      /**< filled payload size*/
+  u32 triggerstatus;            /**< optional triggerstatus for automatic readout mode */
   /* the following members are used for kernel buffers only:*/
   dma_addr_t dma_addr;          /**< dma engine (pci) address*/
   unsigned long kernel_addr;    /**< mapped kernel address  */
@@ -192,6 +185,8 @@ struct pexor_privdata
   spinlock_t irq_lock;         /**< optional lock between top and bottom half? */
   struct tasklet_struct irq_bottomhalf; /**< tasklet structure for isr
                                            bottom half */
+  atomic_t trigstat;           /**< current trixor status for auto readout mode. Complementary to trigger queue! */
+
   wait_queue_head_t irq_dma_queue;      /**< wait queue between bottom
                                            half and wait dma ioctl */
   atomic_t dma_outstanding;     /**< outstanding dma counter */
@@ -353,8 +348,10 @@ int pexor_wait_dma_buffer(struct pexor_privdata *priv,
 
 
 /** poll for dma completion and move received buffer into receive queue.
- * Wake up consuming process (that should wait in call of pexor_wait_dma_buffer) */
-int pexor_receive_dma_buffer(struct pexor_privdata *priv);
+ * Wake up consuming process (that should wait in call of pexor_wait_dma_buffer)
+ * Optionally after direct dma the used size may be set in receive buffer.
+ * for automatic readout mode, triggerstatus can be appended to dma buffer structure*/
+int pexor_receive_dma_buffer(struct pexor_privdata *priv, unsigned long used_size, u32 triggerstatus);
 
 
 /** general cleanup function*/

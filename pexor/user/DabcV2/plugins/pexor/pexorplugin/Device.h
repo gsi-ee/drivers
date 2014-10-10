@@ -39,6 +39,7 @@ extern const char* xmlExploderSubmem;    //< exploder submem size for testbuffer
 extern const char* xmlFormatMbs;    //< enable mbs formating already in device transport
 extern const char* xmlSingleMbsSubevt;    //<  use one single subevent for all sfps
 extern const char* xmlMultichannelRequest;  //<  enable channelpattern request with combined dma for multiple sfps
+extern const char* xmlAutoTriggerRead ; //<  enable automatic readout of all configured token data in driver for each trigger
 extern const char* xmlMbsSubevtCrate;    //<  define crate number for subevent header
 extern const char* xmlMbsSubevtControl;    //<  define crate number for subevent header
 extern const char* xmlMbsSubevtProcid;    //<  define procid number for subevent header
@@ -114,6 +115,11 @@ public:
    * depending on trixor trigger or triggerless readout.*/
   int ReceiveAllTokenBuffer (dabc::Buffer& buf, uint16_t trigtype=mbs::tt_Event);
 
+  /** For automatic kernelmodule trigger readout mode: wait for next filled buffer.
+   * Copy and format it to dabc buffer. Pass actual trigtype back to caller.*/
+  int ReceiveAutoTriggerBuffer(dabc::Buffer& buf, uint8_t& trigtype);
+
+
   virtual const char* ClassName () const
   {
     return "pexorplugin::Device";
@@ -142,11 +148,18 @@ public:
   {
     return fTriggeredRead;
   }
-
+  bool IsAutoReadout ()
+   {
+     return fAutoTriggerRead;
+   }
   bool IsMultichannelMode()
   {
     return fMultichannelRequest;
   }
+  bool IsDirectDMA()
+    {
+      return fDirectDMA;
+    }
 
   /** initialize trixor depending on the setup*/
   void InitTrixor ();
@@ -183,6 +196,9 @@ public:
    * The default implementation will issue retry/timeout on start/stop acquisition trigger and
    * a standard token request with direct dma for all other trigger types*/
   virtual int User_Readout(dabc::Buffer& buf, uint8_t trigtype);
+
+
+
 
 protected:
   virtual void ObjectCleanup ();
@@ -268,6 +284,11 @@ protected:
    * Otherwise, use sequential round-robin token request with separate dma buffers combined in application.
    * The latter may also separate different mbs subvevents for each sfp.*/
   bool fMultichannelRequest;
+
+  /** if true, data readout will be done automatically in driver kernel module.
+   * The already filled token buffer is fetched for each incoming trigger  */
+  bool fAutoTriggerRead;
+
 
   /** flag to switch on memory speed measurements without acquisition*/
   bool fMemoryTest;

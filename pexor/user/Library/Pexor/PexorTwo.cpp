@@ -211,5 +211,41 @@ bool  PexorTwo::SetTriggerTimes(unsigned short fctime, unsigned short cvtime)
 
   }
 
+bool PexorTwo::SetAutoTriggerReadout(bool on, bool directdma)
+{
+
+  int rev= SetDeviceState(on ? PEXOR_STATE_TRIGGERED_READ: PEXOR_STATE_STOPPED);
+  // todo: tell driver about directdma mode for auto readout
+
+  return (rev ? false : true);
+}
+
+pexor::DMA_Buffer* PexorTwo::WaitForTriggerBuffer ()
+{
+  int rev = 0;
+  struct pexor_token_io wrapper;
+  struct pexor_trigger_readout descriptor;
+  rev = ioctl (fFileHandle, PEXOR_IOC_WAITBUFFER, &descriptor);
+  if (rev)
+  {
+    if(rev==PEXOR_TRIGGER_TIMEOUT)
+    {
+      PexorError("\nWaitForTriggerBuffer - trigger timeout!\n");
+      return (pexor::DMA_Buffer*) -1;
+    }
+
+    int er = errno;
+    PexorError("\n\nError %d  on WaitForTriggerBuffer - %s\n", er, strerror(er));
+    return 0;
+  }
+
+  fLastTriggerStatus = descriptor.triggerstatus;
+  wrapper.tkbuf = descriptor.data;
+  return (PrepareReceivedBuffer (wrapper, 0));
+  // TODO: change interface of PrepareReceived Buffer to userbuf instead of token_io
+}
+
+
+
 } // namespace
 

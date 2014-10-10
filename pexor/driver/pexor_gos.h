@@ -339,8 +339,22 @@ int pexor_sfp_read_bus(struct pexor_privdata* priv, struct pexor_bus_io* data);
 
 
 
+/** decode trixor status word into trigger status structure*/
+void pexor_decode_triggerstatus(u32 trixorstat, struct pexor_trigger_status* result);
 
 
+/** reset trigger state after reading out corresponding data*/
+int pexor_trigger_reset(struct pexor_privdata* priv);
+
+/** initiate start acquisition*/
+int pexor_trigger_start_acq(struct pexor_privdata* priv);
+
+/** initiate stop acquisition */
+int pexor_trigger_stop_acq(struct pexor_privdata* priv);
+
+
+/** perform stop acquisition action. This is done after software trigger 15 is received.*/
+int pexor_trigger_do_stop(struct pexor_privdata* priv);
 
 
 

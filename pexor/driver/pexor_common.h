@@ -26,6 +26,7 @@
 #include <linux/scatterlist.h>
 #include <linux/page-flags.h>
 #include <linux/sched.h>
+#include <linux/list.h>
 
 #include <linux/wait.h>
 
@@ -47,7 +48,7 @@
 #define BOARDTYPE_KINPEX 2
 
 
-#define PEXOR_DEBUGPRINT 1
+//#define PEXOR_DEBUGPRINT 1
 
 
 #define PEXOR_ENABLE_IRQ 1

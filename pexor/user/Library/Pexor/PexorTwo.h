@@ -60,6 +60,11 @@ public:
 
 
 
+   /** receive next token buffer that was filled from kernel module by automatic trigger readout.
+    * This mode needs to be enabled by SetAutoTriggerReadout() method.
+    * Buffer contains data of all configured sfp channels.*/
+   pexor::DMA_Buffer* WaitForTriggerBuffer();
+
    /** Wait until a trigger interrupt occurs, indicating that there is new data on the frontends
     * Returns true if trigger was fired within the timeout interval specified in the driver
     * Returns false if timeout was expired without getting trigger interrupt*/
@@ -78,6 +83,12 @@ public:
     /** Set time windows for trigger module:
      * fast clear time, conversion time, see Trixor manual*/
     bool SetTriggerTimes(unsigned short fctime, unsigned short cvtime);
+
+
+    /** switch board to automatic token readout for each trigger.
+     * In this mode, user application simply calls WaitForTriggerBuffer
+     * without the need to explicitely request token data. */
+    bool SetAutoTriggerReadout(bool on=true, bool directdma=true);
 
 
     /** Type of last received trigger. Is set by WaitForTrigger() */

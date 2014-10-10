@@ -127,6 +127,13 @@ struct pexor_trigger_status {
 };
 
 
+/** Data releavant for automatic trigger readout.
+ * contains token data  and corresponding trigger status */
+struct pexor_trigger_readout{
+  struct pexor_trigger_status triggerstatus;
+  struct pexor_userbuf data;
+};
+
 
 
 
@@ -137,7 +144,7 @@ struct pexor_trigger_status {
 #define PEXOR_IOC_RESET  _IO(  PEXOR_IOC_MAGIC, 0)
 #define PEXOR_IOC_FREEBUFFER  _IOW(  PEXOR_IOC_MAGIC, 1, struct pexor_userbuf)
 #define PEXOR_IOC_DELBUFFER   _IOW(  PEXOR_IOC_MAGIC, 2, struct pexor_userbuf)
-#define PEXOR_IOC_WAITBUFFER  _IOR(  PEXOR_IOC_MAGIC, 3, struct pexor_userbuf)
+#define PEXOR_IOC_WAITBUFFER  _IOR(  PEXOR_IOC_MAGIC, 3, struct pexor_trigger_readout)
 #define PEXOR_IOC_USEBUFFER   _IOR(  PEXOR_IOC_MAGIC, 4, struct pexor_userbuf)
 #define PEXOR_IOC_SETSTATE    _IOR(  PEXOR_IOC_MAGIC, 5, int)
 #define PEXOR_IOC_TEST        _IOR(  PEXOR_IOC_MAGIC, 6, int)

@@ -98,7 +98,8 @@ int poland::Device::User_Readout (dabc::Buffer& buf, uint8_t trigtype)
   {
     // to do: special treatment of this trigger.
     DOUT1("poland::Device::User_Readout finds offset trigger :%d !!", trigtype);
-    fBoard->ResetTrigger ();
+    if(!IsAutoReadout())
+      fBoard->ResetTrigger ();
 
 
 

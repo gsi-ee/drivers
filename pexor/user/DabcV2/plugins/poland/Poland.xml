@@ -43,7 +43,7 @@
 			<PexorDMAScatterGather value="false" />
 			<PexorDMAZeroCopy value="false" />
 			<PexorMultiTokenDMA  value="false" />
-			<PexorDirectDMA  value="false" />
+			<PexorDirectDMA  value="true" />
 			<PexorFormatMbs value="true" />
 			<PexorSingleMbsSubevent value="true"/>
 			<PexorMbsSubcrate  value="0"/>
@@ -51,6 +51,7 @@
 			<PexorMbsProcid   value="1"/>			
 			<PexorSyncReadout value="true" />
 			<PexorUseTrigger value="true" />
+			<PexorAutoReadout value="true"/>
 			<TrixorConversionTime value="300" />
 			<TrixorFastClearTime value="10" />
 		</Device>
