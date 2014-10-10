@@ -66,14 +66,15 @@
 /** maximum number of devices controlled by this driver*/
 #define PEXOR_MAXDEVS 4
 
-/** timeout for wait queues */
-#define PEXOR_WAIT_TIMEOUT (1*HZ)
+/** default timeout for trigger and wait queues, in seconds */
+#define PEXOR_WAIT_TIMEOUT 1
+//(1*HZ)
 
 /** timeout for trigger wait queue */
-#define PEXOR_TRIG_TIMEOUT (10*HZ)
+//#define PEXOR_TRIG_TIMEOUT (10*HZ)
 
 /** maximum number of timeouts before wait loop terminates*/
-#define PEXOR_WAIT_MAXTIMEOUTS 5
+//#define PEXOR_WAIT_MAXTIMEOUTS 5
 
 /** maximum number of polling cycles for dma complete bit*/
 #define PEXOR_DMA_MAXPOLLS 10000
@@ -157,7 +158,6 @@ struct pexor_trigger_buf
 
 struct pexor_privdata
 {
-  int magic;                    /**< magic number to identify irq */
   atomic_t state;               /**< run state of device */
   dev_t devno;                  /**< device number (major and minor) */
   int devid;                    /**< local id (counter number) */
@@ -194,6 +194,7 @@ struct pexor_privdata
                                            and user wait trigger ioctl */
   atomic_t trig_outstanding;    /**< outstanding triggers counter */
   struct list_head trig_status; /**< list (queue) of trigger status words corresponding to interrupts*/
+  unsigned int wait_timeout; /**< configurable wait timeout for trigger and dma buffer queues. in seconds */
 };
 
 
@@ -305,12 +306,20 @@ int pexor_ioctl_write_register(struct pexor_privdata *priv,
 int pexor_ioctl_read_register(struct pexor_privdata *priv, unsigned long arg);
 
 
+/** change timeout in waitqueues for trigger or dma buffers.
+ * argument specifies timeout in seconds. */
+int pexor_ioctl_set_wait_timeout(struct pexor_privdata* priv, unsigned long arg);
 
-
-
+/** the top half interrupt service routine.
+ * This is invoked by trigger interrupts from trixor
+ * Depending on daq mode, will either schedule bottom half tasklet for automatic readout,
+ * or just put trigger status to queue and wakes up consumer in userland for explicit readout by ioctl calls.*/
 irqreturn_t pexor_isr(int irq, void *dev_id);
 
-
+/** The bottom half interrupt service routine.
+ * Implements automatic direct dma token request from all configured sfps.
+ * Data DMA buffer is put in the receive queue. Waiting consumer in userland is woken up
+ * to receive it. */
 void pexor_irq_tasklet(unsigned long);
 
 /** set next receive buffer and start dma engine.

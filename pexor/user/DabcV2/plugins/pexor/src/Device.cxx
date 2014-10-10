@@ -60,6 +60,7 @@ const char* pexorplugin::xmlSyncRead = "PexorSyncReadout";    //<  switch readou
 //onst char* pexorplugin::xmlParallelRead	= "PexorParallelReadout"; //<  switch readout parallel token mode
 const char* pexorplugin::xmlTriggeredRead = "PexorUseTrigger";    //<  switch trigger mode
 const char* pexorplugin::xmlDmaMode = "PexorDirectDMA";    //<  switch between direct dma to host,  or token data buffering in pexor RAM
+const char* pexorplugin::xmlWaitTimeout = "PexorTriggerTimeout";    //<  specify kernel waitqueue timeout for trigger and autoread buffers
 
 const char* pexorplugin::xmlTrixorConvTime = "TrixorConversionTime";    //<  conversion time of TRIXOR module
 const char* pexorplugin::xmlTrixorFastClearTime = "TrixorFastClearTime";    //<  fast clear time of TRIXOR module
@@ -88,7 +89,7 @@ unsigned int pexorplugin::Device::fgThreadnum = 0;
 
 pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
     dabc::Device (name), fBoard (0), fMbsFormat (true), fSingleSubevent (false), fSubeventSubcrate (0),
-        fSubeventProcid (0), fSubeventControl (0), fAqcuisitionRunning (false), fSynchronousRead (true),
+        fSubeventProcid (0), fSubeventControl (0), fWaitTimeout(1), fAqcuisitionRunning (false), fSynchronousRead (true),
         fTriggeredRead (false), fDirectDMA (true), fMultichannelRequest (false), fAutoTriggerRead (false),
         fMemoryTest (false), fSkipRequest (false), fCurrentSFP (0), fReadLength (0), fTrixConvTime (0x20),
         fTrixFClearTime (0x10), fInitDone (false), fNumEvents (0)
@@ -110,6 +111,11 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
   bool sgmode = Cfg (pexorplugin::xmlDMAScatterGatherMode, cmd).AsBool (false);
   fBoard->SetScatterGatherMode (sgmode);
   DOUT1("Setting scatter gather mode to %d\n", sgmode);
+  fWaitTimeout=Cfg (pexorplugin::xmlWaitTimeout, cmd).AsInt (2);
+  fBoard->SetWaitTimeout(fWaitTimeout);
+  DOUT1("Setting trigger wait timeout to %d s\n", fWaitTimeout);
+
+
   // initialize here the connected channels:
 
   for (int sfp = 0; sfp < PEXORPLUGIN_NUMSFP; sfp++)
@@ -162,11 +168,11 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
       "Setting mbsformat=%d, singlesubevent=%d, with subcrate:%d, procid:%d, control:%d\n", fMbsFormat, fSingleSubevent, fSubeventSubcrate, fSubeventProcid, fSubeventControl);
   DOUT1("Created PEXOR device %d\n", fDeviceNum);
 
-  fSynchronousRead = Cfg (pexorplugin::xmlSyncRead, cmd).AsBool (true);    //GetCfgBool(pexorplugin::xmlSyncRead,true, cmd);
-  fTriggeredRead = Cfg (pexorplugin::xmlTriggeredRead, cmd).AsBool (false);    //GetCfgBool(pexorplugin::xmlTriggeredRead,false, cmd);
+  fSynchronousRead = Cfg (pexorplugin::xmlSyncRead, cmd).AsBool (true);
+  fTriggeredRead = Cfg (pexorplugin::xmlTriggeredRead, cmd).AsBool (false);
   fDirectDMA = Cfg (pexorplugin::xmlDmaMode, cmd).AsBool (true);
-  fTrixConvTime = Cfg (pexorplugin::xmlTrixorConvTime, cmd).AsInt (0x200);    //GetCfgInt(pexorplugin::xmlTrixorConvTime,0x200, cmd)
-  fTrixFClearTime = Cfg (pexorplugin::xmlTrixorFastClearTime, cmd).AsInt (0x100);    //GetCfgInt(pexorplugin::xmlTrixorFastClearTime,0x100, cmd);
+  fTrixConvTime = Cfg (pexorplugin::xmlTrixorConvTime, cmd).AsInt (0x200);
+  fTrixFClearTime = Cfg (pexorplugin::xmlTrixorFastClearTime, cmd).AsInt (0x100);
 
   CreateCmdDef (pexorplugin::commandStartAcq);
   CreateCmdDef (pexorplugin::commandStopAcq);

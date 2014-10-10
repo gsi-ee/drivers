@@ -211,6 +211,20 @@ bool  PexorTwo::SetTriggerTimes(unsigned short fctime, unsigned short cvtime)
 
   }
 
+bool PexorTwo::SetWaitTimeout (int seconds)
+{
+  int rev = ioctl (fFileHandle, PEXOR_IOC_SET_WAIT_TIMEOUT, &seconds);
+  int er = errno;
+  if (rev == 0)
+    return true;
+  else
+    PexorWarning("\nSetWaitTimeout to %d seconds returned error %d  -  %s\n", seconds, er, strerror(errno));
+  return false;
+
+}
+
+
+
 bool PexorTwo::SetAutoTriggerReadout(bool on, bool directdma)
 {
 

@@ -46,6 +46,7 @@ extern const char* xmlMbsSubevtProcid;    //<  define procid number for subevent
 extern const char* xmlSyncRead;    //< switch synchronous or asynchronous token dma
 extern const char* xmlTriggeredRead;    //< switch triggered or polling mode readout
 extern const char* xmlDmaMode;          //<  switch between direct dma to host,  or token data buffering in pexor RAM
+extern const char* xmlWaitTimeout;    //<  specify kernel waitqueue timeout for trigger and autoread buffers
 
 extern const char* xmlTrixorConvTime;    //< conversion time of TRIXOR module
 extern const char* xmlTrixorFastClearTime;    //< fast clear time of TRIXOR module
@@ -261,6 +262,9 @@ protected:
 
   /** For mbsformat: defines subevent control*/
   unsigned int fSubeventControl;
+
+  /** wait timeout in seconds for kernel receive queues*/
+  int fWaitTimeout;
 
   /** flag for aquisition running state*/
   bool fAqcuisitionRunning;

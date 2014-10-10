@@ -90,6 +90,10 @@ public:
      * without the need to explicitely request token data. */
     bool SetAutoTriggerReadout(bool on=true, bool directdma=true);
 
+    /** set timeout of kernel waiting queues for triggers and receive buffers
+     * This will influence behaviour of methods WaitForTrigger and WaitForTriggerBuffer*/
+    bool SetWaitTimeout(int seconds);
+
 
     /** Type of last received trigger. Is set by WaitForTrigger() */
     uint8_t GetTriggerType(){

@@ -656,11 +656,11 @@ int pexor_ioctl_wait_trigger (struct pexor_privdata* priv, unsigned long arg)
   struct pexor_trigger_buf* trigstat;
   struct pexor_trigger_status descriptor;
   wjifs = wait_event_interruptible_timeout (priv->irq_trig_queue, atomic_read( &(priv->trig_outstanding) ) > 0,
-      PEXOR_TRIG_TIMEOUT);
-  pexor_dbg(KERN_NOTICE "** pexor_wait_trigger after wait_event_interruptible_timeout with TIMEOUT %d, waitjiffies=%d, outstanding=%d \n",PEXOR_TRIG_TIMEOUT, wjifs, atomic_read( &(priv->trig_outstanding)));
+      priv->wait_timeout * HZ);
+  pexor_dbg(KERN_NOTICE "** pexor_wait_trigger after wait_event_interruptible_timeout with TIMEOUT %d s (=%d jiffies), waitjiffies=%d, outstanding=%d \n",priv->wait_timeout,priv->wait_timeout * HZ, wjifs, atomic_read( &(priv->trig_outstanding)));
   if (wjifs == 0)
   {
-    pexor_msg(KERN_NOTICE "** pexor_wait_trigger TIMEOUT %d jiffies expired on wait_event_interruptible_timeout... \n",PEXOR_TRIG_TIMEOUT);
+    pexor_msg(KERN_NOTICE "** pexor_wait_trigger TIMEOUT %d jiffies expired on wait_event_interruptible_timeout... \n",priv->wait_timeout * HZ);
     return PEXOR_TRIGGER_TIMEOUT;
   }
   else if (wjifs == -ERESTARTSYS)

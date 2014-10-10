@@ -197,8 +197,7 @@ ssize_t pexor_write (struct file *filp, const char __user *buf, size_t count, lo
   {
     retval = -EFAULT;
     goto out;
-  }
-  pexor_dbg(KERN_NOTICE "** pexor_write begins copy loop at memstart=%lx\n", (long) memstart);
+  }pexor_dbg(KERN_NOTICE "** pexor_write begins copy loop at memstart=%lx\n", (long) memstart);
   /*memcpy_toio(memstart, kbuf , count);*/mb();
   for (i = 0; i < lcount; ++i)
   {
@@ -305,7 +304,6 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
       retval = pexor_ioctl_read_register(privdata, arg);
       break;
 
-
     case PEXOR_IOC_WRITE_BUS:
       pexor_dbg(KERN_NOTICE "** pexor_ioctl write bus\n");
       retval = pexor_ioctl_write_bus(privdata, arg);
@@ -352,6 +350,11 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     case PEXOR_IOC_GET_SFP_LINKS:
       pexor_dbg(KERN_NOTICE "** pexor_ioctl get sfp links\n");
       retval = pexor_ioctl_get_sfp_links(privdata, arg);
+      break;
+
+    case PEXOR_IOC_SET_WAIT_TIMEOUT:
+      pexor_dbg(KERN_NOTICE "** pexor_ioctl set wait timeout\n");
+      retval = pexor_ioctl_set_wait_timeout(privdata, arg);
       break;
 
     default:
@@ -454,7 +457,8 @@ int pexor_ioctl_mapbuffer (struct pexor_privdata *priv, unsigned long arg)
   dmabuf->sg_ents = nents; /* number of coherent dma buffers to transfer*/
   dmabuf->sg = sg;
 
-  pexor_dbg(KERN_ERR "pexor_ioctl_mapbuffer mapped user buffer 0x%lx, size 0x%lx, pages 0x%x to 0x%x sg entries \n", dmabuf->virt_addr, dmabuf->size, nr_pages, nents);
+  pexor_dbg(
+      KERN_ERR "pexor_ioctl_mapbuffer mapped user buffer 0x%lx, size 0x%lx, pages 0x%x to 0x%x sg entries \n", dmabuf->virt_addr, dmabuf->size, nr_pages, nents);
   spin_lock( &(priv->buffers_lock));
   /* this list contains only the unused (free) buffers: */
   list_add_tail (&(dmabuf->queue_list), &(priv->free_buffers));
@@ -462,7 +466,8 @@ int pexor_ioctl_mapbuffer (struct pexor_privdata *priv, unsigned long arg)
 
   /* DEBUG ****************************************/for_each_sg(dmabuf->sg,sg, dmabuf->sg_ents,i)
   {
-    pexor_dbg(KERN_ERR "-- dump sg chunk %d: start 0x%x length 0x%x \n",i, (unsigned) sg_dma_address(sg), sg_dma_len(sg));
+    pexor_dbg(
+        KERN_ERR "-- dump sg chunk %d: start 0x%x length 0x%x \n", i, (unsigned) sg_dma_address(sg), sg_dma_len(sg));
   }
   /***************************************************/
 
@@ -662,6 +667,19 @@ int pexor_ioctl_waitreceive (struct pexor_privdata* priv, unsigned long arg)
   return rev;
 }
 
+
+int pexor_ioctl_set_wait_timeout(struct pexor_privdata* priv, unsigned long arg)
+{
+  int timeout=0, retval;
+  retval = get_user(timeout, (int*) arg);
+  if (retval)
+      return retval;
+  pexor_msg(KERN_NOTICE "pexor_ioctl_set_wait_timeout sets timeout %d seconds\n",timeout);
+  priv->wait_timeout=timeout;
+  return 0;
+}
+
+
 int pexor_ioctl_setrunstate (struct pexor_privdata* priv, unsigned long arg)
 {
   int state, retval;
@@ -675,7 +693,7 @@ int pexor_ioctl_setrunstate (struct pexor_privdata* priv, unsigned long arg)
 #ifdef PEXOR_WITH_SFP
       pexor_sfp_clear_all (priv);
 #endif
-      pexor_msg(KERN_ERR "pexor_ioctl_setrunstate has set stopped state.\n");
+     pexor_msg(KERN_ERR "pexor_ioctl_setrunstate has set stopped state.\n");
       /* TODO: actively stop the wait queues/tasklet etc for shutdown?*/
     case PEXOR_STATE_DMA_SUSPENDED:
       break;
@@ -849,7 +867,7 @@ int pexor_ioctl_reset (struct pexor_privdata* priv, unsigned long arg)
 
 int pexor_ioctl_clearreceivebuffers (struct pexor_privdata* priv, unsigned long arg)
 {
-  int i = 0, innerwaitcount = 0, outstandingbuffers = 0;
+  int i = 0, outstandingbuffers = 0;
   unsigned long wjifs = 0;
   struct pexor_dmabuf* cursor;
   struct pexor_dmabuf* next;
@@ -868,36 +886,41 @@ int pexor_ioctl_clearreceivebuffers (struct pexor_privdata* priv, unsigned long 
   outstandingbuffers = atomic_read( &(priv->dma_outstanding));
   for (i = 0; i < outstandingbuffers; ++i)
   {
-    while ((wjifs = wait_event_interruptible_timeout (priv->irq_dma_queue, atomic_read( &(priv->dma_outstanding) ) > 0,
-        PEXOR_WAIT_TIMEOUT)) == 0)
+    wjifs = wait_event_interruptible_timeout (priv->irq_dma_queue, atomic_read( &(priv->dma_outstanding) ) > 0,
+        priv->wait_timeout * HZ);
+    pexor_dbg(
+        KERN_NOTICE "** pexor_ioctl_clearreceivebuffers after wait_event_interruptible_timeout with TIMEOUT %ds (=%d jiffies), waitjiffies=%ld, outstanding=%d \n", priv->wait_timeout, priv->wait_timeout*HZ, wjifs, atomic_read( &(priv->dma_outstanding)));
+
+    if (wjifs == 0)
     {
-      pexor_msg(KERN_NOTICE "** pexor_ioctl_clearreceivebuffers TIMEOUT %d jiffies expired on wait_event_interruptible_timeout... \n",PEXOR_WAIT_TIMEOUT);
-      if (innerwaitcount++ > PEXOR_WAIT_MAXTIMEOUTS)
-        return -EFAULT;
+      pexor_msg(KERN_NOTICE "** pexor_ioctl_clearreceivebuffers TIMEOUT %d jiffies expired on wait_event_interruptible_timeout... \n",priv->wait_timeout*HZ);
+      return -EFAULT;
     }
-    pexor_dbg(KERN_NOTICE "** pexor_ioctl_clearreceivebuffers after wait_event_interruptible_timeout with TIMEOUT %d, waitjiffies=%ld, outstanding=%d \n",PEXOR_WAIT_TIMEOUT, wjifs, atomic_read( &(priv->dma_outstanding)));
-    if (wjifs == -ERESTARTSYS)
+    else if (wjifs == -ERESTARTSYS)
     {
       pexor_msg(KERN_NOTICE "** pexor_ioctl_clearreceivebuffers after wait_event_interruptible_timeout woken by signal. abort wait\n");
       return -EFAULT;
     }
     atomic_dec (&(priv->dma_outstanding));
-  }
+  }    // for outstandingbuffers
 
 #ifdef PEXOR_WITH_TRIXOR
   /* empty possible wait queue events for interrupts and dec the outstanding counter*/
   outstandingbuffers = atomic_read( &(priv->trig_outstanding));
   for (i = 0; i < outstandingbuffers; ++i)
   {
-    while ((wjifs = wait_event_interruptible_timeout (priv->irq_trig_queue, atomic_read( &(priv->trig_outstanding) ) > 0,
-        PEXOR_WAIT_TIMEOUT)) == 0)
+    wjifs = wait_event_interruptible_timeout (priv->irq_trig_queue, atomic_read( &(priv->trig_outstanding) ) > 0,
+        priv->wait_timeout * HZ);
+    pexor_dbg(
+        KERN_NOTICE "** pexor_ioctl_clearreceivebuffers after wait_event_interruptible_timeout for trigger queue, with TIMEOUT %ds (=%d jiffies), waitjiffies=%ld, outstanding=%d \n", priv->wait_timeout, priv->wait_timeout*HZ, wjifs, atomic_read( &(priv->trig_outstanding)));
+
+    if (wjifs == 0)
     {
-      pexor_msg(KERN_NOTICE "** pexor_ioctl_clearreceivebuffers TIMEOUT %d jiffies expired on wait_event_interruptible_timeout for trigger queue... \n",PEXOR_WAIT_TIMEOUT);
-      if (innerwaitcount++ > PEXOR_WAIT_MAXTIMEOUTS)
-        return -EFAULT;
+      pexor_dbg(
+          KERN_NOTICE "** pexor_ioctl_clearreceivebuffers TIMEOUT %d jiffies expired on wait_event_interruptible_timeout for trigger queue... \n", priv->wait_timeout*HZ);
+      return -EFAULT;
     }
-    pexor_dbg(KERN_NOTICE "** pexor_ioctl_clearreceivebuffers after wait_event_interruptible_timeout for trigger queue, with TIMEOUT %d, waitjiffies=%ld, outstanding=%d \n",PEXOR_WAIT_TIMEOUT, wjifs, atomic_read( &(priv->trig_outstanding)));
-    if (wjifs == -ERESTARTSYS)
+    else if (wjifs == -ERESTARTSYS)
     {
       pexor_msg(KERN_NOTICE "** pexor_ioctl_clearreceivebuffers after wait_event_interruptible_timeout for trigger queue woken by signal. abort wait\n");
       return -EFAULT;
@@ -914,20 +937,6 @@ int pexor_ioctl_clearreceivebuffers (struct pexor_privdata* priv, unsigned long 
     trigstat->trixorstat = 0;    // mark status object as free
     list_move_tail (&(trigstat->queue_list), &(priv->trig_status));    // move to end of list
     spin_unlock( &(priv->trigstat_lock));
-
-    // old way of clearing triggerstatus queue:
-    //      spin_lock( &(priv->trigstat_lock) );
-    //      if(list_empty(&(priv->trig_status)))
-    //            {
-    //              spin_unlock( &(priv->trigstat_lock) );
-    //              pexor_msg(KERN_ERR "pexor_ioctl_clearreceivebuffers never come here - list of trigger type buffers is empty! \n");
-    //              return -EFAULT;
-    //            }
-    //        trigstat=list_first_entry(&(priv->trig_status), struct pexor_trigger_buf, queue_list);
-    //        list_del(&(trigstat->queue_list));
-    //        spin_unlock( &(priv->trigstat_lock));
-    //        pexor_dbg(KERN_NOTICE "pexor_ioctl_clearreceivebuffers has eaten old trigger type 0x%x ",(trigstat->trixorstat &  SEC__MASK_TRG_TYP) >> 16);
-    //        kfree(trigstat);
 
   }    // for outstandingbuffers
 
@@ -953,15 +962,14 @@ int pexor_ioctl_write_register (struct pexor_privdata* priv, unsigned long arg)
   {
     pexor_msg(KERN_ERR "** pexor_ioctl_write_register: no mapped bar %d\n",bar);
     return -EIO;
-  }
-  pexor_dbg(KERN_NOTICE "** pexor_ioctl_write_register writes value %x to address %p within bar %d \n",val,ad,bar);
+  }pexor_dbg(KERN_NOTICE "** pexor_ioctl_write_register writes value %x to address %p within bar %d \n", val, ad, bar);
   if ((unsigned long) ad > priv->reglen[bar])
   {
     pexor_msg(KERN_ERR "** pexor_ioctl_write_register: address %p is exceeding length %lx of bar %d\n",ad, priv->reglen[bar], bar);
     return -EIO;
   }
   ad = (u32*) ((unsigned long) priv->iomem[bar] + (unsigned long) ad);
-  pexor_dbg(KERN_NOTICE "** pexor_ioctl_write_register writes value %x to mapped PCI address %p !\n",val,ad);
+  pexor_dbg(KERN_NOTICE "** pexor_ioctl_write_register writes value %x to mapped PCI address %p !\n", val, ad);
   iowrite32 (val, ad);
   mb();
   ndelay(20);
@@ -979,14 +987,13 @@ int pexor_ioctl_read_register (struct pexor_privdata* priv, unsigned long arg)
   if (retval)
     return retval;
   ad = (u32*) (ptrdiff_t) descriptor.address;
-  pexor_dbg(KERN_NOTICE "** pexor_ioctl_reading from register address %p\n",ad);
+  pexor_dbg(KERN_NOTICE "** pexor_ioctl_reading from register address %p\n", ad);
   bar = descriptor.bar;
   if ((bar > 5) || priv->iomem[bar] == 0)
   {
     pexor_msg(KERN_ERR "** pexor_ioctl_read_register: no mapped bar %d\n",bar);
     return -EIO;
-  }
-  pexor_dbg(KERN_NOTICE "** pexor_ioctl_read_register reads from address %p within bar %d \n",ad,bar);
+  }pexor_dbg(KERN_NOTICE "** pexor_ioctl_read_register reads from address %p within bar %d \n", ad, bar);
   if ((unsigned long) ad > priv->reglen[bar])
   {
     pexor_msg(KERN_ERR "** pexor_ioctl_read_register: address %p is exceeding length %lx of bar %d\n",ad, priv->reglen[bar], bar);
@@ -996,7 +1003,7 @@ int pexor_ioctl_read_register (struct pexor_privdata* priv, unsigned long arg)
   val = ioread32 (ad);
   mb();
   ndelay(20);
-  pexor_dbg(KERN_NOTICE "** pexor_ioctl_read_register read value %x from mapped PCI address %p !\n",val,ad);
+  pexor_dbg(KERN_NOTICE "** pexor_ioctl_read_register read value %x from mapped PCI address %p !\n", val, ad);
   descriptor.value = val;
   retval = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pexor_reg_io));
   return retval;
@@ -1027,9 +1034,8 @@ int pexor_mmap (struct file *filp, struct vm_area_struct *vma)
     /* user does not specify external physical address, memory is available in kernelspace:*/
 
     /* map kernel addresses to vma*/
-    pexor_dbg(KERN_NOTICE "Mapping address %p / PFN %lx\n",
-        (void*) virt_to_phys((void*)buf->kernel_addr),
-        page_to_pfn(virt_to_page((void*)buf->kernel_addr)));
+    pexor_dbg(
+        KERN_NOTICE "Mapping address %p / PFN %lx\n", (void*) virt_to_phys((void*)buf->kernel_addr), page_to_pfn(virt_to_page((void*)buf->kernel_addr)));
 
     /*vma->vm_flags |= (VM_RESERVED);*/
     /* TODO: do we need this?*/
@@ -1039,8 +1045,7 @@ int pexor_mmap (struct file *filp, struct vm_area_struct *vma)
   else
   {
     /* for external phys memory, use directly pfn*/
-    pexor_dbg(KERN_NOTICE "Using external address %p / PFN %lx\n",
-        (void*) (vma->vm_pgoff << PAGE_SHIFT ),vma->vm_pgoff);
+    pexor_dbg(KERN_NOTICE "Using external address %p / PFN %lx\n", (void*) (vma->vm_pgoff << PAGE_SHIFT ), vma->vm_pgoff);
 
     /*	   vma->vm_flags |= (VM_RESERVED); */
     /* TODO: do we need this?*/
@@ -1050,12 +1055,13 @@ int pexor_mmap (struct file *filp, struct vm_area_struct *vma)
 
   if (ret)
   {
-    pexor_dbg(KERN_ERR "remap_pfn_range failed: %d (%lx)\n", ret,buf->kernel_addr);
+    pexor_dbg(KERN_ERR "remap_pfn_range failed: %d (%lx)\n", ret, buf->kernel_addr);
     delete_dmabuffer (privdata->pdev, buf);
     return -EFAULT;
   }
   buf->virt_addr = vma->vm_start; /* remember as identifier here*/
-  pexor_dbg(KERN_ERR "pexor_mmap mapped kernel buffer %lx, size %lx, to virtual address %lx\n", buf->kernel_addr, buf->size, buf->virt_addr);
+  pexor_dbg(
+      KERN_ERR "pexor_mmap mapped kernel buffer %lx, size %lx, to virtual address %lx\n", buf->kernel_addr, buf->size, buf->virt_addr);
   spin_lock( &(privdata->buffers_lock));
   /* this list contains only the unused (free) buffers: */
   list_add_tail (&(buf->queue_list), &(privdata->free_buffers));
@@ -1144,7 +1150,8 @@ int delete_dmabuffer (struct pci_dev * pdev, struct pexor_dmabuf* buf)
     else
     {
       /* neither kernel address nor sg list -> external phys memory*/
-      pexor_dbg(KERN_NOTICE "**pexor_delete_dmabuffer of size=%ld, unregistering external physaddr=%lx \n", buf->size, (unsigned long) buf->dma_addr);
+      pexor_dbg(
+          KERN_NOTICE "**pexor_delete_dmabuffer of size=%ld, unregistering external physaddr=%lx \n", buf->size, (unsigned long) buf->dma_addr);
       pci_dma_sync_single_for_cpu (pdev, buf->dma_addr, buf->size, PCI_DMA_FROMDEVICE);
       /* Release descriptor memory */
       kfree (buf);
@@ -1255,8 +1262,7 @@ void print_register (const char* description, u32* address)
 void print_pexor (struct dev_pexor* pg)
 {
   if (pg == 0)
-    return;
-  pexor_dbg(KERN_NOTICE "\n##print_pexor: ###################\n");
+    return;pexor_dbg(KERN_NOTICE "\n##print_pexor: ###################\n");
   pexor_dbg(KERN_NOTICE "init: \t=%x\n", pg->init_done);
   if (!pg->init_done)
     return;
@@ -1278,8 +1284,8 @@ void print_pexor (struct dev_pexor* pg)
 
   print_register ("RAM start", pg->ram_start);
   print_register ("RAM end", pg->ram_end);
-  pexor_dbg(KERN_NOTICE "RAM DMA base add=%x \n",(unsigned) pg->ram_dma_base) ;
-  pexor_dbg(KERN_NOTICE "RAM DMA cursor add=%x \n",(unsigned) pg->ram_dma_cursor);
+  pexor_dbg(KERN_NOTICE "RAM DMA base add=%x \n", (unsigned) pg->ram_dma_base);
+  pexor_dbg(KERN_NOTICE "RAM DMA cursor add=%x \n", (unsigned) pg->ram_dma_cursor);
 
 #ifdef PEXOR_WITH_SFP
   print_sfp (&(pg->sfp));
@@ -1292,7 +1298,7 @@ void clear_pexor (struct dev_pexor* pg)
   if (pg == 0)
     return;
   pg->init_done = 0x0;
-  pexor_dbg(KERN_NOTICE "** Cleared pexor structure %lx.\n",(long unsigned int) pg);
+  pexor_dbg(KERN_NOTICE "** Cleared pexor structure %lx.\n", (long unsigned int) pg);
 }
 
 void set_pexor (struct dev_pexor* pg, void* membase, unsigned long bar)
@@ -1318,7 +1324,6 @@ void set_pexor (struct dev_pexor* pg, void* membase, unsigned long bar)
   pg->dma_len = (u32*) (dmabase + PEXOR_DMA_LEN);
   pg->dma_burstsize = (u32*) (dmabase + PEXOR_DMA_BURSTSIZE);
 
-
   pg->ram_start = (u32*) (membase + PEXOR_DRAM);
   pg->ram_end = (u32*) (membase + PEXOR_DRAM + PEXOR_RAMSIZE);
   pg->ram_dma_base = (dma_addr_t) (bar + PEXOR_DRAM);
@@ -1328,7 +1333,7 @@ void set_pexor (struct dev_pexor* pg, void* membase, unsigned long bar)
 #endif
 
   pg->init_done = 0x1;
-  pexor_dbg(KERN_NOTICE "** Set pexor structure %lx.\n",(long unsigned int) pg);
+  pexor_dbg(KERN_NOTICE "** Set pexor structure %lx.\n", (long unsigned int) pg);
 
 }
 
@@ -1336,7 +1341,9 @@ irqreturn_t pexor_isr (int irq, void *dev_id)
 {
   u32 irtype, irstat;
   int state;
+#ifdef PEXOR_WITH_TRIXOR
   struct pexor_trigger_buf* trigstat;
+#endif
   struct pexor_privdata *privdata;
 
   privdata = (struct pexor_privdata *) dev_id;
@@ -1416,8 +1423,6 @@ irqreturn_t pexor_isr (int irq, void *dev_id)
     return IRQ_HANDLED;
   }
 
-
-
 #else
 
   /* check if this interrupt was raised by our device*/
@@ -1453,7 +1458,7 @@ irqreturn_t pexor_isr (int irq, void *dev_id)
 
   else
   {
-    pexor_dbg(KERN_NOTICE "pexor test driver interrupt handler sees unknown ir type %x !\n",irtype);
+    pexor_dbg(KERN_NOTICE "pexor test driver interrupt handler sees unknown ir type %x !\n", irtype);
 #ifdef PEXOR_DISABLE_IRQ_ISR
     enable_irq (irq);
 #endif
@@ -1494,8 +1499,8 @@ void pexor_irq_tasklet (unsigned long arg)
   {
     pexor_msg(KERN_ALERT "pexor_irq_tasklet found more than one ir: N.C.H.\n");
   }
-
-
+  udelay(20);
+  // waitstate between trigger interrupt and accessing pexor
 
   pexor_decode_triggerstatus (trigstat, &descriptor);
   pexor_dbg(
@@ -1510,7 +1515,8 @@ void pexor_irq_tasklet (unsigned long arg)
   {
     /* do nothing special here. Trigger type is passed upwards with dummy buffer,
      * userland application may react by explicit readout request.*/
-    woffset=0;
+    woffset = 0;
+    bufid = 1;    // after start acquisition, always begin with bufid 0
   }
   else
   {
@@ -1572,12 +1578,12 @@ void pexor_irq_tasklet (unsigned long arg)
    * In this case, just the empty next buffer of free queue is moved to receive queue and send
    * to userland as dummy buffer, marked with trigstat.*/
 
-
+  udelay(10);
+  // waitstate between readout complete and trigger reset
   /** RESET trigger here, probably we can do this already before  pexor_receive_dma_buffer?*/
   pexor_trigger_reset (privdata);
 
-
-  bufid= (bufid ? 0 :1);
+  bufid = (bufid ? 0 : 1);
   /* switch frontend double buffer id for next request!
    * otherwise frontends may stall after 3rd event*/
 
@@ -1629,7 +1635,7 @@ int pexor_next_dma (struct pexor_privdata* priv, dma_addr_t source, u32 roffset,
     {
       /* check again if we found the correct buffer in list...*/
       spin_unlock( &(priv->buffers_lock));
-      pexor_dbg(KERN_ERR "pexor_next_dma: buffer of desired id 0x%lx is not in free list! \n",bufid);
+      pexor_dbg(KERN_ERR "pexor_next_dma: buffer of desired id 0x%lx is not in free list! \n", bufid);
       return -EINVAL;
     }
   }
@@ -1642,7 +1648,8 @@ int pexor_next_dma (struct pexor_privdata* priv, dma_addr_t source, u32 roffset,
 
   if (woffset > nextbuf->size - 8)
   {
-    pexor_dbg(KERN_NOTICE "#### pexor_next_dma illlegal write offset 0x%x for target buffer size 0x%x\n",woffset, (unsigned) nextbuf->size);
+    pexor_dbg(
+        KERN_NOTICE "#### pexor_next_dma illlegal write offset 0x%x for target buffer size 0x%x\n", woffset, (unsigned) nextbuf->size);
     return -EINVAL;
   }
 
@@ -1659,10 +1666,9 @@ int pexor_next_dma (struct pexor_privdata* priv, dma_addr_t source, u32 roffset,
 
       if ((dmasize == 0) || (dmasize > nextbuf->size - woffset))
       {
-        pexor_dbg(KERN_NOTICE "#### pexor_next_dma resetting old dma size %x to %lx\n",dmasize,nextbuf->size);
+        pexor_dbg(KERN_NOTICE "#### pexor_next_dma resetting old dma size %x to %lx\n", dmasize, nextbuf->size);
         dmasize = nextbuf->size - woffset;
       }
-
 
       // JAM NOTE: this check is only meaningfull for dma tests
       // RAMSIZE here covers only ram for sfp0, it will fail for higher sfps!
@@ -1759,7 +1765,8 @@ int pexor_next_dma (struct pexor_privdata* priv, dma_addr_t source, u32 roffset,
         sglen = dmasize - sglensum; /* cut dma length for last sg page*/
 
       /* DEBUG: pretend to do dma, but do not issue it*/
-      pexor_dbg(KERN_ERR "#### pexor_next_dma would start dma from 0x%x to 0x%x of length 0x%x, offset 0x%x, complete chunk length: 0x%x\n", (unsigned) sgcursor, (unsigned) sg_dma_address(sgentry), sglen, woffset,sg_dma_len(sgentry));
+      pexor_dbg(
+          KERN_ERR "#### pexor_next_dma would start dma from 0x%x to 0x%x of length 0x%x, offset 0x%x, complete chunk length: 0x%x\n", (unsigned) sgcursor, (unsigned) sg_dma_address(sgentry), sglen, woffset, sg_dma_len(sgentry));
 
       /**** END DEBUG*/
       /* initiate dma to next sg part:*/
@@ -1770,13 +1777,13 @@ int pexor_next_dma (struct pexor_privdata* priv, dma_addr_t source, u32 roffset,
 
       if ((rev = pexor_poll_dma_complete (priv)) != 0)
       {
-        pexor_dbg(KERN_ERR "#### pexor_next_dma error on polling for sg entry %d completion, \n",i);
+        pexor_dbg(KERN_ERR "#### pexor_next_dma error on polling for sg entry %d completion, \n", i);
         return rev;
       }
       sglensum += sglen;
       if (sglensum >= dmasize)
       {
-        pexor_dbg(KERN_NOTICE "#### pexor_next_dma has finished sg buffer dma after %d segments\n",i);
+        pexor_dbg(KERN_NOTICE "#### pexor_next_dma has finished sg buffer dma after %d segments\n", i);
         break;
       }
       sgcursor += sglen;
@@ -1785,13 +1792,11 @@ int pexor_next_dma (struct pexor_privdata* priv, dma_addr_t source, u32 roffset,
 
     if (sglensum < dmasize)
     {
-      pexor_dbg(KERN_ERR "#### pexor_next_dma could not write full size 0x%x to sg buffer of len 0x%x\n",dmasize,sglensum);
+      pexor_dbg(KERN_ERR "#### pexor_next_dma could not write full size 0x%x to sg buffer of len 0x%x\n", dmasize, sglensum);
       return -EINVAL;
     }
 
-  } // end plain dma or emulated sg
-
-
+  }    // end plain dma or emulated sg
 
   return 0;
 
@@ -1819,7 +1824,7 @@ int pexor_start_dma (struct pexor_privdata *priv, dma_addr_t source, dma_addr_t 
   }
   if (burstsize < PEXOR_BURST_MIN)
   {
-    pexor_dbg(KERN_NOTICE "**pexor_start_dma: correcting for too small burstsize %x\n",burstsize);
+    pexor_dbg(KERN_NOTICE "**pexor_start_dma: correcting for too small burstsize %x\n", burstsize);
     burstsize = PEXOR_BURST_MIN;
     while (dmasize % burstsize)
     {
@@ -1835,11 +1840,12 @@ int pexor_start_dma (struct pexor_privdata *priv, dma_addr_t source, dma_addr_t 
       /* otherwise this can only happen in the last chunk of sg dma.
        * here it should be no deal to transfer a little bit more...*/
     }
-    pexor_dbg(KERN_NOTICE "**changed source address to 0x%x, dest:0x%x, dmasize to 0x%x, burstsize:0x%x\n",(unsigned) source, (unsigned) dest,dmasize, burstsize)
+    pexor_dbg(
+        KERN_NOTICE "**changed source address to 0x%x, dest:0x%x, dmasize to 0x%x, burstsize:0x%x\n", (unsigned) source, (unsigned) dest, dmasize, burstsize)
   }
 
-  pexor_dbg(KERN_NOTICE "#### pexor_start_dma will initiate dma from %p to %p, len=%x, burstsize=%x...\n",
-      (void*) source, (void*) dest, dmasize, burstsize);
+  pexor_dbg(
+      KERN_NOTICE "#### pexor_start_dma will initiate dma from %p to %p, len=%x, burstsize=%x...\n", (void*) source, (void*) dest, dmasize, burstsize);
 
   pexor_dma_lock((&(priv->dma_lock)));
   iowrite32 (source, priv->pexor.dma_source);
@@ -1888,18 +1894,16 @@ int pexor_poll_dma_complete (struct pexor_privdata* priv)
     }
     if (PEXOR_DMA_POLLDELAY)
       ndelay(PEXOR_DMA_POLLDELAY);
-//    if (PEXOR_DMA_POLL_SCHEDULE)
-//      schedule (); // never do this in irq tasklet!
-  }; // while
+    //    if (PEXOR_DMA_POLL_SCHEDULE)
+    //      schedule (); // never do this in irq tasklet!
+  };    // while
 
   pexor_dma_unlock((&(priv->dma_lock)));
   //spin_unlock(&(priv->dma_lock));
   return 0;
 }
 
-
-
-int pexor_receive_dma_buffer(struct pexor_privdata *privdata, unsigned long used_size, u32 triggerstatus)
+int pexor_receive_dma_buffer (struct pexor_privdata *privdata, unsigned long used_size, u32 triggerstatus)
 {
   int state, rev = 0;
   struct pexor_dmabuf* nextbuf;
@@ -1908,7 +1912,6 @@ int pexor_receive_dma_buffer(struct pexor_privdata *privdata, unsigned long used
 
   /* transfer buffer from free queue to receive queue*/
   spin_lock( &(privdata->buffers_lock));
-
 
   /* check if free list is empty <- can happen if dma flow gets suspended
    * and waitreceive is called in polling mode*/
@@ -1925,7 +1928,6 @@ int pexor_receive_dma_buffer(struct pexor_privdata *privdata, unsigned long used
   list_move_tail (&(nextbuf->queue_list), &(privdata->received_buffers));
   spin_unlock( &(privdata->buffers_lock));
 
-
   /** JAM TODO: do we still need dma flow states and states anyway?*/
   state = atomic_read(&(privdata->state));
   switch (state)
@@ -1933,17 +1935,17 @@ int pexor_receive_dma_buffer(struct pexor_privdata *privdata, unsigned long used
     case PEXOR_STATE_STOPPED:
       /* this can happen after processing trigger 15 in irq tasklet.
        * we just mark dummy buffer with trigger type and then wake up consumer:*/
-      nextbuf->used_size=0; /* need to tell consumer the real token data size*/
-      nextbuf->triggerstatus=triggerstatus; /* pass up triggerstatus for this data!*/
+      nextbuf->used_size = 0; /* need to tell consumer the real token data size*/
+      nextbuf->triggerstatus = triggerstatus; /* pass up triggerstatus for this data!*/
       break;
 
     case PEXOR_STATE_DMA_FLOW:
       /*if(atomic_read(&(privdata->dma_outstanding))>PEXOR_MAXOUTSTANDING)
-   {
-   pexor_msg(KERN_ALERT "pexor_irq_tasklet finds more than %d pending receive buffers! Emergency suspend dma flow!\n",PEXOR_MAXOUTSTANDING);
-   atomic_set(&(privdata->state),PEXOR_STATE_DMA_SUSPENDED);
-   break;
-   }*/
+ {
+ pexor_msg(KERN_ALERT "pexor_irq_tasklet finds more than %d pending receive buffers! Emergency suspend dma flow!\n",PEXOR_MAXOUTSTANDING);
+ atomic_set(&(privdata->state),PEXOR_STATE_DMA_SUSPENDED);
+ break;
+ }*/
       rev = pexor_next_dma (privdata, 0, 0, 0, 0, 0, 0); /* TODO: inc source address cursor? Handle sfp double buffering?*/
       if (rev)
       {
@@ -1956,14 +1958,14 @@ int pexor_receive_dma_buffer(struct pexor_privdata *privdata, unsigned long used
     case PEXOR_STATE_TRIGGERED_READ:
       /* in case of auto trigger readout, do not change state to stopped.
        * we continue this mode until user stops acquisition*/
-      if(used_size > nextbuf->size)
+      if (used_size > nextbuf->size)
       {
         pexor_msg(KERN_ALERT "pexor_receive_dma_buffer - used size:%ld exceeds kernel buffer size:%ld, truncating!\n",
             used_size, nextbuf->size);
-        used_size=nextbuf->size;
+        used_size = nextbuf->size;
       }
-      nextbuf->used_size=used_size; /* need to tell consumer the real token data size*/
-      nextbuf->triggerstatus=triggerstatus; /* remember triggerstatus for this data!*/
+      nextbuf->used_size = used_size; /* need to tell consumer the real token data size*/
+      nextbuf->triggerstatus = triggerstatus; /* remember triggerstatus for this data!*/
 
       break;
 
@@ -1978,19 +1980,13 @@ int pexor_receive_dma_buffer(struct pexor_privdata *privdata, unsigned long used
   atomic_inc (&(privdata->dma_outstanding));
   wake_up_interruptible (&(privdata->irq_dma_queue));
 
-
-
   return rev;
 }
 
-
-
 int pexor_wait_dma_buffer (struct pexor_privdata* priv, struct pexor_dmabuf* result)
 {
-  int timeoutcount = 0;
   unsigned long wjifs = 0;
   struct pexor_dmabuf* dmabuf;
-
 
   /**
    * wait_event_interruptible_timeout - sleep until a condition gets true or a timeout elapses
@@ -2005,23 +2001,24 @@ int pexor_wait_dma_buffer (struct pexor_privdata* priv, struct pexor_dmabuf* res
    * was interrupted by a signal, and the remaining jiffies otherwise
    * if the condition evaluated to true before the timeout elapsed.
    */
-  while ((wjifs = wait_event_interruptible_timeout (priv->irq_dma_queue, atomic_read( &(priv->dma_outstanding) ) > 0,
-      PEXOR_WAIT_TIMEOUT)) == 0)
+  wjifs = wait_event_interruptible_timeout (priv->irq_dma_queue, atomic_read( &(priv->dma_outstanding) ) > 0,
+      priv->wait_timeout * HZ);
+  pexor_dbg(
+      KERN_NOTICE "** pexor_wait_dma_buffer after wait_event_interruptible_timeout with TIMEOUT %d s (=%d jiffies), waitjiffies=%ld, outstanding=%d \n",   priv->wait_timeout,priv->wait_timeout * HZ, wjifs, atomic_read( &(priv->dma_outstanding)));
+
+  if (wjifs == 0)
   {
-    pexor_msg(KERN_NOTICE "** pexor_wait_dma_buffer TIMEOUT %d jiffies expired on wait_event_interruptible_timeout... \n",PEXOR_WAIT_TIMEOUT);
-    if (timeoutcount++ > PEXOR_WAIT_MAXTIMEOUTS)
-    {
-      pexor_msg(KERN_NOTICE "** pexor_wait_dma_buffer reached maximum number of timeouts %d for %d jiffies wait time. abort wait\n",PEXOR_WAIT_MAXTIMEOUTS, PEXOR_WAIT_TIMEOUT);
-      //spin_unlock(&(priv->dma_lock));
-      return PEXOR_TRIGGER_TIMEOUT;
-    }
+    pexor_dbg(
+        KERN_NOTICE "** pexor_wait_dma_buffer TIMEOUT %d jiffies expired on wait_event_interruptible_timeout... \n", priv->wait_timeout * HZ);
+    return PEXOR_TRIGGER_TIMEOUT;
   }
-  pexor_dbg(KERN_NOTICE "** pexor_wait_dma_buffer after wait_event_interruptible_timeout with TIMEOUT %d, waitjiffies=%ld, outstanding=%d \n",PEXOR_WAIT_TIMEOUT, wjifs, atomic_read( &(priv->dma_outstanding)));
-  if (wjifs == -ERESTARTSYS)
+  else if (wjifs == -ERESTARTSYS)
   {
     pexor_msg(KERN_NOTICE "** pexor_wait_dma_buffer after wait_event_interruptible_timeout woken by signal. abort wait\n");
-    //spin_unlock(&(priv->dma_lock));
     return -EFAULT;
+  }
+  else
+  {
   }
 
   atomic_dec (&(priv->dma_outstanding));
@@ -2160,15 +2157,15 @@ void test_pci (struct pci_dev *dev)
   u32 base = 0;
   u16 comstat = 0;
   u8 typ = 0;
-  pexor_dbg(KERN_NOTICE "\n test_pci found PCI revision number %x \n",get_pci_revision(dev));
+  pexor_dbg(KERN_NOTICE "\n test_pci found PCI revision number %x \n", get_pci_revision(dev));
 
   /*********** test the address regions*/
   for (bar = 0; bar < 6; ++bar)
   {
-    pexor_dbg(KERN_NOTICE "Resource %d start=%x\n",bar, (unsigned) pci_resource_start( dev,bar ));
-    pexor_dbg(KERN_NOTICE "Resource %d end=%x\n",bar,(unsigned) pci_resource_end( dev,bar ));
-    pexor_dbg(KERN_NOTICE "Resource %d len=%x\n",bar,(unsigned) pci_resource_len( dev,bar ));
-    pexor_dbg(KERN_NOTICE "Resource %d flags=%x\n",bar,(unsigned) pci_resource_flags( dev,bar ));
+    pexor_dbg(KERN_NOTICE "Resource %d start=%x\n", bar, (unsigned) pci_resource_start( dev,bar ));
+    pexor_dbg(KERN_NOTICE "Resource %d end=%x\n", bar, (unsigned) pci_resource_end( dev,bar ));
+    pexor_dbg(KERN_NOTICE "Resource %d len=%x\n", bar, (unsigned) pci_resource_len( dev,bar ));
+    pexor_dbg(KERN_NOTICE "Resource %d flags=%x\n", bar, (unsigned) pci_resource_flags( dev,bar ));
     if ((pci_resource_flags (dev, bar) & IORESOURCE_IO))
     {
       // Ressource im IO-Adressraum
@@ -2284,7 +2281,6 @@ void cleanup_device (struct pexor_privdata* priv)
   /* need to explicitely disable interrupt tasklet?*/
   tasklet_kill (&priv->irq_bottomhalf);
 
-
   /* may put disabling device irqs here?*/
 #ifdef PEXOR_ENABLE_IRQ
   free_irq (pcidev->irq, priv);
@@ -2311,17 +2307,17 @@ void cleanup_device (struct pexor_privdata* priv)
       continue;
     if ((pci_resource_flags (pcidev, j) & IORESOURCE_IO))
     {
-      pexor_dbg(KERN_NOTICE " releasing IO region at:%lx -len:%lx \n",priv->bases[j],priv->reglen[j]);
+      pexor_dbg(KERN_NOTICE " releasing IO region at:%lx -len:%lx \n", priv->bases[j], priv->reglen[j]);
       release_region (priv->bases[j], priv->reglen[j]);
     }
     else
     {
       if (priv->iomem[j] != 0)
       {
-        pexor_dbg(KERN_NOTICE " unmapping virtual MEM region at:%lx -len:%lx \n",(unsigned long) priv->iomem[j],priv->reglen[j]);
+        pexor_dbg(
+            KERN_NOTICE " unmapping virtual MEM region at:%lx -len:%lx \n", (unsigned long) priv->iomem[j], priv->reglen[j]);
         iounmap (priv->iomem[j]);
-      }
-      pexor_dbg(KERN_NOTICE " releasing MEM region at:%lx -len:%lx \n",priv->bases[j],priv->reglen[j]);
+      }pexor_dbg(KERN_NOTICE " releasing MEM region at:%lx -len:%lx \n", priv->bases[j], priv->reglen[j]);
       release_mem_region (priv->bases[j], priv->reglen[j]);
     }
     priv->bases[j] = 0;
@@ -2350,8 +2346,7 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
   {
     pexor_msg(KERN_ERR "PEXOR pci driver probe: Error %d enabling PCI device! \n",err);
     return -ENODEV;
-  }
-  pexor_dbg(KERN_NOTICE "PEXOR Device is enabled.\n");
+  }pexor_dbg(KERN_NOTICE "PEXOR Device is enabled.\n");
 
   /* Set Memory-Write-Invalidate support */
   if (!pci_set_mwi (dev))
@@ -2402,6 +2397,8 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
   pci_set_drvdata (dev, privdata);
   privdata->pdev = dev;
   
+  privdata->wait_timeout = PEXOR_WAIT_TIMEOUT;
+  // default values
   // here check which board we have: pexor, pexaria, kinpex
   pci_read_config_word (dev, PCI_VENDOR_ID, &vid);
   pexor_dbg(KERN_NOTICE "  vendor id:........0x%x \n", vid);
@@ -2433,7 +2430,7 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
     pexor_msg(KERN_NOTICE "  Unknown board type, vendor id: 0x%x, device id:0x%x. Assuming pexor mode...\n",vid,did);
   }
 
-  privdata->magic = PEXOR_DEVICE_ID; /* for isr test TODO: what if multiple pexors share same irq?*/
+  //privdata->magic = PEXOR_DEVICE_ID; /* for isr test TODO: what if multiple pexors share same irq?*/
 
   atomic_set(&(privdata->state), PEXOR_STATE_STOPPED);
 
@@ -2446,36 +2443,31 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
     if ((pci_resource_flags (dev, ix) & IORESOURCE_IO))
     {
 
-      pexor_dbg(KERN_NOTICE " - Requesting io ports for bar %d\n",ix);
+      pexor_dbg(KERN_NOTICE " - Requesting io ports for bar %d\n", ix);
       if (request_region (privdata->bases[ix], privdata->reglen[ix], kobject_name (&dev->dev.kobj)) == NULL )
       {
-        pexor_dbg(KERN_ERR "I/O address conflict at bar %d for device \"%s\"\n",
-            ix, kobject_name(&dev->dev.kobj));
+        pexor_dbg(KERN_ERR "I/O address conflict at bar %d for device \"%s\"\n", ix, kobject_name(&dev->dev.kobj));
         cleanup_device (privdata);
         return -EIO;
-      }
-      pexor_dbg( "requested ioport at %lx with length %lx\n", privdata->bases[ix], privdata->reglen[ix]);
+      }pexor_dbg( "requested ioport at %lx with length %lx\n", privdata->bases[ix], privdata->reglen[ix]);
     }
     else if ((pci_resource_flags (dev, ix) & IORESOURCE_MEM))
     {
-      pexor_dbg(KERN_NOTICE " - Requesting memory region for bar %d\n",ix);
+      pexor_dbg(KERN_NOTICE " - Requesting memory region for bar %d\n", ix);
       if (request_mem_region (privdata->bases[ix], privdata->reglen[ix], kobject_name (&dev->dev.kobj)) == NULL )
       {
-        pexor_dbg(KERN_ERR "Memory address conflict at bar %d for device \"%s\"\n",
-            ix, kobject_name(&dev->dev.kobj));
+        pexor_dbg(KERN_ERR "Memory address conflict at bar %d for device \"%s\"\n", ix, kobject_name(&dev->dev.kobj));
         cleanup_device (privdata);
         return -EIO;
-      }
-      pexor_dbg( "requested memory at %lx with length %lx\n", privdata->bases[ix], privdata->reglen[ix]);
+      }pexor_dbg( "requested memory at %lx with length %lx\n", privdata->bases[ix], privdata->reglen[ix]);
       privdata->iomem[ix] = ioremap_nocache (privdata->bases[ix], privdata->reglen[ix]);
       if (privdata->iomem[ix] == NULL )
       {
-        pexor_dbg(KERN_ERR "Could not remap memory  at bar %d for device \"%s\"\n",
-            ix, kobject_name(&dev->dev.kobj));
+        pexor_dbg(KERN_ERR "Could not remap memory  at bar %d for device \"%s\"\n", ix, kobject_name(&dev->dev.kobj));
         cleanup_device (privdata);
         return -EIO;
-      }
-      pexor_dbg( "remapped memory to %lx with length %lx\n", (unsigned long) privdata->iomem[ix], privdata->reglen[ix]);
+      }pexor_dbg(
+          "remapped memory to %lx with length %lx\n", (unsigned long) privdata->iomem[ix], privdata->reglen[ix]);
     }
   }    //for
   set_pexor (&(privdata->pexor), privdata->iomem[0], privdata->bases[0]);
@@ -2530,7 +2522,7 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
     trigstat = kmalloc (sizeof(struct pexor_trigger_buf), GFP_KERNEL);
     if (!trigstat)
     {
-      pexor_dbg(KERN_ERR "pexor probe: could not alloc triggger status buffer #%d! \n",ix);
+      pexor_dbg(KERN_ERR "pexor probe: could not alloc triggger status buffer #%d! \n", ix);
       continue;
     }
     memset (trigstat, 0, sizeof(struct pexor_trigger_buf));
@@ -2538,7 +2530,7 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
     spin_lock( &(privdata->trigstat_lock));
     list_add (&(trigstat->queue_list), &(privdata->trig_status));
     spin_unlock( &(privdata->trigstat_lock));
-    pexor_dbg(KERN_NOTICE "pexor probe added trigger status buffer #%d .\n",ix);
+    pexor_dbg(KERN_NOTICE "pexor probe added trigger status buffer #%d .\n", ix);
   }
 
   tasklet_init (&(privdata->irq_bottomhalf), pexor_irq_tasklet, (unsigned long) privdata);

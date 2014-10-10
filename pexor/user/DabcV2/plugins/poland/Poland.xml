@@ -52,6 +52,7 @@
 			<PexorSyncReadout value="true" />
 			<PexorUseTrigger value="true" />
 			<PexorAutoReadout value="true"/>
+			<PexorTriggerTimeout value="10"/>
 			<TrixorConversionTime value="300" />
 			<TrixorFastClearTime value="10" />
 		</Device>

@@ -162,9 +162,10 @@ struct pexor_trigger_readout{
 #define PEXOR_IOC_UNMAPBUFFER   _IOW(  PEXOR_IOC_MAGIC, 18, struct pexor_userbuf)
 #define PEXOR_IOC_CONFIG_BUS       _IOWR(  PEXOR_IOC_MAGIC, 19, struct pexor_bus_config)
 #define PEXOR_IOC_GET_SFP_LINKS    _IOR(  PEXOR_IOC_MAGIC, 20, struct pexor_sfp_links)
+#define PEXOR_IOC_SET_WAIT_TIMEOUT    _IOW(  PEXOR_IOC_MAGIC, 21, int)
 
 
-#define PEXOR_IOC_MAXNR 21
+#define PEXOR_IOC_MAXNR 22
 
 
 /** some alias ioctl definitions for goiscmd/mbspex lib:*/
