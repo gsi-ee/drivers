@@ -14,6 +14,7 @@
 #include "pexorplugin/Factory.h"
 #include "pexorplugin/ReadoutModule.h"
 #include "pexorplugin/Device.h"
+#include "pexorplugin/Player.h"
 
 #include "dabc/Command.h"
 #include "dabc/logging.h"
@@ -27,7 +28,8 @@ dabc::Module* pexorplugin::Factory::CreateModule (const std::string& classname, 
 {
   DOUT0 ("pexorplugin::Factory::CreateModule called for class:%s, module:%s", classname.c_str (), modulename.c_str ());
 
-  if (strcmp (classname.c_str (), "pexorplugin::ReadoutModule") == 0)
+//  if (strcmp (classname.c_str (), "pexorplugin::ReadoutModule") == 0)
+    if (classname=="pexorplugin::ReadoutModule")
   {
     dabc::Module* mod = new pexorplugin::ReadoutModule (modulename, cmd);
     unsigned int boardnum = 0;    //cmd->GetInt(ABB_PAR_BOARDNUM, 0);
@@ -35,6 +37,11 @@ dabc::Module* pexorplugin::Factory::CreateModule (const std::string& classname, 
         modulename.c_str (), boardnum);
     return mod;
   }
+
+  if (classname == "pexorplugin::Player")
+        return new pexorplugin::Player(modulename, cmd);
+
+
   return dabc::Factory::CreateModule (classname, modulename, cmd);
 }
 

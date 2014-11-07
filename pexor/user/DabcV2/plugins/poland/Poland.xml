@@ -1,12 +1,13 @@
 <?xml version="1.0"?>
 <dabc version="2">
 
-<Context host="localhost" name="Poland">
+<Context host="localhost" name="PEXOR">
 		<Run>
 			<lib value="libDabcHttp.so"/>
 			<lib value="libDabcMbs.so" />
 			<lib value="libDabcPexor.so" />
 			<lib value="libDabcPoland.so" />
+      		<lib value="libDabcGosip.so"/>
 			<!--  lib value="libpexor.so" /-->
 			<logfile value="Poland.log" />
 			<!-- <runtime value="20"/> -->
@@ -51,7 +52,7 @@
 			<PexorMbsProcid   value="1"/>			
 			<PexorSyncReadout value="true" />
 			<PexorUseTrigger value="true" />
-			<PexorAutoReadout value="true"/>
+			<PexorAutoReadout value="false"/>
 			<PexorTriggerTimeout value="10"/>
 			<TrixorConversionTime value="300" />
 			<TrixorFastClearTime value="10" />
@@ -77,6 +78,15 @@
 				
 
 		</Module>
+		
+		 <Module name="gosip_player" class="gosip::Player">
+	     </Module>
+
+		 <Module name="pexor_player" class="pexorplugin::Player">
+	     <HtmlPath value="/daq/usr/adamczew/workspace/drivers/pexor/user/DabcV2/plugins/pexor/htm/"/>
+	     </Module>
+
+
 
 	</Context>
 </dabc>

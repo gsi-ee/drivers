@@ -69,7 +69,7 @@ poland::Device::Device (const std::string& name, dabc::Command cmd) :
   }
   fOffsetTrigType = Cfg (poland::xmlOffsetTriggerType, cmd).AsInt (14);
   CreateCmdDef(poland::commandReadOffsets);
-  PublishPars("$CONTEXT$/PolandDevice");
+  PublishPars("$CONTEXT$/PexDevice");
   fInitDone = true;
    // initial start acquisition here, not done from transport start anymore:
   StartAcquisition();
