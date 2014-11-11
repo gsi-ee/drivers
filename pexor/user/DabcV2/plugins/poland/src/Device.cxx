@@ -98,6 +98,7 @@ int poland::Device::User_Readout (dabc::Buffer& buf, uint8_t trigtype)
   {
     // to do: special treatment of this trigger.
     DOUT1("poland::Device::User_Readout finds offset trigger :%d !!", trigtype);
+    SetInfo(dabc::format("poland::Device::User_Readout finds offset trigger :%d !!", trigtype));
     if(!IsAutoReadout())
       fBoard->ResetTrigger ();
 
@@ -216,6 +217,7 @@ int poland::Device::SendOffsetTrigger()
 {
   DOUT1("poland::Device::SendOffsetTrigger - not implemented yet!\n");
  // todo: need method in PexorTwo board and driver to initiate a software trigger!
+  SetInfo("poland::Device::SendOffsetTrigger - not implemented yet!\n");
   return 0;
 }
 
@@ -388,6 +390,7 @@ bool poland::Device::InitQFWs ()
     }    // for slaves
   }    // for (int sfp = 0;
 
+  SetInfo("Initializing POLAND QFWs done.");
   return true;
 }
 

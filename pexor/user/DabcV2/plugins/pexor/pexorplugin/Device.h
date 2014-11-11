@@ -237,12 +237,24 @@ protected:
    * For round robin readout of single sfps. Not used for default triggered daq implementation.*/
   bool NextSFP ();
 
+
+  void SetDevInfoParName(const std::string& name)
+  {
+    fDevInfoName = name;
+  }
+
+
+  void SetInfo(const std::string& info, bool forceinfo=true);
+
 protected:
 
   pexor::PexorTwo* fBoard;
 
   /** number X of pexor device (/dev/pexor-X) */
   unsigned int fDeviceNum;
+
+  /** Name of info parameter for device messages*/
+  std::string fDevInfoName;
 
   /** if true we put mbs headers already into transport buffer.
    * will contain subevents for each connected sfp*/

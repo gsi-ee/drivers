@@ -174,11 +174,18 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
   fTrixConvTime = Cfg (pexorplugin::xmlTrixorConvTime, cmd).AsInt (0x200);
   fTrixFClearTime = Cfg (pexorplugin::xmlTrixorFastClearTime, cmd).AsInt (0x100);
 
+
   CreateCmdDef (pexorplugin::commandStartAcq);
   CreateCmdDef (pexorplugin::commandStopAcq);
   CreateCmdDef (pexorplugin::commandInitAcq);
 
   CreatePar (pexorplugin::parDeviceDRate).SetRatemeter (false, 3.).SetUnits ("kBytes");
+
+  // todo: set here global info name or use info of readout module
+  SetDevInfoParName("PexDevInfo");
+  CreatePar(fDevInfoName, "info").SetSynchron(true, 2., false).SetDebugLevel(2);
+  // for the moment, we create local info object
+
 
   PublishPars ("$CONTEXT$/PexDevice");
 
@@ -193,6 +200,7 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
 
 int pexorplugin::Device::InitDAQ ()
 {
+  SetInfo("InitDaq is executed...");
   InitTrixor ();
   return 0;
 }
@@ -282,6 +290,7 @@ bool pexorplugin::Device::StartAcquisition ()
   if (IsAcquisitionRunning ())
   {
     DOUT1("pexorplugin::Device - Aqcuisition is already running, do not start again.");
+    SetInfo("Aqcuisition is already running, do not start again.",true);
     return true;
   }
   fAqcuisitionRunning = true;
@@ -290,6 +299,7 @@ bool pexorplugin::Device::StartAcquisition ()
     fBoard->SetAutoTriggerReadout (IsAutoReadout (), true);
     rev = fBoard->StartAcquisition ();
   }
+  SetInfo("Acqusition is started.");
   return rev;
 }
 
@@ -301,6 +311,7 @@ bool pexorplugin::Device::StopAcquisition ()
   if (!IsAcquisitionRunning ())
   {
     DOUT1("pexorplugin::Device - Aqcuisition is already stopped, do not stop again.");
+    SetInfo("pexorplugin::Device - Aqcuisition is already stopped, do not stop again.");
     return true;
   }
   if (fTriggeredRead)
@@ -308,6 +319,8 @@ bool pexorplugin::Device::StopAcquisition ()
   else
     // for triggered read, do not change transport running state unless we recevied back trigger 15 from pexor
     fAqcuisitionRunning = false;
+
+  SetInfo("Acqusition is stopped.");
   return rev;
 }
 
@@ -912,6 +925,7 @@ int pexorplugin::Device::User_Readout (dabc::Buffer& buf, uint8_t trigtype)
     case PEXOR_TRIGTYPE_START:
       {
         DOUT1("pexorplugin::Device::User_Readout finds start trigger :%d !!", trigtype);
+        SetInfo(dabc::format("User_Readout finds start trigger :%d !!", trigtype));
         if (!IsAutoReadout ())
           fBoard->ResetTrigger ();
         fAqcuisitionRunning = true;
@@ -953,6 +967,7 @@ int pexorplugin::Device::User_Readout (dabc::Buffer& buf, uint8_t trigtype)
     case PEXOR_TRIGTYPE_STOP:
       {
         DOUT1("pexorplugin::Device::User_Readout finds stop trigger :%d !!", trigtype);
+        SetInfo(dabc::format("User_Readout finds stop trigger :%d !!", trigtype));
         if (!IsAutoReadout ())
           fBoard->ResetTrigger ();
         fAqcuisitionRunning = false;
@@ -1000,5 +1015,19 @@ int pexorplugin::Device::User_Readout (dabc::Buffer& buf, uint8_t trigtype)
       break;
   };    // switch
   return retsize;
+}
+
+
+void pexorplugin::Device::SetInfo(const std::string& info, bool forceinfo)
+{
+//   DOUT0("SET INFO: %s", info.c_str());
+
+   dabc::InfoParameter par;
+
+   if (!fDevInfoName.empty()) par = Par(fDevInfoName);
+
+   par.SetValue(info);
+   if (forceinfo)
+      par.FireModified();
 }
 

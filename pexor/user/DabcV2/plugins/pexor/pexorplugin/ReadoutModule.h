@@ -34,11 +34,16 @@ public:
   virtual void ProcessInputEvent (unsigned port);
   virtual void ProcessOutputEvent (unsigned port);
 
-protected:
+  virtual int ExecuteCommand(dabc::Command cmd);
 
+
+protected:
+  void SetInfo(const std::string& info, bool forceinfo);
   void DoPexorReadout ();
+
   std::string fEventRateName;
   std::string fDataRateName;
+  std::string fInfoName;
 
 };
 }

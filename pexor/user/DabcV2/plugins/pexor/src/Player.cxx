@@ -47,7 +47,7 @@ pexorplugin::Player::~Player()
 void pexorplugin::Player::ProcessTimerEvent(unsigned timer)
 {
    dabc::Hierarchy ui = fWorkerHierarchy.FindChild("ControlGUI");
-   DOUT0("Process timer '%s'", ui.GetField("_UserFilePath").AsStr().c_str());
+   DOUT2("Process timer '%s'", ui.GetField("_UserFilePath").AsStr().c_str());
 }
 
 

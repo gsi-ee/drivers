@@ -8,13 +8,25 @@
 	<link rel="icon" type="image/ico" href="img/dabc.ico">
 		<script src="/jsrootsys/scripts/JSRootCore.js" type="text/javascript"></script>
 <style type="text/css">
+
 #header_container {
 	outline: outset medium;
 	position: fixed;
 	top: 0;
-	height: 10%;
+	height: 5%;
 	left: 0;
 	width: 80%;
+	text-align: center;
+	outline-style: groove;
+}
+
+#status_container {
+	outline: outset medium;
+	position: fixed;
+	bottom: 1%;
+	height: 5%;
+	left: 0;
+	width: 100%;
 	text-align: center;
 	outline-style: groove;
 }
@@ -27,8 +39,55 @@
 	height: 42%;
 	overflow-y: auto;	
 	overflow-x: auto;
-}
+} 
 
+#rate_container {
+			outline: outset medium;
+			position: fixed;
+			top: 0;
+			height: 50%;
+			left: 81%;
+			width: 19%;
+			text-align: center;
+			outline-style: groove;
+		}
+
+#monitoring_container {
+			outline: outset medium;
+			position: fixed;
+			height: 15%;
+			left: 81%;
+			width: 19%;
+			text-align: center;
+			bottom: 7%;
+		}
+		
+#file_container {
+			outline: outset medium;
+			position: fixed;
+			top: 0%;
+			height: 50%;
+			left: 41%;
+			width: 39%;
+			text-align: center;
+			overflow-y: auto;	
+			outline-style: groove;
+		}	
+		
+#daq_container {
+			outline: outset medium;
+			position: fixed;
+			top: 0%;
+			height: 50%;
+			left: 0;
+			width: 40%;
+			text-align: center;
+			overflow-y: auto;	
+			outline-style: groove;
+		}			
+		
+		
+		
 .styleGreen {
 	background-color: #00FF00;
 }
@@ -37,6 +96,8 @@
 	background-color: #FF0000;
 }
 </style>
+
+
 <script type='text/javascript'>
  function loadDABC() {
           JSROOT.loadScript("/httpsys/scripts/raphael.2.1.0.min.js;"+
@@ -52,53 +113,143 @@
 
 
 
+<div id="status_container">
+<h3 id="status_message" title="Last Status">Status message</h3>
 
+</div>
 
-
-	<div id="header_container">
-		<table style="width: 100%; height: 100%">
+<div id="daq_container">
+		<table style="width: 100%; height: 20%">
 			<tbody>
 				<tr>
 					<td style="height: 30px">
 						<button id="buttonStartAcquisition"
-							title="Start Acquisition via soft trigger 14">Start
-							acquisition</button>
+							title="Start Acquisition via soft trigger 14">Start acquisition</button>
 					</td>
 					<td style="height: 30px">
 						<button id="buttonStopAcquisition"
-							title="Stop  Acquisition via soft trigger 15">Stop
-							acquisition</button>
+							title="Stop  Acquisition via soft trigger 15">Stop acquisition</button>
 					</td>
 					<td style="height: 30px">
 						<button id="buttonInitAcquisition"
 							title="Re-Initialize  Acquisition">Init acquisition</button>
 					</td>
-
 				</tr>
 			</tbody>
 		</table>
+			<td>
+				<div id="DeviceInfo"></div>
+			</td>
+
 	</div>
 
-	<div id="content_left">
+
+	<div id="file_container">
+		<table style="width: 100%; height: 20%">
+			<tbody>
+				<tr>
+					
+					<td style="height: 30px">
+						<button id="buttonStartFile"
+							title="Open lmd file for writing">Start File...</button>
+					</td>
+					<td style="height: 30px">
+						<button id="buttonStopFile"
+							title="Close output file">Stop File</button>
+					</td>
+				</tr>
+			
+			</tbody>
+		</table>
+		<td >
+			<div id="ReadoutInfo"></div>
+			</td>			
+	</div>
+
+<!-- 	<div id="header_container"> -->
+<!-- 		<table style="width: 100%; height: 100%"> -->
+<!-- 			<tbody> -->
+<!-- 				<tr> -->
+<!-- 					<td style="height: 30px"> -->
+<!-- 						<button id="buttonStartAcquisition" -->
+<!-- 							title="Start Acquisition via soft trigger 14">Start -->
+<!-- 							acquisition</button> -->
+<!-- 					</td> -->
+<!-- 					<td style="height: 30px"> -->
+<!-- 						<button id="buttonStopAcquisition" -->
+<!-- 							title="Stop  Acquisition via soft trigger 15">Stop -->
+<!-- 							acquisition</button> -->
+<!-- 					</td> -->
+<!-- 					<td style="height: 30px"> -->
+<!-- 						<button id="buttonInitAcquisition" -->
+<!-- 							title="Re-Initialize  Acquisition">Init acquisition</button> -->
+<!-- 					</td> -->
+					
+<!-- 					<td style="height: 30px"> -->
+<!-- 						<button id="buttonStartFile" -->
+<!-- 							title="Open lmd file for writing">Start File...</button> -->
+<!-- 					</td> -->
+<!-- 					<td style="height: 30px"> -->
+<!-- 						<button id="buttonStopFile" -->
+<!-- 							title="Close output file">Stop File</button> -->
+<!-- 					</td> -->
+					
+					
+
+<!-- 				</tr> -->
+<!-- 			</tbody> -->
+<!-- 		</table> -->
+<!-- 	</div> -->
+
+	<div id="rate_container">
 		<table style="width: 100%; height: 100%">
 			<tbody>
 				<tr>
-					<td>
+					<td style="height: 40%">
 						<div id="EvRateDisplay"></div>
-					</td>
-					<td>
-						<div id="DatRateDisplay"></div>
 					</td>
 				</tr>
 				<tr>
-					<td>
-						<div id="EvTrendDisplay"></div>
-					</td>
-					<td>
-						<div id="DatTrendDisplay"></div>
+					<td style="height: 40%">
+						<div id="DatRateDisplay"></div>
 					</td>
 				</tr>
 			</tbody>
 		</table>
 	</div>
+	
+<!-- 	<div id="content_left"> -->
+<!-- 		<h3 id="status_message" title="Last Status">Status message</h3> -->
+<!-- 			<hr> -->
+<!-- 			<table style="width: 100%; height: 100%"> -->
+<!-- 			<tbody> -->
+<!-- 				<tr> -->
+<!-- 					<td style="width: 50%"> -->
+<!-- 						<div id="DeviceInfo"></div> -->
+<!-- 					</td> -->
+<!-- 					<td style="width: 50%"> -->
+<!-- 						<div id="ReadoutInfo"></div> -->
+<!-- 					</td> -->
+<!-- 				</tr> -->
+<!-- 			</tbody> -->
+<!-- 		</table> -->
+<!-- 		</div> -->
+		
+		
+	<div id="monitoring_container">
+		<table style="width: 100%; height: 100%">
+			<tbody>
+				<td><input id="Monitoring" type="checkbox"><label
+						for="Monitoring" title="Activate frequent refresh"> Monitoring</label></td>
+				<tr>
+
+					<td><input id="Refreshtime" type="text" value="1000"><label
+							for="Refreshtime" title="Specify update interval" > Interval</label></td>
+
+					<tbody>
+		</table>
+	</div>	
+	
+	
+	
 </body>
