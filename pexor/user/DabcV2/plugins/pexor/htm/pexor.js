@@ -45,18 +45,17 @@ PexorState.prototype.DabcParameter = function(par, callback) {
 	xmlHttp.onreadystatechange = function() {
 
 		if (xmlHttp.readyState == 4) {
-			console.log("DabcParameter request completed.");
+			//console.log("DabcParameter request completed.");
 			var reply = JSON.parse(xmlHttp.responseText);
 			 if (typeof reply != 'object') {
 		         console.log("non-object in json response from server");
 		         return;
 		      }
 			 
-			//var value= (reply['value']=="true");
-			 var val= false;
-			 val=(reply['value']==="true") ? true : false;
-			 console.log("response=%s, Reply= %s, value=%s", xmlHttp.responseText, reply, val);
-			 console.log("name=%s, value= %s state=%s", reply['_name'], reply['value'], val);
+//			 var val= false;
+//			 val=(reply['value']==="true") ? true : false;
+			 //console.log("response=%s, Reply= %s, value=%s", xmlHttp.responseText, reply, val);
+			 //console.log("name=%s, value= %s state=%s", reply['_name'], reply['value'], val);
 			callback("true",reply['value']); 
 		}
 	}
@@ -66,7 +65,7 @@ PexorState.prototype.DabcParameter = function(par, callback) {
 
 
 PexorState.prototype.UpdateRunstate = function(ok, state){
-	console.log("UpdateRunstate with ok=%s, value=%s", ok, state);
+	//console.log("UpdateRunstate with ok=%s, value=%s", ok, state);
 	if (ok=="true") {
 		this.fRunning = (state==true);
 	} else {
@@ -84,15 +83,16 @@ PexorState.prototype.UpdateFilestate = function(ok, state){
 		} else {
 		console.log("UpdateFilestate failed.");
 	}
-	console.log("UpdateFilestate with ok=%s, value=%s, fileopen=%s, typeofFileopen=%s", ok, state, this.fFileOpen, typeof(this.fFileOpen));
+	//console.log("UpdateFilestate with ok=%s, value=%s, fileopen=%s, typeofFileopen=%s", ok, state, this.fFileOpen, typeof(this.fFileOpen));
 }
 
-PexorState.prototype.Update= function(){
+PexorState.prototype.Update= function(callback){
 	var pthis = this;
 	//this.DabcParameter("PexDevice/PexorAcquisitionRunning", pthis.UpdateRunstate);
 	//this.DabcParameter("PexReadout/PexorFileOn", pthis.UpdateFilestate);	
 	this.DabcParameter("PexDevice/PexorAcquisitionRunning", function(res,val) { pthis.UpdateRunstate(res,val); });
 	this.DabcParameter("PexReadout/PexorFileOn",function(res,val) { pthis.UpdateFilestate(res,val); })
+	callback();
 }
 
 
@@ -161,11 +161,8 @@ PexorDisplay.prototype.RefreshMonitor = function(){
 	this.fLogDevice.RegularCheck();
 	this.fLogReadout.force=true;
 	this.fLogReadout.RegularCheck();
-	this.fPexorState.Update();
-	
-	this.RefreshView();
-	
-	
+	pthis=this;
+	this.fPexorState.Update(function(){pthis.RefreshView()});
 }
 
 
@@ -200,8 +197,9 @@ PexorDisplay.prototype.RefreshView = function(){
 		} else {
 			$("#daq_container").addClass("styleRed").removeClass("styleGreen");
 		}
-	 console.log("RefreshView typeof fileopen=%s, value=%s globalvalue=%s", typeof(this.fPexorState.fFileOpen), 
-			 this.fPexorState.fFileOpen, Pexor.fFileOpen);
+	 //console.log("RefreshView typeof fileopen=%s, value=%s globalvalue=%s", typeof(this.fPexorState.fFileOpen), 
+	//		 this.fPexorState.fFileOpen, Pexor.fFileOpen);
+	 
 	 if (this.fPexorState.fFileOpen) {
 		 	console.log("RefreshView finds open file");
 			$("#file_container").addClass("styleGreen").removeClass("styleRed");
