@@ -28,9 +28,11 @@ pexorplugin::ReadoutModule::ReadoutModule (const std::string name, dabc::Command
   fEventRateName = ratesprefix + "Events";
   fDataRateName = ratesprefix + "Data";
   fInfoName = ratesprefix + "Info";
+  fFileStateName= ratesprefix + "FileOn";
   CreatePar (fEventRateName).SetRatemeter (false, 3.).SetUnits ("Ev");
   CreatePar (fDataRateName).SetRatemeter (false, 3.).SetUnits ("Mb");
   CreatePar(fInfoName, "info").SetSynchron(true, 2., false).SetDebugLevel(2);
+  CreatePar(fFileStateName).Dflt(false);
 
   Par (fDataRateName).SetDebugLevel (1);
   Par (fEventRateName).SetDebugLevel (1);
@@ -130,11 +132,13 @@ int pexorplugin::ReadoutModule::ExecuteCommand(dabc::Command cmd)
     bool res = dabc::mgr.CreateTransport(OutputName(1, true), url);
     DOUT0("Started file %s res = %d", url.c_str(), res);
     SetInfo(dabc::format("Execute StartFile for %s, result=%d",url.c_str(), res), true);
+    ChangeFileState(true);
     return cmd_bool(res);
      } else
      if (cmd.IsName(mbs::comStopFile)) {
         FindPort(OutputName(1)).Disconnect();
         SetInfo("Stopped file", true);
+        ChangeFileState(false);
         return dabc::cmd_true;
      } else
      if (cmd.IsName(mbs::comStartServer)) {
@@ -179,3 +183,25 @@ void pexorplugin::ReadoutModule::SetInfo(const std::string& info, bool forceinfo
       par.FireModified();
 }
 
+
+void pexorplugin::ReadoutModule::ChangeFileState(bool on)
+{
+  dabc::Parameter par=Par (fFileStateName);
+  par.SetValue (on);
+  dabc::Hierarchy chld = fWorkerHierarchy.FindChild(fFileStateName.c_str());
+  if (!chld.null())
+  {
+       par.ScanParamFields(&chld()->Fields());
+       fWorkerHierarchy.MarkChangedItems();
+       DOUT0("ChangeFileState to %d", on);
+  }
+  else
+  {
+      DOUT0("ChangeFileState Could not find parameter %s", fFileStateName.c_str());
+  }
+
+
+
+
+
+}

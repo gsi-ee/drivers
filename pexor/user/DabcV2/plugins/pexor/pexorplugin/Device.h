@@ -25,6 +25,9 @@
 /** number of connected sfps*/
 #define PEXORPLUGIN_NUMSFP 4
 
+/* interval in seconds to refresh exported control variables*/
+#define PEXORPLUGIN_REFRESHTIMEOUT 1.0
+
 namespace pexorplugin
 {
 
@@ -67,6 +70,7 @@ extern const char* commandStopAcq;
 extern const char* commandInitAcq;
 
 extern const char* parDeviceDRate;
+extern const char* parDaqRunningState;
 
 class Device: public dabc::Device
 {
@@ -75,6 +79,12 @@ public:
 
   Device (const std::string& name, dabc::Command cmd);
   virtual ~Device ();
+
+  /** need to start timeout here*/
+  void OnThreadAssigned();
+
+  /** define timout timer to refresh monitoring stat variables*/
+  virtual double ProcessTimeout(double last_diff);
 
   /** here we may insert some actions to the device cleanup methods*/
   virtual bool DestroyByOwnThread();

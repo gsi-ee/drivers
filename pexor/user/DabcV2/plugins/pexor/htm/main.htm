@@ -7,18 +7,9 @@
 	<title>PEXOR web GUI</title>
 	<link rel="icon" type="image/ico" href="img/dabc.ico">
 		<script src="/jsrootsys/scripts/JSRootCore.js" type="text/javascript"></script>
-<style type="text/css">
+		<style type="text/css">
 
-#header_container {
-	outline: outset medium;
-	position: fixed;
-	top: 0;
-	height: 5%;
-	left: 0;
-	width: 80%;
-	text-align: center;
-	outline-style: groove;
-}
+
 
 #status_container {
 	outline: outset medium;
@@ -27,67 +18,81 @@
 	height: 5%;
 	left: 0;
 	width: 100%;
+	text-align: left;
+	outline-style: groove;
+}
+
+
+#rate_container {
+	outline: outset medium;
+	position: fixed;
+	top: 0;
+	height: 50%;
+	left: 81%;
+	width: 19%;
 	text-align: center;
 	outline-style: groove;
 }
 
-#content_left {
+#monitoring_container {
+	outline: outset medium;
+	position: fixed;
+	height: 15%;
+	left: 81%;
+	width: 19%;
+	text-align: center;
+	bottom: 7%;
+}
+
+#file_container {
+	outline: outset medium;
+	position: fixed;
+	top: 0%;
+	height: 10%;
+	left: 41%;
+	width: 39%;
+	text-align: center;
+	overflow-y: auto;
+	outline-style: groove;
+}
+
+#file_log {
+	outline: outset medium;
 	position: fixed;
 	top: 11%;
-	left: 0;
-	width: 80%;
-	height: 42%;
-	overflow-y: auto;	
-	overflow-x: auto;
-} 
+	height: 50%;
+	left: 41%;
+	width: 39%;
+	text-align: left;
+	overflow-y: auto;
+	outline-style: groove;
+}
 
-#rate_container {
-			outline: outset medium;
-			position: fixed;
-			top: 0;
-			height: 50%;
-			left: 81%;
-			width: 19%;
-			text-align: center;
-			outline-style: groove;
-		}
-
-#monitoring_container {
-			outline: outset medium;
-			position: fixed;
-			height: 15%;
-			left: 81%;
-			width: 19%;
-			text-align: center;
-			bottom: 7%;
-		}
-		
-#file_container {
-			outline: outset medium;
-			position: fixed;
-			top: 0%;
-			height: 50%;
-			left: 41%;
-			width: 39%;
-			text-align: center;
-			overflow-y: auto;	
-			outline-style: groove;
-		}	
-		
 #daq_container {
-			outline: outset medium;
-			position: fixed;
-			top: 0%;
-			height: 50%;
-			left: 0;
-			width: 40%;
-			text-align: center;
-			overflow-y: auto;	
-			outline-style: groove;
-		}			
-		
-		
-		
+	outline: outset medium;
+	position: fixed;
+	top: 0%;
+	height: 10%;
+	left: 0;
+	width: 40%;
+	text-align: center;
+	overflow-y: auto;
+	outline-style: groove;
+}
+
+#daq_log {
+	outline: outset medium;
+	position: fixed;
+	top: 11%;
+	height: 50%;
+	left: 0;
+	width: 40%;
+	text-align: left;
+	overflow-y: auto;
+	outline-style: groove;
+}
+
+
 .styleGreen {
 	background-color: #00FF00;
 }
@@ -98,7 +103,7 @@
 </style>
 
 
-<script type='text/javascript'>
+		<script type='text/javascript'>
  function loadDABC() {
           JSROOT.loadScript("/httpsys/scripts/raphael.2.1.0.min.js;"+
                             "/httpsys/scripts/justgage.1.0.1.min.js;"+
@@ -113,22 +118,24 @@
 
 
 
-<div id="status_container">
-<h3 id="status_message" title="Last Status">Status message</h3>
+	<div id="status_container">
+		<h3 id="status_message" title="Last Status">Status message</h3>
 
-</div>
+	</div>
 
-<div id="daq_container">
+	<div id="daq_container">
 		<table style="width: 100%; height: 20%">
 			<tbody>
 				<tr>
 					<td style="height: 30px">
 						<button id="buttonStartAcquisition"
-							title="Start Acquisition via soft trigger 14">Start acquisition</button>
+							title="Start Acquisition via soft trigger 14">Start
+							acquisition</button>
 					</td>
 					<td style="height: 30px">
 						<button id="buttonStopAcquisition"
-							title="Stop  Acquisition via soft trigger 15">Stop acquisition</button>
+							title="Stop  Acquisition via soft trigger 15">Stop
+							acquisition</button>
 					</td>
 					<td style="height: 30px">
 						<button id="buttonInitAcquisition"
@@ -137,69 +144,51 @@
 				</tr>
 			</tbody>
 		</table>
-			<td>
-				<div id="DeviceInfo"></div>
-			</td>
-
 	</div>
+	
+<div id="daq_log">		
+		<td>
+			<div id="DeviceInfo"></div>
+		</td>
+	</div>
+
 
 
 	<div id="file_container">
 		<table style="width: 100%; height: 20%">
 			<tbody>
 				<tr>
-					
-					<td style="height: 30px">
-						<button id="buttonStartFile"
-							title="Open lmd file for writing">Start File...</button>
-					</td>
-					<td style="height: 30px">
-						<button id="buttonStopFile"
-							title="Close output file">Stop File</button>
-					</td>
-				</tr>
-			
-			</tbody>
-		</table>
-		<td >
-			<div id="ReadoutInfo"></div>
-			</td>			
+
+					<td ><input id="buttonStartFile"
+						type="checkbox"><label for="buttonStartFile" style="height: 2em"
+							title="Open lmd file for writing"> Start File?</label></td>
+					<td> <table style="width: 100%; height: 100%">
+						<tbody>
+							<tr>
+								<td><input id="Filename" type="text" value="test.lmd"><label
+										for="Filename" title="Output file name (*.lmd)">
+											Filename</label></td>
+
+
+								<td><input id="Filesize" type="text" value="1000"><label
+										for="Filesize"
+										title="Maximum file size (will open next file after reaching this size)">
+											Max size</label></td>
+							</tr>
+						</tbody>
+						</table></td>
+						</tr>
+						</tbody>
+					</table>									
 	</div>
 
-<!-- 	<div id="header_container"> -->
-<!-- 		<table style="width: 100%; height: 100%"> -->
-<!-- 			<tbody> -->
-<!-- 				<tr> -->
-<!-- 					<td style="height: 30px"> -->
-<!-- 						<button id="buttonStartAcquisition" -->
-<!-- 							title="Start Acquisition via soft trigger 14">Start -->
-<!-- 							acquisition</button> -->
-<!-- 					</td> -->
-<!-- 					<td style="height: 30px"> -->
-<!-- 						<button id="buttonStopAcquisition" -->
-<!-- 							title="Stop  Acquisition via soft trigger 15">Stop -->
-<!-- 							acquisition</button> -->
-<!-- 					</td> -->
-<!-- 					<td style="height: 30px"> -->
-<!-- 						<button id="buttonInitAcquisition" -->
-<!-- 							title="Re-Initialize  Acquisition">Init acquisition</button> -->
-<!-- 					</td> -->
-					
-<!-- 					<td style="height: 30px"> -->
-<!-- 						<button id="buttonStartFile" -->
-<!-- 							title="Open lmd file for writing">Start File...</button> -->
-<!-- 					</td> -->
-<!-- 					<td style="height: 30px"> -->
-<!-- 						<button id="buttonStopFile" -->
-<!-- 							title="Close output file">Stop File</button> -->
-<!-- 					</td> -->
-					
-					
+<div id="file_log">
+				<td>
+					<div id="ReadoutInfo"></div>
+				</td>
+	</div>
 
-<!-- 				</tr> -->
-<!-- 			</tbody> -->
-<!-- 		</table> -->
-<!-- 	</div> -->
+	
 
 	<div id="rate_container">
 		<table style="width: 100%; height: 100%">
@@ -217,39 +206,30 @@
 			</tbody>
 		</table>
 	</div>
-	
-<!-- 	<div id="content_left"> -->
-<!-- 		<h3 id="status_message" title="Last Status">Status message</h3> -->
-<!-- 			<hr> -->
-<!-- 			<table style="width: 100%; height: 100%"> -->
-<!-- 			<tbody> -->
-<!-- 				<tr> -->
-<!-- 					<td style="width: 50%"> -->
-<!-- 						<div id="DeviceInfo"></div> -->
-<!-- 					</td> -->
-<!-- 					<td style="width: 50%"> -->
-<!-- 						<div id="ReadoutInfo"></div> -->
-<!-- 					</td> -->
-<!-- 				</tr> -->
-<!-- 			</tbody> -->
-<!-- 		</table> -->
-<!-- 		</div> -->
-		
-		
+
+
+
 	<div id="monitoring_container">
 		<table style="width: 100%; height: 100%">
 			<tbody>
+					<td style="height: 30px">
+						<button id="buttonRefresh"
+							title="Refresh view from server">Refresh View</button>
+					</td>
+				<tr>			
 				<td><input id="Monitoring" type="checkbox"><label
-						for="Monitoring" title="Activate frequent refresh"> Monitoring</label></td>
+						for="Monitoring" style="height: 2em" title="Activate frequent refresh">
+							Monitoring</label></td>
 				<tr>
 
 					<td><input id="Refreshtime" type="text" value="1000"><label
-							for="Refreshtime" title="Specify update interval" > Interval</label></td>
+						for="Refreshtime" title="Specify update interval">
+							Interval</label></td>
 
 					<tbody>
 		</table>
-	</div>	
-	
-	
-	
+	</div>
+
+
+
 </body>

@@ -85,6 +85,8 @@ const char* pexorplugin::commandInitAcq = "InitAcquisition";
 
 const char* pexorplugin::parDeviceDRate = "DeviceReceiveRate";
 
+const char* pexorplugin::parDaqRunningState = "PexorAcquisitionRunning";
+
 unsigned int pexorplugin::Device::fgThreadnum = 0;
 
 pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
@@ -186,8 +188,11 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
   CreatePar(fDevInfoName, "info").SetSynchron(true, 2., false).SetDebugLevel(2);
   // for the moment, we create local info object
 
+  CreatePar(pexorplugin::parDaqRunningState).Dflt(false);
+
 
   PublishPars ("$CONTEXT$/PexDevice");
+
 
   InitTrixor ();
 
@@ -197,6 +202,20 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
 
   //fInitDone=true; // do this in subclass after constructor has finnished.
 }
+
+void pexorplugin::Device::OnThreadAssigned()
+{
+   dabc::Device::OnThreadAssigned();
+
+   // we can not activate timeout in constructor,
+   // need to activate it here
+   bool rev=ActivateTimeout(PEXORPLUGIN_REFRESHTIMEOUT); // enable timeout to refresh exported variables
+   DOUT0("Activated timeout, result=%d\n", rev);
+
+}
+
+
+
 
 int pexorplugin::Device::InitDAQ ()
 {
@@ -1014,6 +1033,7 @@ int pexorplugin::Device::User_Readout (dabc::Buffer& buf, uint8_t trigtype)
       }
       break;
   };    // switch
+  Par(pexorplugin::parDaqRunningState).SetValue(fAqcuisitionRunning);
   return retsize;
 }
 
@@ -1031,3 +1051,11 @@ void pexorplugin::Device::SetInfo(const std::string& info, bool forceinfo)
       par.FireModified();
 }
 
+double pexorplugin::Device::ProcessTimeout(double last_diff)
+{
+  //Par(pexorplugin::parDaqRunningState).SetValue(fAqcuisitionRunning);
+  Par(pexorplugin::parDaqRunningState).SubmitSetValue(fAqcuisitionRunning);
+  DOUT0("pexorplugin::Device::ProcessTimeout with dt= %f s - acuisition state=%d, parameter=%d!!", last_diff, fAqcuisitionRunning, Par(pexorplugin::parDaqRunningState).Value().AsBool());
+  fWorkerHierarchy.MarkChangedItems();
+  return PEXORPLUGIN_REFRESHTIMEOUT;
+}

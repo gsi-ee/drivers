@@ -41,9 +41,13 @@ protected:
   void SetInfo(const std::string& info, bool forceinfo);
   void DoPexorReadout ();
 
+  /** change file on/off state in application*/
+  void ChangeFileState(bool on);
+
   std::string fEventRateName;
   std::string fDataRateName;
   std::string fInfoName;
+  std::string fFileStateName;
 
 };
 }
