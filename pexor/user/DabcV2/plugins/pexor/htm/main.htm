@@ -10,6 +10,104 @@
 		<style type="text/css">
 
 
+#dabc_container {
+	outline: outset medium;
+	position: fixed;
+	top: 0%;
+	height: 10%;
+	left: 0;
+	width: 35%;
+	text-align: center;
+	outline-style: groove;
+}
+
+#daq_container {
+	outline: outset medium;
+	position: fixed;
+	top: 11%;
+	height: 10%;
+	left: 0;
+	width: 35%;
+	text-align: center;
+	overflow-y: auto;
+	outline-style: groove;
+}
+
+#daq_log {
+	outline: outset medium;
+	position: fixed;
+	top: 22%;
+	height: 71%;
+	left: 0;
+	width: 35%;
+	text-align: left;
+	overflow-y: auto;
+	outline-style: groove;
+}
+
+#monitoring_container {
+	outline: outset medium;
+	position: fixed;
+	top: 0%;
+	height: 10%;
+	left: 36%;
+	width: 35%;
+	text-align: center;
+	bottom: 7%;
+	outline-style: groove;
+}
+
+#file_container {
+	outline: outset medium;
+	position: fixed;
+	top: 11%;
+	height: 10%;
+	left: 36%;
+	width: 35%;
+	text-align: center;
+	overflow-y: auto;
+	outline-style: groove;
+}
+
+#file_log {
+	outline: outset medium;
+	position: fixed;
+	top: 22%;
+	height: 71%;
+	left: 36%;
+	width: 35%;
+	text-align: left;
+	overflow-y: auto;
+	outline-style: groove;
+}
+
+
+
+
+
+
+#ratemode_container {
+	outline: outset medium;
+	position: fixed;
+	top: 0;
+	height: 10%;
+	left: 72%;
+	width: 28%;
+	text-align: center;
+	outline-style: groove;
+}
+
+#rate_container {
+	outline: outset medium;
+	position: fixed;
+	top: 11%;
+	height: 82%;
+	left: 72%;
+	width: 28%;
+	text-align: center;
+	overflow-y: auto;
+	outline-style: groove;
+}
 
 #status_container {
 	outline: outset medium;
@@ -23,88 +121,6 @@
 }
 
 
-#rate_container {
-	outline: outset medium;
-	position: fixed;
-	top: 0;
-	height: 50%;
-	left: 72%;
-	width: 28%;
-	text-align: center;
-	outline-style: groove;
-}
-
-#monitoring_container {
-	outline: outset medium;
-	position: fixed;
-	height: 10%;
-	left: 0;
-	width: 35%;
-	text-align: center;
-	bottom: 7%;
-	outline-style: groove;
-}
-
-#ratemode_container {
-	outline: outset medium;
-	position: fixed;
-	height: 10%;
-	left: 72%;
-	width: 28%;
-	text-align: center;
-	bottom: 7%;
-	outline-style: groove;
-}
-
-
-
-#file_container {
-	outline: outset medium;
-	position: fixed;
-	top: 0%;
-	height: 10%;
-	left: 36%;
-	width: 35%;
-	text-align: center;
-	overflow-y: auto;
-	outline-style: groove;
-}
-
-#file_log {
-	outline: outset medium;
-	position: fixed;
-	top: 11%;
-	height: 39%;
-	left: 36%;
-	width: 35%;
-	text-align: left;
-	overflow-y: auto;
-	outline-style: groove;
-}
-
-#daq_container {
-	outline: outset medium;
-	position: fixed;
-	top: 0%;
-	height: 10%;
-	left: 0;
-	width: 35%;
-	text-align: center;
-	overflow-y: auto;
-	outline-style: groove;
-}
-
-#daq_log {
-	outline: outset medium;
-	position: fixed;
-	top: 11%;
-	height: 39%;
-	left: 0;
-	width: 35%;
-	text-align: left;
-	overflow-y: auto;
-	outline-style: groove;
-}
 
 
 .styleGreen {
@@ -114,6 +130,11 @@
 .styleRed {
 	background-color: #FF0000;
 }
+.styleYellow {
+	background-color: #FFFF00;
+}
+
+
 </style>
 
 
@@ -136,9 +157,40 @@
 		<h3 id="status_message" title="Last Status">Status message</h3>
 
 	</div>
+	
+	
+	<div id="dabc_container">
+		<table style="width: 100%; height: 50%">
+		 <caption><h3>DABC Controls</h3></caption>
+			<tbody>
+				<tr>
+					<td style="height: 30px">
+						<button id="buttonConfigureDabc"
+							title="Reconfigure DABC application">Configure Dabc</button>
+					</td>
+					<td style="height: 30px">
+						<button id="buttonStartDabc"
+							title="Re-Start DABC application">Start Dabc </button>
+					</td>
+					<td style="height: 30px">
+						<button id="buttonStopDabc"
+							title="Stop DABC application">Stop Dabc</button>
+					</td>
+					<td style="height: 30px">
+						<button id="buttonHaltDabc"
+							title="Shutdown DABC application">Halt Dabc</button>
+					</td>
+					
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	
+	
 
 	<div id="daq_container">
-		<table style="width: 100%; height: 20%">
+		<table style="width: 100%; height: 50%">
+		 <caption><h3>PEXOR Controls</h3></caption>
 			<tbody>
 				<tr>
 					<td style="height: 30px">
@@ -169,7 +221,8 @@
 
 
 	<div id="file_container">
-		<table style="width: 100%; height: 20%">
+		<table style="width: 100%; height: 50%">
+		 <caption><h3>Data taking</h3></caption>
 			<tbody>
 				<tr>
 
@@ -209,12 +262,12 @@
 			<tbody>
 				<tr>
 					<td style="height: 40%">
-						<div id="EvRateDisplay"></div>
+						<div id="EvRateDisplay" title="Eventrate (Ev/s)"></div>
 					</td>
 				</tr>
 				<tr>
 					<td style="height: 40%">
-						<div id="DatRateDisplay"></div>
+						<div id="DatRateDisplay" title="Data Rate (MB/s)"></div>
 					</td>
 				</tr>
 			</tbody>
@@ -222,8 +275,9 @@
 	</div>
 
 
-	<div id="ratemode_container">
-		<table style="width: 100%; height: 100%">
+	<div id="ratemode_container" class="styleYellow">
+		<table style="width: 100%; height: 50%" >
+		 <caption><h3>Rates display</h3></caption>
 			<tbody>
 				<tr>
 					<td><input id="Trending" type="checkbox"><label
@@ -241,7 +295,8 @@
 
 
 	<div id="monitoring_container">
-		<table style="width: 100%; height: 100%">
+		<table style="width: 100%; height: 50%">
+		 <caption><h3>Display refresh</h3></caption>
 			<tbody>
 				<tr>
 					<td style="height: 30px">
@@ -252,9 +307,9 @@
 							for="Monitoring" style="height: 2em"
 							title="Activate frequent refresh"> Monitoring</label></td>
 
-					<td><input id="Refreshtime" type="text" value="1000"><label
+					<td><input id="Refreshtime" type="number" value="1"><label
 						for="Refreshtime" title="Specify update interval">
-							Interval</label></td>
+							Refresh Interval [s]</label></td>
 				</tr>
 			<tbody>
 		</table>

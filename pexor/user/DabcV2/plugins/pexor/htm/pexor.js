@@ -6,6 +6,7 @@ var MyDisplay;
 
 ////////////// State class reflecting remote state and commnication:
 function PexorState() {
+	this.fDabcState="Running";
 	this.fRunning = false;
 	this.fFileOpen = false;
 	this.fFileName = "run0.lmd";
@@ -76,10 +77,7 @@ PexorState.prototype.UpdateRunstate = function(ok, state){
 PexorState.prototype.UpdateFilestate = function(ok, state){
 	
 	if (ok=="true") {
-		if(state==true)
-		this.fFileOpen =true;
-		else
-			this.fFileOpen =false;
+		this.fFileOpen = (state==true);
 		} else {
 		console.log("UpdateFilestate failed.");
 	}
@@ -167,14 +165,20 @@ PexorDisplay.prototype.RefreshMonitor = function() {
 
 	if (this.fTrending) {
 		this.fTrendEv.force = true;
-		this.fTrendEv.RegularCheck();		
-		this.fTrendDa.force = true;
+		
+		this.fTrendEv.RegularCheck();
+		this.fTrendEv.CheckResize(true);			
+		this.fTrendDa.force = true;		
 		this.fTrendDa.RegularCheck();
+		this.fTrendDa.CheckResize(true);	
+		
 	} else {
 		this.fGaugeEv.force = true;
 		this.fGaugeEv.RegularCheck();
+		this.fGaugeEv.CheckResize(true);	
 		this.fGaugeDa.force = true;
 		this.fGaugeDa.RegularCheck();
+		this.fGaugeDa.CheckResize(true);
 
 	}
 
@@ -269,6 +273,14 @@ PexorDisplay.prototype.RefreshView = function(){
 		}
 	 $("#Trendlength").prop('disabled', this.fTrending);
 	 
+	 if (this.fPexorState.fDabcState=="Running") {
+			$("#dabc_container").addClass("styleGreen").removeClass("styleRed");
+			 
+		} else {
+			$("#dabc_container").addClass("styleRed").removeClass("styleGreen");
+		}
+	 
+	 
 };
 
 
@@ -288,6 +300,70 @@ $(function() {
 	MyDisplay=new PexorDisplay(Pexor);
 	MyDisplay.BuildView();
 	MyDisplay.ChangeMonitoring(false);
+	
+	//////// first DABC generic commands
+	// later this should be part of the framework...
+	$("#buttonStartDabc").button().click(
+			function() {
+				var requestmsg = "Really Re-Start DABC Application?";
+				var response = confirm(requestmsg);
+				if (!response)
+					return;
+
+				Pexor.DabcCommand("App/DoStart", "", function(
+						result) {
+					MyDisplay.SetStatusMessage(result ? "Start DABC command sent."
+							: "Start DABC FAILED.");
+					MyDisplay.RefreshMonitor();
+				});
+			});
+	
+	$("#buttonStopDabc").button().click(
+			function() {
+				var requestmsg = "Really Stop DABC Application?";
+				var response = confirm(requestmsg);
+				if (!response)
+					return;
+
+				Pexor.DabcCommand("App/DoStop", "", function(
+						result) {
+					MyDisplay.SetStatusMessage(result ? "Stop DABC command sent."
+							: "Stop DABC  FAILED.");
+					MyDisplay.RefreshMonitor();
+				});
+			});
+	
+	$("#buttonConfigureDabc").button().click(
+			function() {
+				var requestmsg = "Really Re-Configure DABC Application?";
+				var response = confirm(requestmsg);
+				if (!response)
+					return;
+
+				Pexor.DabcCommand("App/DoConfigure", "", function(
+						result) {
+					MyDisplay.SetStatusMessage(result ? "Configure DABC command sent."
+							: "Configure DABC FAILED.");
+					MyDisplay.RefreshMonitor();
+				});
+			});
+	$("#buttonHaltDabc").button().click(
+			function() {
+				var requestmsg = "Really Halt (shutdown) DABC Application?";
+				var response = confirm(requestmsg);
+				if (!response)
+					return;
+
+				Pexor.DabcCommand("App/DoHalt", "", function(
+						result) {
+					MyDisplay.SetStatusMessage(result ? "Halt DABC command sent."
+							: "Halt DABC FAILED.");
+					MyDisplay.RefreshMonitor();
+				});
+			});
+	
+	
+///////////////////////////// pexor specific:	
 	
 	$("#buttonStartAcquisition").button().click(
 			function() {
@@ -381,11 +457,11 @@ $(function() {
 						}
 					
 						var options = "FileName=" + datafilename
-						 + "&FileSizeLimit=" + datafilelimit;
+						 + "&maxsize=" + datafilelimit;
 
 						Pexor.DabcCommand("PexReadout/StartFile", options,function(
 								result) {
-							MyDisplay.SetStatusMessage(result ? "Start File command sent."
+							MyDisplay.SetStatusMessage(result ? "Start File command sent with options "+options
 									: "Start File FAILED.");
 							if (result)
 								{
@@ -405,7 +481,7 @@ $(function() {
 
 	$("#Monitoring").button().click(function() {		
 		//MyDisplay.fUpdateInterval= Number($("#Refreshtime").value); // does not work?
-		MyDisplay.fUpdateInterval=parseInt(document.getElementById("Refreshtime").value);
+		MyDisplay.fUpdateInterval=1000*parseInt(document.getElementById("Refreshtime").value);
 		MyDisplay.ChangeMonitoring($(this).is(':checked'));
 		MyDisplay.RefreshView();
 	});
@@ -423,6 +499,25 @@ $(function() {
 	});
 	
 	
+    $('#Refreshtime').spinner({
+        min: 1,
+        max: 120,
+        step: 1
+    });
+
+    $('#Trendlength').spinner({
+        min: 10,
+        max: 10000,
+        step: 10
+    });
+	
+    $('#Filesize').spinner({
+        min: 100,
+        max: 4000,
+        step: 100
+    });
+    
+    
 	MyDisplay.RefreshView();
 	
 	
