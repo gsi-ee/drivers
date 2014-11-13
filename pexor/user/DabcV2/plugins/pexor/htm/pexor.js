@@ -100,10 +100,14 @@ PexorState.prototype.Update= function(callback){
 function PexorDisplay(state){
 	this.fPexorState=state;
 	this.fMonitoring=false;
+	this.fTrending=false;
+	this.fTrendingHistory=100;
 	this.fUpdateTimer=null;
 	this.fUpdateInterval=2000; // ms
 	this.fGaugeEv = null;
 	this.fGaugeDa = null;
+	this.fTrendEv = null;
+	this.fTrendDa = null;
 	this.fLogDevice=null;
 	this.fLogReadout=null;
 }
@@ -114,13 +118,10 @@ PexorDisplay.prototype.BuildView = function(){
 	
 	
 	this.fGaugeEv = new DABC.GaugeDrawElement();
-	this.fGaugeEv.itemname = "/PEXOR/PexReadout/PexorEvents";
-	this.fGaugeEv.CreateFrames($("#EvRateDisplay"));
-
+	this.fTrendEv=new DABC.RateHistoryDrawElement();
+	
 	this.fGaugeDa = new DABC.GaugeDrawElement();
-	this.fGaugeDa.itemname = "/PEXOR/PexReadout/PexorData";
-	this.fGaugeDa.CreateFrames($("#DatRateDisplay"));
-
+	this.fTrendDa=new DABC.RateHistoryDrawElement();
 	
 	this.fLogDevice= new DABC.LogDrawElement();
 	this.fLogDevice.itemname = "/PEXOR/PexDevice/PexDevInfo";
@@ -132,37 +133,59 @@ PexorDisplay.prototype.BuildView = function(){
 	this.fLogReadout.EnableHistory(100);
 	this.fLogReadout.CreateFrames($("#ReadoutInfo"));
 	
-	// trending still does not work together with gauge elements?	
-	// var trendEv=new DABC.RateHistoryDrawElement();
-	// trendEv.itemname="/PEXOR/PexReadout/PexorEvents";
-	// trendEv.CreateFrames($("#EvTrendDisplay"));
-	// trendEv['monitoring']=true;
-	// trendEv.RegularCheck();
-	// setInterval(function(){ trendEv.RegularCheck();}, 2000);
-	//	 
-	// var trendDa=new DABC.RateHistoryDrawElement();
-	// trendDa.itemname="/PEXOR/PexReadout/PexorData";
-	// //trendDa.EnableHistory(100);
-	// trendDa.CreateFrames($("#DatTrendDisplay"));
-	// trendDa['monitoring']=true;
-	//	 trendDa.RegularCheck();				 
-	//	 setInterval(function(){ trendDa.RegularCheck();}, 2000);
+	this.SetRateGauges();
 	
 }
 
 
-
-
-PexorDisplay.prototype.RefreshMonitor = function(){
+PexorDisplay.prototype.SetRateGauges = function(){
 	
-	this.fGaugeEv.RegularCheck();
-	this.fGaugeDa.RegularCheck();
-	this.fLogDevice.force=true;
+	this.fTrendEv.Clear();
+	this.fTrendDa.Clear();
+	this.fGaugeEv.itemname = "/PEXOR/PexReadout/PexorEvents";
+	this.fGaugeEv.CreateFrames($("#EvRateDisplay"));
+	this.fGaugeDa.itemname = "/PEXOR/PexReadout/PexorData";
+	this.fGaugeDa.CreateFrames($("#DatRateDisplay"));
+}
+
+PexorDisplay.prototype.SetRateTrending = function(history){
+	
+	this.fTrendingHistory=history;
+	this.fGaugeEv.Clear();
+	this.fGaugeDa.Clear();
+	this.fTrendEv.itemname="/PEXOR/PexReadout/PexorEvents";
+	this.fTrendEv.EnableHistory(this.fTrendingHistory); 
+	this.fTrendEv.CreateFrames($("#EvRateDisplay"));
+	this.fTrendDa.itemname="/PEXOR/PexReadout/PexorData";
+	this.fTrendDa.EnableHistory(this.fTrendingHistory);
+	this.fTrendDa.CreateFrames($("#DatRateDisplay"));	
+}
+
+
+
+PexorDisplay.prototype.RefreshMonitor = function() {
+
+	if (this.fTrending) {
+		this.fTrendEv.force = true;
+		this.fTrendEv.RegularCheck();		
+		this.fTrendDa.force = true;
+		this.fTrendDa.RegularCheck();
+	} else {
+		this.fGaugeEv.force = true;
+		this.fGaugeEv.RegularCheck();
+		this.fGaugeDa.force = true;
+		this.fGaugeDa.RegularCheck();
+
+	}
+
+	this.fLogDevice.force = true;
 	this.fLogDevice.RegularCheck();
-	this.fLogReadout.force=true;
+	this.fLogReadout.force = true;
 	this.fLogReadout.RegularCheck();
-	pthis=this;
-	this.fPexorState.Update(function(){pthis.RefreshView()});
+	pthis = this;
+	this.fPexorState.Update(function() {
+		pthis.RefreshView()
+	});
 }
 
 
@@ -186,7 +209,20 @@ PexorDisplay.prototype.ChangeMonitoring = function(on){
 }
 
 
-
+PexorDisplay.prototype.SetTrending = function(on,history){
+	this.fTrending=on;
+	if(on)
+		{
+			console.log("SetTrending on");
+			this.SetRateTrending(history); // todo: get interval from textbox
+		}
+	else
+		{
+			console.log("SetTrending off");
+			this.SetRateGauges();
+		}
+	
+}
 
 PexorDisplay.prototype.RefreshView = function(){
 
@@ -201,32 +237,38 @@ PexorDisplay.prototype.RefreshView = function(){
 	//		 this.fPexorState.fFileOpen, Pexor.fFileOpen);
 	 
 	 if (this.fPexorState.fFileOpen) {
-		 	console.log("RefreshView finds open file");
+		 	//console.log("RefreshView finds open file");
 			$("#file_container").addClass("styleGreen").removeClass("styleRed");
+			$("#buttonStartFile").prop('checked', true);
+			 $("label[for='buttonStartFile']").html("<span class=\"ui-button-text\"> Stop File </span>");		 
 		} else {
-			console.log("RefreshView finds close file");
+			//console.log("RefreshView finds close file");
 			$("#file_container").addClass("styleRed").removeClass("styleGreen");
+			$("#buttonStartFile").prop('checked', false);
+			$("label[for='buttonStartFile']").html("<span class=\"ui-button-text\"> Start File </span>");		
 		}
 	 
 	 
 	 if (this.fMonitoring) {
 			$("#monitoring_container").addClass("styleGreen").removeClass("styleRed");
 			 $("label[for='Monitoring']").html("<span class=\"ui-button-text\">  Stop Monitoring </span>");
+			 
 		} else {
 			$("#monitoring_container").addClass("styleRed").removeClass("styleGreen");
 			$("label[for='Monitoring']").html("<span class=\"ui-button-text\">  Start Monitoring </span>");
 		}
 	 
-	 if(Pexor.fFileOpen)
-		 {
-			 $("label[for='buttonStartFile']").html("<span class=\"ui-button-text\"> Stop File </span>");		 
-		 }
-	 else
-	 	{
-		 	$("label[for='buttonStartFile']").html("<span class=\"ui-button-text\"> Start File </span>");		 
-	 	}
-	
-	
+	 $("#Refreshtime").prop('disabled', this.fMonitoring);
+	 
+	 
+	 if (this.fTrending) {
+			 $("label[for='Trending']").html("<span class=\"ui-button-text\">  Show Rate Gauges </span>");
+			 
+		} else {
+			$("label[for='Trending']").html("<span class=\"ui-button-text\">   Show Rate Trending </span>");
+		}
+	 $("#Trendlength").prop('disabled', this.fTrending);
+	 
 };
 
 
@@ -337,13 +379,6 @@ $(function() {
 							$(this).prop('checked', false);						
 							return;
 						}
-//						var datafilename = prompt(
-//								"Please specify output file (*.lmd) ",
-//								Pexor.fFileName);
-//						// TODO: prompt for outputfile and file size limit
-//						if (!datafilename)
-//							return;
-						
 					
 						var options = "FileName=" + datafilename
 						 + "&FileSizeLimit=" + datafilelimit;
@@ -354,9 +389,6 @@ $(function() {
 									: "Start File FAILED.");
 							if (result)
 								{
-//								Pexor.fFileOpen = true;
-							// todo: evaluate real state of file open/close
-							
 								Pexor.fFileName = datafilename;
 								}
 							MyDisplay.RefreshMonitor();
@@ -369,33 +401,12 @@ $(function() {
 
 					});
 
-//	$("#buttonStopFile").button().click(
-//			function() {
-//				var requestmsg = "Really Stop writing output file "
-//						+ Pexor.fFileName + " ?";
-//				var response = confirm(requestmsg);
-//				if (!response)
-//					return;
-//
-//				Pexor.DabcCommand("PexReadout/StopFile","",function(
-//						result) {
-//					MyDisplay.SetStatusMessage(result ? "Stop File command sent."
-//							: "Stop File FAILED.");
-//					if (result)
-//						Pexor.fFileOpen = false;
-//					// todo: evaluate real state of file open/close
-//					MyDisplay.RefreshView();
-//				});
-//
-//			});
 
-	$("#Monitoring").button().click(function() {
-		MyDisplay.fMonitoring= $(this).is(':checked');
+
+	$("#Monitoring").button().click(function() {		
 		//MyDisplay.fUpdateInterval= Number($("#Refreshtime").value); // does not work?
 		MyDisplay.fUpdateInterval=parseInt(document.getElementById("Refreshtime").value);
-		
-		$("#Refreshtime").prop('disabled', MyDisplay.fMonitoring);
-		MyDisplay.ChangeMonitoring(MyDisplay.fMonitoring);
+		MyDisplay.ChangeMonitoring($(this).is(':checked'));
 		MyDisplay.RefreshView();
 	});
 	
@@ -404,6 +415,12 @@ $(function() {
 			function() {
 					MyDisplay.RefreshMonitor();
 				});
+	
+	
+	$("#Trending").button().click(function() {
+		MyDisplay.SetTrending($(this).is(':checked'), parseInt(document.getElementById("Trendlength").value));
+		MyDisplay.RefreshView();
+	});
 	
 	
 	MyDisplay.RefreshView();

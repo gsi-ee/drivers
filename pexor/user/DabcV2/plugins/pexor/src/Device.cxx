@@ -1054,8 +1054,25 @@ void pexorplugin::Device::SetInfo(const std::string& info, bool forceinfo)
 double pexorplugin::Device::ProcessTimeout(double last_diff)
 {
   //Par(pexorplugin::parDaqRunningState).SetValue(fAqcuisitionRunning);
-  Par(pexorplugin::parDaqRunningState).SubmitSetValue(fAqcuisitionRunning);
-  DOUT0("pexorplugin::Device::ProcessTimeout with dt= %f s - acuisition state=%d, parameter=%d!!", last_diff, fAqcuisitionRunning, Par(pexorplugin::parDaqRunningState).Value().AsBool());
+  dabc::Parameter par=Par(pexorplugin::parDaqRunningState);
+  par.SetValue(fAqcuisitionRunning);
+  DOUT3("pexorplugin::Device::ProcessTimeout with dt= %f s - acuisition state=%d, parameter=%d!!", last_diff, fAqcuisitionRunning, Par(pexorplugin::parDaqRunningState).Value().AsBool());
+  dabc::Hierarchy chld = fWorkerHierarchy.FindChild(pexorplugin::parDaqRunningState);
+    if (!chld.null())
+    {
+         par.ScanParamFields(&chld()->Fields());
+         fWorkerHierarchy.MarkChangedItems();
+    }
+    else
+    {
+        DOUT0("pexorplugin::Device::ProcessTimeout could not find parameter %s", pexorplugin::parDaqRunningState);
+    }
+
+
+
+
+
+
   fWorkerHierarchy.MarkChangedItems();
   return PEXORPLUGIN_REFRESHTIMEOUT;
 }

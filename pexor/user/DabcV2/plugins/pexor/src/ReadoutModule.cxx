@@ -99,6 +99,8 @@ void pexorplugin::ReadoutModule::DoPexorReadout ()
       }
     }
 
+
+
   }
   catch (dabc::Exception& e)
   {
