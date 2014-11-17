@@ -84,13 +84,35 @@ PexorState.prototype.UpdateFilestate = function(ok, state){
 	//console.log("UpdateFilestate with ok=%s, value=%s, fileopen=%s, typeofFileopen=%s", ok, state, this.fFileOpen, typeof(this.fFileOpen));
 }
 
+PexorState.prototype.UpdateDABCstate = function(ok, state, refreshcall){
+// DABC states as strings:	
+//	"Halted"
+//	"Ready"
+//    "Running"
+//    "Failure";
+//    "Transition";	
+	
+	
+	if (ok=="true") {
+		this.fDabcState = state;			
+	} else {
+		console.log("UpdateDABCstate failed.");
+	}
+    console.log("UpdateDABCstate with ok=%s, value=%s, dabcstate=%s", ok, state, this.fDabcState);
+    refreshcall();
+}
+
+
+
 PexorState.prototype.Update= function(callback){
 	var pthis = this;
 	//this.DabcParameter("PexDevice/PexorAcquisitionRunning", pthis.UpdateRunstate);
 	//this.DabcParameter("PexReadout/PexorFileOn", pthis.UpdateFilestate);	
 	this.DabcParameter("PexDevice/PexorAcquisitionRunning", function(res,val) { pthis.UpdateRunstate(res,val); });
 	this.DabcParameter("PexReadout/PexorFileOn",function(res,val) { pthis.UpdateFilestate(res,val); })
-	callback();
+	this.DabcParameter("App/State",function(res,val) { pthis.UpdateDABCstate(res,val, callback); })
+	//this.fDabcState="Running";
+	//callback(); // will be done when last parameter update response has been processed
 }
 
 
@@ -273,11 +295,24 @@ PexorDisplay.prototype.RefreshView = function(){
 		}
 	 $("#Trendlength").prop('disabled', this.fTrending);
 	 
-	 if (this.fPexorState.fDabcState=="Running") {
-			$("#dabc_container").addClass("styleGreen").removeClass("styleRed");
+	 console.log("RefreshView with dabc state = %s", this.fPexorState.fDabcState);
+	 
+	 if (this.fPexorState.fDabcState=="Running") { 
+		//	console.log("RefreshView finds Running state");
+			$("#dabc_container").addClass("styleGreen").removeClass("styleRed").removeClass("styleYellow").removeClass("styleBlue");
 			 
-		} else {
-			$("#dabc_container").addClass("styleRed").removeClass("styleGreen");
+		} 
+	 else if (this.fPexorState.fDabcState=="Ready") {
+		 //	console.log("RefreshView finds Ready state");
+			$("#dabc_container").addClass("styleYellow").removeClass("styleRed").removeClass("styleGreen").removeClass("styleBlue");			 
+		} 
+	 else if ((this.fPexorState.fDabcState=="Failure") || (this.fPexorState.fDabcState=="Transition")) {
+		 //console.log("RefreshView finds Failure state");
+		 $("#dabc_container").addClass("styleBlue").removeClass("styleYellow").removeClass("styleRed").removeClass("styleGreen");			 
+		} 	 
+	 else {
+		 //console.log("RefreshView finds other state");
+			$("#dabc_container").addClass("styleRed").removeClass("styleGreen").removeClass("styleYellow").removeClass("styleBlue");
 		}
 	 
 	 
