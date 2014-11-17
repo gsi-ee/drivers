@@ -266,32 +266,44 @@ PexorDisplay.prototype.RefreshView = function(){
 		 	//console.log("RefreshView finds open file");
 			$("#file_container").addClass("styleGreen").removeClass("styleRed");
 			$("#buttonStartFile").prop('checked', true);
-			 $("label[for='buttonStartFile']").html("<span class=\"ui-button-text\"> Stop File </span>");		 
+			 //$("label[for='buttonStartFile']").html("<span class=\"ui-button-text\"> Stop File </span>");
+			$("label[for='buttonStartFile']").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-closethick MyButtonStyle\"</span>");
+			$("label[for='buttonStartFile']").attr("title", "Close output file");
 		} else {
 			//console.log("RefreshView finds close file");
 			$("#file_container").addClass("styleRed").removeClass("styleGreen");
 			$("#buttonStartFile").prop('checked', false);
-			$("label[for='buttonStartFile']").html("<span class=\"ui-button-text\"> Start File </span>");		
+			//$("label[for='buttonStartFile']").html("<span class=\"ui-button-text\"> Start File </span>");
+			 $("label[for='buttonStartFile']").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-disk MyButtonStyle\"</span>");
+			 $("label[for='buttonStartFile']").attr("title", "Open lmd file for writing");
 		}
 	 
 	 
 	 if (this.fMonitoring) {
 			$("#monitoring_container").addClass("styleGreen").removeClass("styleRed");
-			 $("label[for='Monitoring']").html("<span class=\"ui-button-text\">  Stop Monitoring </span>");
-			 
+			 //$("label[for='Monitoring']").html("<span class=\"ui-button-text\">  Stop Monitoring </span>");
+			 $("label[for='Monitoring']").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-stop MyButtonStyle\"></span>");
+			 $("label[for='Monitoring']").attr("title", "Stop frequent refresh");
 		} else {
 			$("#monitoring_container").addClass("styleRed").removeClass("styleGreen");
-			$("label[for='Monitoring']").html("<span class=\"ui-button-text\">  Start Monitoring </span>");
+			//$("label[for='Monitoring']").html("<span class=\"ui-button-text\">  Start Monitoring </span>");
+			$("label[for='Monitoring']").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-play MyButtonStyle\"></span>");
+			 $("label[for='Monitoring']").attr("title", "Activate frequent refresh");	
 		}
 	 
 	 $("#Refreshtime").prop('disabled', this.fMonitoring);
 	 
 	 
 	 if (this.fTrending) {
-			 $("label[for='Trending']").html("<span class=\"ui-button-text\">  Show Rate Gauges </span>");
-			 
+			 //$("label[for='Trending']").html("<span class=\"ui-button-text\">  Show Rate Gauges </span>");
+			 $("label[for='Trending']").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-circle-arrow-n MyButtonStyle\"></span>");//
+			 //.addClass("MyButtonStyle");
+			 $("label[for='Trending']").attr("title", "Show Rate Gauges");	
 		} else {
-			$("label[for='Trending']").html("<span class=\"ui-button-text\">   Show Rate Trending </span>");
+			//$("label[for='Trending']").html("<span class=\"ui-button-text\">   Show Rate Trending </span>");
+			$("label[for='Trending']").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-image MyButtonStyle\"></span>");
+			//.addClass("MyButtonStyle");
+			$("label[for='Trending']").attr("title", "Show Rate Trending");		
 		}
 	 $("#Trendlength").prop('disabled', this.fTrending);
 	 
@@ -338,7 +350,7 @@ $(function() {
 	
 	//////// first DABC generic commands
 	// later this should be part of the framework...
-	$("#buttonStartDabc").button().click(
+	$("#buttonStartDabc").button({text: false, icons: { primary: "ui-icon-play MyButtonStyle"}}).click(
 			function() {
 				var requestmsg = "Really Re-Start DABC Application?";
 				var response = confirm(requestmsg);
@@ -353,7 +365,7 @@ $(function() {
 				});
 			});
 	
-	$("#buttonStopDabc").button().click(
+	$("#buttonStopDabc").button({text: false, icons: { primary: "ui-icon-pause MyButtonStyle"}}).click(
 			function() {
 				var requestmsg = "Really Stop DABC Application?";
 				var response = confirm(requestmsg);
@@ -368,7 +380,7 @@ $(function() {
 				});
 			});
 	
-	$("#buttonConfigureDabc").button().click(
+	$("#buttonConfigureDabc").button({text: false, icons: { primary: "ui-icon-gear MyButtonStyle"}}).click(
 			function() {
 				var requestmsg = "Really Re-Configure DABC Application?";
 				var response = confirm(requestmsg);
@@ -382,7 +394,7 @@ $(function() {
 					MyDisplay.RefreshMonitor();
 				});
 			});
-	$("#buttonHaltDabc").button().click(
+	$("#buttonHaltDabc").button({text: false, icons: { primary: "ui-icon-stop MyButtonStyle"}}).click(
 			function() {
 				var requestmsg = "Really Halt (shutdown) DABC Application?";
 				var response = confirm(requestmsg);
@@ -400,7 +412,7 @@ $(function() {
 	
 ///////////////////////////// pexor specific:	
 	
-	$("#buttonStartAcquisition").button().click(
+	$("#buttonStartAcquisition").button({text: false, icons: { primary: "ui-icon-play MyButtonStyle"}}).click(
 			function() {
 				var requestmsg = "Really Start Acquisition?";
 				var response = confirm(requestmsg);
@@ -417,7 +429,7 @@ $(function() {
 				});
 			});
 
-	$("#buttonStopAcquisition").button().click(
+	$("#buttonStopAcquisition").button({text: false, icons: { primary: "ui-icon-pause MyButtonStyle"}}).click(
 			function() {
 
 				var requestmsg = "Really Stop Acquisition?";
@@ -434,7 +446,7 @@ $(function() {
 					MyDisplay.RefreshMonitor();
 				});
 			});
-	$("#buttonInitAcquisition").button().click(function() {
+	$("#buttonInitAcquisition").button({text: false, icons: { primary: "ui-icon-wrench MyButtonStyle"}}).click(function() {
 		var requestmsg = "Really Initialize Acquisition?";
 		var response = confirm(requestmsg);
 		if (!response)
@@ -450,7 +462,7 @@ $(function() {
 
 	});
 
-	$("#buttonStartFile").button()
+	$("#buttonStartFile").button({text: false, icons: { primary: "ui-icon-disk MyButtonStyle"}})
 			.click(
 					function() {						
 						var checked= $(this).is(':checked');
@@ -514,7 +526,7 @@ $(function() {
 
 
 
-	$("#Monitoring").button().click(function() {		
+	$("#Monitoring").button({text: false, icons: { primary: "ui-icon-play MyButtonStyle"}}).click(function() {		
 		//MyDisplay.fUpdateInterval= Number($("#Refreshtime").value); // does not work?
 		MyDisplay.fUpdateInterval=1000*parseInt(document.getElementById("Refreshtime").value);
 		MyDisplay.ChangeMonitoring($(this).is(':checked'));
@@ -522,13 +534,13 @@ $(function() {
 	});
 	
 	
-	$("#buttonRefresh").button().click(
+	$("#buttonRefresh").button({text: false, icons: { primary: "ui-icon-refresh MyButtonStyle"}}).click(
 			function() {
 					MyDisplay.RefreshMonitor();
 				});
 	
 	
-	$("#Trending").button().click(function() {
+	$("#Trending").button({text: false, icons: { primary: "ui-icon-image MyButtonStyle"}}).click(function() {
 		MyDisplay.SetTrending($(this).is(':checked'), parseInt(document.getElementById("Trendlength").value));
 		MyDisplay.RefreshView();
 	});
