@@ -481,9 +481,6 @@ $(function() {
 								result) {
 							MyDisplay.SetStatusMessage(result ? "Stop File command sent."
 									: "Stop File FAILED.");
-//							if (result)
-//								Pexor.fFileOpen = false;
-							// todo: evaluate real state of file open/close
 							MyDisplay.RefreshMonitor();
 						});
 							
@@ -519,9 +516,6 @@ $(function() {
 							
 						});
 							}
-						
-						
-
 					});
 
 

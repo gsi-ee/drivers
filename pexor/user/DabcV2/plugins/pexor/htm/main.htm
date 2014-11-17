@@ -13,66 +13,57 @@
 #dabc_container {
 	outline: outset medium;
 	position: fixed;
-	top: 0%;
-	min-height: 10%;
+	top: 0.5%;
+	min-height: 9.5%;
 	left: 0;
-	width: 35%;
+	width: 20%;
 	text-align: center;
+	overflow: hidden;
 	outline-style: groove;
 }
 
 #daq_container {
 	outline: outset medium;
 	position: fixed;
-	top: 11%;
-	min-height: 10%;
-	left: 0;
-	width: 35%;
+	top: 0.5%;
+	min-height: 9.5%;
+	left: 21%;
+	width: 14%;
 	text-align: center;
-	overflow-y: auto;
+	overflow: hidden;
 	outline-style: groove;
 }
 
 #daq_log {
 	outline: outset medium;
 	position: fixed;
-	top: 22%;
-	height: 71%;
-	left: 0;
+	top: 11%;
+	height: 82%;
+	left: 0%;
 	width: 35%;
 	text-align: left;
 	overflow-y: auto;
 	outline-style: groove;
 }
 
-#monitoring_container {
-	outline: outset medium;
-	position: fixed;
-	top: 0%;
-	min-height: 10%;
-	left: 36%;
-	width: 35%;
-	text-align: center;
-	outline-style: groove;
-}
 
 #file_container {
 	outline: outset medium;
 	position: fixed;
-	top: 11%;
-	min-height: 10%;
+	top: 0.5%;
+	min-height: 9.5%;
 	left: 36%;
 	width: 35%;
 	text-align: center;
-	overflow-y: auto;
+	overflow: hidden;
 	outline-style: groove;
 }
 
 #file_log {
 	outline: outset medium;
 	position: fixed;
-	top: 22%;
-	height: 71%;
+	top: 11%;
+	height: 82%;
 	left: 36%;
 	width: 35%;
 	text-align: left;
@@ -82,16 +73,28 @@
 
 
 
+#monitoring_container {
+	outline: outset medium;
+	position: fixed;
+	top: 0.5%;
+	min-height: 9.5%;
+	left: 72%;
+	width: 27%;
+	overflow: hidden;
+	text-align: center;
+	outline-style: groove;
+}
 
 
 
 #ratemode_container {
 	outline: outset medium;
 	position: fixed;
-	top: 0;
+	top: 11%;
 	min-height: 10%;
 	left: 72%;
-	width: 28%;
+	width: 27%;
+	overflow: hidden;
 	text-align: center;
 	outline-style: groove;
 }
@@ -99,8 +102,8 @@
 #rate_container {
 	outline: outset medium;
 	position: fixed;
-	top: 11%;
-	height: 82%;
+	top: 22%;
+	height: 71%;
 	left: 72%;
 	width: 28%;
 	text-align: center;
@@ -113,8 +116,8 @@
 	position: fixed;
 	bottom: 1%;
 	height: 5%;
-	left: 0;
-	width: 100%;
+	left: 1%;
+	width: 98%;
 	text-align: left;
 	outline-style: groove;
 }
@@ -137,9 +140,13 @@
 }
 
 .MyButtonStyle{
-	transform:scale(2 , 2);
-	
+	transform:scale(2 , 2);	
 }
+
+.MySpinnerStyle{
+	width: 50px ;	
+}
+
 
 </style>
 
@@ -167,7 +174,7 @@
 	
 	<div id="dabc_container">
 		<table style="width: 100%; height: 50%">
-		 <caption><h3>DABC Controls</h3></caption>
+		 <caption><h3>DABC</h3></caption>
 			<tbody>
 				<tr>
 					<td style="height: 30px">
@@ -196,7 +203,7 @@
 
 	<div id="daq_container">
 		<table style="width: 100%; height: 50%">
-		 <caption><h3>PEXOR Controls</h3></caption>
+		 <caption><h3>PEXOR</h3></caption>
 			<tbody>
 				<tr>
 					<td style="height: 30px">
@@ -225,7 +232,6 @@
 	</div>
 
 
-
 	<div id="file_container">
 		<table style="width: 100%; height: 50%">
 		 <caption><h3>Data taking</h3></caption>
@@ -243,7 +249,7 @@
 											Filename</label></td>
 
 
-								<td><input id="Filesize" type="text" value="1000"><label
+								<td><input id="Filesize" type="text" value="1000" class="MySpinnerStyle"><label
 										for="Filesize"
 										title="Maximum file size (will open next file after reaching this size)">
 											Max size</label></td>
@@ -265,22 +271,7 @@
 
 	<div id="rate_container">
 		<div id="EvRateDisplay" title="Eventrate (Ev/s)"></div>
-		<div id="DatRateDisplay" title="Data Rate (MB/s)"></div>
-		
-<!-- 		<table style="width: 100%; height: 100%"> -->
-<!-- 			<tbody> -->
-<!-- 				<tr> -->
-<!-- 					<td style="height: 40%"> -->
-<!-- 						<div id="EvRateDisplay" title="Eventrate (Ev/s)"></div> -->
-<!-- 					</td> -->
-<!-- 				</tr> -->
-<!-- 				<tr> -->
-<!-- 					<td style="height: 40%"> -->
-<!-- 						<div id="DatRateDisplay" title="Data Rate (MB/s)"></div> -->
-<!-- 					</td> -->
-<!-- 				</tr> -->
-<!-- 			</tbody> -->
-<!-- 		</table> -->
+		<div id="DatRateDisplay" title="Data Rate (MB/s)"></div>		
 	</div>
 
 
@@ -293,7 +284,7 @@
 							for="Trending" style="height: 30px"
 							title="Show Rates as trending"> Trending?</label></td>
 							
-					<td><input id="Trendlength" type="text" value="100"><label
+					<td><input id="Trendlength" type="text" value="100" class="MySpinnerStyle"><label
 						for="Trendlength" title="Specify length of trending history">
 							Trending history</label></td>		
 
@@ -316,7 +307,7 @@
 							for="Monitoring" style="height: 30px"
 							title="Activate frequent refresh"> Monitoring</label></td>
 
-					<td><input id="Refreshtime" type="number" value="1"><label
+					<td><input id="Refreshtime" type="number" value="1" class="MySpinnerStyle"><label
 						for="Refreshtime" title="Specify update interval">
 							Refresh Interval [s]</label></td>
 				</tr>
