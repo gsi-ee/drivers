@@ -9,6 +9,7 @@
 		<script src="/jsrootsys/scripts/JSRootCore.js" type="text/javascript"></script>
 		<style type="text/css">
 
+
 #dabc_container {
 	outline: outset medium;
 	position: fixed;
@@ -37,6 +38,32 @@
 	outline: outset medium;
 	position: fixed;
 	top: 79px;
+	height: 200px;
+	left: 2px;
+	width: 34.5%;
+	text-align: left;
+	overflow-y: auto;
+	outline-style: groove;
+}
+
+
+#gosip_container {
+	outline: outset medium;
+	position: fixed;
+	top: 280px;
+	min-height: 70px;
+	left: 2px;
+	width: 34.5%;
+	overflow: hidden;
+	text-align: center;
+	outline-style: groove;
+}
+
+
+#gosip_log {
+	outline: outset medium;
+	position: fixed;
+	top: 356px;
 	bottom: 2.7em;
 	left: 2px;
 	width: 34.5%;
@@ -44,6 +71,10 @@
 	overflow-y: auto;
 	outline-style: groove;
 }
+
+
+
+
 
 
 #file_container {
@@ -148,6 +179,10 @@
 
 
 
+
+
+
+
 </style>
 
 
@@ -228,6 +263,39 @@
 <div id="daq_log">		
 		<td>
 			<div id="DeviceInfo"></div>
+		</td>
+	</div>
+
+
+<div id="gosip_container" class="styleBlue">
+		<table style="width: 100%; height: 50%">
+		 <caption><h3>GOSIP</h3></caption>
+			<tbody>
+				<tr>
+					
+					<td><label for="commandGosip" title="Input gosipcmd parameter">
+											gosipcmd </label><input id="commandGosip" type="text" value="-"></td>
+					
+					<td style="height: 30px">
+						<button id="buttonExecuteGosip"
+							title="Execute gosip command">Execute</button>
+					</td>
+					<td style="height: 30px">
+						<button id="buttonClearGosipLog"
+							title="Clear gosip logwindow">User GUI</button>
+					</td>
+					<td style="height: 30px">
+						<button id="buttonUserGUI"
+							title="Start Frontend GUI">User GUI</button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+<div id="gosip_log">		
+		<td>
+			<div id="GosipLog"></div>
 		</td>
 	</div>
 

@@ -65,6 +65,66 @@ PexorState.prototype.DabcParameter = function(par, callback) {
 
 
 
+
+PexorState.prototype.GosipCommand = function(cmd, command_callback) {
+// this is variation of code found in gosip polandsetup gui:
+	
+	var cmdurl="/GOSIP/Test/CmdGosip/execute";
+	var xmlHttp = new XMLHttpRequest();
+	var sfp=0; 
+	var dev=0;
+	
+	var cmdtext = cmdurl + "?sfp=" + sfp + "&dev=" + dev;
+//
+//	if (log)
+    cmdtext += "&log=1";
+//
+	cmdtext += "&cmd=\'" + cmd + "\'";
+//
+	console.log(cmdtext);
+//
+	xmlHttp.open('GET', cmdtext, true);
+//
+	var pthis = this;
+
+	xmlHttp.onreadystatechange = function() {
+		// console.log("onready change " + xmlHttp.readyState); 
+		if (xmlHttp.readyState == 4) {
+			var reply = JSON.parse(xmlHttp.responseText);
+			var ddd = "";
+			if (!reply || (reply["_Result_"] != 1)) {
+				command_callback(false, null,ddd);
+				return;
+			}
+
+			if (reply['log'] != null) {
+				
+				// console.log("log length = " + Setup.fLogData.length); 
+				for ( var i in reply['log']) {
+
+					if (reply['log'][i].search("\n") >= 0)
+						console.log("found 1");
+					if (reply['log'][i].search("\\n") >= 0)
+						console.log("found 2");
+					if (reply['log'][i].search("\\\n") >= 0)
+						console.log("found 3");
+
+					ddd += "<pre>";
+					ddd += reply['log'][i].replace(/\\n/g, "<br/>");
+					ddd += "</pre>";
+				}
+				//console.log(ddd);
+			}
+			
+			command_callback(true, ddd, reply["res"]);
+		}
+	};
+
+	xmlHttp.send(null);
+}
+
+
+
 PexorState.prototype.UpdateRunstate = function(ok, state){
 	//console.log("UpdateRunstate with ok=%s, value=%s", ok, state);
 	if (ok=="true") {
@@ -538,6 +598,52 @@ $(function() {
 		MyDisplay.SetTrending($(this).is(':checked'), parseInt(document.getElementById("Trendlength").value));
 		MyDisplay.RefreshView();
 	});
+	
+	
+	
+	$("#buttonExecuteGosip").button({text: false, icons: { primary: "ui-icon-gear MyButtonStyle"}}).click(
+			function() {
+				var sfp=0;
+				var dev=0;
+				var log=false;
+				var cmdpar=document.getElementById("commandGosip").value;
+				var requestmsg = "Really Execute  gosipcmd "+ cmdpar;
+				var response = confirm(requestmsg);
+				if (!response)
+					return;
+				
+				Pexor.GosipCommand(cmdpar, function(ok,
+						logout, result) {
+					// todo: display output of result like in poland debug mode
+					
+					
+					MyDisplay.SetStatusMessage(ok ? "gosip command send."
+							: "gosip command FAILED.");
+					if(ok)
+						{
+							document.getElementById("GosipLog").innerHTML += logout;
+							//console.log(logout);
+						}
+					
+					
+					
+					MyDisplay.RefreshMonitor();
+				});
+			});
+	
+	
+	$("#buttonClearGosipLog").button({text: false, icons: { primary: "ui-icon-trash MyButtonStyle"}}).click(
+			function() {
+					MyDisplay.SetStatusMessage("Cleared gosip logoutput."); 
+					document.getElementById("GosipLog").innerHTML="";
+			});
+	
+
+	$("#buttonUserGUI").button({text: false, icons: { primary: "ui-icon-calculator MyButtonStyle"}}).click(
+			function() {
+					MyDisplay.SetStatusMessage("Launched gosip user gui."); 
+					window.open('/GOSIP/Test/UI/','_blank');
+				});
 	
 	
     $('#Refreshtime').spinner({
