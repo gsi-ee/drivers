@@ -268,6 +268,12 @@ PexorDisplay.prototype.RefreshMonitor = function() {
 	this.fLogDevice.RegularCheck();
 	this.fLogReadout.force = true;
 	this.fLogReadout.RegularCheck();
+	
+	// optionally adjust scrollbars at info logs:
+	$("#daq_log").scrollTop($("#daq_log")[0].scrollHeight - $("#daq_log").height());
+	$("#file_log").scrollTop($("#file_log")[0].scrollHeight - $("#file_log").height());
+	
+	
 	pthis = this;
 	this.fPexorState.Update(function() {
 		pthis.RefreshView()
@@ -312,7 +318,6 @@ PexorDisplay.prototype.SetTrending = function(on,history){
 
 PexorDisplay.prototype.RefreshView = function(){
 
-	
 	
 	 if (this.fPexorState.fRunning) {
 			$("#daq_container").addClass("styleGreen").removeClass("styleRed");
@@ -387,7 +392,33 @@ PexorDisplay.prototype.RefreshView = function(){
 			$("#dabc_container").addClass("styleRed").removeClass("styleGreen").removeClass("styleYellow").removeClass("styleBlue");
 		}
 	 
-	 
+	// try here to redefine some icons:
+	  $(".ui-icon-stop")
+	  .css("display", "block")
+	  //.css("-moz-background-size:", "contain")
+	  .css("background-size:", "contain")
+	  .css("background-image", "url(img/Stop.png)")
+	  .css("background-position", "0 0")
+	  .css("width", "30px")
+	  .css("height", "30px")
+	  .css("margin-top", "-15px")
+	  .css("margin-left", "-15px");
+	  
+//	  $(".ui-icon-calculator")
+//	  .css("display", "inline-block")
+//	  .css("background-image", "url(img/PolandLogo.png)")
+//	  .css("background-position", "0 0")	   
+//	   .css("width", "30px")
+//		  .css("height", "30px")
+//		  .css("margin-top", "-15px")
+//		  .css("margin-left", "-15px")
+//		  .css("background-size:", "contain");
+	   
+//	  .css("width", "249px")
+//	  .css("height", "244px")
+//	  .css("margin-top", "-125px")
+//	  .css("margin-left", "-122px");
+	
 };
 
 
@@ -624,9 +655,9 @@ $(function() {
 							document.getElementById("GosipLog").innerHTML += logout;
 							//console.log(logout);
 						}
-					
-					
-					
+					// NOTE: GosipLog is inner text div, but scrollbars are put to container gosip_log!
+					$("#gosip_log").scrollTop($("#gosip_log")[0].scrollHeight - $("#gosip_log").height());
+				  	//console.log("scrollheight="+ $("#gosip_log")[0].scrollHeight + ", height=" + $("#gosip_log").height() + ", scrolltop=" + $("#gosip_log").scrollTop());				
 					MyDisplay.RefreshMonitor();
 				});
 			});
@@ -636,6 +667,10 @@ $(function() {
 			function() {
 					MyDisplay.SetStatusMessage("Cleared gosip logoutput."); 
 					document.getElementById("GosipLog").innerHTML="";
+					
+					// test test
+					$("#GosipLog").animate({ scrollTop: $("#GosipLog").attr("scrollHeight") - $("#GosipLog").height() }, 3000);
+					 
 			});
 	
 
@@ -666,6 +701,10 @@ $(function() {
     
     
 	MyDisplay.RefreshView();
+	
+
+	
+	
 	
 	
 	$(document).tooltip();
