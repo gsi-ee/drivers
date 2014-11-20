@@ -330,17 +330,27 @@ PexorDisplay.prototype.RefreshView = function(){
 	 if (this.fPexorState.fFileOpen) {
 		 	//console.log("RefreshView finds open file");
 			$("#file_container").addClass("styleGreen").removeClass("styleRed");
-			$("#buttonStartFile").prop('checked', true);
-			 //$("label[for='buttonStartFile']").html("<span class=\"ui-button-text\"> Stop File </span>");
-			$("label[for='buttonStartFile']").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-closethick MyButtonStyle\"</span>");
-			$("label[for='buttonStartFile']").attr("title", "Close output file");
+//			$("#buttonStartFile").prop('checked', true);
+//			$("label[for='buttonStartFile']").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-closethick MyButtonStyle\"</span>");
+//			$("label[for='buttonStartFile']").attr("title", "Close output file");
+			//$("#buttonStartFile").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-closethick MyButtonStyle\"</span>");
+			$("#buttonStartFile").addClass("ui-icon-closethick").removeClass("ui-icon-disk");
+			$("#buttonStartFile").attr("title", "Close output file");
+			
 		} else {
 			//console.log("RefreshView finds close file");
 			$("#file_container").addClass("styleRed").removeClass("styleGreen");
-			$("#buttonStartFile").prop('checked', false);
-			//$("label[for='buttonStartFile']").html("<span class=\"ui-button-text\"> Start File </span>");
-			 $("label[for='buttonStartFile']").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-disk MyButtonStyle\"</span>");
-			 $("label[for='buttonStartFile']").attr("title", "Open lmd file for writing");
+//			$("#buttonStartFile").prop('checked', false);
+//			 $("label[for='buttonStartFile']").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-disk MyButtonStyle\"</span>");
+//			 $("label[for='buttonStartFile']").attr("title", "Open lmd file for writing");
+//			 
+			 //$("#buttonStartFile").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-disk MyButtonStyle\"</span>");
+			 $("#buttonStartFile").addClass("ui-icon-disk").removeClass("ui-icon-closethick");
+			 $("#buttonStartFile").attr("title", "Open lmd file for writing");
+			  
+			 
+			 
+			 
 		}
 	 
 	 
@@ -393,17 +403,17 @@ PexorDisplay.prototype.RefreshView = function(){
 		}
 	 
 	// try here to redefine some icons:
-	  $(".ui-icon-stop")
-	  .css("display", "block")
-	  //.css("-moz-background-size:", "contain")
-	  .css("background-size:", "contain")
-	  .css("background-image", "url(img/Stop.png)")
-	  .css("background-position", "0 0")
-	  .css("width", "30px")
-	  .css("height", "30px")
-	  .css("margin-top", "-15px")
-	  .css("margin-left", "-15px");
-	  
+//	  $(".ui-icon-stop")
+//	  .css("display", "block")
+//	  //.css("-moz-background-size:", "contain")
+//	  .css('background-size:', 'contain !important')
+//	  .css("background-image", "url(img/Stop.png)")
+//	  .css("background-position", "0 0")
+//	  .css("width", "30px")
+//	  .css("height", "30px")
+//	  .css("margin-top", "-15px")
+//	  .css("margin-left", "-15px");
+//	  
 //	  $(".ui-icon-calculator")
 //	  .css("display", "inline-block")
 //	  .css("background-image", "url(img/PolandLogo.png)")
@@ -553,63 +563,123 @@ $(function() {
 
 	});
 
-	$("#buttonStartFile").button({text: false, icons: { primary: "ui-icon-disk MyButtonStyle"}})
-			.click(
-					function() {						
-						var checked= $(this).is(':checked');
-						
-						if(!checked)
-							{
-							var requestmsg = "Really Stop writing output file "
-								+ Pexor.fFileName + " ?";
-						var response = confirm(requestmsg);
-						if (!response)
-							{
-								$(this).prop('checked', true);
-								return;
-							}
-						Pexor.DabcCommand("PexReadout/StopFile","",function(
-								result) {
-							MyDisplay.SetStatusMessage(result ? "Stop File command sent."
-									: "Stop File FAILED.");
-							MyDisplay.RefreshMonitor();
-						});
-							
-							
-							}
-						else
-							{							
-							var datafilename=document.getElementById("Filename").value;
-							var datafilelimit=document.getElementById("Filesize").value;
-							
-						var requestmsg = "Really Start writing output file "
-						+ datafilename + ", maxsize=" + datafilelimit +" ?";
+	$("#buttonStartFile").button({text: false, icons: { primary: "ui-icon-disk MyButtonStyle"}});
+//			.click(
+//					function() {						
+//						var checked= $(this).is(':checked');
+//						
+//						if(!checked)
+//							{
+//							var requestmsg = "Really Stop writing output file "
+//								+ Pexor.fFileName + " ?";
+//						var response = confirm(requestmsg);
+//						if (!response)
+//							{
+//								$(this).prop('checked', true);
+//								return;
+//							}
+//						Pexor.DabcCommand("PexReadout/StopFile","",function(
+//								result) {
+//							MyDisplay.SetStatusMessage(result ? "Stop File command sent."
+//									: "Stop File FAILED.");
+//							MyDisplay.RefreshMonitor();
+//						});
+//							
+//							
+//							}
+//						else
+//							{							
+//							var datafilename=document.getElementById("Filename").value;
+//							var datafilelimit=document.getElementById("Filesize").value;
+//							
+//						var requestmsg = "Really Start writing output file "
+//						+ datafilename + ", maxsize=" + datafilelimit +" ?";
+//					var response = confirm(requestmsg);
+//					if (!response)
+//						{
+//							$(this).prop('checked', false);						
+//							return;
+//						}
+//					
+//						var options = "FileName=" + datafilename
+//						 + "&maxsize=" + datafilelimit;
+//
+//						Pexor.DabcCommand("PexReadout/StartFile", options,function(
+//								result) {
+//							MyDisplay.SetStatusMessage(result ? "Start File command sent with options "+options
+//									: "Start File FAILED.");
+//							if (result)
+//								{
+//								Pexor.fFileName = datafilename;
+//								}
+//							MyDisplay.RefreshMonitor();
+//							
+//							
+//						});
+//							}
+//					});
+
+
+
+	   $("#lmd_file_form").submit(
+				function(event) {
+					
+					var checked=Pexor.fFileOpen;
+					
+					if(checked)
+						{
+						var requestmsg = "Really Stop writing output file "
+							+ Pexor.fFileName + " ?";
 					var response = confirm(requestmsg);
 					if (!response)
 						{
-							$(this).prop('checked', false);						
+							event.preventDefault();
 							return;
 						}
-					
-						var options = "FileName=" + datafilename
-						 + "&maxsize=" + datafilelimit;
-
-						Pexor.DabcCommand("PexReadout/StartFile", options,function(
-								result) {
-							MyDisplay.SetStatusMessage(result ? "Start File command sent with options "+options
-									: "Start File FAILED.");
-							if (result)
-								{
-								Pexor.fFileName = datafilename;
-								}
-							MyDisplay.RefreshMonitor();
-							
-							
-						});
-							}
+					Pexor.DabcCommand("PexReadout/StopFile","",function(
+							result) {
+						MyDisplay.SetStatusMessage(result ? "Stop File command sent."
+								: "Stop File FAILED.");
+						MyDisplay.RefreshMonitor();
 					});
+						
+						
+						}
+					else
+						{							
+						var datafilename=document.getElementById("Filename").value;
+						var datafilelimit=document.getElementById("Filesize").value;
+						
+					var requestmsg = "Really Start writing output file "
+					+ datafilename + ", maxsize=" + datafilelimit +" ?";
+				var response = confirm(requestmsg);
+				if (!response)
+					{
+						event.preventDefault();
+						return;
+					}
+				
+					var options = "FileName=" + datafilename
+					 + "&maxsize=" + datafilelimit;
 
-
+					Pexor.DabcCommand("PexReadout/StartFile", options,function(
+							result) {
+						MyDisplay.SetStatusMessage(result ? "Start File command sent with options "+options
+								: "Start File FAILED.");
+						if (result)
+							{
+							Pexor.fFileName = datafilename;
+							}
+						MyDisplay.RefreshMonitor();
+						
+					
+					});
+						}
+					event.preventDefault();
+				}
+					);
+	
+	
 
 	$("#Monitoring").button({text: false, icons: { primary: "ui-icon-play MyButtonStyle"}}).click(function() {		
 		//MyDisplay.fUpdateInterval= Number($("#Refreshtime").value); // does not work?
@@ -632,35 +702,79 @@ $(function() {
 	
 	
 	
-	$("#buttonExecuteGosip").button({text: false, icons: { primary: "ui-icon-gear MyButtonStyle"}}).click(
-			function() {
-				var sfp=0;
-				var dev=0;
-				var log=false;
-				var cmdpar=document.getElementById("commandGosip").value;
-				var requestmsg = "Really Execute  gosipcmd "+ cmdpar;
-				var response = confirm(requestmsg);
-				if (!response)
-					return;
-				
-				Pexor.GosipCommand(cmdpar, function(ok,
-						logout, result) {
-					// todo: display output of result like in poland debug mode
-					
-					
-					MyDisplay.SetStatusMessage(ok ? "gosip command send."
-							: "gosip command FAILED.");
-					if(ok)
-						{
-							document.getElementById("GosipLog").innerHTML += logout;
-							//console.log(logout);
+	$("#buttonExecuteGosip").button({text: false, icons: { primary: "ui-icon-gear MyButtonStyle"}});
+	
+	// note: old method using click and request confirm
+	// was replaced by form with submit event caught (see below)
+	//.click(
+			
+//			function() {
+//				var sfp=0;
+//				var dev=0;
+//				var log=false;
+//				var cmdpar=document.getElementById("commandGosip").value;
+//				var requestmsg = "Really Execute  gosipcmd "+ cmdpar;
+//				var response = confirm(requestmsg);
+//				if (!response)
+//					return;
+//				
+//				Pexor.GosipCommand(cmdpar, function(ok,
+//						logout, result) {
+//					// todo: display output of result like in poland debug mode
+//					
+//					
+//					MyDisplay.SetStatusMessage(ok ? "gosip command send."
+//							: "gosip command FAILED.");
+//					if(ok)
+//						{
+//							document.getElementById("GosipLog").innerHTML += logout;
+//							//console.log(logout);
+//						}
+//					// NOTE: GosipLog is inner text div, but scrollbars are put to container gosip_log!
+//					$("#gosip_log").scrollTop($("#gosip_log")[0].scrollHeight - $("#gosip_log").height());
+//				  	//console.log("scrollheight="+ $("#gosip_log")[0].scrollHeight + ", height=" + $("#gosip_log").height() + ", scrolltop=" + $("#gosip_log").scrollTop());				
+//					MyDisplay.RefreshMonitor();
+//				});
+//			}
+//);
+	
+	
+	
+	   $( "#gosipcmd_form" ).submit(
+				function(event) {
+					var sfp=0;
+					var dev=0;
+					var log=false;
+					var cmdpar=document.getElementById("commandGosip").value;
+					var requestmsg = "Really Execute  gosipcmd "+ cmdpar;
+					var response = confirm(requestmsg);
+					if (!response){
+						event.preventDefault();
+						return;
 						}
-					// NOTE: GosipLog is inner text div, but scrollbars are put to container gosip_log!
-					$("#gosip_log").scrollTop($("#gosip_log")[0].scrollHeight - $("#gosip_log").height());
-				  	//console.log("scrollheight="+ $("#gosip_log")[0].scrollHeight + ", height=" + $("#gosip_log").height() + ", scrolltop=" + $("#gosip_log").scrollTop());				
-					MyDisplay.RefreshMonitor();
+					Pexor.GosipCommand(cmdpar, function(ok,
+							logout, result) {
+						// todo: display output of result like in poland debug mode
+						
+						
+						MyDisplay.SetStatusMessage(ok ? "gosip command send."
+								: "gosip command FAILED.");
+						if(ok)
+							{
+								document.getElementById("GosipLog").innerHTML += logout;
+								//console.log(logout);
+							}
+						// NOTE: GosipLog is inner text div, but scrollbars are put to container gosip_log!
+						$("#gosip_log").scrollTop($("#gosip_log")[0].scrollHeight - $("#gosip_log").height());
+					  	//console.log("scrollheight="+ $("#gosip_log")[0].scrollHeight + ", height=" + $("#gosip_log").height() + ", scrolltop=" + $("#gosip_log").scrollTop());				
+						MyDisplay.RefreshMonitor();
+					});
+					
+					event.preventDefault();
 				});
-			});
+				
+			
+			
 	
 	
 	$("#buttonClearGosipLog").button({text: false, icons: { primary: "ui-icon-trash MyButtonStyle"}}).click(
@@ -668,17 +782,28 @@ $(function() {
 					MyDisplay.SetStatusMessage("Cleared gosip logoutput."); 
 					document.getElementById("GosipLog").innerHTML="";
 					
-					// test test
-					$("#GosipLog").animate({ scrollTop: $("#GosipLog").attr("scrollHeight") - $("#GosipLog").height() }, 3000);
 					 
 			});
+	 
+	
 	
 
-	$("#buttonUserGUI").button({text: false, icons: { primary: "ui-icon-calculator MyButtonStyle"}}).click(
+//	$("#buttonUserGUI").button({text: false, icons: { primary: "ui-icon-calculator MyButtonStyle"}}).click(
+//			function() {
+//					MyDisplay.SetStatusMessage("Launched gosip user gui."); 
+//					window.open('/GOSIP/Test/UI/','_blank');
+//				});
+
+	// this works without replacing existing classes icons:
+	$("#buttonUserGUI").text("").append('<img src="img/PolandLogo.png"  height="24" width="25"/>').button({text: false})
+	.click(
 			function() {
 					MyDisplay.SetStatusMessage("Launched gosip user gui."); 
 					window.open('/GOSIP/Test/UI/','_blank');
 				});
+	
+
+	
 	
 	
     $('#Refreshtime').spinner({
@@ -698,6 +823,12 @@ $(function() {
         max: 4000,
         step: 100
     });
+    
+    
+    
+ 
+    
+    
     
     
 	MyDisplay.RefreshView();
