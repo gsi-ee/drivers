@@ -383,6 +383,7 @@ int pex_ioctl_wait_token (struct pex_privdata* priv, unsigned long arg)
 
   /* find out real package length after dma:*/
   dmasize = ioread32 (priv->regs.dma_len);
+  pex_bus_delay();
   descriptor.dmasize = dmasize; /* account used payload size.*/
 
   retval = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pex_token_io));
@@ -587,7 +588,9 @@ int pex_sfp_clear_channel (struct pex_privdata* privdata, int ch)
     pex_sfp_delay()
     ;
     repstatus = ioread32 (sfp->rep_stat[ch]) & 0xf000;
+    pex_bus_delay();
     tokenstatus = ioread32 (sfp->tk_stat[ch]) & 0xf000;
+    pex_bus_delay();
     chstatus = ioread32 (sfp->rep_stat_clr) & clrval;
     pex_sfp_delay()
     ;
@@ -742,20 +745,31 @@ ssize_t pex_sysfs_sfpregs_show(struct device *dev, struct device_attribute *attr
   sfp=&(pg->sfp);
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "*** PEX sfp register dump:\n");
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t request command:           0x%x\n",readl(sfp->req_comm));
+  pex_bus_delay();
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t request address:           0x%x\n",readl(sfp->req_addr));
+  pex_bus_delay();
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t reply status /clear:       0x%x\n",readl(sfp->rep_stat_clr));
+  pex_bus_delay();
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t rx monitor:                0x%x\n",readl(sfp->rx_moni));
+  pex_bus_delay();
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t tx status:                 0x%x\n",readl(sfp->tx_stat));
+  pex_bus_delay();
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t reset:                     0x%x\n",readl(sfp->reset));
+  pex_bus_delay();
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t disable:                   0x%x\n",readl(sfp->disable));
+  pex_bus_delay();
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t fault:                     0x%x\n",readl(sfp->fault));
   for(i=0; i<PEX_SFP_NUMBER;++i)
   {
     curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t  ** sfp %d:\n",i);
     curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  reply status:  0x%x\n",readl(sfp->rep_stat[i]));
+    pex_bus_delay();
     curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  reply address: 0x%x\n",readl(sfp->rep_addr[i]));
+    pex_bus_delay();
     curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  reply data:    0x%x\n",readl(sfp->rep_data[i]));
+    pex_bus_delay();
     curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  token memsize: 0x%x\n",readl(sfp->tk_memsize[i]));
+    pex_bus_delay();
   }
 
   return curs;

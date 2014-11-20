@@ -90,7 +90,11 @@
 
 
 
+/** on some PCs, need maybe waitstates for simple bus io:*/
 
+#define pex_bus_delay()                       \
+  mb();      \
+  ndelay(20);
 
 
 
