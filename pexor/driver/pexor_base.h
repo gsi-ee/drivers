@@ -101,6 +101,12 @@
 
 
 
+/** on some PCs, need maybe waitstates for simple bus io:*/
+#define pexor_bus_delay()                       \
+  mb();      \
+  ndelay(20);
+
+
 
 struct dev_pexor
 {

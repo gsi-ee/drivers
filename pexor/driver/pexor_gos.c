@@ -935,7 +935,9 @@ int pexor_sfp_clear_channel (struct pexor_privdata* privdata, int ch)
     pexor_sfp_delay()
     ;
     repstatus = ioread32 (sfp->rep_stat[ch]) & 0xf000;
+    pexor_bus_delay();
     tokenstatus = ioread32 (sfp->tk_stat[ch]) & 0xf000;
+    pexor_bus_delay();
     chstatus = ioread32 (sfp->rep_stat_clr) & clrval;
     pexor_sfp_delay()
     ;
@@ -1090,20 +1092,32 @@ ssize_t pexor_sysfs_sfpregs_show(struct device *dev, struct device_attribute *at
   sfp=&(pg->sfp);
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "*** PEXOR sfp register dump:\n");
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t request command:           0x%x\n",readl(sfp->req_comm));
+  pexor_bus_delay();
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t request address:           0x%x\n",readl(sfp->req_addr));
+  pexor_bus_delay();
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t reply status /clear:       0x%x\n",readl(sfp->rep_stat_clr));
+  pexor_bus_delay();
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t rx monitor:                0x%x\n",readl(sfp->rx_moni));
+  pexor_bus_delay();
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t tx status:                 0x%x\n",readl(sfp->tx_stat));
+  pexor_bus_delay();
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t reset:                     0x%x\n",readl(sfp->reset));
+  pexor_bus_delay();
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t disable:                   0x%x\n",readl(sfp->disable));
+  pexor_bus_delay();
   curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t fault:                     0x%x\n",readl(sfp->fault));
+  pexor_bus_delay();
   for(i=0; i<PEXOR_SFP_NUMBER;++i)
   {
     curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t  ** sfp %d:\n",i);
     curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  reply status:  0x%x\n",readl(sfp->rep_stat[i]));
+    pexor_bus_delay();
     curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  reply address: 0x%x\n",readl(sfp->rep_addr[i]));
+    pexor_bus_delay();
     curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  reply data:    0x%x\n",readl(sfp->rep_data[i]));
+    pexor_bus_delay();
     curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  token memsize: 0x%x\n",readl(sfp->tk_memsize[i]));
+    pexor_bus_delay();
   }
 
 #else

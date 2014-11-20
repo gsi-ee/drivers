@@ -139,7 +139,7 @@ ssize_t pexor_read (struct file *filp, char __user *buf, size_t count, loff_t *f
      if((i%10)==0) pexor_msg(KERN_NOTICE "\n");
      mb();*/
      kbuf[i] = ioread32 (memstart + (i << 2));
-     mb();
+     pexor_bus_delay();
      /*udelay(1);*/
    }
 
@@ -772,7 +772,7 @@ int pexor_ioctl_test (struct pexor_privdata* priv, unsigned long arg)
   for (i = 0; i < memsize; ++i)
   {
     localbuf = ioread32 (memstart + (i << 2));
-    mb();
+    pexor_bus_delay();
     if(localbuf!=i)
       pexor_msg(KERN_ERR "Error reading back value %d\n", i);
   }
@@ -1001,8 +1001,7 @@ int pexor_ioctl_read_register (struct pexor_privdata* priv, unsigned long arg)
   }
   ad = (u32*) ((unsigned long) priv->iomem[bar] + (unsigned long) ad);
   val = ioread32 (ad);
-  mb();
-  ndelay(20);
+  pexor_bus_delay();
   pexor_dbg(KERN_NOTICE "** pexor_ioctl_read_register read value %x from mapped PCI address %p !\n", val, ad);
   descriptor.value = val;
   retval = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pexor_reg_io));
@@ -1257,6 +1256,7 @@ struct pexor_privdata* get_privdata (struct file *filp)
 void print_register (const char* description, u32* address)
 {
   pexor_dbg(KERN_NOTICE "%s:\taddr=%lx cont=%x\n", description, (long unsigned int) address, readl(address));
+  pexor_bus_delay();
 }
 
 void print_pexor (struct dev_pexor* pg)
@@ -2122,18 +2122,29 @@ ssize_t pexor_sysfs_dmaregs_show (struct device *dev, struct device_attribute *a
   pg = &(privdata->pexor);
   curs += snprintf (buf + curs, PAGE_SIZE - curs, "*** PEXOR dma/irq register dump:\n");
   curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t dma control/status: 0x%x\n", readl(pg->dma_control_stat));
+  pexor_bus_delay();
   curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t irq/trixor stat  0x%x\n", readl(pg->irq_status));
+  pexor_bus_delay();
   curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t irq/trixor ctrl: 0x%x\n", readl(pg->irq_control));
+  pexor_bus_delay();
 #ifdef PEXOR_WITH_TRIXOR
   curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t trixor fcti: 0x%x\n", readl(pg->trix_fcti));
+  pexor_bus_delay();
   curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t trixor cvti: 0x%x\n", readl(pg->trix_cvti));
+  pexor_bus_delay();
 #endif
   curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t dma source      address: 0x%x\n", readl(pg->dma_source));
+  pexor_bus_delay();
   curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t dma destination address: 0x%x\n", readl(pg->dma_dest));
+  pexor_bus_delay();
   curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t dma length:              0x%x\n", readl(pg->dma_len));
+  pexor_bus_delay();
   curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t dma burst size:          0x%x\n", readl(pg->dma_burstsize));
+  pexor_bus_delay();
   curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t RAM start:               0x%x\n", readl(pg->ram_start));
+  pexor_bus_delay();
   curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t RAM end:                 0x%x\n", readl(pg->ram_end));
+  pexor_bus_delay();
   return curs;
 }
 
