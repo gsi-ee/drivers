@@ -333,8 +333,7 @@ PexorDisplay.prototype.RefreshView = function(){
 //			$("#buttonStartFile").prop('checked', true);
 //			$("label[for='buttonStartFile']").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-closethick MyButtonStyle\"</span>");
 //			$("label[for='buttonStartFile']").attr("title", "Close output file");
-			//$("#buttonStartFile").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-closethick MyButtonStyle\"</span>");
-			$("#buttonStartFile").addClass("ui-icon-closethick").removeClass("ui-icon-disk");
+    		$("#buttonStartFile").button("option", {icons: { primary: "ui-icon-closethick MyButtonStyle" }});
 			$("#buttonStartFile").attr("title", "Close output file");
 			
 		} else {
@@ -344,8 +343,7 @@ PexorDisplay.prototype.RefreshView = function(){
 //			 $("label[for='buttonStartFile']").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-disk MyButtonStyle\"</span>");
 //			 $("label[for='buttonStartFile']").attr("title", "Open lmd file for writing");
 //			 
-			 //$("#buttonStartFile").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-disk MyButtonStyle\"</span>");
-			 $("#buttonStartFile").addClass("ui-icon-disk").removeClass("ui-icon-closethick");
+			 $("#buttonStartFile").button("option", {icons: { primary: "ui-icon-disk MyButtonStyle" }}); 
 			 $("#buttonStartFile").attr("title", "Open lmd file for writing");
 			  
 			 
@@ -466,7 +464,7 @@ $(function() {
 				});
 			});
 	
-	$("#buttonStopDabc").button({text: false, icons: { primary: "ui-icon-pause MyButtonStyle"}}).click(
+	$("#buttonStopDabc").button({text: false, icons: { primary: "ui-icon-stop MyButtonStyle"}}).click(
 			function() {
 				var requestmsg = "Really Stop DABC Application?";
 				var response = confirm(requestmsg);
@@ -481,7 +479,7 @@ $(function() {
 				});
 			});
 	
-	$("#buttonConfigureDabc").button({text: false, icons: { primary: "ui-icon-gear MyButtonStyle"}}).click(
+	$("#buttonConfigureDabc").button({text: false, icons: { primary: "ui-icon-power MyButtonStyle"}}).click(
 			function() {
 				var requestmsg = "Really Re-Configure DABC Application?";
 				var response = confirm(requestmsg);
@@ -495,7 +493,7 @@ $(function() {
 					MyDisplay.RefreshMonitor();
 				});
 			});
-	$("#buttonHaltDabc").button({text: false, icons: { primary: "ui-icon-stop MyButtonStyle"}}).click(
+	$("#buttonHaltDabc").button({text: false, icons: { primary: "ui-icon-cancel MyButtonStyle"}}).click(
 			function() {
 				var requestmsg = "Really Halt (shutdown) DABC Application?";
 				var response = confirm(requestmsg);
@@ -530,7 +528,7 @@ $(function() {
 				});
 			});
 
-	$("#buttonStopAcquisition").button({text: false, icons: { primary: "ui-icon-pause MyButtonStyle"}}).click(
+	$("#buttonStopAcquisition").button({text: false, icons: { primary: "ui-icon-stop MyButtonStyle"}}).click(
 			function() {
 
 				var requestmsg = "Really Stop Acquisition?";
@@ -564,64 +562,8 @@ $(function() {
 	});
 
 	$("#buttonStartFile").button({text: false, icons: { primary: "ui-icon-disk MyButtonStyle"}});
-//			.click(
-//					function() {						
-//						var checked= $(this).is(':checked');
-//						
-//						if(!checked)
-//							{
-//							var requestmsg = "Really Stop writing output file "
-//								+ Pexor.fFileName + " ?";
-//						var response = confirm(requestmsg);
-//						if (!response)
-//							{
-//								$(this).prop('checked', true);
-//								return;
-//							}
-//						Pexor.DabcCommand("PexReadout/StopFile","",function(
-//								result) {
-//							MyDisplay.SetStatusMessage(result ? "Stop File command sent."
-//									: "Stop File FAILED.");
-//							MyDisplay.RefreshMonitor();
-//						});
-//							
-//							
-//							}
-//						else
-//							{							
-//							var datafilename=document.getElementById("Filename").value;
-//							var datafilelimit=document.getElementById("Filesize").value;
-//							
-//						var requestmsg = "Really Start writing output file "
-//						+ datafilename + ", maxsize=" + datafilelimit +" ?";
-//					var response = confirm(requestmsg);
-//					if (!response)
-//						{
-//							$(this).prop('checked', false);						
-//							return;
-//						}
-//					
-//						var options = "FileName=" + datafilename
-//						 + "&maxsize=" + datafilelimit;
-//
-//						Pexor.DabcCommand("PexReadout/StartFile", options,function(
-//								result) {
-//							MyDisplay.SetStatusMessage(result ? "Start File command sent with options "+options
-//									: "Start File FAILED.");
-//							if (result)
-//								{
-//								Pexor.fFileName = datafilename;
-//								}
-//							MyDisplay.RefreshMonitor();
-//							
-//							
-//						});
-//							}
-//					});
 
-
-
-	   $("#lmd_file_form").submit(
+	$("#lmd_file_form").submit(
 				function(event) {
 					
 					var checked=Pexor.fFileOpen;
@@ -682,7 +624,6 @@ $(function() {
 	
 
 	$("#Monitoring").button({text: false, icons: { primary: "ui-icon-play MyButtonStyle"}}).click(function() {		
-		//MyDisplay.fUpdateInterval= Number($("#Refreshtime").value); // does not work?
 		MyDisplay.fUpdateInterval=1000*parseInt(document.getElementById("Refreshtime").value);
 		MyDisplay.ChangeMonitoring($(this).is(':checked'));
 		MyDisplay.RefreshView();
@@ -787,20 +728,22 @@ $(function() {
 	 
 	
 	
-
-//	$("#buttonUserGUI").button({text: false, icons: { primary: "ui-icon-calculator MyButtonStyle"}}).click(
-//			function() {
-//					MyDisplay.SetStatusMessage("Launched gosip user gui."); 
-//					window.open('/GOSIP/Test/UI/','_blank');
-//				});
-
-	// this works without replacing existing classes icons:
-	$("#buttonUserGUI").text("").append('<img src="img/PolandLogo.png"  height="24" width="25"/>').button({text: false})
-	.click(
+// Use new jquery ui styled icon. However, here we would lose colors due to rendering
+	$("#buttonUserGUI").button({text: false, icons: { primary: "ui-icon-poland MyButtonStyle"}}).click(
 			function() {
 					MyDisplay.SetStatusMessage("Launched gosip user gui."); 
 					window.open('/GOSIP/Test/UI/','_blank');
 				});
+
+	
+	
+	// this works without replacing existing classes icons:
+//	$("#buttonUserGUI").text("").append('<img src="img/PolandLogo.png"  height="24" width="25"/>').button()
+//	.click(
+//			function() {
+//					MyDisplay.SetStatusMessage("Launched gosip user gui."); 
+//					window.open('/GOSIP/Test/UI/','_blank');
+//				});
 	
 
 	
