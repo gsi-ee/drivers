@@ -1339,7 +1339,7 @@ void set_pexor (struct dev_pexor* pg, void* membase, unsigned long bar)
 
 irqreturn_t pexor_isr (int irq, void *dev_id)
 {
-  u32 irtype, irstat;
+  u32 irtype, irstat, irmask;
   int state;
 #ifdef PEXOR_WITH_TRIXOR
   struct pexor_trigger_buf* trigstat;
@@ -1347,6 +1347,8 @@ irqreturn_t pexor_isr (int irq, void *dev_id)
   struct pexor_privdata *privdata;
 
   privdata = (struct pexor_privdata *) dev_id;
+
+  irmask=(TRIX_EV_IRQ_CLEAR | TRIX_DT_CLEAR);
 
 #ifdef PEXOR_DISABLE_IRQ_ISR
   //disable_irq(irq);  // disable and spinlock until any isr of that irq has been finished -> deadlock!
@@ -1362,7 +1364,7 @@ irqreturn_t pexor_isr (int irq, void *dev_id)
   mb();
   ndelay(200);
   pexor_dbg(KERN_NOTICE "pexor driver interrupt handler with interrupt status 0x%x!\n", irtype);
-  if (irtype & (TRIX_EV_IRQ_CLEAR | TRIX_DT_CLEAR)) /* test bits */
+  if ((irtype & irmask) == irmask) /* test bits */
   {
     /* prepare for trixor interrupts here:*/
     irstat = (irtype << 16) & 0xffff0000;
