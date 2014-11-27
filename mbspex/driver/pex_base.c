@@ -1014,28 +1014,25 @@ irqreturn_t irq_hand (int irq, void *dev_id)
 
   struct pex_privdata *privdata;
   /*pex_dbg(KERN_INFO "BEGIN irq_hand \n");*/
-  u32 irtype;
+  u32 irtype, irmask;
+  irmask=(TRIX_EV_IRQ_CLEAR | TRIX_DT_CLEAR);
   privdata = (struct pex_privdata *) dev_id;
-  disable_irq_nosync (irq);
-
-  ndelay(1000);
   irtype = ioread32 (privdata->regs.irq_status);
   mb();
-  ndelay(200);
+  // JAM test: do not wait when testing status reg
+  //ndelay(200); // ORIG
   //pex_dbg(KERN_NOTICE "mbspex driver interrupt handler with interrupt status 0x%x!\n", irtype);
 
-  if (irtype & (TRIX_EV_IRQ_CLEAR | TRIX_DT_CLEAR)) /* test bits, is this interupt from us?*/
+  if ((irtype & irmask) == irmask) /* test bits, is this interupt from us?*/
   {
-    //pex_dbg(KERN_NOTICE "mbspex driver handling it\n", irtype);
+    disable_irq_nosync (irq);
+    //pex_dbg(KERN_NOTICE "mbspex driver handling interrupt type :0x%x\n", irtype);
+    ndelay(200); // JAM test: only wait before writing
 
     // clear source of pending interrupts (in trixor)
     iowrite32 ((TRIX_EV_IRQ_CLEAR | TRIX_IRQ_CLEAR), privdata->regs.irq_status);
-
-    //wmb ();
     mb ();
-
     ndelay(1000);
-
     enable_irq (irq);
 
     //ndelay (200);
@@ -1051,13 +1048,14 @@ irqreturn_t irq_hand (int irq, void *dev_id)
 #endif //INTERNAL_TRIG_TEST
     /*    pex_dbg(KERN_INFO "END   irq_hand \n");*/
 
+
     //printk (KERN_INFO "END   irq_hand \n");
     return IRQ_HANDLED;
   }
   else
   {
-    pex_msg(KERN_NOTICE "mbspex driver unknown irtype 0x%x\n", irtype);
-    enable_irq (irq);
+    //pex_dbg(KERN_NOTICE "mbspex driver unknown irtype 0x%x\n", irtype);
+    //enable_irq (irq);
     return IRQ_NONE;
   }
 }
