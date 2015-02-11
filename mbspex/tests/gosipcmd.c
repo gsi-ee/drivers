@@ -860,3 +860,18 @@ int main (int argc, char *argv[])
   return l_status;
 }
 
+#ifndef MBSPEX_NOMBS
+/*****************************************************************/
+/* here separate definition of printm:*/
+#include <stdarg.h>
+
+void printm (CHARX *fmt, ...)
+{
+  CHARX c_str[256];
+  va_list args;
+  va_start(args, fmt);
+  vsprintf (c_str, fmt, args);
+  printf ("%s", c_str);
+  va_end(args);
+}
+#endif

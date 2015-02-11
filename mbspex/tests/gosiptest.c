@@ -506,3 +506,21 @@ printf ("Test to map pipe at 0x%x, size: 0x%x, ...\n", off, len);
 return 0;
 }
 
+
+#ifndef MBSPEX_NOMBS
+/*****************************************************************/
+/* here separate definition of printm required by mbspex lib at link time:*/
+
+#include <stdarg.h>
+
+void printm (CHARX *fmt, ...)
+{
+  CHARX c_str[256];
+  va_list args;
+  va_start(args, fmt);
+  vsprintf (c_str, fmt, args);
+  printf ("%s", c_str);
+  va_end(args);
+}
+#endif
+

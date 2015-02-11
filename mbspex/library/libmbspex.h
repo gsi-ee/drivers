@@ -14,14 +14,11 @@
 
 #include "../include/pex_user.h"
 
-/* enable this define if you link against mbs libraries */
-/*#define MBSPEX_USEMBS 1*/
-
-
-#ifdef MBSPEX_USEMBS
-#include "f_ut_printm.h"
-#else
+#ifdef MBSPEX_NOMBS
 #define printm printf
+#else
+typedef char            CHARX;
+void printm (CHARX *, ...); /* use mbs logger, or for gosipcmd this will be reimplemented  as printf for link time switching*/
 #endif
 
 
