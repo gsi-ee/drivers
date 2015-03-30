@@ -513,9 +513,9 @@ return 0;
 
 #include <stdarg.h>
 
-void printm (CHARX *fmt, ...)
+void printm (char *fmt, ...)
 {
-  CHARX c_str[256];
+  char c_str[256];
   va_list args;
   va_start(args, fmt);
   vsprintf (c_str, fmt, args);
