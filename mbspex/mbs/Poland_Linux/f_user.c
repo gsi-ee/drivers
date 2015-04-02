@@ -5,6 +5,10 @@
 /* This define will switch on usage of mbspex lib with locked ioctls instead of direct register mapping usage*/
 #define USE_MBSPEX_LIB 1
 
+/* this define switches user readout for virtual pipe
+ * TODO: evaluate this directly from mbs setup structure?*/
+#define USE_VIRTUAL_PIPE 1
+
 #include "stdio.h"
 #include "s_veshe.h"
 #include "stdarg.h"
@@ -69,7 +73,7 @@
 
 // nr of slaves on SFP 0  1  2  3
 //                     |  |  |  |
-#define NR_SLAVES     {2, 0, 0, 0}
+#define NR_SLAVES     {1, 1, 0, 0}
 
 #define STATISTIC   2000000
 
@@ -83,12 +87,15 @@
                                        // - otherwisse send data immediately
                                        //   after token arrived at qfw/exploder  
 
-#define SEQUENTIAL_TOKEN_SEND 1        // - token sending and receiving is
+//#define SEQUENTIAL_TOKEN_SEND 1        // - token sending and receiving is
                                        //   sequential for all used SFPs
                                        // - otherwise token sending and receiving
                                        //   is done parallel for all used SFPs
 
 //----------------------------------------------------------------------------
+
+#ifndef USE_VIRTUAL_PIPE
+// direct dma still not possible with virtual pipe in current driver
 
 #ifdef SEQUENTIAL_TOKEN_SEND
  #define DIRECT_DMA    1 
@@ -97,11 +104,15 @@
  #endif
 #endif
 
+#endif
+
+
+
 #define PEXOR_PC_DRAM_DMA 1
 
 #define USER_TRIG_CLEAR 1
 
-#define CHECK_META_DATA 1
+//#define CHECK_META_DATA 1
 
 //#define printm printf
 
@@ -145,7 +156,7 @@ static   INTS4    fd_pex;             // file descriptor for PEXOR device
 static   INTS4    l_sfp_slaves[MAX_SFP] = NR_SLAVES;
 
 static   INTS4    l_bar0_base;
-static   long  volatile *pl_virt_bar0;
+static   INTS4  volatile *pl_virt_bar0;
 
 static   int   l_i, l_j, l_k;
 static  long  l_stat;
@@ -172,7 +183,7 @@ static  long  l_sfp_id;
 static  long  l_qfw_id;
 static  long  l_cha_id;
 
-static  long *pl_dat_save, *pl_tmp;
+static  INTS4 *pl_dat_save, *pl_tmp;
 static  long  l_dat_len_sum[MAX_SFP];
 static  long  l_dat_len_sum_long[MAX_SFP];
 static  long  volatile *pl_pex_sfp_mem_base[MAX_SFP];
@@ -359,11 +370,13 @@ int f_user_readout (unsigned char   bh_trig_typ,
                     unsigned char   bh_crate_nr,
                     register long  *pl_loc_hwacc,
                     register long  *pl_rem_cam,
-                    long           *pl_dat,
+                    long           *pl_dat_long,
                     s_veshe        *ps_veshe,
                     long           *l_se_read_len,
                     long           *l_read_stat)
 {
+  INTS4* pl_dat = (INTS4*) pl_dat_long; /* JAM64: need to change pointer type since we still work with 4 byte data words in mbs event!*/
+
   *l_se_read_len = 0;
   pl_dat_save = pl_dat;
 
@@ -675,7 +688,12 @@ int f_user_readout (unsigned char   bh_trig_typ,
                    else                                 { l_burst_size = 0x80; }
 
 
+
+
 #ifdef USE_MBSPEX_LIB
+
+
+
            // transfer size must be adjusted to burst size
                    if ( (l_dat_len_sum[l_i] % l_burst_size) != 0)
                    {
@@ -691,15 +709,45 @@ int f_user_readout (unsigned char   bh_trig_typ,
                              if ( ((long)pl_dat % l_burst_size) != 0)
                              {
                                l_padd[l_i] = l_burst_size - ((long)pl_dat % l_burst_size);
-                               l_dma_target_base = (long) pl_dat + l_diff_pipe_phys_virt + l_padd[l_i];
+#ifdef USE_VIRTUAL_PIPE
+                                 l_dma_target_base = (long) pl_dat + l_padd[l_i];
+#else
+                                 l_dma_target_base = (long) pl_dat + l_diff_pipe_phys_virt + l_padd[l_i];
+#endif
+
+
+
                              }
                              else
                              {
+#ifdef USE_VIRTUAL_PIPE
+                               l_dma_target_base = (long) pl_dat;
+#else
                                l_dma_target_base = (long) pl_dat + l_diff_pipe_phys_virt;
+#endif
+
+
                              }
 
+#ifdef USE_VIRTUAL_PIPE
+                             l_stat =mbspex_dma_rd_virt (fd_pex, l_pex_sfp_phys_mem_base[l_i], l_dma_target_base, l_dma_trans_size,l_burst_size);
+                             if(l_stat<0)
+                               printm("!!!!!!! error dma to virtual pipe!\n");
+                             else if (l_stat !=l_dma_trans_size)
+                               {
+                                 printm("!!!!!! dma to virtual pipe length mismatch: transferred:0x%x, requested:0x%x\n",l_stat,l_dma_trans_size);
+                               }
+                             else
+                               {
+                                 //printm("!!!!!!! dma to virtual pipe did transfer 0x%x bytes. \n",l_dma_trans_size);
+                               }
+
+#else
           mbspex_dma_rd (fd_pex, l_pex_sfp_phys_mem_base[l_i], l_dma_target_base, l_dma_trans_size,l_burst_size);
           /* note: return value is true dma transfer size, we do not use this here*/
+#endif
+
+
 
 #else
 
@@ -927,7 +975,7 @@ bad_event:
             *pl_dat++= l_cha_head;
           for (l_k = 0; l_k < 32; l_k++)
           {
-            l_stat = f_pex_slave_rd (l_i, l_j, REG_QFW_OFFSET_BASE + 4*l_k, pl_dat++);
+            l_stat = f_pex_slave_rd (l_i, l_j, REG_QFW_OFFSET_BASE + 4*l_k, (long*) pl_dat++);
             printm ("oooooooo Read offset %d: 0x%x \n", l_k, *(pl_dat - 1));
           }
         }
@@ -946,6 +994,8 @@ bad_event:
     l_lec_check = -1;
     break;
     default:
+        printm ("TTTTTTTTTTT Found unhandled Trigger Type :%d \n", bh_trig_typ);
+      
     break;
   }
   return (1);

@@ -2,6 +2,7 @@
  * pex_user.h
  *
  *  Created on: 01.12.2009, Updated for mbspex 08.04.2014
+ *                          Added sg pipe mode 13.03.2015
  *      Author: J. Adamczewski-Musch
  *
  *      Contains all common definitions for kernel driver and user space library
@@ -46,9 +47,17 @@ struct pex_reg_io {
     unsigned char bar;      /**< the BAR where the register is mapped to PCI access. */
 };
 
+struct pex_pipebuf {
+    unsigned long addr; /**< user space virtual address of mbs pipe*/
+    unsigned long size; /**< allocated size or used size*/
+};
+
+
+
 struct pex_dma_io {
     unsigned int source;     /**< DMA source start address on the *pex* pciEx board*/
     unsigned int target;     /**< physical DMA target start address in host memory*/
+    unsigned long virtdest;   /**< virtual target start address in readout process. only for pipe type 4 with sg mapping*/
     unsigned int size;      /**< size of bytes to transfer. returns real transfer size*/
     unsigned int burst;     /**< burst lenght in bytes*/
 };
@@ -117,6 +126,10 @@ struct pex_trixor_set {
 #define PEX_IOC_READ_DMA         _IOWR(  PEX_IOC_MAGIC, 16, struct pex_dma_io)      /**< directly initiate DMA transfer from pexor/kinpex board memory to host destination address. Controlled by =struct pex_dma_io=. Required in MBS for backward compatibility in parallel readout mode. since burstsize is computed in user readout function from actual token payload before DMA is started.*/
 #define PEX_IOC_CONFIG_BUS       _IOWR(  PEX_IOC_MAGIC, 17, struct pex_bus_config)  /**< Send package of configuration values to one or several slaves at once via gosip. Defined by array of  =struct pex_bus_io= that is contained in =struct pex_bus_config=. Is capable of slave broadcast if sfp or slave id is -1.*/
 #define PEX_IOC_GET_SFP_LINKS    _IOR(  PEX_IOC_MAGIC, 18, struct pex_sfp_links)    /**< Retrieve actual number of configured slaves for each sfp chain, as it was done by  =PEX_IOC_INIT_BUS=. This is delivered in =struct pex_sfp_links=. Required from =gosipcmd= to perform a safe _broadcast read_ of register values.*/
+#define PEX_IOC_MAP_PIPE         _IOW(  PEX_IOC_MAGIC, 19, struct pex_pipebuf)          /**< map virtual mbs pipe to driver sg list*/
+#define PEX_IOC_UNMAP_PIPE       _IO(  PEX_IOC_MAGIC, 20)        /**< unmap virtual mbs pipe and clear driver sg list*/
+#define PEX_IOC_READ_DMA_PIPE    _IOWR(  PEX_IOC_MAGIC, 21, struct pex_dma_io)      /**< directly initiate DMA transfer from pexor/kinpex board memory to _virtual_ destination address in pipe. Pipe must be mapped before into internal sg list by PEX_IOC_MAP_PIPE*/
+
 
 
 /** we keep old ioctl definitions for backward compatibility and patch it in ioctl function*/
@@ -125,7 +138,7 @@ struct pex_trixor_set {
 #define GET_BAR0_BASE       0x1234
 #define GET_BAR0_TRIX_BASE  0x1235
 #define RESET_SEM           0x1236
-#define PEX_IOC_MAXNR 24
+#define PEX_IOC_MAXNR 27
 
 
 /* note: we do not redefine ioctls existing in mbs user code!*/

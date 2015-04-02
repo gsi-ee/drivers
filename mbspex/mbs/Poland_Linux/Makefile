@@ -76,6 +76,16 @@ SMILIBS = $(LIB)/lib_mbs.a $(LIB)/lib_tools.a $(LIB)/lib_mbs.a $(LIB)/lib_smi.a 
           $(LIB)/libedit.a  -lnetinet
 endif
 
+ifeq ($(GSI_OS_VERSION),3.2-64)
+POSIX   =
+CFLAGS  = $(POSIX) -DLinux -Dunix -DV40 -DGSI_MBS -D$(GSI_CPU_ENDIAN) -D$(GSI_CPU_PLATFORM)
+LIBS    = $(LIB)/lib_mbs.a $(LIB)/lib_tools.a $(LIB)/lib_mbs.a $(DIMLIB) \
+          $(LIB)/libedit.a  $(LIB)/lib_mbs.a -lpthread -lrt
+SMILIBS = $(LIB)/lib_mbs.a $(LIB)/lib_tools.a $(LIB)/lib_mbs.a $(LIB)/lib_smi.a \
+          $(LIB)/libedit.a  -lnetinet
+endif
+
+
 #PEX_INC = -I/daq/usr/adamczew/workspace/drivers/mbspex/include
 #PEX_LIB = /daq/usr/adamczew/workspace/drivers/mbspex/lib/libmbspex.a
 PEX_INC = -I/mbs/driv/mbspex_$(GSI_OS_VERSION)_DEB/include

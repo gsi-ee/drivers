@@ -6,6 +6,15 @@
 
 #include "pex_base.h"
 
+/** hold full device number */
+static dev_t pex_devt;
+static atomic_t pex_numdevs = ATOMIC_INIT(0);
+static int my_major_nr = 0;
+
+MODULE_AUTHOR("Nikolaus Kurz, Joern Adamczewski-Musch, EE, GSI, 13-Mar-2015");
+MODULE_LICENSE("Dual BSD/GPL");
+
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
 static struct class* pex_class;
 static DEVICE_ATTR(codeversion, S_IRUGO, pex_sysfs_codeversion_show, NULL);
@@ -14,15 +23,9 @@ static DEVICE_ATTR(bar0base, S_IRUGO, pex_sysfs_bar0base_show, NULL);
 static DEVICE_ATTR(trixorbase, S_IRUGO, pex_sysfs_trixorbase_show, NULL);
 static DEVICE_ATTR(dmaregs, S_IRUGO, pex_sysfs_dmaregs_show, NULL);
 static DEVICE_ATTR(sfpregs, S_IRUGO, pex_sysfs_sfpregs_show, NULL);
-#endif
+static DEVICE_ATTR(mbspipe, S_IRUGO, pex_sysfs_pipe_show, NULL);
 
-/** hold full device number */
-static dev_t pex_devt;
-static atomic_t pex_numdevs = ATOMIC_INIT(0);
-static int my_major_nr = 0;
 
-MODULE_AUTHOR("Nikolaus Kurz, Joern Adamczewski-Musch, EE, GSI, 8-Apr-2014");
-MODULE_LICENSE("Dual BSD/GPL");
 
 ssize_t pex_sysfs_trixorregs_show (struct device *dev, struct device_attribute *attr, char *buf)
 {
@@ -110,6 +113,41 @@ ssize_t pex_sysfs_dmaregs_show (struct device *dev, struct device_attribute *att
   curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t RAM end:                 0x%x\n", readl(pg->ram_end));
   return curs;
 }
+
+ssize_t pex_sysfs_pipe_show (struct device *dev, struct device_attribute *attr, char *buf)
+{
+  ssize_t curs = 0;
+  int i = 0;
+  struct mbs_pipe* pipe;
+  struct scatterlist *sg = NULL;
+  struct pex_privdata *privdata;
+  privdata = (struct pex_privdata*) dev_get_drvdata (dev);
+  pipe = &(privdata->pipe);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "*** MBS pipe dump:\n");
+  if (pipe->size == 0)
+  {
+    curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t No virtual pipe is mapped for scatter-gather DMA. Pipe type 4 is required for this!\n");
+  }
+  else
+  {
+    curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t virtual start address: 0x%lx\n", pipe->virt_start);
+    curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t total length: 0x%lx\n", pipe->size);
+    curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t number of pages:     %d\n", pipe->num_pages);
+    curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t number of sg chunks: %d\n", pipe->sg_ents);
+    for_each_sg(pipe->sg, sg, pipe->sg_ents,i)
+    {
+      if((i>10) &&  !(pipe->sg_ents - i < 10)) continue; // skip everything except first and last entries
+      curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t-- sg chunk %d: start 0x%x length 0x%x \n", i,
+          (unsigned) sg_dma_address(sg), sg_dma_len(sg));
+
+      if(PAGE_SIZE - curs < 0) return PAGE_SIZE; // avoid overflowing buffer
+    }
+  }
+  return curs;
+}
+
+#endif // INUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
+
 
 void test_pci (struct pci_dev *dev)
 {
@@ -360,7 +398,8 @@ int pex_poll_dma_complete (struct pex_privdata* priv)
 {
   int loops = 0;
   u32 enable = PEX_DMA_ENABLED_BIT;
-
+   pex_tdbg(KERN_ERR "pex_poll_dma_complete: starts...\n");
+   
   while (1)
   {
     /* pex_dbg(KERN_ERR "pex_poll_dma_complete reading from 0x%p \n",priv->regs.dma_control_stat);*/
@@ -383,6 +422,7 @@ int pex_poll_dma_complete (struct pex_privdata* priv)
     if (PEX_DMA_POLL_SCHEDULE)
       schedule ();
   };
+  pex_tdbg(KERN_ERR "pex_poll_dma_complete: returns...\n");
   return 0;
 }
 
@@ -589,7 +629,7 @@ int pex_ioctl_write_register (struct pex_privdata* priv, unsigned long arg)
   u32 val = 0;
   int bar = 0;
   struct pex_reg_io descriptor;
-  retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_reg_io));
+  retval = pex_copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_reg_io));
   if (retval)
     return retval;
   /* here we assume something for this very connection, to be adjusted later*/
@@ -621,7 +661,7 @@ int pex_ioctl_read_register (struct pex_privdata* priv, unsigned long arg)
   u32 val = 0;
   int bar = 0;
   struct pex_reg_io descriptor;
-  retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_reg_io));
+  retval = pex_copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_reg_io));
   if (retval)
     return retval;
   ad = (u32*) (ptrdiff_t) descriptor.address;
@@ -653,7 +693,7 @@ int pex_ioctl_read_dma (struct pex_privdata* priv, unsigned long arg)
   dma_addr_t dmasource, dmadest;
   u32 dmasize, dmaburst;
   struct pex_dma_io descriptor;
-  retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_dma_io));
+  retval = pex_copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_dma_io));
   if (retval)
     return retval;
   dmasource = descriptor.source;
@@ -674,12 +714,329 @@ int pex_ioctl_read_dma (struct pex_privdata* priv, unsigned long arg)
   return retval;
 }
 
+int pex_ioctl_read_dma_pipe (struct pex_privdata* priv, unsigned long arg)
+{
+  int rev = 0, i=0;
+  unsigned long virtdest, woffset;
+  dma_addr_t dmasource, sgcursor;
+  u32 dmasize, dmaburst, sglensum, sglen;
+  struct mbs_pipe* pipe;
+  struct scatterlist *sgentry = NULL;
+  /* debug for dump target segments*/
+//  struct scatterlist *firstentry = NULL;
+//  unsigned long firstoffset=0;
+  /* end debug for dump target segments*/
+  struct pex_dma_io descriptor;
+  pex_dbg(KERN_NOTICE "#### pex_ioctl_read_dma_pipe starts copy from user\n");
+  rev = pex_copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_dma_io));
+
+  if (rev)
+    return rev;
+  pipe = &(priv->pipe);
+  dmasource = descriptor.source;
+  virtdest = descriptor.virtdest;
+  dmasize = descriptor.size;
+
+  pex_dbg(KERN_NOTICE "#### pex_ioctl_read_dma_pipe with source 0x%x, virt dest 0x%lx, size 0x%x, vpipe start:0x%lx\n", (unsigned int) dmasource, virtdest, dmasize, pipe->virt_start);
+  // find which sg entry belongs to our start address:
+
+  woffset=virtdest - pipe->virt_start; // write offset relative to pipe begin
+                                       // this will only work if calling process is the same that had mapped pipe!
+                                       // usually, this is m_read_meb
+
+  // sync pipe buffer to allow device DMA: TODO: only sync parts of sg list that are really used!
+  pci_dma_sync_sg_for_device( priv->pdev, pipe->sg, pipe->sg_ents,PCI_DMA_FROMDEVICE );
+
+  // loop over all sg chunks:
+  sgcursor = dmasource;
+  sglensum = 0;
+  i = 0;
+  pex_dbg(KERN_NOTICE "#### pex_ioctl_read_dma_pipe looping sglist with %d entries\n", pipe->sg_ents);
+
+  for_each_sg(pipe->sg,sgentry, pipe->sg_ents,i)
+       {
+         sglen = sg_dma_len(sgentry);
+         if (woffset >= sglen)
+         {
+           /* find out start segment for pipe write offset and adjust local offset*/
+           woffset -= sglen;
+
+           /* limit debug output, otherwise we flood syslogd...*/
+           if((i<10) ||  (pipe->sg_ents - i < 10)) {
+             pex_dbg(KERN_NOTICE "#### pex_ioctl_read_dma_pipe skipping entry %d, woffset=0x%lx bytes", i,woffset);
+           }
+           continue;
+         }
+         sglen -= woffset; /* reduce transfer length from offset to end of first used segment*/
+         if (dmasize < sglen)
+           sglen = dmasize; /* source buffer fits into first sg page*/
+         if (dmasize - sglensum < sglen)
+           sglen = dmasize - sglensum; /* cut dma length for last sg page*/
+
+         // adjust burst size to match start address and length within chunk:
+         dmaburst = descriptor.burst;
+         while (sglen % dmaburst)
+         {
+             dmaburst = (dmaburst >> 1);
+             if(dmaburst == PEX_BURST_MIN)
+             {
+               pex_msg(
+                          KERN_NOTICE "#### pex_ioctl_read_dma_pipe reduced dmaburst to min:0x%x \n", dmaburst);
+               break;
+
+             }
+         }
+         //dmaburst =PEX_BURST_MIN; // JAM test for sg chunks override user given burstsize
+
+         /* DEBUG: pretend to do dma, but do not issue it*/
+         pex_dbg(
+             KERN_NOTICE "#### pex_ioctl_read_dma_pipe would start dma from 0x%x to 0x%x of length 0x%x, offset 0x%lx, complete chunk length: 0x%x\n", (unsigned) sgcursor, (unsigned) sg_dma_address(sgentry), sglen, woffset, sg_dma_len(sgentry));
+
+         /**** END DEBUG*/
+
+
+
+         /* initiate dma to next sg part:*/
+         if (pex_start_dma (priv, sgcursor, sg_dma_address(sgentry) + woffset, sglen, 0, dmaburst) < 0)
+           {
+             rev = -EINVAL;
+             goto pipe_sync_for_cpu;
+           }
+         if (woffset > 0)
+           woffset = 0; /* reset write offset, once it was applied to first sg segment*/
+
+         if ((rev = pex_poll_dma_complete (priv)) != 0)
+         {
+           pex_msg(KERN_NOTICE "#### pex_ioctl_read_dma_pipe error on polling for sg entry %d completion, \n", i);
+           goto pipe_sync_for_cpu;
+         }
+
+         // find out the real transferred length?
+         sglen = ioread32 (priv->regs.dma_len);
+         pex_bus_delay(); // this could give some time penalty?
+
+
+         sglensum += sglen;
+         if (sglensum >= dmasize)
+         {
+           pex_dbg(KERN_NOTICE "#### pex_ioctl_read_dma_pipe has finished sg buffer dma after %d segments\n", i);
+           break;
+         }
+         sgcursor += sglen;
+
+       }    // for each sg
+
+
+
+
+  descriptor.size = sglensum;
+  rev = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pex_dma_io));
+
+  if (sglensum < dmasize)
+  {
+    pex_msg(KERN_NOTICE "#### pex_ioctl_read_dma_pipe could not write full size 0x%x , transferred was: 0x%x\n", dmasize, sglensum);
+    rev= -EINVAL;
+  }
+
+  pipe_sync_for_cpu:
+  // need to sync pipe for cpu after dma is complete: TODO: only sync parts of pipe that have really been written?
+   pci_dma_sync_sg_for_cpu (priv->pdev, pipe->sg, pipe->sg_ents, PCI_DMA_FROMDEVICE);
+   pex_dbg(KERN_NOTICE "#### pex_ioctl_read_dma_pipe has synced for cpu %d entries\n", pipe->sg_ents);
+
+   // here try to dump directly contents
+
+  return rev;
+}
+
+
+
+
+
+
+
+int pex_ioctl_map_pipe (struct pex_privdata *priv, unsigned long arg)
+{
+  // here evalulate sg list f
+
+  int i, res = 0;
+   int nr_pages = 0;
+   struct page **pages;
+   struct scatterlist *sg = NULL;
+   unsigned int nents;
+   unsigned long count, offset, length;
+   struct pex_pipebuf pipedesc;
+   res = copy_from_user (&pipedesc, (void __user *) arg, sizeof(struct pex_pipebuf));
+   if (res)
+     return res;
+   if (pipedesc.size == 0)
+     return -EINVAL;
+
+   /* calculate the number of pages */
+     nr_pages = ((pipedesc.addr & ~PAGE_MASK)+ pipedesc.size + ~PAGE_MASK)>>PAGE_SHIFT;
+     pex_msg(KERN_NOTICE "nr_pages computed: 0x%x\n", nr_pages);
+
+     /* Allocate space for the page information */
+     if ((pages = vmalloc (nr_pages * sizeof(*pages))) == NULL )
+       goto mapbuffer_descriptor;
+     /* Allocate space for the scatterlist */
+     if ((sg = vmalloc (nr_pages * sizeof(*sg))) == NULL )
+       goto mapbuffer_pages;
+
+     sg_init_table (sg, nr_pages);
+
+     /* Get the page information */
+     down_read (&current->mm->mmap_sem);
+     res = get_user_pages (current, current->mm, pipedesc.addr, nr_pages, 1, 0, pages, NULL );
+     up_read (&current->mm->mmap_sem);
+
+     /* Error, not all pages mapped */
+     if (res < (int) nr_pages)
+     {
+       pex_msg(KERN_ERR "Could not map all user pages (0x%x of 0x%x)\n", res, nr_pages);
+       /* If only some pages could be mapped, we release those. If a real
+        * error occured, we set nr_pages to 0 */
+       nr_pages = (res > 0 ? res : 0);
+       goto mapbuffer_unmap;
+     }
+
+     pex_msg(KERN_NOTICE "Got the pages (0x%x).\n", res);
+
+     if(pex_ioctl_unmap_pipe(priv,arg)==0)
+         pex_msg(KERN_NOTICE "Cleaned up previous pipe \n"); // clean up previous pipe if not done before
+
+
+      /* populate sg list:*/
+      /* page0 is different */
+
+#ifndef     PEX_SG_NO_MEMLOCK
+      if (!PageReserved (pages[0]))
+        //lock_page_killable(pages[0]);
+          __set_page_locked (pages[0]);
+      //SetPageLocked(pages[0]);
+#endif
+      /* for first chunk, we take into account that memory is possibly not starting at
+       * page boundary:*/
+      offset = (pipedesc.addr & ~PAGE_MASK);
+      length = (pipedesc.size > (PAGE_SIZE - offset) ? (PAGE_SIZE - offset) : pipedesc.size);
+      sg_set_page (&sg[0], pages[0], length, offset);
+
+      count = pipedesc.size - length;
+      for (i = 1; i < nr_pages; i++)
+      {
+
+#ifndef     PEX_SG_NO_MEMLOCK
+        if (!PageReserved (pages[i]))
+          //lock_page_killable(pages[0]); // will block this calling process if used on shared memory! sleep on wait queue
+          __set_page_locked (pages[i]); // will block other process that read shared memory,
+        //SetPageLocked(pages[i]);
+#endif
+        sg_set_page (&sg[i], pages[i], ((count > PAGE_SIZE)? PAGE_SIZE : count), 0);
+        count -= sg[i].length;
+      }
+
+      /* Use the page list to populate the SG list */
+      /* SG entries may be merged, res is the number of used entries */
+      /* We have originally nr_pages entries in the sg list */
+      if ((nents = pci_map_sg (priv->pdev, sg, nr_pages, PCI_DMA_FROMDEVICE)) == 0)
+        goto mapbuffer_unmap;
+
+      pex_msg(KERN_NOTICE "Mapped SG list (0x%x entries).\n", nents);
+
+
+
+      // put sg list to privdata pipe singleton:
+      (priv->pipe).num_pages = nr_pages; /* Will be needed when unmapping */
+      (priv->pipe).pages = pages;
+      (priv->pipe).sg_ents = nents; /* number of coherent dma buffers to transfer*/
+      (priv->pipe).sg = sg;
+
+      (priv->pipe).virt_start = pipedesc.addr;
+      (priv->pipe).size = pipedesc.size;
+
+      /* DEBUG ****************************************       */
+      pex_msg(KERN_NOTICE "\t virtual start address: 0x%lx\n", (priv->pipe).virt_start);
+      pex_msg(KERN_NOTICE "\t total length: 0x%lx\n", (priv->pipe).size);
+      pex_msg(KERN_NOTICE "\t number of pages:     %d\n", (priv->pipe).num_pages);
+      pex_msg(KERN_NOTICE "\t number of sg chunks: %d\n", (priv->pipe).sg_ents);
+      for_each_sg((priv->pipe).sg,sg, (priv->pipe).sg_ents,i)
+      {
+        if((i>10) &&  !((priv->pipe).sg_ents - i < 10)) continue; // skip everything except first and last entries
+        pex_msg(
+            KERN_NOTICE "-- dump sg chunk %d: start 0x%x length 0x%x \n", i, (unsigned) sg_dma_address(sg), sg_dma_len(sg));
+      }
+      /***************************************************/
+
+      return 0;
+
+      mapbuffer_unmap:
+      /* release pages */
+
+
+      for (i = 0; i < nr_pages; i++)
+      {
+#ifndef     PEX_SG_NO_MEMLOCK
+        if (PageLocked (pages[i]))
+          //unlock_page(pages[i]);
+          __clear_page_locked (pages[i]);
+        //ClearPageLocked(pages[i]);
+#endif
+
+        if (!PageReserved (pages[i]))
+          SetPageDirty (pages[i]);
+        page_cache_release(pages[i]);
+      }
+      vfree (sg);
+      mapbuffer_pages: vfree (pages);
+      mapbuffer_descriptor: ;
+
+      return -ENOMEM;
+
+
+
+
+
+
+  return 0;
+}
+
+
+
+
+
+int pex_ioctl_unmap_pipe (struct pex_privdata *priv, unsigned long arg)
+{
+  int i = 0;
+  if((priv->pipe).size==0) return 1;
+   pex_dbg(KERN_NOTICE "**mbspex unmapping sg pipe, size=%ld, user start address=%lx \n", (priv->pipe).size, (priv->pipe).virt_start);
+   pci_unmap_sg (priv->pdev, (priv->pipe).sg, (priv->pipe).num_pages, PCI_DMA_FROMDEVICE);
+   for (i = 0; i < ((priv->pipe).num_pages); i++)
+   {
+     if (!PageReserved ((priv->pipe).pages[i]))
+     {
+       SetPageDirty ((priv->pipe).pages[i]);
+
+#ifndef     PEX_SG_NO_MEMLOCK
+       //  unlock_page((priv->pipe).pages[i]);
+       __clear_page_locked ((priv->pipe).pages[i]);
+       //ClearPageLocked(buf->pages[i]);
+#endif
+     }
+     page_cache_release( (priv->pipe).pages[i]);
+   }
+   vfree ((priv->pipe).pages);
+   vfree ((priv->pipe).sg);
+   (priv->pipe).size=0;
+  return 0;
+}
+
+
+
 #ifdef PEX_WITH_TRIXOR
 int pex_ioctl_set_trixor (struct pex_privdata* priv, unsigned long arg)
 {
   int command, retval;
   struct pex_trixor_set descriptor;
-  retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_trixor_set));
+  retval = pex_copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_trixor_set));
   if (retval)
     return retval;
   command = descriptor.command;
@@ -766,12 +1123,14 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
   privdata = (struct pex_privdata*) filp->private_data;
   pex_dbg((KERN_INFO "BEGIN pex_ioctl... \n"));
 
+#ifndef  PEX_NO_IOCTL_SEM
   /* use semaphore to allow multi user mode:*/
   if (down_interruptible(&(privdata->ioctl_sem)))
   {
     pex_dbg((KERN_INFO "down interruptible of ioctl sem is not zero, restartsys!\n"));
     return -ERESTARTSYS;
   }
+#endif
   switch (cmd)
   {
     case PEX_IOC_RESET:
@@ -805,12 +1164,12 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     break;
 
     case PEX_IOC_REQUEST_TOKEN:
-    pex_dbg(KERN_NOTICE "** pex_ioctl request token\n");
+    pex_tdbg(KERN_NOTICE "** pex_ioctl request token\n");
     retval = pex_ioctl_request_token(privdata, arg);
     break;
 
     case PEX_IOC_WAIT_TOKEN:
-    pex_dbg(KERN_NOTICE "** pex_ioctl wait token\n");
+    pex_tdbg(KERN_NOTICE "** pex_ioctl wait token\n");
     retval = pex_ioctl_wait_token(privdata, arg);
     break;
 
@@ -825,9 +1184,25 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     break;
 
     case PEX_IOC_READ_DMA:
-    pex_dbg(KERN_NOTICE "** pex_ioctl read dma\n");
+    pex_tdbg(KERN_NOTICE "** pex_ioctl read dma\n");
     retval = pex_ioctl_read_dma(privdata, arg);
     break;
+
+    case PEX_IOC_READ_DMA_PIPE:
+      pex_dbg(KERN_NOTICE "** pex_ioctl read dma_pipe\n");
+      retval = pex_ioctl_read_dma_pipe(privdata, arg);
+      break;
+
+    case PEX_IOC_MAP_PIPE:
+      pex_msg(KERN_NOTICE "** pex_ioctl map pipe\n");
+      retval = pex_ioctl_map_pipe(privdata, arg);
+      break;
+
+    case PEX_IOC_UNMAP_PIPE:
+      pex_msg(KERN_NOTICE "** pex_ioctl unmap pipe\n");
+      retval = pex_ioctl_unmap_pipe(privdata, arg);
+      break;
+
 
 #ifdef PEX_WITH_TRIXOR
     case PEX_IOC_WAIT_TRIGGER:
@@ -844,7 +1219,9 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     case WAIT_SEM:
     case PEX_IOC_WAIT_SEM:
     pex_dbg(KERN_INFO "Emulated WAIT_SEM using waitqueu\n");
+#ifndef  PEX_NO_IOCTL_SEM
     up(&privdata->ioctl_sem); /* do not lock ioctl during wait on next trigger*/
+#endif
     retval = pex_ioctl_wait_trigger(privdata,arg);
     return retval;
     break;
@@ -866,28 +1243,30 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 #else
     case WAIT_SEM:
     case PEX_IOC_WAIT_SEM:
-    pex_dbg(KERN_INFO " before WAIT_SEM \n");
+    pex_tdbg(KERN_INFO " before WAIT_SEM \n");
+#ifndef  PEX_NO_IOCTL_SEM
     up(&privdata->ioctl_sem); /* do not lock ioctl during wait for next trigger*/
-    pex_dbg(KERN_INFO " after up ioctl_sem WAIT_SEM \n");
+    pex_tdbg(KERN_INFO " after up ioctl_sem WAIT_SEM \n");
+#endif
     if (down_interruptible(&(privdata->trix_sem)))
     {
-      pex_dbg((KERN_INFO "down interruptible of trix  sem is not zero, restartsys!\n"));
+      pex_tdbg((KERN_INFO "down interruptible of trix  sem is not zero, restartsys!\n"));
       return -ERESTARTSYS; /* JAM avoid possible hangup of m_read_meb when killed by resl*/
     }
     privdata->trix_val = 0;
-    pex_dbg((KERN_INFO " after  WAIT_SEM, returning now\n"));
+    pex_tdbg((KERN_INFO " after  WAIT_SEM, returning now\n"));
     return retval;
     break;
     case POLL_SEM:
     case PEX_IOC_POLL_SEM:
-    pex_dbg(
+    pex_tdbg(
         KERN_INFO " before POLL_SEM, trix_val: %ld \n", privdata->trix_val);
     retval = __put_user(privdata->trix_val, (int __user *)arg);
-    pex_dbg((KERN_INFO " after POLL_SEM \n"));
+    pex_tdbg((KERN_INFO " after POLL_SEM \n"));
     break;
     case RESET_SEM:
     case PEX_IOC_RESET_SEM:
-    pex_dbg(KERN_INFO " before RESET_SEM \n");
+    pex_tdbg(KERN_INFO " before RESET_SEM \n");
     privdata->trix_val = 0;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 37)
     init_MUTEX_LOCKED(&(privdata->trix_sem));
@@ -923,7 +1302,10 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     break;
   }
   pex_dbg((KERN_INFO "END   pex_ioctl \n"));
+
+#ifndef  PEX_NO_IOCTL_SEM
   up(&privdata->ioctl_sem);
+#endif
 
   return retval;
 }
@@ -1065,6 +1447,7 @@ irqreturn_t irq_hand (int irq, void *dev_id)
 void cleanup_device (struct pex_privdata* priv)
 {
   int j = 0;
+  unsigned long arg=0;
   struct pci_dev* pcidev;
   if (!priv)
     return;
@@ -1078,11 +1461,20 @@ void cleanup_device (struct pex_privdata* priv)
     device_remove_file (priv->class_dev, &dev_attr_codeversion);
     device_remove_file (priv->class_dev, &dev_attr_sfpregs);
     device_remove_file (priv->class_dev, &dev_attr_dmaregs);
+    device_remove_file (priv->class_dev, &dev_attr_mbspipe);
     device_destroy (pex_class, priv->devno);
     priv->class_dev = 0;
   }
 
 #endif
+
+  if(pex_ioctl_unmap_pipe(priv,arg) ==0)
+  {
+      pex_msg(KERN_NOTICE "Cleaned up previous pipe \n")
+      ; // clean up previous pipe if not done before
+  }
+
+
   /* character device cleanup*/
   if (priv->cdev.owner)
     cdev_del (&priv->cdev);
@@ -1381,6 +1773,11 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
     {
       pex_msg(KERN_ERR "Could not add device file node for sfp registers.\n");
     }
+    if (device_create_file (privdata->class_dev, &dev_attr_mbspipe) != 0)
+        {
+          pex_msg(KERN_ERR "Could not add device file node for mbs pipe dump.\n");
+        }
+
 
 #ifdef INTERNAL_TRIG_TEST
     // initalize TRIXOR only for internal tests

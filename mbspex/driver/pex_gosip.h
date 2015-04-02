@@ -114,7 +114,9 @@
 
 #define pex_sfp_delay()                       \
   mb();      \
-  ndelay(200);
+  ndelay(20);
+
+ /*ndelay(200); JAM test of performance loss, this was reason?*/
 
 /*  ndelay(20); too short for multiprocesses with semaphore wait?*/
 /*udelay(10);*/

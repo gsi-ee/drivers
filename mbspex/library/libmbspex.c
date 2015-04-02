@@ -327,51 +327,51 @@ int mbspex_dma_rd (int handle, long source, long dest, long size, int burst)
 }
 
 
-//int mbspex_dma_rd_virt (int handle, unsigned int source, unsigned long virtdest, unsigned int size, unsigned int burst)
-//{
-//  int rev = 0, errsv = 0;;
-//    struct pex_dma_io descriptor;
-//    mbspex_assert_handle(handle);
-//    descriptor.source = source;
-//    descriptor.virtdest = virtdest;
-//    descriptor.size = size;
-//    descriptor.burst=burst;
-//    rev = ioctl (handle, PEX_IOC_READ_DMA_PIPE, &descriptor);
-//    errsv = errno;
-//    if (rev)
-//    {
-//      printm (RON"ERROR>>"RES"Error %d  on DMA reading 0x%x bytes from address 0x%lx  to 0x%lx (%s)\n", errsv, size, source, virtdest, strerror (errsv));
-//      return -1;
-//    }
-//    return descriptor.size;
-//}
-//
-//int mbspex_map_pipe (int handle, unsigned long startaddress, unsigned long size)
-//{
-//      int rev = 0, errsv = 0;;
-//     struct pex_pipebuf descriptor;
-//      mbspex_assert_handle(handle);
-//      descriptor.addr = startaddress;
-//      descriptor.size = size;
-//      rev = ioctl (handle, PEX_IOC_MAP_PIPE, &descriptor);
-//      errsv = errno;
-//      if (rev)
-//      {
-//        printm (RON"ERROR>>"RES"Error %d  on mapping PIPE of 0x%x bytes from address 0x%lx  (%s)\n", errsv, size, startaddress,  strerror (errsv));
-//        return -1;
-//      }
-//      return descriptor.size;
-//}
-//
-//int mbspex_unmap_pipe (int handle){
-//  int rev = 0, errsv = 0;;
-//       rev = ioctl (handle, PEX_IOC_UNMAP_PIPE);
-//       errsv = errno;
-//       if (rev)
-//       {
-//         printm (RON"ERROR>>"RES"Error %d  on unmapping PIPE (%s)\n", errsv, strerror (errsv));
-//         return -1;
-//       }
-//       return 0;
-//}
+int mbspex_dma_rd_virt (int handle, unsigned int source, unsigned long virtdest, unsigned int size, unsigned int burst)
+{
+  int rev = 0, errsv = 0;;
+    struct pex_dma_io descriptor;
+    mbspex_assert_handle(handle);
+    descriptor.source = source;
+    descriptor.virtdest = virtdest;
+    descriptor.size = size;
+    descriptor.burst=burst;
+    rev = ioctl (handle, PEX_IOC_READ_DMA_PIPE, &descriptor);
+    errsv = errno;
+    if (rev)
+    {
+      printm (RON"ERROR>>"RES"Error %d  on DMA reading 0x%x bytes from address 0x%lx  to 0x%lx (%s)\n", errsv, size, source, virtdest, strerror (errsv));
+      return -1;
+    }
+    return descriptor.size;
+}
+
+int mbspex_map_pipe (int handle, unsigned long startaddress, unsigned long size)
+{
+      int rev = 0, errsv = 0;;
+     struct pex_pipebuf descriptor;
+      mbspex_assert_handle(handle);
+      descriptor.addr = startaddress;
+      descriptor.size = size;
+      rev = ioctl (handle, PEX_IOC_MAP_PIPE, &descriptor);
+      errsv = errno;
+      if (rev)
+      {
+        printm (RON"ERROR>>"RES"Error %d  on mapping PIPE of 0x%x bytes from address 0x%lx  (%s)\n", errsv, size, startaddress,  strerror (errsv));
+        return -1;
+      }
+      return descriptor.size;
+}
+
+int mbspex_unmap_pipe (int handle){
+  int rev = 0, errsv = 0;;
+       rev = ioctl (handle, PEX_IOC_UNMAP_PIPE);
+       errsv = errno;
+       if (rev)
+       {
+         printm (RON"ERROR>>"RES"Error %d  on unmapping PIPE (%s)\n", errsv, strerror (errsv));
+         return -1;
+       }
+       return 0;
+}
 

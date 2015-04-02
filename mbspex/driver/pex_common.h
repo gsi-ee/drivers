@@ -57,11 +57,27 @@
 #define BOARDTYPE_KINPEX 2
 
 
-#define PEXVERSION     "1.5"
+#define PEXVERSION     "1.60"
 
 
 //#define PEX_DEBUGPRINT 1
 
+
+/* debug latencies of trigger/token request*/
+//#define PEX_TRIGGERDEBUG 1
+
+
+/** this will enable a faster parameter copy between kernel and user space at ioctls
+ * but system most likely will crash when daq is interrupted with resl*/
+//#define PEX_COPY_USER_NOCHECK 1
+
+
+/** this disables that pages of pipe will locked to memory
+ * when creating scatter-gather list for virtual pipes, avoiding
+ * a deadlock with readout or collector process.
+ * The idea is that shared memory pipe will do a memory lock anyway.
+ *  */
+#define PEX_SG_NO_MEMLOCK 1
 
 /** maximum number of devices controlled by this driver*/
 #define PEX_MAXDEVS 4
@@ -95,7 +111,9 @@
  * schedule directly*/
 #define PEX_DMA_POLL_SCHEDULE 1
 
-
+/* with this define we can disable the ioctl semaphore
+ * for performance reason?*/
+//#define PEX_NO_IOCTL_SEM 1
 
 
 #define PEX_ENABLE_IRQ 1
@@ -115,6 +133,12 @@
 #define pex_dbg( args... ) ;
 #endif
 
+#ifdef PEX_TRIGGERDEBUG
+#define pex_tdbg( args... )                    \
+  printk( args );
+#else
+#define pex_tdbg( args... ) ;
+#endif
 
 #define pex_msg( args... )                    \
   printk( args );
@@ -123,6 +147,26 @@
 struct pex_privdata;
 
 
+// here switch different copy to/from user functions
+// the regular copy may sleep, the "__" one not but may crash
+// in case of page fault! better do not use this
+
+#ifdef PEX_COPY_USER_NOCHECK
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+#define pex_copy_to_user __copy_to_user_inatomic
+#define pex_copy_from_user __copy_from_user_inatomic
+#else
+#define pex_copy_to_user copy_to_user
+#define pex_copy_from_user copy_from_user
+#endif
+
+#else
+
+#define pex_copy_to_user copy_to_user
+#define pex_copy_from_user copy_from_user
+
+#endif
 
 
 #endif

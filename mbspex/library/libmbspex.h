@@ -111,21 +111,21 @@ int mbspex_register_rd (int handle, unsigned char s_bar, long l_address, long * 
  * This function will no sooner return than dma is complete*/
 int mbspex_dma_rd (int handle, long source, long dest, long size, int burst);
 
-///** transfer dma of size bytes from board source to virtual user space dest address.
-// * Destination memory must be part of the virtual mbs pipe that has been mapped at iniatializatio to sg list
-// * burst size may be specified, or 0 for automatic burst adjustment in driver
-// * returns real number of bytes transferred, or -1 in case of error
-// * This function will no sooner return than dma is complete*/
-//int mbspex_dma_rd_virt (int handle, unsigned int source, unsigned long virtdest, unsigned int size, unsigned int burst);
-//
-//
-//
-///* map user space mbs pipe for dma into sg list in driver
-// * startaddress is virtual adress in mbs process, size is pipe length*/
-//int mbspex_map_pipe (int handle, unsigned long startaddress, unsigned long size);
-//
-///* unmap internal sg list*/
-//int mbspex_unmap_pipe (int handle);
+/** transfer dma of size bytes from board source to virtual user space dest address.
+ * Destination memory must be part of the virtual mbs pipe that has been mapped at iniatializatio to sg list
+ * burst size may be specified, or 0 for automatic burst adjustment in driver
+ * returns real number of bytes transferred, or -1 in case of error
+ * This function will no sooner return than dma is complete*/
+int mbspex_dma_rd_virt (int handle, unsigned int source, unsigned long virtdest, unsigned int size, unsigned int burst);
+
+
+
+/* map user space mbs pipe for dma into sg list in driver
+ * startaddress is virtual adress in mbs process, size is pipe length*/
+int mbspex_map_pipe (int handle, unsigned long startaddress, unsigned long size);
+
+/* unmap internal sg list*/
+int mbspex_unmap_pipe (int handle);
 
 
 

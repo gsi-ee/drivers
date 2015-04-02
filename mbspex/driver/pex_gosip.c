@@ -8,7 +8,7 @@ int pex_ioctl_init_bus (struct pex_privdata* priv, unsigned long arg)
 
   struct pex_bus_io descriptor;
   struct pex_sfp* sfpregisters = &(priv->regs.sfp);
-  retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_bus_io));
+  retval = pex_copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_bus_io));
   if (retval)
     return retval;
 
@@ -36,7 +36,7 @@ int pex_ioctl_get_sfp_links (struct pex_privdata* priv, unsigned long arg)
   {
     descriptor.numslaves[sfp] = sfpregisters->num_slaves[sfp];
   }
-  retval = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pex_sfp_links));
+  retval = pex_copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pex_sfp_links));
   return retval;
 }
 
@@ -46,13 +46,13 @@ int pex_ioctl_write_bus (struct pex_privdata* priv, unsigned long arg)
 {
   int retval = 0;
   struct pex_bus_io descriptor;
-  retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_bus_io));
+  retval = pex_copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_bus_io));
   if (retval)
     return retval;
   retval = pex_sfp_broadcast_write_bus (priv, &descriptor); /* everything is subfunctions now*/
   if (retval)
     return retval;
-  retval = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pex_bus_io));
+  retval = pex_copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pex_bus_io));
   return retval;
 }
 
@@ -60,13 +60,13 @@ int pex_ioctl_read_bus (struct pex_privdata* priv, unsigned long arg)
 {
   int retval = 0;
   struct pex_bus_io descriptor;
-  retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_bus_io));
+  retval = pex_copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_bus_io));
   if (retval)
     return retval;
   retval = pex_sfp_read_bus (priv, &descriptor); /* everything is subfunctions now*/
   if (retval)
     return retval;
-  retval = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pex_bus_io));
+  retval = pex_copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pex_bus_io));
   return retval;
 }
 
@@ -74,7 +74,7 @@ int pex_ioctl_configure_bus (struct pex_privdata* priv, unsigned long arg)
 {
   int retval = 0, i = 0;
   struct pex_bus_config descriptor;
-  retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_bus_config));
+  retval = pex_copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_bus_config));
   if (retval)
     return retval;
   if (descriptor.numpars > PEX_MAXCONFIG_VALS)
@@ -254,15 +254,15 @@ int pex_ioctl_request_token (struct pex_privdata* priv, unsigned long arg)
   u32 dmalen = 0, dmaburst = 0;
   u32 channelmask = 0;
 
-  retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_token_io));
+  retval = pex_copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_token_io));
   if (retval)
     return retval;
   chan = ((u32) descriptor.sfp) & 0xFFFF;
   chanpattern = (((u32) descriptor.sfp) & 0xFFFF0000) >> 16; /* optionally use sfp pattern in upper bytes*/
   bufid = (u32) descriptor.bufid;
 
-  /* send token request
-   pex_msg(KERN_NOTICE "** pex_ioctl_request_token from_sfp 0x%x, bufid 0x%x\n",chan,bufid);*/
+  /* send token request*/
+   pex_tdbg(KERN_NOTICE "** pex_ioctl_request_token from_sfp 0x%x, bufid 0x%x\n",chan,bufid);
   pex_sfp_assert_channel(chan);
 
   if (descriptor.directdma)
@@ -272,7 +272,7 @@ int pex_ioctl_request_token (struct pex_privdata* priv, unsigned long arg)
     dmalen = (u32) descriptor.dmasize;
     dmaburst = (u32) descriptor.dmaburst;
     channelmask = 1 << (chan + 1);    // select SFP for PCI Express DMA
-    pex_dbg(
+    pex_tdbg(
         KERN_NOTICE "** pex_ioctl_request_token uses dma target 0x%x, channelmask=0x%x\n", (unsigned) dmatarget, channelmask);
     retval = pex_start_dma (priv, 0, dmatarget, 0, channelmask, dmaburst);
     if (retval)
@@ -303,6 +303,7 @@ int pex_ioctl_request_token (struct pex_privdata* priv, unsigned long arg)
     /* only wait here for dma buffer if synchronous*/
     return (pex_ioctl_wait_token (priv, arg));
   }
+   pex_tdbg(KERN_NOTICE "** pex_ioctl_request_token returns with no wait\n");
   return retval;
 }
 
@@ -316,7 +317,7 @@ int pex_ioctl_wait_token (struct pex_privdata* priv, unsigned long arg)
 
   struct pex_sfp* sfp = &(priv->regs.sfp);
   struct pex_token_io descriptor;
-  retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_token_io));
+  retval = pex_copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_token_io));
   if (retval)
     return retval;
 
@@ -325,7 +326,7 @@ int pex_ioctl_wait_token (struct pex_privdata* priv, unsigned long arg)
   /* send token request
    pex_msg(KERN_NOTICE "** pex_ioctl_request_token from_sfp 0x%x, bufid 0x%x\n",chan,bufid);*/
   pex_sfp_assert_channel(chan);
-
+ pex_tdbg(KERN_ERR "pex_ioctl_wait_token waits for reply...\n");
   if ((retval = pex_sfp_get_reply (priv, chan, &rstat, &radd, &rdat, 0)) != 0)    // debug: do not check reply status
   //if((retval=pex_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEX_SFP_PT_TK_R_REP))!=0)
   {
@@ -351,8 +352,9 @@ int pex_ioctl_wait_token (struct pex_privdata* priv, unsigned long arg)
     {
       oldsize = dmasize;
       dmasize = PEX_SFP_TK_MEM_RANGE - (PEX_SFP_TK_MEM_RANGE % dmaburst); /* align on last proper burst interval*/
-      pex_msg(KERN_NOTICE "** pex_ioctl_wait_token reduces dma size from 0x%x to 0x%x \n", oldsize, dmasize);
-    }pex_dbg(KERN_NOTICE "** pex_ioctl_wait_token uses dma size 0x%x of channel %x\n", dmasize, chan);
+      pex_dbg(KERN_NOTICE "** pex_ioctl_wait_token reduces dma size from 0x%x to 0x%x \n", oldsize, dmasize);
+    }
+    pex_dbg(KERN_NOTICE "** pex_ioctl_wait_token uses dma size 0x%x of channel %x\n", dmasize, chan);
 
     print_register ("DUMP token dma size", sfp->tk_memsize[chan]);
 
@@ -386,7 +388,8 @@ int pex_ioctl_wait_token (struct pex_privdata* priv, unsigned long arg)
   pex_bus_delay();
   descriptor.dmasize = dmasize; /* account used payload size.*/
 
-  retval = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pex_token_io));
+  retval = pex_copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pex_token_io));
+  pex_tdbg(KERN_NOTICE "pex_ioctl_wait_token returns\n");
   return retval;
 
 }
@@ -509,7 +512,8 @@ int pex_sfp_get_token_reply (struct pex_privdata* privdata, int ch, u32* stat, u
   ;
   *foot = ioread32 (sfp->tk_foot[ch]);
   pex_sfp_delay()
-  ;pex_dbg(
+  ;
+  pex_dbg(
       KERN_NOTICE "pex_sfp_get_token_reply from SFP: %x got token status:%x header:%x footer: %x \n", ch, *stat, *head, *foot);
 
   return 0;

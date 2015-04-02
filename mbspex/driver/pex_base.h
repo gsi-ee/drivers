@@ -96,7 +96,7 @@
   mb();      \
   ndelay(20);
 
-
+ //ndelay(20);
 
 
 
@@ -141,10 +141,16 @@ struct regs_pex
     unsigned char init_done; /**< object is ready flag*/
 };
 
-
-
-
-
+/* this contains scatter gather information of virtual mbs pipe*/
+struct mbs_pipe
+{
+  unsigned long virt_start;         /**< virtual start address*/
+  unsigned long size;               /**< total size of pipe */
+  struct scatterlist* sg;           /**<  sg list of pipe memory*/
+  unsigned int sg_ents;             /**< actual entries in the scatter/gatter list (NOT nents for the map function, but the result) */
+  struct page **pages;              /**< list of pointers to the pages */
+  int num_pages;                    /**< number of pages for this user memory area*/
+};
 
 
 
@@ -162,6 +168,7 @@ struct pex_privdata
     struct device *class_dev; /**< Class device */
     struct cdev cdev; /**< char device struct */
     struct regs_pex regs;       /**< mapped register address pointers */
+    struct mbs_pipe pipe;       /**< sg information on mbs pipe, for mode 4*/
     unsigned long bases[6]; /**< contains pci resource bases */
     unsigned long reglen[6]; /**< contains pci resource length */
     void *iomem[6]; /**< points to mapped io memory of the bars */
@@ -184,53 +191,9 @@ struct pex_privdata
     u32 l_bar0_end;
     u32 l_bar0_trix_base; /**< unmapped bus address of trixor register part*/
 
- // below is redundat, everything is already in regs_pex
-//    u32 l_map_bar0_trix_base;
-//
-//    // trigger module registers
-//    unsigned int *pl_stat;
-//    unsigned int *pl_ctrl;
-//    unsigned int *pl_fcti;
-//    unsigned int *pl_cvti;
+
 
 };
-
-
-// from full driver for comparison:
-//struct pexor_privdata
-//{
-//  int magic;                    /**< magic number to identify irq */
-//  atomic_t state;               /**< run state of device */
-//  dev_t devno;                  /**< device number (major and minor) */
-//  int devid;                    /**< local id (counter number) */
-//  char irqname[64];             /**< private name for irq */
-//  struct pci_dev *pdev;         /**< PCI device */
-//  struct device *class_dev;     /**< Class device */
-//  struct cdev cdev;             /**< char device struct */
-//  struct dev_pexor pexor;       /**< mapped pexor address pointers */
-//  unsigned long bases[6];       /**< contains pci resource bases */
-//  unsigned long reglen[6];      /**< contains pci resource length */
-//  void *iomem[6];               /**< points to mapped io memory of the bars */
-//  struct semaphore ramsem;      /**< protects read/write access to mapped ram */
-//  struct list_head free_buffers;        /**< list containing the free buffers */
-//  struct list_head received_buffers;    /**< dma receive queue */
-//  struct list_head used_buffers;        /**< list containing the buffers in
-//                                           use in client application */
-//
-//  spinlock_t buffers_lock;      /**< protect any buffer lists operations */
-//  spinlock_t dma_lock;      /**< protects DMA Buffer */
-//
-//  atomic_t irq_count;           /**< counter for irqs */
-//  spinlock_t irq_lock;         /**< optional lock between top and bottom half? */
-//  struct tasklet_struct irq_bottomhalf; /**< tasklet structure for isr
-//                                           bottom half */
-//  wait_queue_head_t irq_dma_queue;      /**< wait queue between bottom
-//                                           half and wait dma ioctl */
-//  atomic_t dma_outstanding;     /**< outstanding dma counter */
-//  wait_queue_head_t irq_trig_queue;     /**< wait queue between bottom half
-//                                           and user wait trigger ioctl */
-//  atomic_t trig_outstanding;    /**< outstanding triggers counter */
-//};
 
 
 
@@ -265,6 +228,16 @@ int pex_ioctl_write_register(struct pex_privdata* priv, unsigned long arg);
 
 /** dma read from memory on the pex board to a known physical address in host memory*/
 int pex_ioctl_read_dma(struct pex_privdata* priv, unsigned long arg);
+
+/** dma read from memory on the pex board to a known virtual address in pipe*/
+int pex_ioctl_read_dma_pipe (struct pex_privdata* priv, unsigned long arg);
+
+/** map virtual mbs pipe (mode 4) to sg list for dma. Pipe sg will be stored in kernel module.*/
+int pex_ioctl_map_pipe (struct pex_privdata *priv, unsigned long arg);
+
+/** unmap virtual mbs pipe (mode 4) to sg list for dma*/
+int pex_ioctl_unmap_pipe (struct pex_privdata *priv, unsigned long arg);
+
 
 #ifdef PEX_WITH_TRIXOR
 /** set acquisition state of trixor trigger module extension.
@@ -309,7 +282,14 @@ ssize_t pex_sysfs_trixorbase_show(struct device *dev,
 ssize_t pex_sysfs_dmaregs_show(struct device *dev,
                                  struct device_attribute *attr, char *buf);
 
+ssize_t pex_sysfs_pipe_show (struct device *dev, struct device_attribute *attr, char *buf);
+
+
 #endif
 #endif
 
 #endif
+
+
+
+
