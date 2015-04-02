@@ -24,7 +24,7 @@ static DEVICE_ATTR(trixorbase, S_IRUGO, pex_sysfs_trixorbase_show, NULL);
 static DEVICE_ATTR(dmaregs, S_IRUGO, pex_sysfs_dmaregs_show, NULL);
 static DEVICE_ATTR(sfpregs, S_IRUGO, pex_sysfs_sfpregs_show, NULL);
 static DEVICE_ATTR(mbspipe, S_IRUGO, pex_sysfs_pipe_show, NULL);
-
+static DEVICE_ATTR(gosipretries, S_IWUGO | S_IRUGO , pex_sysfs_sfp_retries_show, pex_sysfs_sfp_retries_store);
 
 
 ssize_t pex_sysfs_trixorregs_show (struct device *dev, struct device_attribute *attr, char *buf)
@@ -145,6 +145,35 @@ ssize_t pex_sysfs_pipe_show (struct device *dev, struct device_attribute *attr, 
   }
   return curs;
 }
+
+
+ssize_t pex_sysfs_sfp_retries_show (struct device *dev, struct device_attribute *attr, char *buf)
+{
+  ssize_t curs = 0;
+   struct pex_privdata *privdata;
+   privdata = (struct pex_privdata*) dev_get_drvdata (dev);
+   //curs += snprintf (buf + curs, PAGE_SIZE - curs, "*** PEX gosip request retries:\n");
+   curs += snprintf (buf + curs, PAGE_SIZE - curs, "%d\n", privdata->sfp_maxpolls);
+   return curs;
+}
+
+ssize_t pex_sysfs_sfp_retries_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+  int rev=0;
+  unsigned int val=0;
+  struct pex_privdata *privdata;
+  privdata = (struct pex_privdata*) dev_get_drvdata (dev);
+  rev=kstrtouint(buf,0,&val); // this can handle both decimal, hex and octal formats if specified by prefix JAM
+  if(rev!=0) return rev;
+  privdata->sfp_maxpolls=val;
+  pex_msg( KERN_NOTICE "PEX: sfp maximum retries was set to %d => timeout = %d ns \n", privdata->sfp_maxpolls, (privdata->sfp_maxpolls * PEX_SFP_DELAY));
+  return count;
+}
+
+
+
+
+
 
 #endif // INUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
 
@@ -1462,6 +1491,7 @@ void cleanup_device (struct pex_privdata* priv)
     device_remove_file (priv->class_dev, &dev_attr_sfpregs);
     device_remove_file (priv->class_dev, &dev_attr_dmaregs);
     device_remove_file (priv->class_dev, &dev_attr_mbspipe);
+    device_remove_file (priv->class_dev, &dev_attr_gosipretries);
     device_destroy (pex_class, priv->devno);
     priv->class_dev = 0;
   }
@@ -1626,6 +1656,10 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
     }
   }    //for
 
+
+  // initialize maximum polls value:
+  privdata->sfp_maxpolls=PEX_SFP_MAXPOLLS;
+
 // set pointer structures:
   set_pointers (&(privdata->regs), privdata->iomem[0], privdata->bases[0]);
 
@@ -1776,6 +1810,10 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
     if (device_create_file (privdata->class_dev, &dev_attr_mbspipe) != 0)
         {
           pex_msg(KERN_ERR "Could not add device file node for mbs pipe dump.\n");
+        }
+    if (device_create_file (privdata->class_dev, &dev_attr_gosipretries) != 0)
+        {
+             pex_msg(KERN_ERR "Could not add device file node for gosip retries.\n");
         }
 
 

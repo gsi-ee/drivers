@@ -92,9 +92,11 @@
 
 /** on some PCs, need maybe waitstates for simple bus io:*/
 
+#define PEX_BUS_DELAY 20
+
 #define pex_bus_delay()                       \
   mb();      \
-  ndelay(20);
+  ndelay(PEX_BUS_DELAY);
 
  //ndelay(20);
 
@@ -168,6 +170,7 @@ struct pex_privdata
     struct device *class_dev; /**< Class device */
     struct cdev cdev; /**< char device struct */
     struct regs_pex regs;       /**< mapped register address pointers */
+    u32 sfp_maxpolls; /**< number of retries when polling for sfp response ready */
     struct mbs_pipe pipe;       /**< sg information on mbs pipe, for mode 4*/
     unsigned long bases[6]; /**< contains pci resource bases */
     unsigned long reglen[6]; /**< contains pci resource length */
@@ -283,6 +286,13 @@ ssize_t pex_sysfs_dmaregs_show(struct device *dev,
                                  struct device_attribute *attr, char *buf);
 
 ssize_t pex_sysfs_pipe_show (struct device *dev, struct device_attribute *attr, char *buf);
+
+/* show number of retries Nr for sfp request until error is recognized.
+ * this will cause request timeout = Nr * (20 ns + arbitrary schedule() switch time)  */
+ssize_t pex_sysfs_sfp_retries_show (struct device *dev, struct device_attribute *attr, char *buf);
+
+/* set number of retries for sfp request until error is recognized:*/
+ssize_t pex_sysfs_sfp_retries_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count);
 
 
 #endif

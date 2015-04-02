@@ -439,9 +439,9 @@ int pex_sfp_get_reply (struct pex_privdata* privdata, int ch, u32* comm, u32 *ad
 
   do
   {
-    if (loopcount++ > 1000000)/* 1000000*/
+    if (loopcount > privdata->sfp_maxpolls)/* 1000000*/
     {
-      pex_msg(KERN_WARNING "**pex_sfp_get_reply polled %d x 400ns without success, abort\n", loopcount);
+      pex_msg(KERN_WARNING "**pex_sfp_get_reply polled %d times = %d ns without success, abort\n", loopcount, (loopcount* PEX_SFP_DELAY));
       print_register (" ... status after FAILED pex_sfp_get_reply:", sfp->rep_stat[ch]);
       return -EIO;
     }
@@ -450,7 +450,7 @@ int pex_sfp_get_reply (struct pex_privdata* privdata, int ch, u32* comm, u32 *ad
     ;
     //pex_sfp_delay(); /* additional waitstate here?*/
     if(PEX_DMA_POLL_SCHEDULE) schedule(); /* probably this also may help*/
-
+    loopcount++;
   } while (((status & 0x3000) >> 12) != 0x02); /* packet received bit is set*/
 
   *comm = ioread32 (sfp->rep_stat[ch]);
@@ -491,9 +491,9 @@ int pex_sfp_get_token_reply (struct pex_privdata* privdata, int ch, u32* stat, u
 
   do
   {
-    if (loopcount++ > 1000000)
+    if (loopcount > privdata->sfp_maxpolls)
     {
-      pex_msg(KERN_WARNING "**pex_sfp_get_token reply polled %d x 20 ns without success, abort\n", loopcount);
+      pex_msg(KERN_WARNING "**pex_sfp_get_token reply polled %d times = %d ns without success, abort\n", loopcount, (loopcount* PEX_SFP_DELAY));
       print_register (" ... status after FAILED pex_sfp_get_token_reply:0x%x", sfp->tk_stat[ch]);
       return -EIO;
     }
@@ -501,7 +501,7 @@ int pex_sfp_get_token_reply (struct pex_privdata* privdata, int ch, u32* stat, u
     pex_sfp_delay()
     ;
 
-
+    loopcount++;
   } while (((status & 0x3000) >> 12) != 0x02); /* packet received bit is set*/
 
   *stat = ioread32 (sfp->tk_stat[ch]);
@@ -552,9 +552,9 @@ int pex_sfp_clear_all (struct pex_privdata* privdata)
    pex_sfp_delay();*/
   do
   {
-    if (loopcount++ > 1000000)
+    if (loopcount > privdata->sfp_maxpolls)
     {
-      pex_msg(KERN_WARNING "**pex_sfp_clear_all tried %d x without success, abort\n", loopcount);
+      pex_msg(KERN_WARNING "**pex_sfp_clear_all tried  %d times = %d ns  without success, abort\n", loopcount, (loopcount* 2 * PEX_SFP_DELAY));
       print_register (" ... stat_clr after FAILED pex_sfp_clear_all: 0x%x", sfp->rep_stat_clr);
       return -EIO;
     }
@@ -564,6 +564,7 @@ int pex_sfp_clear_all (struct pex_privdata* privdata)
     status = ioread32 (sfp->rep_stat_clr);
     pex_sfp_delay()
     ;
+    loopcount++;
   } while (status != 0x0);pex_dbg(KERN_INFO "**after pex_sfp_clear_all: loopcount:%d \n", loopcount);
   print_register (" ... stat_clr after pex_sfp_clear_all:", sfp->rep_stat_clr);
   return 0;
@@ -580,9 +581,9 @@ int pex_sfp_clear_channel (struct pex_privdata* privdata, int ch)
    pex_sfp_delay();*/
   do
   {
-    if (loopcount++ > 1000000)
+    if (loopcount > privdata->sfp_maxpolls)
     {
-      pex_msg(KERN_WARNING "**pex_sfp_clear_channel %d tried %d x 20 ns without success, abort\n", ch, loopcount);
+      pex_msg(KERN_WARNING "**pex_sfp_clear_channel %d tried %d times = %d ns without success, abort\n", ch, loopcount, (loopcount* (2 * PEX_SFP_DELAY+ 2 * PEX_BUS_DELAY)));
       print_register (" ... reply status after FAILED pex_sfp_clear_channel:", sfp->rep_stat[ch]);
       print_register (" ... token reply status after FAILED pex_sfp_clear_channel:", sfp->tk_stat[ch]);
       return -EIO;
@@ -598,7 +599,7 @@ int pex_sfp_clear_channel (struct pex_privdata* privdata, int ch)
     chstatus = ioread32 (sfp->rep_stat_clr) & clrval;
     pex_sfp_delay()
     ;
-
+    loopcount++;
   } while ((repstatus != 0x0) || (tokenstatus != 0x0) || (chstatus != 0x0));
 
   pex_dbg(KERN_INFO "**after pex_sfp_clear_channel %d : loopcount:%d \n", ch, loopcount);
@@ -618,10 +619,10 @@ int pex_sfp_clear_channelpattern (struct pex_privdata* privdata, int pat)
   mask = (pat << 8) | (pat << 4) | pat;
   do
   {
-    if (loopcount++ > 1000000)
+    if (loopcount > privdata->sfp_maxpolls)
     {
       pex_msg(
-          KERN_WARNING "**pex_sfp_clear_channelpattern 0x%x tried %d x 20 ns without success, abort\n", pat, loopcount);
+          KERN_WARNING "**pex_sfp_clear_channelpattern 0x%x tried %d  times = %d ns without success, abort\n", pat, loopcount, (loopcount* 2 * PEX_SFP_DELAY));
       print_register (" ... reply status after FAILED pex_sfp_clear_channelpattern:", sfp->rep_stat_clr);
       return -EIO;
     }
@@ -631,7 +632,7 @@ int pex_sfp_clear_channelpattern (struct pex_privdata* privdata, int pat)
     repstatus = ioread32 (sfp->rep_stat_clr) & mask;
     pex_sfp_delay()
     ;
-
+    loopcount++;
   } while ((repstatus != 0x0));
 
   pex_dbg(KERN_INFO "**after pex_sfp_clear_channelpattern 0x%x : loopcount:%d \n", pat, loopcount);

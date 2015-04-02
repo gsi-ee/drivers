@@ -112,11 +112,24 @@
     }
 
 
+
+
+/* default maximum number of polls for sfp request response.
+ * Initializes privdata->sfp_maxpolls
+ * This causes a timeout value =(PEX_SFP_MAXPOLLS * PEX_SFP_DELAY ns)
+ * note that this default can be tuned by setting privdata->sfp_maxpolls
+ * via sysfs handle*/
+#define PEX_SFP_MAXPOLLS 10000
+
+/* delay in nanoseconds (ns) for any operation on gosip sfp protocol*/
+#define PEX_SFP_DELAY 20
+
+
+/* pseudo function to work with delay:*/
 #define pex_sfp_delay()                       \
   mb();      \
-  ndelay(20);
+  ndelay(PEX_SFP_DELAY);
 
- /*ndelay(200); JAM test of performance loss, this was reason?*/
 
 /*  ndelay(20); too short for multiprocesses with semaphore wait?*/
 /*udelay(10);*/
