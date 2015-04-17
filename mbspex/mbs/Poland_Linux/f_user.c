@@ -7,7 +7,7 @@
 
 /* this define switches user readout for virtual pipe
  * TODO: evaluate this directly from mbs setup structure?*/
-#define USE_VIRTUAL_PIPE 1
+//#define USE_VIRTUAL_PIPE 1
 
 #include "stdio.h"
 #include "s_veshe.h"
@@ -87,7 +87,7 @@
                                        // - otherwisse send data immediately
                                        //   after token arrived at qfw/exploder  
 
-//#define SEQUENTIAL_TOKEN_SEND 1        // - token sending and receiving is
+#define SEQUENTIAL_TOKEN_SEND 1        // - token sending and receiving is
                                        //   sequential for all used SFPs
                                        // - otherwise token sending and receiving
                                        //   is done parallel for all used SFPs
@@ -112,7 +112,7 @@
 
 #define USER_TRIG_CLEAR 1
 
-//#define CHECK_META_DATA 1
+#define CHECK_META_DATA 1
 
 //#define printm printf
 
@@ -931,6 +931,20 @@ int f_user_readout (unsigned char   bh_trig_typ,
   }
 
         //printm ("chan size: 0x%d \n", l_cha_size);
+
+        if(l_cha_size==0)
+        {
+          printm (RON"ERROR>>"RES" found optic length 0 for sfp:%d poland:%d - ",l_sfp_id, l_qfw_id);
+          // todo: write to debug register here!
+#ifdef USE_MBSPEX_LIB
+      mbspex_slave_wr(fd_pex,l_sfp_id,l_qfw_id,0x2000d8,1);
+      printm (" writing debug bit to address 0x2000d8 \n");
+#else
+      printm (" please enable mbspex lib to send debug bit !!!\n");
+#endif
+          // probably mark as bad event already here goto bad_event;
+        }
+
         pl_tmp += l_cha_size>>2; // jump to next exploder 
         // instead of jump checks or payload data sahll be done here !! nik 16-Jan-2014 
       }
