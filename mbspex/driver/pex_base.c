@@ -864,6 +864,9 @@ int pex_ioctl_read_dma_pipe (struct pex_privdata* priv, unsigned long arg)
   if (sglensum < dmasize)
   {
     pex_msg(KERN_NOTICE "#### pex_ioctl_read_dma_pipe could not write full size 0x%x , transferred was: 0x%x\n", dmasize, sglensum);
+    pex_msg(KERN_NOTICE "#### -------- at sgentry %d of length 0x%x at dma address 0x%x sgoffs=0x%lx, pipeoffset=0x%lx, dmasource=0x%x, dmacur=0x%x\n", i, (unsigned  int) sg_dma_len(sgentry), (unsigned int)sg_dma_address(sgentry),
+        woffset, (virtdest - pipe->virt_start), (unsigned  int) dmasource, (unsigned  int) sgcursor);
+
     rev= -EINVAL;
   }
 
@@ -878,7 +881,82 @@ int pex_ioctl_read_dma_pipe (struct pex_privdata* priv, unsigned long arg)
 }
 
 
+int pex_reduce_sg(struct scatterlist **sg, int entries)
+{
+  int i,j, first=1;
+  unsigned int sglen, sgnewlen=0;
+  dma_addr_t sgstart=0, sgnext=0, dmalen=0,newdmalen=0;
+  struct scatterlist* sgentry;
+  struct scatterlist* sgreduced=NULL;
+  struct scatterlist* sgnewentry;
+  /* Allocate space for the reduced scatterlist */
+  pex_msg(KERN_NOTICE "pex_reduce_sg before vmalloc....\n");
+  if ((sgreduced = vmalloc (entries * sizeof(*sgreduced))) == NULL )
+         return -ENOMEM;
+  pex_msg(KERN_NOTICE "pex_reduce_sg before sg_init_table...\n");
+  sg_init_table (sgreduced, entries);
+  // JAM first approach: just glue sg entries together that follow each other in original sg list:
+  j=0;
+  pex_msg(KERN_NOTICE "pex_reduce_sg before for_each_sg..\n");
+  sgnewentry=*sg;
+  for_each_sg(*sg,sgentry, entries,i)
+        {
+          sglen = sgentry->length;       // <- probably redundant, but better to take into account
+          dmalen = sg_dma_len(sgentry);
+          //if(sglen<PAGE_SIZE) continue; // do not touch partial entries
+          sgstart=sg_dma_address(sgentry);
+          if(first)
+          {
+            sgnewentry=sgentry;
+            first=0;
+            pex_msg(KERN_NOTICE "pex_reduce_sg with first entry at 0x%x..\n", (unsigned) sg_dma_address(sgnewentry));
+          }
+          else if(sgstart!=sgnext) {
+              // this chunk address is separate from the one before, finalize reduced entry:
+            sgreduced[j].dma_address=sg_dma_address(sgnewentry); //
+            sgreduced[j].dma_length=newdmalen;
+            sgreduced[j].length=sgnewlen;
+            sgreduced[j].offset=sgnewentry->offset;
+            sgreduced[j].page_link=sgnewentry->page_link;
+            sgnewlen=0;
+            newdmalen=0;
+            if(j<20)
+            {
+              pex_msg(
+                      KERN_NOTICE "-- pex_reduce_sg finalized chunk %d: start 0x%x length 0x%x dmalen 0x%x offset 0x%x , at original entry %d  \n", j, (unsigned) sgreduced[j].dma_address, sgreduced[j].length, sg_dma_len(&sgreduced[j]),sgreduced[j].offset, i);
+            }
+            j++;
+            sgnewentry=sgentry;
+          }
+          else {}
+          sgnewlen+=sglen;
+          newdmalen+=dmalen;
+          sgnext=sgstart+sglen;
+          if(i<50)pex_msg(KERN_NOTICE "pex_reduce_sg  end of for loop at %d \n",i);
+        } // for_each_sg
+        // do not forget to put the last coherent segment into new list:
+  sgreduced[j].dma_address=sg_dma_address(sgnewentry); //
+  sgreduced[j].dma_length=newdmalen;
+  sgreduced[j].length=sgnewlen;
+  sgreduced[j].offset=sgnewentry->offset;
+  sgreduced[j].page_link=sgnewentry->page_link;
+  sg_mark_end(&sgreduced[j]);
+  pex_msg(KERN_NOTICE "-- pex_reduce_sg finalized last chunk %d: start 0x%x length 0x%x dmalen 0x%x offset 0x%x , at original entry %d  \n", j, (unsigned) sgreduced[j].dma_address, sgreduced[j].length, sg_dma_len(&sgreduced[j]),sgreduced[j].offset, i);
 
+   j++; // return length, not index!
+  pex_msg(KERN_NOTICE "pex_reduce_sg reduced sglist from %d to %d entries).\n", entries,j);
+
+  vfree (*sg); // free original list
+  *sg=sgreduced; // exchange pointers
+  // TODO: overwrite original sglist instead of allocating new one.
+
+  pex_msg(KERN_NOTICE "pex_reduce_sg returns %d \n",j);
+  return j;
+
+
+
+
+}
 
 
 
@@ -891,6 +969,7 @@ int pex_ioctl_map_pipe (struct pex_privdata *priv, unsigned long arg)
    int nr_pages = 0;
    struct page **pages;
    struct scatterlist *sg = NULL;
+   struct scatterlist *sgentry = NULL;
    unsigned int nents;
    unsigned long count, offset, length;
    struct pex_pipebuf pipedesc;
@@ -907,6 +986,12 @@ int pex_ioctl_map_pipe (struct pex_privdata *priv, unsigned long arg)
      /* Allocate space for the page information */
      if ((pages = vmalloc (nr_pages * sizeof(*pages))) == NULL )
        goto mapbuffer_descriptor;
+
+     // JAM todo: reimplement this maybe with newly found
+     //  sg_alloc_table_from_pages() (kernel > 3.6 only!)
+     // otherwise better use sg_alloc_table and sg_free_table
+
+
      /* Allocate space for the scatterlist */
      if ((sg = vmalloc (nr_pages * sizeof(*sg))) == NULL )
        goto mapbuffer_pages;
@@ -943,6 +1028,11 @@ int pex_ioctl_map_pipe (struct pex_privdata *priv, unsigned long arg)
           __set_page_locked (pages[0]);
       //SetPageLocked(pages[0]);
 #endif
+
+
+
+
+
       /* for first chunk, we take into account that memory is possibly not starting at
        * page boundary:*/
       offset = (pipedesc.addr & ~PAGE_MASK);
@@ -969,9 +1059,20 @@ int pex_ioctl_map_pipe (struct pex_privdata *priv, unsigned long arg)
       if ((nents = pci_map_sg (priv->pdev, sg, nr_pages, PCI_DMA_FROMDEVICE)) == 0)
         goto mapbuffer_unmap;
 
-      pex_msg(KERN_NOTICE "Mapped SG list (0x%x entries).\n", nents);
+      pex_msg(KERN_NOTICE "Mapped SG list 0x%lx (0x%x entries).\n", (unsigned long) sg, nents);
 
 
+#ifdef PEX_SG_REDUCE_SGLIST
+      // optimize here scatterlist
+      res=pex_reduce_sg(&sg,nents);
+      if(res<0)
+      {
+        pex_msg(KERN_NOTICE "Error %d at pex_reduce_sg!!!\n", res);
+        goto mapbuffer_unmap;
+      }
+      nents= res;
+      pex_msg(KERN_NOTICE "Reduced to SG list 0x%lx (0x%x entries).\n", (unsigned long) sg, nents);
+#endif
 
       // put sg list to privdata pipe singleton:
       (priv->pipe).num_pages = nr_pages; /* Will be needed when unmapping */
@@ -987,11 +1088,11 @@ int pex_ioctl_map_pipe (struct pex_privdata *priv, unsigned long arg)
       pex_msg(KERN_NOTICE "\t total length: 0x%lx\n", (priv->pipe).size);
       pex_msg(KERN_NOTICE "\t number of pages:     %d\n", (priv->pipe).num_pages);
       pex_msg(KERN_NOTICE "\t number of sg chunks: %d\n", (priv->pipe).sg_ents);
-      for_each_sg((priv->pipe).sg,sg, (priv->pipe).sg_ents,i)
+      for_each_sg((priv->pipe).sg, sgentry, (priv->pipe).sg_ents,i)
       {
         if((i>10) &&  !((priv->pipe).sg_ents - i < 10)) continue; // skip everything except first and last entries
         pex_msg(
-            KERN_NOTICE "-- dump sg chunk %d: start 0x%x length 0x%x \n", i, (unsigned) sg_dma_address(sg), sg_dma_len(sg));
+            KERN_NOTICE "-- dump sg chunk %d: start 0x%x length 0x%x dmalen 0x%x\n", i, (unsigned) sg_dma_address(sgentry), sgentry->length, sg_dma_len(sgentry));
       }
       /***************************************************/
 

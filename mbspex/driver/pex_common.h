@@ -79,6 +79,12 @@
  *  */
 #define PEX_SG_NO_MEMLOCK 1
 
+
+/* if defined we merge together physically adjacent pages in sg list as delivered from system
+ * Note that this is _not_ done by pci_map_sg by default.
+ * May disable merging for testing purposes*/
+#define PEX_SG_REDUCE_SGLIST 1
+
 /** maximum number of devices controlled by this driver*/
 #define PEX_MAXDEVS 4
 

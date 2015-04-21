@@ -242,6 +242,9 @@ int pex_ioctl_map_pipe (struct pex_privdata *priv, unsigned long arg);
 int pex_ioctl_unmap_pipe (struct pex_privdata *priv, unsigned long arg);
 
 
+
+
+
 #ifdef PEX_WITH_TRIXOR
 /** set acquisition state of trixor trigger module extension.
  * used to clear deadtime flag from user program and start/stop acquisition mode, etc.*/
@@ -252,6 +255,10 @@ int pex_ioctl_set_trixor(struct pex_privdata* priv, unsigned long arg);
 int pex_ioctl_wait_trigger(struct pex_privdata *priv, unsigned long arg);
 
 #endif
+
+/* combine physically  adjacent pages in scatterlist to single entry. */
+int pex_reduce_sg(struct scatterlist **sg, int entries);
+
 
 
 /** initiate dma from source to dest. depending on channelmask, dma transfer will start immediately (channelmask=1), or will be
