@@ -751,10 +751,13 @@ int pex_ioctl_read_dma_pipe (struct pex_privdata* priv, unsigned long arg)
   u32 dmasize, dmaburst, sglensum, sglen;
   struct mbs_pipe* pipe;
   struct scatterlist *sgentry = NULL;
-  /* debug for dump target segments*/
-//  struct scatterlist *firstentry = NULL;
-//  unsigned long firstoffset=0;
-  /* end debug for dump target segments*/
+
+#ifndef  PEX_SG_SYNCFULLPIPE
+  struct scatterlist *firstentry = NULL;
+  int dmaentries=0;
+#endif
+
+
   struct pex_dma_io descriptor;
   pex_dbg(KERN_NOTICE "#### pex_ioctl_read_dma_pipe starts copy from user\n");
   rev = pex_copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_dma_io));
@@ -773,9 +776,10 @@ int pex_ioctl_read_dma_pipe (struct pex_privdata* priv, unsigned long arg)
                                        // this will only work if calling process is the same that had mapped pipe!
                                        // usually, this is m_read_meb
 
-  // sync pipe buffer to allow device DMA: TODO: only sync parts of sg list that are really used!
+#ifdef  PEX_SG_SYNCFULLPIPE
+  // sync complete pipe buffer to allow device DMA:
   pci_dma_sync_sg_for_device( priv->pdev, pipe->sg, pipe->sg_ents,PCI_DMA_FROMDEVICE );
-
+#endif
   // loop over all sg chunks:
   sgcursor = dmasource;
   sglensum = 0;
@@ -796,6 +800,7 @@ int pex_ioctl_read_dma_pipe (struct pex_privdata* priv, unsigned long arg)
            }
            continue;
          }
+
          sglen -= woffset; /* reduce transfer length from offset to end of first used segment*/
          if (dmasize < sglen)
            sglen = dmasize; /* source buffer fits into first sg page*/
@@ -823,7 +828,14 @@ int pex_ioctl_read_dma_pipe (struct pex_privdata* priv, unsigned long arg)
 
          /**** END DEBUG*/
 
-
+#ifndef  PEX_SG_SYNCFULLPIPE
+         // remember which segments we use:
+         if(firstentry==NULL)
+           firstentry=sgentry;
+         dmaentries++;
+         // sync each single sg member right before starting dma:
+         pci_dma_sync_sg_for_device( priv->pdev, sgentry, 1 ,PCI_DMA_FROMDEVICE );
+#endif
 
          /* initiate dma to next sg part:*/
          if (pex_start_dma (priv, sgcursor, sg_dma_address(sgentry) + woffset, sglen, 0, dmaburst) < 0)
@@ -870,18 +882,26 @@ int pex_ioctl_read_dma_pipe (struct pex_privdata* priv, unsigned long arg)
     rev= -EINVAL;
   }
 
-  pipe_sync_for_cpu:
-  // need to sync pipe for cpu after dma is complete: TODO: only sync parts of pipe that have really been written?
-   pci_dma_sync_sg_for_cpu (priv->pdev, pipe->sg, pipe->sg_ents, PCI_DMA_FROMDEVICE);
-   pex_dbg(KERN_NOTICE "#### pex_ioctl_read_dma_pipe has synced for cpu %d entries\n", pipe->sg_ents);
 
-   // here try to dump directly contents
+
+#ifndef  PEX_SG_SYNCFULLPIPE
+    // only sync parts of pipe that really have been touched:
+    pci_dma_sync_sg_for_cpu (priv->pdev, firstentry, dmaentries, PCI_DMA_FROMDEVICE);
+    pex_dbg(KERN_NOTICE "#### pex_ioctl_read_dma_pipe has synced for cpu used %d entries\n", dmaentries);
+    return rev;
+#endif
+
+    pipe_sync_for_cpu:
+
+  // need to sync pipe for cpu after dma is complete:
+   pci_dma_sync_sg_for_cpu (priv->pdev, pipe->sg, pipe->sg_ents, PCI_DMA_FROMDEVICE);
+   pex_dbg(KERN_NOTICE "#### pex_ioctl_read_dma_pipe has synced for cpu all %d pipe entries\n", pipe->sg_ents);
 
   return rev;
 }
 
 
-int pex_reduce_sg(struct scatterlist **sg, int entries)
+int pex_reduce_sg(struct scatterlist **psg, int entries)
 {
   int i,j, first=1;
   unsigned int sglen, sgnewlen=0;
@@ -889,27 +909,20 @@ int pex_reduce_sg(struct scatterlist **sg, int entries)
   struct scatterlist* sgentry;
   struct scatterlist* sgreduced=NULL;
   struct scatterlist* sgnewentry;
-  /* Allocate space for the reduced scatterlist */
-  pex_msg(KERN_NOTICE "pex_reduce_sg before vmalloc....\n");
-  if ((sgreduced = vmalloc (entries * sizeof(*sgreduced))) == NULL )
-         return -ENOMEM;
-  pex_msg(KERN_NOTICE "pex_reduce_sg before sg_init_table...\n");
-  sg_init_table (sgreduced, entries);
-  // JAM first approach: just glue sg entries together that follow each other in original sg list:
+
+  sgreduced=*psg; // just reuse original list and overwrite
   j=0;
-  pex_msg(KERN_NOTICE "pex_reduce_sg before for_each_sg..\n");
-  sgnewentry=*sg;
-  for_each_sg(*sg,sgentry, entries,i)
+  sgnewentry=*psg; // first init to suppress warnings below
+  for_each_sg(*psg , sgentry, entries,i)
         {
           sglen = sgentry->length;       // <- probably redundant, but better to take into account
           dmalen = sg_dma_len(sgentry);
-          //if(sglen<PAGE_SIZE) continue; // do not touch partial entries
           sgstart=sg_dma_address(sgentry);
           if(first)
           {
             sgnewentry=sgentry;
             first=0;
-            pex_msg(KERN_NOTICE "pex_reduce_sg with first entry at 0x%x..\n", (unsigned) sg_dma_address(sgnewentry));
+            pex_dbg(KERN_NOTICE "pex_reduce_sg with first entry at 0x%x..\n", (unsigned) sg_dma_address(sgnewentry));
           }
           else if(sgstart!=sgnext) {
               // this chunk address is separate from the one before, finalize reduced entry:
@@ -922,7 +935,7 @@ int pex_reduce_sg(struct scatterlist **sg, int entries)
             newdmalen=0;
             if(j<20)
             {
-              pex_msg(
+              pex_dbg(
                       KERN_NOTICE "-- pex_reduce_sg finalized chunk %d: start 0x%x length 0x%x dmalen 0x%x offset 0x%x , at original entry %d  \n", j, (unsigned) sgreduced[j].dma_address, sgreduced[j].length, sg_dma_len(&sgreduced[j]),sgreduced[j].offset, i);
             }
             j++;
@@ -932,25 +945,18 @@ int pex_reduce_sg(struct scatterlist **sg, int entries)
           sgnewlen+=sglen;
           newdmalen+=dmalen;
           sgnext=sgstart+sglen;
-          if(i<50)pex_msg(KERN_NOTICE "pex_reduce_sg  end of for loop at %d \n",i);
         } // for_each_sg
-        // do not forget to put the last coherent segment into new list:
+  // do not forget to put the last coherent segment into new list:
   sgreduced[j].dma_address=sg_dma_address(sgnewentry); //
   sgreduced[j].dma_length=newdmalen;
   sgreduced[j].length=sgnewlen;
   sgreduced[j].offset=sgnewentry->offset;
   sgreduced[j].page_link=sgnewentry->page_link;
   sg_mark_end(&sgreduced[j]);
-  pex_msg(KERN_NOTICE "-- pex_reduce_sg finalized last chunk %d: start 0x%x length 0x%x dmalen 0x%x offset 0x%x , at original entry %d  \n", j, (unsigned) sgreduced[j].dma_address, sgreduced[j].length, sg_dma_len(&sgreduced[j]),sgreduced[j].offset, i);
-
-   j++; // return length, not index!
-  pex_msg(KERN_NOTICE "pex_reduce_sg reduced sglist from %d to %d entries).\n", entries,j);
-
-  vfree (*sg); // free original list
-  *sg=sgreduced; // exchange pointers
-  // TODO: overwrite original sglist instead of allocating new one.
-
-  pex_msg(KERN_NOTICE "pex_reduce_sg returns %d \n",j);
+  pex_dbg(KERN_NOTICE "-- pex_reduce_sg finalized last chunk %d: start 0x%x length 0x%x dmalen 0x%x offset 0x%x , at original entry %d  \n", j, (unsigned) sgreduced[j].dma_address, sgreduced[j].length, sg_dma_len(&sgreduced[j]),sgreduced[j].offset, i);
+  j++; // return length, not index!
+  pex_dbg(KERN_NOTICE "pex_reduce_sg reduced sglist from %d to %d entries).\n", entries,j);
+//  *psg=sgreduced; // exchange pointers not necessary since we reuse original array
   return j;
 
 
@@ -1013,7 +1019,7 @@ int pex_ioctl_map_pipe (struct pex_privdata *priv, unsigned long arg)
        goto mapbuffer_unmap;
      }
 
-     pex_msg(KERN_NOTICE "Got the pages (0x%x).\n", res);
+     pex_dbg(KERN_NOTICE "Got the pages (0x%x).\n", res);
 
      if(pex_ioctl_unmap_pipe(priv,arg)==0)
          pex_msg(KERN_NOTICE "Cleaned up previous pipe \n"); // clean up previous pipe if not done before

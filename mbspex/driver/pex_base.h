@@ -257,7 +257,7 @@ int pex_ioctl_wait_trigger(struct pex_privdata *priv, unsigned long arg);
 #endif
 
 /* combine physically  adjacent pages in scatterlist to single entry. */
-int pex_reduce_sg(struct scatterlist **sg, int entries);
+int pex_reduce_sg(struct scatterlist **psg, int entries);
 
 
 

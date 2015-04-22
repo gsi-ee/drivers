@@ -57,7 +57,7 @@
 #define BOARDTYPE_KINPEX 2
 
 
-#define PEXVERSION     "1.60"
+#define PEXVERSION     "1.65"
 
 
 //#define PEX_DEBUGPRINT 1
@@ -84,6 +84,11 @@
  * Note that this is _not_ done by pci_map_sg by default.
  * May disable merging for testing purposes*/
 #define PEX_SG_REDUCE_SGLIST 1
+
+
+/* if set, complete mbs pipe is synced for device/cpu at each ioctl readdmapipe.
+ * if undefined, we will sync only parts of sglist that have been touched*/
+#define PEX_SG_SYNCFULLPIPE 1
 
 /** maximum number of devices controlled by this driver*/
 #define PEX_MAXDEVS 4
