@@ -159,14 +159,23 @@ ssize_t pex_sysfs_sfp_retries_show (struct device *dev, struct device_attribute 
 
 ssize_t pex_sysfs_sfp_retries_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
-  int rev=0;
   unsigned int val=0;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+  int rev=0;
+#else
+  char* endp=0;
+#endif
   struct pex_privdata *privdata;
   privdata = (struct pex_privdata*) dev_get_drvdata (dev);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
   rev=kstrtouint(buf,0,&val); // this can handle both decimal, hex and octal formats if specified by prefix JAM
   if(rev!=0) return rev;
-  privdata->sfp_maxpolls=val;
-  pex_msg( KERN_NOTICE "PEX: sfp maximum retries was set to %d => timeout = %d ns \n", privdata->sfp_maxpolls, (privdata->sfp_maxpolls * PEX_SFP_DELAY));
+#else
+  val=simple_strtoul(buf,&endp, 0);
+  count= endp - buf; // do we need this?
+#endif
+   privdata->sfp_maxpolls=val;
+   pex_msg( KERN_NOTICE "PEX: sfp maximum retries was set to %d => timeout = %d ns \n", privdata->sfp_maxpolls, (privdata->sfp_maxpolls * PEX_SFP_DELAY));
   return count;
 }
 
@@ -991,8 +1000,7 @@ int pex_ioctl_map_pipe (struct pex_privdata *priv, unsigned long arg)
 
      /* Allocate space for the page information */
      if ((pages = vmalloc (nr_pages * sizeof(*pages))) == NULL )
-       goto mapbuffer_descriptor;
-
+         goto mapbuffer_descriptor;
      // JAM todo: reimplement this maybe with newly found
      //  sg_alloc_table_from_pages() (kernel > 3.6 only!)
      // otherwise better use sg_alloc_table and sg_free_table
