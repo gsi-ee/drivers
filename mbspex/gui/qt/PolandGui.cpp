@@ -132,8 +132,14 @@ EvaluateSlave ();
 //std::cout << "InitChainBtn_clicked()"<< std::endl;
 bool ok;
 snprintf (buffer, 1024, "Please specify NUMBER OF DEVICES to initialize at SFP %d ?", fChannel);
+#if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
 int numslaves = QInputDialog::getInt(this, tr("Number of Slaves?"),
                                  tr(buffer), 1, 1, 1024, 1, &ok);
+#else
+int numslaves = QInputDialog::getInteger(this, tr("Number of Slaves?"),
+                                 tr(buffer), 1, 1, 1024, 1, &ok);
+
+#endif
 if (!ok) return;
 if(fChannel<0)
 {
