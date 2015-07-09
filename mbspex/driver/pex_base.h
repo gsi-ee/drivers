@@ -171,6 +171,7 @@ struct pex_privdata
     struct cdev cdev; /**< char device struct */
     struct regs_pex regs;       /**< mapped register address pointers */
     u32 sfp_maxpolls; /**< number of retries when polling for sfp response ready */
+    u32 sfp_buswait; /**< sfp bus waitstates in ns for each bus read/write ioctl. To adjust for frontend slaves speed */
     struct mbs_pipe pipe;       /**< sg information on mbs pipe, for mode 4*/
     unsigned long bases[6]; /**< contains pci resource bases */
     unsigned long reglen[6]; /**< contains pci resource length */
@@ -300,6 +301,14 @@ ssize_t pex_sysfs_sfp_retries_show (struct device *dev, struct device_attribute 
 
 /* set number of retries for sfp request until error is recognized:*/
 ssize_t pex_sysfs_sfp_retries_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count);
+
+/* show sfp bus read/write waitstate in microseconds.
+ * this will impose such wait time after each frontend address read/write ioctl */
+ssize_t pex_sysfs_buswait_show (struct device *dev, struct device_attribute *attr, char *buf);
+
+/* set sfp bus read/write waitstate in microseconds. */
+ssize_t pex_sysfs_buswait_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count);
+
 
 
 #endif

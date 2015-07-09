@@ -11,7 +11,7 @@ static dev_t pex_devt;
 static atomic_t pex_numdevs = ATOMIC_INIT(0);
 static int my_major_nr = 0;
 
-MODULE_AUTHOR("Nikolaus Kurz, Joern Adamczewski-Musch, EE, GSI, 13-Mar-2015");
+MODULE_AUTHOR("Nikolaus Kurz, Joern Adamczewski-Musch, EE, GSI, 09-July-2015");
 MODULE_LICENSE("Dual BSD/GPL");
 
 
@@ -25,6 +25,7 @@ static DEVICE_ATTR(dmaregs, S_IRUGO, pex_sysfs_dmaregs_show, NULL);
 static DEVICE_ATTR(sfpregs, S_IRUGO, pex_sysfs_sfpregs_show, NULL);
 static DEVICE_ATTR(mbspipe, S_IRUGO, pex_sysfs_pipe_show, NULL);
 static DEVICE_ATTR(gosipretries, S_IWUGO | S_IRUGO , pex_sysfs_sfp_retries_show, pex_sysfs_sfp_retries_store);
+static DEVICE_ATTR(gosipbuswait, S_IWUGO | S_IRUGO , pex_sysfs_buswait_show, pex_sysfs_buswait_store);
 
 
 ssize_t pex_sysfs_trixorregs_show (struct device *dev, struct device_attribute *attr, char *buf)
@@ -180,8 +181,41 @@ ssize_t pex_sysfs_sfp_retries_store (struct device *dev, struct device_attribute
 }
 
 
+/* show sfp bus read/write waitstate in nanoseconds.
+ * this will impose such wait time after each frontend address read/write ioctl */
+ssize_t pex_sysfs_buswait_show (struct device *dev, struct device_attribute *attr, char *buf)
+{
+  ssize_t curs = 0;
+   struct pex_privdata *privdata;
+   privdata = (struct pex_privdata*) dev_get_drvdata (dev);
+   //curs += snprintf (buf + curs, PAGE_SIZE - curs, "*** PEX gosip request retries:\n");
+   curs += snprintf (buf + curs, PAGE_SIZE - curs, "%d\n", privdata->sfp_buswait);
+   return curs;
+}
 
+/* set sfp bus read/write waitstate in nanoseconds. */
+ssize_t pex_sysfs_buswait_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 
+{
+  unsigned int val=0;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+  int rev=0;
+#else
+  char* endp=0;
+#endif
+  struct pex_privdata *privdata;
+  privdata = (struct pex_privdata*) dev_get_drvdata (dev);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+  rev=kstrtouint(buf,0,&val); // this can handle both decimal, hex and octal formats if specified by prefix JAM
+  if(rev!=0) return rev;
+#else
+  val=simple_strtoul(buf,&endp, 0);
+  count= endp - buf; // do we need this?
+#endif
+   privdata->sfp_buswait=val;
+   pex_msg( KERN_NOTICE "PEX: gosip bus io wait interval was set to %d microseconds\n", privdata->sfp_buswait);
+  return count;
+}
 
 
 #endif // INUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
@@ -378,11 +412,15 @@ int pex_start_dma (struct pex_privdata *priv, dma_addr_t source, dma_addr_t dest
     burstsize = PEX_BURST;
   if (channelmask > 1)
     enable = channelmask; /* set sfp token transfer to initiate the DMA later*/
-  rev = pex_poll_dma_complete (priv);
-  if (rev)
+
+  if (enable < 1) // JAM test for nyxor problem: only check previous dma if not in direct dma preparation mode
   {
-    pex_msg(KERN_NOTICE "**pex_start_dma: dma was not finished, do not start new one!\n");
-    return rev;
+    rev = pex_poll_dma_complete (priv);
+    if (rev)
+    {
+      pex_msg(KERN_NOTICE "**pex_start_dma: dma was not finished, do not start new one!\n");
+      return rev;
+    }
   }
   if (burstsize == 0)
   {
@@ -1607,6 +1645,7 @@ void cleanup_device (struct pex_privdata* priv)
     device_remove_file (priv->class_dev, &dev_attr_dmaregs);
     device_remove_file (priv->class_dev, &dev_attr_mbspipe);
     device_remove_file (priv->class_dev, &dev_attr_gosipretries);
+    device_remove_file (priv->class_dev, &dev_attr_gosipbuswait);
     device_destroy (pex_class, priv->devno);
     priv->class_dev = 0;
   }
@@ -1930,6 +1969,10 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
         {
              pex_msg(KERN_ERR "Could not add device file node for gosip retries.\n");
         }
+    if (device_create_file (privdata->class_dev, &dev_attr_gosipbuswait) != 0)
+      {
+        pex_msg(KERN_ERR "Could not add device file node for gosip bus wait.\n");
+      }
 
 
 #ifdef INTERNAL_TRIG_TEST

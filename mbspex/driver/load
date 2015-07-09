@@ -31,7 +31,7 @@ elif [ -e "/dev/${kinpexname}0" ]
 	then
 	device=${kinpexname}0
 	ln -sf /dev/${device} /dev/pexor0
-elif [ -e "/dev/${pexarianame}0"] 
+elif [ -e "/dev/${pexarianame}0" ] 
  	then
  	device=${pexarianame}0
 else

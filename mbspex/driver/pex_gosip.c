@@ -50,6 +50,7 @@ int pex_ioctl_write_bus (struct pex_privdata* priv, unsigned long arg)
   if (retval)
     return retval;
   retval = pex_sfp_broadcast_write_bus (priv, &descriptor); /* everything is subfunctions now*/
+  if(priv->sfp_buswait) udelay(priv->sfp_buswait); // delay after each user bus ioctl to adjust frontend speed
   if (retval)
     return retval;
   retval = pex_copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pex_bus_io));
@@ -64,6 +65,7 @@ int pex_ioctl_read_bus (struct pex_privdata* priv, unsigned long arg)
   if (retval)
     return retval;
   retval = pex_sfp_read_bus (priv, &descriptor); /* everything is subfunctions now*/
+  if(priv->sfp_buswait) udelay(priv->sfp_buswait); // delay after each user bus ioctl to adjust frontend speed
   if (retval)
     return retval;
   retval = pex_copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pex_bus_io));
@@ -88,6 +90,7 @@ int pex_ioctl_configure_bus (struct pex_privdata* priv, unsigned long arg)
   {
     struct pex_bus_io data = descriptor.param[i];
     retval = pex_sfp_broadcast_write_bus (priv, &data);
+    if(priv->sfp_buswait) udelay(priv->sfp_buswait); // delay after each user bus ioctl to adjust frontend speed
     if (retval)
     {
       pex_msg(
@@ -600,12 +603,14 @@ int pex_sfp_clear_channel (struct pex_privdata* privdata, int ch)
     pex_sfp_delay()
     ;
     loopcount++;
-  } while ((repstatus != 0x0) || (tokenstatus != 0x0) || (chstatus != 0x0));
+  }
+  while ((repstatus != 0x0) || (tokenstatus != 0x0) || (chstatus != 0x0));
+
 
   pex_dbg(KERN_INFO "**after pex_sfp_clear_channel %d : loopcount:%d \n", ch, loopcount);
-  /*print_register(" ... reply status:", sfp->rep_stat[ch]);
-   print_register(" ... token reply status:", sfp->tk_stat[ch]);
-   print_register(" ... statclr:", sfp->rep_stat_clr);*/
+  pex_dbg(" ... reply status: 0x%x", readl(sfp->rep_stat[ch]));
+  pex_dbg(" ... token reply status: 0x%xx", readl(sfp->tk_stat[ch]));
+  pex_dbg(" ... statclr: 0x%x", readl(sfp->rep_stat_clr));
 
   return 0;
 }
