@@ -103,8 +103,8 @@ protected:
 
 
 
-  /** execute gosip command in shell. Return value is output of command*/
-  QString ExecuteGosipCmd (QString& command);
+  /** execute (gosip) command in shell. Return value is output of command*/
+  QString ExecuteGosipCmd (QString& command,  int timeout=5000);
 
   void AppendTextWindow (const QString& text);
 

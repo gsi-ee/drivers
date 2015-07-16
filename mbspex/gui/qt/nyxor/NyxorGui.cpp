@@ -270,7 +270,7 @@ void NyxorGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "NyxorGui::ClearOutputBtn_clicked()"<< std::endl;
 TextOutput->clear ();
-TextOutput->setPlainText ("Welcome to NYXOR GUI!\n\t v0.3 of 16-July-2015 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by  Sergey Linev, GSI");
+TextOutput->setPlainText ("Welcome to NYXOR GUI!\n\t v0.4 of 16-July-2015 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by  Sergey Linev, GSI");
 
 }
 
@@ -279,7 +279,7 @@ void NyxorGui::ConfigBtn_clicked ()
 //std::cout << "NyxorGui::ConfigBtn_clicked" << std::endl;
 
 // here file requester and application of set up via gosipcmd
-QFileDialog fd (this, "Select NYXOR configuration file", ".", "gosipcmd file (*.gos)");
+QFileDialog fd (this, "Select NYXOR configuration file", ".", "nyxor setup file (*.txt);;gosipcmd file (*.gos)");
 fd.setFileMode (QFileDialog::ExistingFile);
 if (fd.exec () != QDialog::Accepted)
   return;
@@ -287,12 +287,23 @@ QStringList flst = fd.selectedFiles ();
 if (flst.isEmpty ())
   return;
 QString fileName = flst[0];
-if (!fileName.endsWith (".gos"))
-  fileName.append (".gos");
 char buffer[1024];
-snprintf (buffer, 1024, "gosipcmd -x -c %s ", fileName.toLatin1 ().constData ());
+if(fileName.endsWith(".txt"))
+{
+    QString path=fileName;
+    path.truncate(path.lastIndexOf("/"));
+    // for the moment, the setup exectuable does not take any setup file as argument but maybe later..
+  snprintf (buffer, 1024, "bash -c \"cd %s; ./m_set_nxy %s \" ",path.toLatin1 ().constData (), fileName.toLatin1 ().constData ());
+}
+else
+{
+  if (!fileName.endsWith (".gos"))
+    fileName.append (".gos");
+    snprintf (buffer, 1024, "gosipcmd -x -c %s ", fileName.toLatin1 ().constData ());
+
+}
 QString com (buffer);
-QString result = ExecuteGosipCmd (com);
+QString result = ExecuteGosipCmd (com, 10000); // this will just execute the command in shell, gosip or not
 AppendTextWindow (result);
 
 
@@ -512,7 +523,7 @@ if (result == "ERROR")
 return rev;
 }
 
-QString NyxorGui::ExecuteGosipCmd (QString& com)
+QString NyxorGui::ExecuteGosipCmd (QString& com, int timeout)
 {
 // interface to shell gosipcmd
 // TODO optionally some remote call via ssh for Go4 gui?
@@ -527,15 +538,17 @@ QApplication::setOverrideCursor( Qt::WaitCursor );
 
 proc.start (com);
 // if(proc.waitForReadyRead (1000)) // will give termination warnings after leaving this function
-if (proc.waitForFinished (5000))    // after process is finished we can still read stdio buffer
+if (proc.waitForFinished (timeout))    // after process is finished we can still read stdio buffer
 {
   // read back stdout of proc here
   result = proc.readAll ();
 }
 else
 {
-  std::cout << " NyxorGui::ExecuteGosipCmd(): gosipcmd not finished after 5 s error" << std::endl;
-  AppendTextWindow ("! Warning: ExecuteGosipCmd not finished after 5 s timeout !!!");
+  std::stringstream buf;
+  buf<<"! Warning: ExecuteGosipCmd not finished after "<< timeout/1000<<" s timeout !!!"<< std::endl;
+  std::cout << " NyxorGui: "<<buf.str().c_str();
+  AppendTextWindow (buf.str().c_str());
   result = "ERROR";
 }
 QApplication::restoreOverrideCursor();
