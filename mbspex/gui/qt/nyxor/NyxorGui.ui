@@ -123,7 +123,7 @@
         <item>
          <widget class="QPushButton" name="ResetSlaveButton">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reset logic on chosen POLAND device&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reset logic on chosen NYXOR device&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>Reset</string>
@@ -179,7 +179,7 @@
      <item>
       <widget class="QTabWidget" name="Nxyter_tabWidget">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+        <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
@@ -191,6 +191,23 @@
      </item>
      <item>
       <widget class="QPlainTextEdit" name="TextOutput">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>100</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>Andale Mono</family>
+        </font>
+       </property>
        <property name="readOnly">
         <bool>true</bool>
        </property>

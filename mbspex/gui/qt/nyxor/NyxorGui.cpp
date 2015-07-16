@@ -270,7 +270,7 @@ void NyxorGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "NyxorGui::ClearOutputBtn_clicked()"<< std::endl;
 TextOutput->clear ();
-TextOutput->setPlainText ("Welcome to NYXOR GUI!\n\t v0.2 of 15-July-2015 by JAM (j.adamczewski@gsi.de)\n\tRe-uses parts of ROC/nxyter GUI by  Sergey Linev, GSI");
+TextOutput->setPlainText ("Welcome to NYXOR GUI!\n\t v0.3 of 16-July-2015 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by  Sergey Linev, GSI");
 
 }
 
@@ -464,8 +464,13 @@ QString com (buffer);
 QString result = ExecuteGosipCmd (com);
 if (result != "ERROR")
 {
-  DebugTextWindow (result);
+  QString pre, valtext;
+  fNumberBase==16? pre="0x" : pre="";
+  //DebugTextWindow (result);
   value = result.toInt (0, 0);
+  valtext=pre+valtext.setNum (value, fNumberBase);
+  DebugTextWindow (valtext);
+
 }
 else
 {

@@ -654,14 +654,11 @@ uint8_t nxyter::NxI2c::settingToDelay(uint8_t val)
 int nxyter::NxI2c::setRegister(uint8_t reg, uint8_t val, bool veri)
 {
   // JAM TODO: here use gosipcmd script interface in the owner NyxorGUI class
-    std::cout <<"NxI2c, id:"<< fNxId<<" setRegister("<<(int)reg<<","<< (int)val<<","<<veri<<")"<< std::endl;
+    //std::cout <<"NxI2c, id:"<< fNxId<<" setRegister("<<(int)reg<<","<< (int)val<<","<<veri<<")"<< std::endl;
 
 
     fOwner->WriteNyxorI2c(fNxId, reg,val,veri);
 
-//  fOwner->WriteGosip(sfp, slave, address, value);
-
-// probably need another wrapping function acting on the current sfp/slave only, or broadcasting.
 
 
 //  bool isput[7];
@@ -716,10 +713,10 @@ int nxyter::NxI2c::getRegister(uint8_t reg, uint8_t& val)
 
   // JAM we first use gosipcmd script interface in the owner NyxorGUI class
 
-  std::cout <<"NxI2c, id:"<< (int)fNxId<<" getRegister("<< (int) reg<<") "<< std::endl;
+
   val=fOwner->ReadNyxorI2c(fNxId,reg);
 
-
+ // std::cout <<"NxI2c, id:"<< (int)fNxId<<" getRegister("<< (int) reg<<")="<<(int) val << std::endl;
 
 
 //  bool isput[5];
@@ -804,6 +801,16 @@ int nxyter::NxI2c::getRegister16(uint8_t reg, uint16_t& val)
 int nxyter::NxI2c::setRegisterVerify(uint8_t reg, uint8_t valset,
                                       uint8_t& valget)
 {
+  // implement this since it is needed for imnplementation of shift register handling
+
+  //std::cout <<"NxI2c, id:"<< fNxId<<" setRegisterVerify("<<(int)reg<<","<< (int)valset<<","<<valget<<")"<< std::endl;
+
+
+ fOwner->WriteNyxorI2c(fNxId, reg,valset);
+ valget=fOwner->ReadNyxorI2c(fNxId, reg);
+
+
+
 //  bool isput[7];
 //  uint32_t addr[7];
 //  uint32_t data[7];
