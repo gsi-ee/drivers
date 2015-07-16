@@ -173,7 +173,18 @@ void NyxorGui::ResetSlaveBtn_clicked ()
     return;
   }
 
-  AppendTextWindow ("--- Resetting logic on NYXOR, TO DO... ");
+  AppendTextWindow ("--- Resetting logic on NYXOR... ");
+
+
+  WriteGosip(fChannel, fSlave, GOS_I2C_DWR, 0x7f000000);
+
+  int dat=0;
+  dat  = 0x8c;
+  dat += 0x0              <<  8;
+  dat  += 0x0              << 16;
+  dat += I2C_CTRL_A       << 24;
+
+  WriteGosip(fChannel, fSlave, GOS_I2C_DWR, dat);
 
 
 //  // has to be changed a bit if more than one nxy are connected to
@@ -207,8 +218,6 @@ void NyxorGui::ResetSlaveBtn_clicked ()
 
 
 
-//  WriteGosip (fChannel, fSlave, POLAND_REG_RESET, 0);
-//  WriteGosip (fChannel, fSlave, POLAND_REG_RESET, 1);
 
 }
 
