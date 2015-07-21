@@ -18,12 +18,13 @@
 
 #include <sstream>
 
+
+
 #include "nxyterwidget.h"
 
 // *********************************************************
 
-
-
+NyxorGui* NyxorGui::fInstance=0;
 
 /*
  *  Constructs a NyxorGui which is a child of 'parent', with the
@@ -72,7 +73,17 @@ for (int nx = 0; nx < NYXOR_NUMNX; nx++)
     fNxTab[nx] = nxw;
   }
 
+#ifdef USE_MBSPEX_LIB
+// open handle to driver file:
+fPexFD=mbspex_open (0); // we restrict to board number 0 here
+  if (fPexFD< 0)
+  {
+    printm ("ERROR>> open /dev/pexor%d \n", 0);
+    exit (1);
+  }
 
+  fInstance=this;
+#endif
 
 
 
@@ -81,7 +92,9 @@ show();
 
 NyxorGui::~NyxorGui ()
 {
-
+#ifdef USE_MBSPEX_LIB
+  mbspex_close (fPexFD);
+#endif
 }
 
 void NyxorGui::ShowBtn_clicked ()
@@ -134,12 +147,15 @@ if(fChannel<0)
     AppendTextWindow ("--- Error: Broadcast not allowed for init chain!");
     return;
 }
+#ifdef USE_MBSPEX_LIB
+int rev=mbspex_slave_init (fPexFD, fChannel, numslaves);
+
+#else
 snprintf (buffer, 1024, "gosipcmd -i  %d %d", fChannel, numslaves);
 QString com (buffer);
 QString result = ExecuteGosipCmd (com);
 AppendTextWindow (result);
-
-
+#endif
 }
 
 void NyxorGui::ResetBoardBtn_clicked ()
@@ -151,6 +167,11 @@ if (QMessageBox::question (this, "Poland GUI", "Really Reset gosip on pex board?
   //std::cout <<"QMessageBox does not return yes! "<< std::endl;
   return;
 }
+#ifdef USE_MBSPEX_LIB
+mbspex_reset(fPexFD);
+AppendTextWindow ("Reset PEX board with mbspex_reset()");
+
+#else
 
 char buffer[1024];
 snprintf (buffer, 1024, "gosipcmd -z");
@@ -158,6 +179,7 @@ QString com (buffer);
 QString result = ExecuteGosipCmd (com);
 AppendTextWindow (result);
 
+#endif
 
 }
 
@@ -270,7 +292,7 @@ void NyxorGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "NyxorGui::ClearOutputBtn_clicked()"<< std::endl;
 TextOutput->clear ();
-TextOutput->setPlainText ("Welcome to NYXOR GUI!\n\t v0.4 of 16-July-2015 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by  Sergey Linev, GSI");
+TextOutput->setPlainText ("Welcome to NYXOR GUI!\n\t v0.5 of 20-July-2015 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by  Sergey Linev, GSI");
 
 }
 
@@ -394,37 +416,6 @@ void NyxorGui::SetRegisters ()
 
 
 
-
-
-if (AssertNoBroadcast (false))
-{
-  // update trigger modes only in single device
-//  WriteGosip (fChannel, fSlave, POLAND_REG_INTERNAL_TRIGGER, fSetup.fInternalTrigger);
-//  WriteGosip (fChannel, fSlave, POLAND_REG_MASTERMODE, fSetup.fTriggerMode);
-}
-
-//WriteGosip (fChannel, fSlave, POLAND_REG_QFW_MODE, fSetup.fQFWMode);
-//
-//// following is required to really activate qfw mode (thanks Sven Loechner for fixing):
-//WriteGosip (fChannel, fSlave, POLAND_REG_QFW_PRG, 1);
-//WriteGosip (fChannel, fSlave, POLAND_REG_QFW_PRG, 0);
-//
-//
-//
-//// WriteGosip(fChannel, fSlave, POLAND_REG_TRIGCOUNT, fSetup.fEventCounter);
-//
-//for (int i = 0; i < POLAND_TS_NUM; ++i)
-//{
-//  WriteGosip (fChannel, fSlave, POLAND_REG_STEPS_BASE + 4 * i, fSetup.fSteps[i]);
-//  WriteGosip (fChannel, fSlave, POLAND_REG_TIME_BASE + 4 * i, fSetup.fTimes[i]);
-//}
-////    for(int e=0; e<POLAND_ERRCOUNT_NUM;++e)
-////     {
-////       WriteGosip(fChannel, fSlave, POLAND_REG_ERRCOUNT_BASE + 4*e, fSetup.fErrorCounter[e]);
-////     }
-//
-//// TODO: error handling with exceptions?
-
 }
 
 void NyxorGui::GetRegisters ()
@@ -467,7 +458,30 @@ uint8_t NyxorGui::ReadNyxorI2c (int nxid, uint8_t address)
 int NyxorGui::ReadGosip (int sfp, int slave, int address)
 {
 int value = -1;
+#ifdef USE_MBSPEX_LIB
+int rev=0;
+long int dat=0;
+QApplication::setOverrideCursor( Qt::WaitCursor );
+rev = mbspex_slave_rd (fPexFD, sfp, slave, address, &dat);
+I2c_sleep ();
+value=dat;
+  if (fDebug)
+  {
+    char buffer[1024];
+    if (rev == 0)
+    {
+      snprintf (buffer, 1024, "mbspex_slave_rd(%d,%d 0x%x) -> 0x%x", sfp, slave, address, value);
+    }
+    else
+    {
+      snprintf (buffer, 1024, "ERROR %d from mbspex_slave_rd(%d,%d 0x%x)", rev, sfp, slave, address);
+    }
+    QString msg (buffer);
+    AppendTextWindow (msg);
 
+  }
+QApplication::restoreOverrideCursor();
+#else
 char buffer[1024];
 //snprintf(buffer,1024,"/daq/usr/adamczew/workspace/drivers/mbspex/bin/gosipcmd -r -- %d %d 0x%x",sfp, slave, address);
 snprintf (buffer, 1024, "gosipcmd -r -- %d %d 0x%x", sfp, slave, address);
@@ -488,7 +502,7 @@ else
 
   value = -1;
 }
-
+#endif
 
 return value;
 }
@@ -514,12 +528,28 @@ int NyxorGui::WriteNyxorI2c (int nxid, uint8_t address, uint8_t value, bool veri
 int NyxorGui::WriteGosip (int sfp, int slave, int address, int value)
 {
 int rev = 0;
+
+#ifdef USE_MBSPEX_LIB
+QApplication::setOverrideCursor( Qt::WaitCursor );
+rev = mbspex_slave_wr (fPexFD, sfp, slave, address, value);
+I2c_sleep ();
+if (fDebug)
+  {
+      char buffer[1024];
+      snprintf (buffer, 1024, "mbspex_slave_wr(%d,%d 0x%x 0x%x)", sfp, slave, address, value);
+      QString msg (buffer);
+      AppendTextWindow (msg);
+  }
+QApplication::restoreOverrideCursor();
+#else
 char buffer[1024];
 snprintf (buffer, 1024, "gosipcmd -w -- %d %d 0x%x 0x%x", sfp, slave, address, value);
 QString com (buffer);
 QString result = ExecuteGosipCmd (com);
 if (result == "ERROR")
   rev = -1;
+#endif
+
 return rev;
 }
 
@@ -572,4 +602,42 @@ if (fChannel < 0 || fSlave < 0)
 }
 return true;
 }
+
+
+
+
+
+// this we need to implement for output of mbspex library:
+#ifdef USE_MBSPEX_LIB
+#include <stdarg.h>
+
+void printm (char *fmt, ...)
+{
+  char c_str[256];
+  va_list args;
+  va_start(args, fmt);
+  vsprintf (c_str, fmt, args);
+  //printf ("%s", c_str);
+  NyxorGui::fInstance->AppendTextWindow(c_str);
+
+  va_end(args);
+}
+
+/** this one from Nik to speed down direct mbspex io*/
+void NyxorGui::I2c_sleep ()
+{
+  #define N_LOOP 300000
+
+  int l_ii;
+  int volatile l_depp=0;
+
+  for (l_ii=0; l_ii<N_LOOP; l_ii++)
+  {
+    l_depp++;
+  }
+}
+
+
+
+#endif
 

@@ -9,6 +9,19 @@
 #include <QProcess>
 #include <QString>
 
+/** this define will switch between direct call of mbspex lib or external shell call of gosipcmd*/
+#define USE_MBSPEX_LIB 1
+
+#ifdef USE_MBSPEX_LIB
+extern "C"
+{
+#include "mbspex/libmbspex.h"
+}
+#endif
+
+
+
+
 class NxyterWidget;
 
 /** number of nxyters on nyxor board. may not change so soon...*/
@@ -46,6 +59,22 @@ public:
    uint8_t ReadNyxorI2c (int nxid, uint8_t address);
 
 
+   void AppendTextWindow (const QString& text);
+
+     void AppendTextWindow (const char* txt)
+     {
+       QString buf (txt);
+       AppendTextWindow (buf);
+     }
+
+
+
+#ifdef USE_MBSPEX_LIB
+
+   /** singleton pointer to forward mbspex output*/
+     static NyxorGui* fInstance;
+#endif
+
 protected:
 
 #if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
@@ -54,6 +83,8 @@ protected:
 
 
   NxyterWidget* fNxTab[NYXOR_NUMNX];
+
+
 
   /** text debug mode*/
   bool fDebug;
@@ -73,7 +104,16 @@ protected:
   int fSlaveSave;
 
 
+#ifdef USE_MBSPEX_LIB
 
+
+
+  /** file descriptor on mbspex device*/
+  int fPexFD;
+
+  /** speed down mbspex io witht this function from Nik*/
+  void I2c_sleep ();
+ #endif
 
   /** update register display*/
   void RefreshView ();
@@ -106,17 +146,10 @@ protected:
   /** execute (gosip) command in shell. Return value is output of command*/
   QString ExecuteGosipCmd (QString& command,  int timeout=5000);
 
-  void AppendTextWindow (const QString& text);
-
-  void AppendTextWindow (const char* txt)
-  {
-    QString buf (txt);
-    AppendTextWindow (buf);
-  }
 
   void DebugTextWindow (const char*txt)
   {
-    if (fDebug)
+
       AppendTextWindow (txt);
   }
   void DebugTextWindow (const QString& text)
