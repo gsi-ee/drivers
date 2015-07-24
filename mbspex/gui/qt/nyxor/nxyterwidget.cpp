@@ -265,8 +265,11 @@ void NxyterWidget::showContext()
    fIgnore = true;
 
    for (int n=0;n<NumBias;n++) {
-      fBiasSpins[n]->setValue(fContext.getRegister(BiasShift+n));
-      fBiasSlider[n]->setValue(fContext.getRegister(BiasShift+n));
+     uint8_t value=fContext.getRegister(BiasShift+n);
+      fBiasSpins[n]->setValue(value);
+      fBiasSlider[n]->setValue(value);
+      QString tooltip = QString("0x%1").arg(value,0,16);
+      fBiasSpins[n]->setToolTip(tooltip);
    }
 
    for (int n=0;n<NumConfigBits;n++) {
@@ -274,9 +277,12 @@ void NxyterWidget::showContext()
       fConfigChks[n]->setCheckState(on ? Qt::Checked : Qt::Unchecked);
    }
 
-   for (int n=0;n<NumOtherRegs;n++)
-      fOtherSpins[n]->setValue(fContext.getRegister(OtherRegsId[n]));
-
+   for (int n=0;n<NumOtherRegs;n++){
+      uint8_t value=fContext.getRegister(OtherRegsId[n]);
+      fOtherSpins[n]->setValue(value);
+      QString tooltip = QString("0x%1 - delay=%2").arg(value,0,16).arg( nxyter::NxI2c::settingToDelay(value));
+      fOtherSpins[n]->setToolTip(tooltip);
+   }
    fIgnore = false;
 
    showMask();
@@ -305,6 +311,8 @@ void NxyterWidget::showThreshold(int select)
       uint8_t value = fContext.getThresholdTrim(n);
 
       fThrdSpins[n]->setValue(value);
+      QString tooltip = QString("0x%1").arg(value,0,16);
+      fThrdSpins[n]->setToolTip(tooltip);
 
       bool off = fContext.getPowerOffMaskBit(n);
 

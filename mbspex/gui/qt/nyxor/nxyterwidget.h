@@ -47,6 +47,7 @@ class NxyterWidget : public QWidget , public Ui::NxyterWidget {
       virtual bool setSubToDefault();
       virtual bool fillCmdFile(FILE* f);
 
+      const nxyter::NxContext* getContext(){return &fContext;}
 
    public slots:
 

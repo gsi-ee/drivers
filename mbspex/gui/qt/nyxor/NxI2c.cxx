@@ -801,7 +801,7 @@ int nxyter::NxI2c::getRegister16(uint8_t reg, uint16_t& val)
 int nxyter::NxI2c::setRegisterVerify(uint8_t reg, uint8_t valset,
                                       uint8_t& valget)
 {
-  // implement this since it is needed for imnplementation of shift register handling
+  // JAM implement this since it is needed for shift register handling
 
   //std::cout <<"NxI2c, id:"<< fNxId<<" setRegisterVerify("<<(int)reg<<","<< (int)valset<<","<<valget<<")"<< std::endl;
 

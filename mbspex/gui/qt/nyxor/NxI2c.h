@@ -87,7 +87,7 @@ namespace nxyter {
          uint8_t getId(){return fNxId;}
 
          int setContext(NxContext& cntx, int domask=nxyter::kDoAll,
-                        bool veri=true);
+                        bool veri=false); // JAM turn off verify by default
          int getContext(NxContext& cntx, int domask=nxyter::kDoAll);
 
          int getCounters(uint16_t& overflow, uint16_t& tokenmiss);

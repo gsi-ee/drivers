@@ -89,6 +89,9 @@ protected:
   /** text debug mode*/
   bool fDebug;
 
+  /** save configuration file instead of setting device values*/
+  bool fSaveConfig;
+
   /** base for number display (10 or 16)*/
   int fNumberBase;
 
@@ -103,6 +106,8 @@ protected:
   /** remember slave channel to recover after broadcast*/
   int fSlaveSave;
 
+  /** configuration output file handle*/
+  FILE* fConfigFile;
 
 #ifdef USE_MBSPEX_LIB
 
@@ -111,9 +116,10 @@ protected:
   /** file descriptor on mbspex device*/
   int fPexFD;
 
-  /** speed down mbspex io witht this function from Nik*/
+  /** speed down mbspex io with this function from Nik*/
   void I2c_sleep ();
- #endif
+
+#endif
 
   /** update register display*/
   void RefreshView ();
@@ -140,11 +146,28 @@ protected:
   /** Write value to address from sfp and slave*/
   int WriteGosip (int sfp, int slave, int address, int value);
 
-
-
+  /** Save value to currently open *.gos configuration file*/
+  int SaveGosip(int sfp, int slave, int address, int value);
 
   /** execute (gosip) command in shell. Return value is output of command*/
   QString ExecuteGosipCmd (QString& command,  int timeout=5000);
+
+
+  /** helper function that either does enable i2c on board, or writes such commands to .gos file*/
+  void EnableI2C();
+
+  /** open configuration file for writing*/
+  int OpenConfigFile(const QString& fname);
+
+  /** guess what...*/
+  int CloseConfigFile();
+
+  /** append text to currently open config file*/
+  int WriteConfigFile(const QString& text);
+
+
+  /** convert current context values into gemex/nyxor file format by N.Kurz*/
+  int WriteNiksConfig();
 
 
   void DebugTextWindow (const char*txt)
@@ -170,6 +193,7 @@ public slots:
   virtual void DumpBtn_clicked ();
   virtual void ClearOutputBtn_clicked ();
   virtual void ConfigBtn_clicked ();
+  virtual void SaveConfigBtn_clicked ();
   virtual void DebugBox_changed (int on);
   virtual void HexBox_changed(int on);
   virtual void Slave_changed(int val);
