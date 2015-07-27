@@ -71,4 +71,4 @@ clean: cleanset cleangui
 install: 
 	@echo "Installing to $(PEX_BINPATH) ..."
 	@cp -f m_set_nxy $(PEX_BINPATH)
-	@ln -fs ./NyxorGui $(PEX_BINPATH)
+	@ln -fs $(PWD)/NyxorGui $(PEX_BINPATH)
