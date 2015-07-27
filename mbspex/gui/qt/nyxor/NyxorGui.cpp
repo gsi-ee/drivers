@@ -226,7 +226,7 @@ int NyxorGui::OpenConfigFile (const QString& fname)
     return -1;
   }
   QString timestring = QDateTime::currentDateTime ().toString ("ddd dd.MM.yyyy hh:mm:ss");
-  WriteConfigFile (QString ("#Nyxor configuration file saved on ") + timestring + QString ("\n"));
+  WriteConfigFile (QString ("# Nyxor configuration file saved on ") + timestring + QString ("\n"));
   return 0;
 }
 
@@ -257,7 +257,7 @@ int NyxorGui::WriteConfigFile (const QString& text)
 
 int NyxorGui::WriteNiksConfig ()
 {
-
+  WriteConfigFile (QString ("# -------------------------------------------------------------\n"));
   WriteConfigFile (QString ("# specify nr of nXYters in use (as function of GEMEX/NYXOR id).\n"));
   WriteConfigFile (QString ("# must be filled consecutively beginning with GEMEX/NYXOR index 0.\n"));
   WriteConfigFile (
@@ -269,7 +269,7 @@ int NyxorGui::WriteNiksConfig ()
   WriteConfigFile (QString ("#                   |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |\n"));
   for (int ch = 0; ch < 4; ++ch)
   {
-    QString sfpline = QString ("# SFP%1_NYX_IN_USE   ").arg (ch);
+    QString sfpline = QString ("SFP%1_NYX_IN_USE     ").arg (ch);
     if (fChannel == ch || (fChannel < 0 && ch == 0))
     {
       for (int i = 0; i < 16; ++i)
@@ -305,7 +305,7 @@ int NyxorGui::WriteNiksConfig ()
 
       QString line;
       const nxyter::NxContext* theContext = fNxTab[nx]->getContext ();
-      line= QString("SFP %1 NYX %2 nXY %3 I2C_ADDR    \t0x%4 # wr\n").arg(fChannel).arg(fSlave).arg(nx).arg(iadd,0,16);
+      line= QString("SFP %1 NYX %2 nXY %3 I2C_ADDR    \t\t0x%4 # wr\n").arg(fChannel).arg(fSlave).arg(nx).arg(iadd,0,16);
       WriteConfigFile(line);
       line= QString("SFP %1 NYX %2 nXY %3 RESET    \t\t0x8c \n").arg(fChannel).arg(fSlave).arg(nx);
       WriteConfigFile(line);
@@ -336,7 +336,7 @@ int NyxorGui::WriteNiksConfig ()
       line.append ("\n");
       WriteConfigFile(line);
 
-      line= QString("SFP %1 NYX %2 nXY %3 TEST_DELAY   \t").arg(fChannel).arg(fSlave).arg(nx);
+      line= QString("SFP %1 NYX %2 nXY %3 TEST_DELAY   \t\t").arg(fChannel).arg(fSlave).arg(nx);
       for(int d=0; d<2;++d)
       {
         uint8_t dval=theContext->getRegister(d+38);
@@ -354,7 +354,7 @@ int NyxorGui::WriteNiksConfig ()
       line.append ("\n");
       WriteConfigFile(line);
 
-      line= QString("SFP %1 NYX %2 nXY %3 THR_TEST   \t\t").arg(fChannel).arg(fSlave).arg(nx);
+      line= QString("SFP %1 NYX %2 nXY %3 THR_TEST         \t\t").arg(fChannel).arg(fSlave).arg(nx);
       uint8_t testval=theContext->getTrimRegister(128);
       line.append(QString("0x%1 ").arg(testval,0,16));
       line.append ("\n");
@@ -518,7 +518,7 @@ void NyxorGui::ClearOutputBtn_clicked ()
 //std::cout << "NyxorGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
   TextOutput->setPlainText (
-      "Welcome to NYXOR GUI!\n\t v0.6 of 24-July-2015 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by  Sergey Linev, GSI");
+      "Welcome to NYXOR GUI!\n\t v0.7 of 27-July-2015 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI");
 
 }
 
@@ -538,11 +538,7 @@ void NyxorGui::ConfigBtn_clicked ()
   char buffer[1024];
   if (fileName.endsWith (".txt"))
   {
-    QString path = fileName;
-    path.truncate (path.lastIndexOf ("/"));
-    // for the moment, the setup exectuable does not take any setup file as argument but maybe later..
-    snprintf (buffer, 1024, "bash -c \"cd %s; ./m_set_nxy %s \" ", path.toLatin1 ().constData (),
-        fileName.toLatin1 ().constData ());
+    snprintf (buffer, 1024, "bash -c \"m_set_nxy %s \" ", fileName.toLatin1 ().constData ());
   }
   else
   {
@@ -580,11 +576,7 @@ void NyxorGui::Slave_changed (int)
 //std::cout << "NyxorGui::Slave_changed" << std::endl;
   EvaluateSlave ();
   bool triggerchangeable = AssertNoBroadcast (false);
-//MasterTriggerBox->setEnabled (triggerchangeable);
-//InternalTriggerBox->setEnabled (triggerchangeable);
-//FesaModeBox->setEnabled (triggerchangeable);
   RefreshButton->setEnabled (triggerchangeable);
-//if(triggerchangeable) ShowBtn_clicked (); // automatic update of values?
 
 }
 
@@ -636,7 +628,7 @@ void NyxorGui::GetRegisters ()
 
   if (!AssertNoBroadcast ())
     return;
-
+  EnableI2C ();
   for (int nx = 0; nx < NYXOR_NUMNX; nx++)
   {
     fNxTab[nx]->getSubConfig ();
@@ -844,15 +836,18 @@ void printm (char *fmt, ...)
 /** this one from Nik to speed down direct mbspex io*/
 void NyxorGui::I2c_sleep ()
 {
-#define N_LOOP 300000
+  usleep(300);
 
-  int l_ii;
-  int volatile l_depp = 0;
-
-  for (l_ii = 0; l_ii < N_LOOP; l_ii++)
-  {
-    l_depp++;
-  }
+// JAM: test avoid arbirtrary loop
+//#define N_LOOP 300000
+//
+//  int l_ii;
+//  int volatile l_depp = 0;
+//
+//  for (l_ii = 0; l_ii < N_LOOP; l_ii++)
+//  {
+//    l_depp++;
+//  }
 }
 
 #endif
