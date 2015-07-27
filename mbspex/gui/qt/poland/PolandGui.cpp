@@ -7,6 +7,7 @@
 #include <iostream>
 //#include <QProcess>
 #include <stdlib.h>
+#include <errno.h>
 
 #include <QString>
 #include <QMessageBox>
@@ -44,7 +45,7 @@
  *  name 'name'.'
  */
 PolandGui::PolandGui (QWidget* parent) :
-    QWidget (parent), fDebug (false), fChannel (0), fSlave (0), fChannelSave (0), fSlaveSave (0), fTriggerOn(true)
+    QWidget (parent), fDebug (false), fSaveConfig(false), fChannel (0), fSlave (0), fChannelSave (0), fSlaveSave (0), fTriggerOn(true), fConfigFile(NULL)
 {
   setupUi (this);
 #if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
@@ -68,6 +69,7 @@ PolandGui::PolandGui (QWidget* parent) :
   QObject::connect (BroadcastButton, SIGNAL (clicked (bool)), this, SLOT (BroadcastBtn_clicked (bool)));
   QObject::connect (DumpButton, SIGNAL (clicked ()), this, SLOT (DumpBtn_clicked ()));
   QObject::connect (ConfigButton, SIGNAL (clicked ()), this, SLOT (ConfigBtn_clicked ()));
+  QObject::connect (SaveConfigButton, SIGNAL (clicked ()), this, SLOT (SaveConfigBtn_clicked ()));
   QObject::connect (ClearOutputButton, SIGNAL (clicked ()), this, SLOT (ClearOutputBtn_clicked ()));
   QObject::connect (OffsetButton, SIGNAL (clicked ()), this, SLOT (OffsetBtn_clicked ()));
   QObject::connect (TriggerButton, SIGNAL (clicked ()), this, SLOT (TriggerBtn_clicked ()));
@@ -301,7 +303,7 @@ void PolandGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "PolandGui::ClearOutputBtn_clicked()"<< std::endl;
 TextOutput->clear ();
-TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.50 of 24-September-2014 by JAM (j.adamczewski@gsi.de)");
+TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.60 of 27-July-2015 by JAM (j.adamczewski@gsi.de)");
 
 }
 
@@ -798,6 +800,141 @@ fTriggerOn=fSetup.fTriggerOn;
 // TODO: error handling with exceptions?
 }
 
+
+
+void PolandGui::SaveConfigBtn_clicked ()
+{
+//std::cout << "PolandGui::SaveConfigBtn_clicked()"<< std::endl;
+
+  static char buffer[1024];
+  QString gos_filter ("gosipcmd file (*.gos)");
+  //QString dmp_filter ("data dump file (*.dmp)");
+  QStringList filters;
+  filters << gos_filter;// << dmp_filter;
+
+  QFileDialog fd (this, "Write POLAND configuration file");
+
+  fd.setNameFilters (filters);
+  fd.setFileMode (QFileDialog::AnyFile);
+  fd.setAcceptMode (QFileDialog::AcceptSave);
+  if (fd.exec () != QDialog::Accepted)
+    return;
+  QStringList flst = fd.selectedFiles ();
+  if (flst.isEmpty ())
+    return;
+  QString fileName = flst[0];
+
+  // complete suffix if user did not
+   if (fd.selectedNameFilter () == gos_filter)
+  {
+    if (!fileName.endsWith (".gos"))
+      fileName.append (".gos");
+  }
+//  else if (fd.selectedNameFilter () == dmp_filter)
+//  {
+//    if (!fileName.endsWith (".dmp"))
+//      fileName.append (".dmp");
+//  }
+  else
+  {
+    std::cout << "PolandGui::SaveConfigBtn_clicked( - NEVER COME HERE!!!!)" << std::endl;
+  }
+
+  // open file
+  if (OpenConfigFile (fileName) != 0)
+    return;
+
+  if (fileName.endsWith (".gos"))
+  {
+    WriteConfigFile (QString ("# Format *.gos\n"));
+    WriteConfigFile (QString ("# usage: gosipcmd -x -c file.gos \n"));
+    WriteConfigFile (QString ("#                                         \n"));
+    WriteConfigFile (QString ("# sfp slave address value\n"));
+
+    fSaveConfig = true;    // switch to file output mode
+    EvaluateView ();
+    EvaluateDAC();
+    WriteConfigFile (QString ("# QFW Registers: \n"));
+    SetRegisters ();
+    WriteConfigFile (QString ("# DAC Settings: \n"));
+    ApplyDAC();
+    fSaveConfig = false;
+  }
+
+//  else if (fileName.endsWith (".dmp"))
+//  {
+//    // dump configuration
+//    WriteConfigFile (QString ("#Format *.dmp - register dump output\n"));
+//    WriteConfigFile (QString ("#                                         \n"));
+//
+//
+//  }
+  else
+  {
+    std::cout << "PolandGui::SaveConfigBtn_clicked( -  unknown file type, NEVER COME HERE!!!!)" << std::endl;
+  }
+
+  // close file
+  CloseConfigFile ();
+  snprintf (buffer, 1024, "Saved current slave configuration to file '%s' .\n", fileName.toLatin1 ().constData ());
+  AppendTextWindow (buffer);
+}
+
+int PolandGui::OpenConfigFile (const QString& fname)
+{
+  fConfigFile = fopen (fname.toLatin1 ().constData (), "w");
+  if (fConfigFile == NULL)
+  {
+    char buffer[1024];
+    snprintf (buffer, 1024, " Error opening Configuration File '%s': %s\n", fname.toLatin1 ().constData (),
+        strerror (errno));
+    AppendTextWindow (buffer);
+    return -1;
+  }
+  QString timestring = QDateTime::currentDateTime ().toString ("ddd dd.MM.yyyy hh:mm:ss");
+  WriteConfigFile (QString ("# Poland configuration file saved on ") + timestring + QString ("\n"));
+  return 0;
+}
+
+int PolandGui::CloseConfigFile ()
+{
+  int rev = 0;
+  if (fConfigFile == NULL)
+    return 0;
+  if (fclose (fConfigFile) != 0)
+  {
+    char buffer[1024];
+    snprintf (buffer, 1024, " Error closing Configuration File! (%s)\n", strerror (errno));
+    AppendTextWindow (buffer);
+    rev = -1;
+  }
+  fConfigFile = NULL;    // must not use handle again even if close fails
+  return rev;
+}
+
+int PolandGui::WriteConfigFile (const QString& text)
+{
+  if (fConfigFile == NULL)
+    return -1;
+  if (fprintf (fConfigFile, text.toLatin1 ().constData ()) < 0)
+    return -2;
+  return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 int PolandGui::ReadGosip (int sfp, int slave, int address)
 {
 int value = -1;
@@ -824,6 +961,9 @@ return value;
 
 int PolandGui::WriteGosip (int sfp, int slave, int address, int value)
 {
+  if (fSaveConfig)
+      return SaveGosip (sfp, slave, address, value);
+
 int rev = 0;
 char buffer[1024];
 snprintf (buffer, 1024, "gosipcmd -w -- %d %d 0x%x 0x%x", sfp, slave, address, value);
@@ -833,6 +973,17 @@ if (result == "ERROR")
   rev = -1;
 return rev;
 }
+
+int PolandGui::SaveGosip (int sfp, int slave, int address, int value)
+{
+//std::cout << "# SaveGosip" << std::endl;
+  static char buffer[1024] = { };
+  snprintf (buffer, 1024, "%d %d %x %x \n", sfp, slave, address, value);
+  QString line (buffer);
+  return (WriteConfigFile (line));
+}
+
+
 
 QString PolandGui::ExecuteGosipCmd (QString& com)
 {
