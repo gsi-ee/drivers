@@ -105,15 +105,17 @@ void NyxorGui::ApplyBtn_clicked ()
 {
 //std::cout << "NyxorGui::ApplyBtn_clicked()"<< std::endl;
 
-  char buffer[1024];
+  //char buffer[1024];
   EvaluateSlave ();
   //std::cout << "InitChainBtn_clicked()"<< std::endl;
-  snprintf (buffer, 1024, "Really apply NYXOR settings  to SFP %d Device %d?", fChannel, fSlave);
-  if (QMessageBox::question (this, "NYXOR GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
-      != QMessageBox::Yes)
-  {
-    return;
-  }
+
+// JAM disabled confirm window as wished by Henning H.
+//  snprintf (buffer, 1024, "Really apply NYXOR settings  to SFP %d Device %d?", fChannel, fSlave);
+//  if (QMessageBox::question (this, "NYXOR GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
+//      != QMessageBox::Yes)
+//  {
+//    return;
+//  }
 //EvaluateView ();
 
 // here we call subguis for nxyters to do setup:
@@ -518,7 +520,7 @@ void NyxorGui::ClearOutputBtn_clicked ()
 //std::cout << "NyxorGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
   TextOutput->setPlainText (
-      "Welcome to NYXOR GUI!\n\t v0.7 of 27-July-2015 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI");
+      "Welcome to NYXOR GUI!\n\t v0.75 of 29-July-2015 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI");
 
 }
 
