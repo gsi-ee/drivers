@@ -6,7 +6,7 @@
  * C user library to work with mbspex.ko kernel module
  *
  * \author JAM (Joern Adamczewski-Musch, GSI Darmstadt, Germany -- j.adamczewski@gsi.de)
- * \date 26-August-2014
+ * \date 26-August-2014 -- 10-Sep-2015
  *
  */
 
@@ -70,6 +70,25 @@ int mbspex_slave_config (int handle, struct pex_bus_config* config);
  */
 int mbspex_send_and_receive_tok (int handle, long l_sfp, long l_toggle, unsigned long l_dma_target,
     unsigned long* pl_transfersize, long *pl_check_comm, long *pl_check_token, long *pl_check_slaves);
+
+
+/**
+ * Sends token request and receive data from all SFPs of pexor device handle,
+ * marked bitwise in l_sfp_p pattern: 1: sfp 0, 2: sfp 1, 4: sfp 2, 8: sfp 3, 0xf: all four SFPs.
+ *  with l_toggle word (sets frontend buffer).
+ * l_ldma_target specifies physical address of target buffer for token data DMA.
+ * returns some result check words:
+ * pl_transfersize:  size of transferred dma in bytes.
+ * pl_check_comm: l_comm.
+ * pl_check_token: toggle and mode bits.
+ * pl_check_slaves: nr. of slaves connected to token chain.
+ * The data written to l_ldma_target contains DMA read token contents of all sfps, separated by the
+ * optional DMA padding words 0xaddXXXXX as defined for MBS readout.
+ */
+int mbspex_send_and_receive_parallel_tok (int handle, long l_sfp_p, long l_toggle, unsigned long l_dma_target,
+    unsigned long* pl_transfersize, long *pl_check_comm, long *pl_check_token, long *pl_check_slaves);
+
+
 
 /** sends token to all SFPs of pexor device handle,
  * marked bitwise in l_sfp_p pattern: 1: sfp 0, 2: sfp 1, 4: sfp 2, 8: sfp 3, 0xf: all four SFPs

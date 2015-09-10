@@ -148,6 +148,37 @@ int mbspex_slave_rd (int handle, long l_sfp, long l_slave, long l_slave_off, lon
 }
 
 
+int mbspex_send_and_receive_parallel_tok (int handle, long l_sfp_p, long l_toggle, unsigned long l_dma_target,
+    unsigned long* pl_transfersize, long *pl_check_comm, long *pl_check_token, long *pl_check_slaves)
+{
+  int rev=0, errsv=0;
+       struct pex_token_io descriptor;
+       descriptor.bufid=l_toggle;
+       descriptor.sfp=(l_sfp_p << 16); // upper bytes expected as sfp pattern by driver
+       descriptor.sync=1; // redundant, this call is always synchronous
+       descriptor.directdma=0; // redundant, parallel mode requires intermediate buffering in pex mem
+       descriptor.dmatarget= l_dma_target; // begin of pipe memory for writing. initial padding is done without dma though.
+       descriptor.dmaburst=0; // is adjusted inside driver due to actual chain payload
+       rev=ioctl(handle, PEX_IOC_REQUEST_RECEIVE_TOKENS, &descriptor);
+       errsv = errno;
+       if(rev)
+           {
+               printm(RON"ERROR>>"RES" mbspex_send_and_receive_parallel_tok -Error %d  on token request, sfp 0x%x toggle:0x%x - %s\n",errsv, l_sfp_p, l_toggle, strerror(errsv));
+               return -1;
+           }
+       *pl_check_comm=descriptor.check_comm;
+       *pl_check_token=descriptor.check_token;
+       *pl_check_slaves=descriptor.check_numslaves;
+       *pl_transfersize=descriptor.dmasize; // offset to adjust pipe pointer after call
+
+ return rev;
+
+  return 0;
+}
+
+
+
+
 
 /*****************************************************************************/
 

@@ -9,6 +9,10 @@
  * TODO: evaluate this directly from mbs setup structure?*/
 //#define USE_VIRTUAL_PIPE 1
 
+
+/** if defined, use ioctl call for internal parallel token send*/
+#define USE_DRIVER_PARALLEL_TOKENREAD 1
+
 #include "stdio.h"
 #include "s_veshe.h"
 #include "stdarg.h"
@@ -87,7 +91,7 @@
                                        // - otherwisse send data immediately
                                        //   after token arrived at qfw/exploder  
 
-#define SEQUENTIAL_TOKEN_SEND 1        // - token sending and receiving is
+//#define SEQUENTIAL_TOKEN_SEND 1        // - token sending and receiving is
                                        //   sequential for all used SFPs
                                        // - otherwise token sending and receiving
                                        //   is done parallel for all used SFPs
@@ -417,8 +421,11 @@ int f_user_readout (unsigned char   bh_trig_typ,
  
     if (l_tog == 1) { l_tog = 0; } else { l_tog = 1; }
 
+
+
+
     //#ifdef  WAIT_FOR_DATA_READY_TOKEN
-#if defined (WAIT_FOR_DATA_READY_TOKEN) && ! (SEQUENTIAL_TOKEN_SEND)
+#if defined (WAIT_FOR_DATA_READY_TOKEN) && ! (SEQUENTIAL_TOKEN_SEND) && ! defined(USE_DRIVER_PARALLEL_TOKENREAD)
     //printm ("send token in WAIT_FOR_DATA_READY_TOKEN mode \n");
     //printm ("l_tog | l_tok_mode: 0x%x \n", l_tog | l_tok_mode);
     //sleep (1);
@@ -459,6 +466,28 @@ int f_user_readout (unsigned char   bh_trig_typ,
     // prepare token data sending
     if ((bh_trig_typ != 14) && (bh_trig_typ != 15))
     {
+
+#if  defined (USE_DRIVER_PARALLEL_TOKENREAD) &&  ! (SEQUENTIAL_TOKEN_SEND)
+    l_dma_target_base = (long) pl_dat + l_diff_pipe_phys_virt;
+
+    l_stat=mbspex_send_and_receive_parallel_tok(fd_pex, l_sfp_pat, l_tog | l_tok_mode,
+                  (long) l_dma_target_base, (long unsigned*) &l_dma_trans_size,
+                  &l_dummy, &l_tok_check, &l_n_slaves);
+    if (l_stat !=0)
+      {
+        printm (RON"ERROR>>"RES" mbspex_send_and_receive_parallel_tok to slave(s) / SFPs failed\n");
+        l_err_prot_ct++;
+        l_check_err = 3; goto bad_event;
+      }
+    pl_dat += (l_dma_trans_size>>2); // l_dma_trans_size bytes to pointer units - int
+
+
+
+#else
+
+
+
+
       #ifdef SEQUENTIAL_TOKEN_SEND
       for (l_i=0; l_i<MAX_SFP; l_i++)
       {
@@ -592,6 +621,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
       // end SEQUENTIAL_TOKEN_SEND
       #else
       // begin parallel token sending
+
 
       // send token to all SFPs used
       #ifndef WAIT_FOR_DATA_READY_TOKEN
@@ -830,6 +860,9 @@ int f_user_readout (unsigned char   bh_trig_typ,
           pl_dat += l_dat_len_sum_long[l_i];
           //printm (">>> Incremented pl_dat with 0x%x words to 0x%x \n",l_dat_len_sum_long[l_i], pl_dat);
 
+
+
+
           #else // PEXOR_PC_DRAM_DMA 
 
           //l_dat_len_sum_long[l_i] = (l_dat_len_sum[l_i] >> 2) + 1;  // in 4 bytes
@@ -852,9 +885,19 @@ int f_user_readout (unsigned char   bh_trig_typ,
 #endif
           #endif // PEXOR_PC_DRAM_DMA 
         }
+
       }
+
+
       #endif // not DIRECT_DMA
+
+
+#endif //  defined (USE_DRIVER_PARALLEL_TOKENREAD) &&  ! (SEQUENTIAL_TOKEN_SEND)
     }
+
+
+
+
 
     l_tr_ct[0]++;            // event/trigger counter
     l_tr_ct[bh_trig_typ]++;  // individual trigger counter
@@ -952,7 +995,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
       {
         printm (RON"ERROR>>"RES" data word neither header nor padding word: \n");
         //printm ("bad event: 0x%x,  0x%x,  0x%x,  0x%x,  0x%x \n",
-  //*pl_dat_save, *(pl_dat_save+1), *(pl_dat_save+2), *(pl_dat_save+3), *(pl_dat_save+4));
+//  *pl_dat_save, *(pl_dat_save+1), *(pl_dat_save+2), *(pl_dat_save+3), *(pl_dat_save+4));
       }       
     }
 

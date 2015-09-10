@@ -3,6 +3,7 @@
  *
  *  Created on: 01.12.2009, Updated for mbspex 08.04.2014
  *                          Added sg pipe mode 13.03.2015
+ *                          Added parallel token dma ioctl 10.09.2015
  *      Author: J. Adamczewski-Musch
  *
  *      Contains all common definitions for kernel driver and user space library
@@ -129,6 +130,7 @@ struct pex_trixor_set {
 #define PEX_IOC_MAP_PIPE         _IOW(  PEX_IOC_MAGIC, 19, struct pex_pipebuf)          /**< map virtual mbs pipe to driver sg list*/
 #define PEX_IOC_UNMAP_PIPE       _IO(  PEX_IOC_MAGIC, 20)        /**< unmap virtual mbs pipe and clear driver sg list*/
 #define PEX_IOC_READ_DMA_PIPE    _IOWR(  PEX_IOC_MAGIC, 21, struct pex_dma_io)      /**< directly initiate DMA transfer from pexor/kinpex board memory to _virtual_ destination address in pipe. Pipe must be mapped before into internal sg list by PEX_IOC_MAP_PIPE*/
+#define PEX_IOC_REQUEST_RECEIVE_TOKENS    _IOWR(  PEX_IOC_MAGIC, 22, struct pex_token_io)    /**<  Request data from parallel slaves via token and initiate DMA to destination address in PC memory. MBS padding words are provided between slave DMA data sections.*/
 
 
 
@@ -138,7 +140,7 @@ struct pex_trixor_set {
 #define GET_BAR0_BASE       0x1234
 #define GET_BAR0_TRIX_BASE  0x1235
 #define RESET_SEM           0x1236
-#define PEX_IOC_MAXNR 27
+#define PEX_IOC_MAXNR 28
 
 
 /* note: we do not redefine ioctls existing in mbs user code!*/

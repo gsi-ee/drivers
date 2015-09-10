@@ -397,6 +397,205 @@ int pex_ioctl_wait_token (struct pex_privdata* priv, unsigned long arg)
 
 }
 
+
+int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigned long arg)
+{
+  int retval = 0, i;
+  u32 comm = 0, chan = 0, chanpattern, chmask, bufid = 0, sfp = 0;
+  u32 rstat = 0, radd = 0, rdat = 0;
+  struct pex_token_io descriptor;
+  struct pex_sfp* sfpregisters;
+  dma_addr_t dmatarget = 0, dmasource = 0;
+  phys_addr_t poff[PEX_SFP_NUMBER] = { 0 };    // pipe pointer offset
+  u32 paddington[PEX_SFP_NUMBER] = { 0 };
+  u32 dmalen = 0, dmaburst = 0, tokenmemsize = 0, dmalencheck = 0, datalensum = 0;
+  u32* pipepartbase = 0;
+  u32* pdat = 0;
+
+  retval = pex_copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_token_io));
+  if (retval)
+    return retval;
+  chan = ((u32) descriptor.sfp) & 0xFFFF;
+  chanpattern = (((u32) descriptor.sfp) & 0xFFFF0000) >> 16; /* optionally use sfp pattern in upper bytes*/
+  bufid = (u32) descriptor.bufid;
+  dmatarget = (dma_addr_t) descriptor.dmatarget;
+
+  if (chanpattern != 0)
+  {
+    // TODO: might check here if channelpattern is consistent with initialized chains!
+    pex_dbg(
+        KERN_NOTICE "** pex_ioctl_request_receive_token_parallel with channelpattern 0x%x\n", (unsigned) chanpattern);
+    comm = PEX_SFP_PT_TK_R_REQ | (chanpattern << 16); /* token broadcast mode*/
+    pex_sfp_clear_channelpattern (priv, chanpattern);
+  }
+  else
+  {
+    pex_dbg(KERN_NOTICE "** pex_ioctl_request_receive_token_parallel for channel 0x%x\n", (unsigned) chan);
+    comm = PEX_SFP_PT_TK_R_REQ | (0x1 << (16 + chan)); /* single sfp token mode*/
+    pex_sfp_clear_channel (priv, chan);
+  }
+
+  pex_sfp_request (priv, comm, bufid, 0); /* note: slave is not specified; the chain of all slaves will send everything to receive buffer*/
+
+  ////////////////////////////////////////////////////////////
+  // first loop over all registered sfps for token receive complete
+  sfpregisters = &(priv->regs.sfp);
+  for (sfp = 0; sfp < PEX_SFP_NUMBER; ++sfp)
+  {
+    if (sfpregisters->num_slaves[sfp] == 0)
+      continue;    // exclude not configured sfps
+    if ((chanpattern == 0) && (sfp != chan))
+      continue;    //single channel mode
+    if (chanpattern != 0)
+    {
+      chmask = (0x1 << sfp);
+      if ((chmask & chanpattern) != chmask)
+        continue;    // check for channel pattern
+    }
+    pex_tdbg(KERN_ERR "pex_ioctl_request_receive_token_parallel waits for reply of sfp %d...\n", sfp);
+    if ((retval = pex_sfp_get_reply (priv, sfp, &rstat, &radd, &rdat, 0)) != 0)    // debug: do not check reply status
+    //if((retval=pex_sfp_get_reply(priv, sfp, &rstat, &radd, &rdat, PEX_SFP_PT_TK_R_REP))!=0)
+    {
+      pex_msg(KERN_ERR "** pex_ioctl_request_receive_token_parallel: wait token error %d at sfp_%d reply \n", retval, sfp);
+      pex_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
+      return -EIO;
+    }
+  }    // for sfp first loop
+
+  ////////////////////////////////////////////////////////////
+  // second loop over all registered sfps:
+  for (sfp = 0; sfp < PEX_SFP_NUMBER; ++sfp)
+  {
+    if (sfpregisters->num_slaves[sfp] == 0)
+      continue;
+    if ((chanpattern == 0) && (sfp != chan))
+      continue;    //single channel mode
+    if (chanpattern != 0)
+    {
+      chmask = (0x1 << sfp);
+      if ((chmask & chanpattern) != chmask)
+        continue;    // check for channel pattern
+    }
+    poff[sfp] = dmatarget - (dma_addr_t) descriptor.dmatarget;    // at the start of each sfp, current pipe pointer offset refers to intended dma target
+    // - get token memsize:
+    tokenmemsize = ioread32 (sfpregisters->tk_memsize[sfp]);
+    pex_sfp_delay()
+    ;
+    tokenmemsize += 4;    // wg. shizu !!??
+    pex_dbg(
+        KERN_NOTICE "** pex_ioctl_request_receive_token_parallel token data len (sfp_%d)=%d bytes\n", sfp, tokenmemsize);
+
+    // choose burst size to accept max. 20% padding size
+    if (tokenmemsize < 0xa0)
+    {
+      dmaburst = 0x10;
+    }
+    else if (tokenmemsize < 0x140)
+    {
+      dmaburst = 0x20;
+    }
+    else if (tokenmemsize < 0x280)
+    {
+      dmaburst = 0x40;
+    }
+    else
+    {
+      dmaburst = 0x80;
+    }
+
+    // - calculate DMA transfer size up to full burstlength multiples
+    if ((tokenmemsize % dmaburst) != 0)
+    {
+      dmalen = tokenmemsize + dmaburst     // in bytes
+      - (tokenmemsize % dmaburst);
+    }
+    else
+    {
+      dmalen = tokenmemsize;
+    }
+
+    // - calculate padding offset from current destination pointer:
+    paddington[sfp] = 0;
+    if ((dmatarget % dmaburst) != 0)
+    {
+      paddington[sfp] = dmaburst - (dmatarget % dmaburst);
+      dmatarget = dmatarget + paddington[sfp];
+    }
+
+    // - perform DMA
+    dmasource = sfpregisters->tk_mem_dma[sfp];
+    if ((retval = pex_start_dma (priv, dmasource, dmatarget, dmalen, 1, dmaburst)) != 0)
+      return retval;
+
+    if ((retval = pex_poll_dma_complete (priv)) != 0)
+      return retval;
+    /* find out real package length after dma:*/
+    dmalencheck = ioread32 (priv->regs.dma_len);
+    pex_bus_delay()
+    ;
+    if (dmalencheck != dmalen)
+    {
+      pex_msg(KERN_ERR "** pex_ioctl_request_receive_token_parallel: dmalen mismatch at sfp_%d, transferred %d bytes, requested %d bytes\n",
+          sfp, dmalencheck, dmalen);
+      return -EIO;
+    }
+
+    dmatarget = descriptor.dmatarget + poff[sfp] + paddington[sfp]+ tokenmemsize; // increment pipe data pointer to end of real payload
+    datalensum += tokenmemsize + paddington[sfp];    // for ioremap also account possible padding space here
+
+  }    // for sfp second loop dma
+
+  ////////////////////////////////////////////////////////////
+  // third loop to put padding words into ioremapped pipe. this may reduce overhead of ioremap call:
+
+  //pipepartbase = ioremap_nocache (descriptor.dmatarget, dmalensum);
+  // < JAM this gives error on kernel 3.2.0-4:  ioremap error for 0xa641000-0xa643000, requested 0x10, got 0x0
+
+  pipepartbase = ioremap_cache(descriptor.dmatarget, datalensum);
+  // JAM need to sync page cache with phys pipe afterwards?
+  if (pipepartbase == NULL )
+  {
+    pex_msg(KERN_ERR "** pex_ioctl_request_receive_token_parallel: Could not remap %d bytes of pipe memory at 0x%lx  ", datalensum, descriptor.dmatarget);
+    return -EIO;
+  }
+  pex_dbg(KERN_NOTICE "** pex_ioctl_request_receive_token_parallel: remapped %d bytes of pipe memory at 0x%lx, kernel address:0x%x  ",
+      datalensum, descriptor.dmatarget, pipepartbase);
+
+  pdat = pipepartbase;
+  for (sfp = 0; sfp < PEX_SFP_NUMBER; ++sfp)
+  {
+    if (sfpregisters->num_slaves[sfp] == 0)
+      continue;
+    if ((chanpattern == 0) && (sfp != chan))
+      continue;    //single channel mode
+    if (chanpattern != 0)
+    {
+      chmask = (0x1 << sfp);
+      if ((chmask & chanpattern) != chmask)
+        continue;    // check for channel pattern
+    }
+    pdat =  pipepartbase + (poff[sfp] >> 2);     // set padding start pointer to pipe offset for this sfp's part
+    paddington[sfp] = paddington[sfp] >> 2;      // padding length also now in 4 bytes (longs)
+    for (i = 0; i < paddington[sfp]; i++)
+    {
+      pex_dbg(KERN_NOTICE ">>> Fill padding pattern at 0x%x with 0x%x ,l_k=%d times\n", pdat, 0xadd00000 + (paddington[sfp] << 8) + i, i);
+      *(pdat++) = 0xadd00000 + (paddington[sfp] << 8) + i;
+    }
+  }      // for sfp end padding loop
+
+  iounmap (pipepartbase); // seems to be that any cache is sync'ed to phys memory after this...
+
+  // now return new position of data pointer in pipe:
+  descriptor.dmasize = datalensum; /* contains sum of token data length and sum of padding fields => new pdat offset */
+
+  retval = pex_copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pex_token_io));
+  pex_tdbg(KERN_NOTICE "pex_ioctl_request_receive_token_parallel returns\n");
+  return retval;
+
+}
+
+
+
 void pex_sfp_reset (struct pex_privdata* privdata)
 {
   int i;

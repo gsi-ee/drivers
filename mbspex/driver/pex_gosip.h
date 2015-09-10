@@ -206,11 +206,11 @@ int pex_sfp_init_request(struct pex_privdata *privdata, int ch,
  * return value specifies error if not 0 */
 int pex_sfp_clear_all(struct pex_privdata *privdata);
 
-/** clear sfp channel ch and wait for success
+/** clear sfp channel ch and wait for success.
  * return value specifies error if not 0 */
 int pex_sfp_clear_channel(struct pex_privdata *privdata, int ch);
 
-/** clear sfp channel pattern pat before broadcast and wait for success
+/** clear sfp channel pattern pat before broadcast and wait for success.
  * return value specifies error if not 0 */
 int pex_sfp_clear_channelpattern(struct pex_privdata *privdata, int pat);
 
@@ -224,9 +224,17 @@ int pex_ioctl_request_token(struct pex_privdata *priv, unsigned long arg);
 
 
 /** Waits for a token to arrive previously requested by
- * an asynchronous ioctl request token
+ * an asynchronous ioctl request token.
  * Setup and data contained in user arg structure */
 int pex_ioctl_wait_token(struct pex_privdata *priv, unsigned long arg);
+
+
+/** Initiate reading token buffers from sfp front end hardware in parallel.
+ *  After token data has been received on *PEX* board memory, DMA is performed to user specified physical host memory.
+ *  Memory between SFP sections is padded with 0xaddXXXXX words for MBS readout unpackers.
+ *  Function is synchronous, when it returns the data is ready in user buffer, i.e. MBS Pipe
+ */
+int pex_ioctl_request_receive_token_parallel(struct pex_privdata *priv, unsigned long arg);
 
 
 /** initialize sfp fieldbus of frontends*/

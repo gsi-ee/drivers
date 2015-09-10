@@ -11,7 +11,7 @@ static dev_t pex_devt;
 static atomic_t pex_numdevs = ATOMIC_INIT(0);
 static int my_major_nr = 0;
 
-MODULE_AUTHOR("Nikolaus Kurz, Joern Adamczewski-Musch, EE, GSI, 09-July-2015");
+MODULE_AUTHOR("Nikolaus Kurz, Joern Adamczewski-Musch, EE, GSI, 10-Sep-2015");
 MODULE_LICENSE("Dual BSD/GPL");
 
 
@@ -1354,6 +1354,12 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     pex_tdbg(KERN_NOTICE "** pex_ioctl wait token\n");
     retval = pex_ioctl_wait_token(privdata, arg);
     break;
+
+    case PEX_IOC_REQUEST_RECEIVE_TOKENS:
+    pex_tdbg(KERN_NOTICE "** pex_ioctl request and receive parallel tokens\n");
+    retval = pex_ioctl_request_receive_token_parallel(privdata, arg);
+    break;
+
 
     case PEX_IOC_WRITE_REGISTER:
     pex_dbg(KERN_NOTICE "** pex_ioctl write register\n");
