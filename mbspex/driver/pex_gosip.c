@@ -405,10 +405,11 @@ int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigne
   u32 rstat = 0, radd = 0, rdat = 0;
   struct pex_token_io descriptor;
   struct pex_sfp* sfpregisters;
-  dma_addr_t dmatarget = 0, dmasource = 0;
+  dma_addr_t dmatarget = 0, dmasource = 0, dmatmp=0;
+  phys_addr_t pipephys=0;
   phys_addr_t poff[PEX_SFP_NUMBER] = { 0 };    // pipe pointer offset
   u32 paddington[PEX_SFP_NUMBER] = { 0 };
-  u32 dmalen = 0, dmaburst = 0, tokenmemsize = 0, dmalencheck = 0, datalensum = 0;
+  u32 dmalen = 0, dmaburst = 0, tokenmemsize = 0, dmalencheck = 0, datalensum = 0, paddingdelta=0;
   u32* pipepartbase = 0;
   u32* pdat = 0;
 
@@ -477,6 +478,7 @@ int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigne
         continue;    // check for channel pattern
     }
     poff[sfp] = dmatarget - (dma_addr_t) descriptor.dmatarget;    // at the start of each sfp, current pipe pointer offset refers to intended dma target
+
     // - get token memsize:
     tokenmemsize = ioread32 (sfpregisters->tk_memsize[sfp]);
     pex_sfp_delay()
@@ -513,15 +515,16 @@ int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigne
     {
       dmalen = tokenmemsize;
     }
-
     // - calculate padding offset from current destination pointer:
     paddington[sfp] = 0;
-    if ((dmatarget % dmaburst) != 0)
+    dmatmp=dmatarget; // do not touch dmatarget from modulo macro!
+    paddingdelta = do_div(dmatmp, dmaburst); // this will also work on 32 bit platforms, note that dmatmp will be modified by do_div
+    //paddingdelta= dmatarget % dmaburst; // works only on 64 bit arch, 32 bit gives linker error "__umoddi3 undefined!
+    if (paddingdelta != 0)
     {
-      paddington[sfp] = dmaburst - (dmatarget % dmaburst);
+      paddington[sfp] = dmaburst - paddingdelta;
       dmatarget = dmatarget + paddington[sfp];
     }
-
     // - perform DMA
     dmasource = sfpregisters->tk_mem_dma[sfp];
     if ((retval = pex_start_dma (priv, dmasource, dmatarget, dmalen, 1, dmaburst)) != 0)
@@ -531,6 +534,8 @@ int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigne
       return retval;
     /* find out real package length after dma:*/
     dmalencheck = ioread32 (priv->regs.dma_len);
+
+/////////// JAM END section
     pex_bus_delay()
     ;
     if (dmalencheck != dmalen)
@@ -540,18 +545,17 @@ int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigne
       return -EIO;
     }
 
-    dmatarget = descriptor.dmatarget + poff[sfp] + paddington[sfp]+ tokenmemsize; // increment pipe data pointer to end of real payload
+    dmatarget =  descriptor.dmatarget + poff[sfp] + paddington[sfp]+ tokenmemsize; // increment pipe data pointer to end of real payload
     datalensum += tokenmemsize + paddington[sfp];    // for ioremap also account possible padding space here
 
   }    // for sfp second loop dma
-
   ////////////////////////////////////////////////////////////
   // third loop to put padding words into ioremapped pipe. this may reduce overhead of ioremap call:
 
   //pipepartbase = ioremap_nocache (descriptor.dmatarget, dmalensum);
   // < JAM this gives error on kernel 3.2.0-4:  ioremap error for 0xa641000-0xa643000, requested 0x10, got 0x0
-
-  pipepartbase = ioremap_cache(descriptor.dmatarget, datalensum);
+  pipephys=descriptor.dmatarget;
+  pipepartbase = ioremap_cache(pipephys, datalensum);
   // JAM need to sync page cache with phys pipe afterwards?
   if (pipepartbase == NULL )
   {
@@ -584,7 +588,6 @@ int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigne
   }      // for sfp end padding loop
 
   iounmap (pipepartbase); // seems to be that any cache is sync'ed to phys memory after this...
-
   // now return new position of data pointer in pipe:
   descriptor.dmasize = datalensum; /* contains sum of token data length and sum of padding fields => new pdat offset */
 
