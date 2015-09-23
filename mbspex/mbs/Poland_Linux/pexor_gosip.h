@@ -98,47 +98,52 @@
 #define REG_LED 0xFFFFF8
 #define REG_VERSION 0xFFFFFC
 
+
+
+// registers should be 32 bit size also on 64 bit architecture: JAM64
 typedef struct
 {
   char *name;
 
 
-  long volatile *pexor_base;
-  long volatile *req_comm;
-  long volatile *req_addr;
-  long volatile *req_data;
-  long volatile *rep_stat;
-  long volatile *rep_clr;
-  long volatile *rep_stat_0;
-  long volatile *rep_stat_1;
-  long volatile *rep_stat_2;
-  long volatile *rep_stat_3;
+  int volatile *pexor_base;
+  int volatile *req_comm;
+  int volatile *req_addr;
+  int volatile *req_data;
+  int volatile *rep_stat;
+  int volatile *rep_clr;
+  int volatile *rep_stat_0;
+  int volatile *rep_stat_1;
+  int volatile *rep_stat_2;
+  int volatile *rep_stat_3;
 
-  long volatile *rep_addr_0;
-  long volatile *rep_addr_1;
-  long volatile *rep_addr_2;
-  long volatile *rep_addr_3;
+  int volatile *rep_addr_0;
+  int volatile *rep_addr_1;
+  int volatile *rep_addr_2;
+  int volatile *rep_addr_3;
 
-  long volatile *rep_data_0;
-  long volatile *rep_data_1;
-  long volatile *rep_data_2;
-  long volatile *rep_data_3;
+  int volatile *rep_data_0;
+  int volatile *rep_data_1;
+  int volatile *rep_data_2;
+  int volatile *rep_data_3;
 
-  long volatile *rx_moni;
-  long volatile *rx_rst;
-  long volatile *sfp_disa;        
-  long volatile *sfp_fault;        
-  long volatile *sfp_fifo;        
-  long volatile *sfp_tk_stat, *sfp_tk_head, *sfp_tk_foot;        
-  long volatile *sfp_tk_dsize, *sfp_tk_sel;
-  long volatile *tk_mem_size;
-  long volatile *tk_mem_0,*tk_mem_1,*tk_mem_2,*tk_mem_3;        
-  long volatile *tk_mem;
+  int volatile *rx_moni;
+  int volatile *rx_rst;
+  int volatile *sfp_disa;
+  int volatile *sfp_fault;
+  int volatile *sfp_fifo;
+  int volatile *sfp_tk_stat, *sfp_tk_head, *sfp_tk_foot;
+  int volatile *sfp_tk_dsize, *sfp_tk_sel;
+  int volatile *tk_mem_size;
+  int volatile *tk_mem_0,*tk_mem_1,*tk_mem_2,*tk_mem_3;
+  int volatile *tk_mem;
 
-  long volatile *pexor_version;
+  int volatile *pexor_version;
 
 
 } s_pexor ;
+
+
 
 //  long l_pack_ad_r_req;
 //  long l_pack_ad_w_req;
@@ -146,7 +151,7 @@ typedef struct
 //  long l_pack_ini_req;
 
 
-int PEXOR_GetPointer( long PEXOR_BASE_OFF, volatile long *pl_virt_sram, s_pexor *ps_pexor ){
+int PEXOR_GetPointer( unsigned long PEXOR_BASE_OFF, volatile int *pl_virt_sram, s_pexor *ps_pexor ){
 /*   smem_remove("Mem"); */
 /* 	smem = smem_create("Mem", */
 /* 			(char *) 0x51000000, */
@@ -159,53 +164,54 @@ int PEXOR_GetPointer( long PEXOR_BASE_OFF, volatile long *pl_virt_sram, s_pexor 
 /*   //  l_pack_tk_r_req = 0xa00; */
 /*   l_pack_ini_req = 0x344; */
 
-  long *ph_pexor_seq= (long *) (PEXOR_BASE_OFF + (long) pl_virt_sram);
-  ps_pexor->pexor_base = (long *) ((long) ph_pexor_seq + (long)PEXOR_BASE );
-  ps_pexor->req_comm = (long *) ((long) ph_pexor_seq + (long)PEXOR_REQ_COMM );
-  ps_pexor->req_addr   = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REQ_ADDR);
-  ps_pexor->req_data   = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REQ_DATA);
-  ps_pexor->rep_stat   = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REP_STAT);
-  ps_pexor->rep_clr    = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REP_CLR);
-  ps_pexor->rep_stat_0 = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REP_STAT_0);
-  ps_pexor->rep_stat_1 = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REP_STAT_1);
-  ps_pexor->rep_stat_2 = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REP_STAT_2);
-  ps_pexor->rep_stat_3 = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REP_STAT_3);
+  unsigned long ph_pexor_seq= PEXOR_BASE_OFF + (unsigned long) pl_virt_sram;
+
+  ps_pexor->pexor_base = ( volatile int *) (ph_pexor_seq + (unsigned long)PEXOR_BASE );
+  ps_pexor->req_comm = ( volatile int *) (ph_pexor_seq + (unsigned long)PEXOR_REQ_COMM );
+  ps_pexor->req_addr   = ( volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REQ_ADDR);
+  ps_pexor->req_data   = ( volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REQ_DATA);
+  ps_pexor->rep_stat   = ( volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REP_STAT);
+  ps_pexor->rep_clr    = ( volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REP_CLR);
+  ps_pexor->rep_stat_0 = ( volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REP_STAT_0);
+  ps_pexor->rep_stat_1 = ( volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REP_STAT_1);
+  ps_pexor->rep_stat_2 = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REP_STAT_2);
+  ps_pexor->rep_stat_3 = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REP_STAT_3);
 				  			  	 		 
-  ps_pexor->rep_addr_0 = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REP_ADDR_0);
-  ps_pexor->rep_addr_1 = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REP_ADDR_1);
-  ps_pexor->rep_addr_2 = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REP_ADDR_2);
-  ps_pexor->rep_addr_3 = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REP_ADDR_3);
+  ps_pexor->rep_addr_0 = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REP_ADDR_0);
+  ps_pexor->rep_addr_1 = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REP_ADDR_1);
+  ps_pexor->rep_addr_2 = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REP_ADDR_2);
+  ps_pexor->rep_addr_3 = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REP_ADDR_3);
 				  			  	 		 
-  ps_pexor->rep_data_0 = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REP_DATA_0);
-  ps_pexor->rep_data_1 = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REP_DATA_1);
-  ps_pexor->rep_data_2 = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REP_DATA_2);
-  ps_pexor->rep_data_3 = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REP_DATA_3);
+  ps_pexor->rep_data_0 = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REP_DATA_0);
+  ps_pexor->rep_data_1 = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REP_DATA_1);
+  ps_pexor->rep_data_2 = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REP_DATA_2);
+  ps_pexor->rep_data_3 = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REP_DATA_3);
 				  			  				
-  ps_pexor->rx_moni    = (long *) ((long)ph_pexor_seq +  (long) PEXOR_RX_MONI);
-  ps_pexor->rx_rst     = (long *) ((long)ph_pexor_seq +  (long) PEXOR_RX_RST);
-  ps_pexor->sfp_disa   = (long *) ((long)ph_pexor_seq +  (long) PEXOR_SFP_DISA);
-  ps_pexor->sfp_fault  = (long *) ((long)ph_pexor_seq +  (long) PEXOR_SFP_FAULT);
-  ps_pexor->sfp_fifo   = (long *) ((long)ph_pexor_seq +  (long) PEXOR_SFP_FIFO);
-  ps_pexor->sfp_tk_stat = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REP_TK_STAT);
-  ps_pexor->sfp_tk_head = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REP_TK_HEAD);
-  ps_pexor->sfp_tk_foot = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REP_TK_FOOT);
-  ps_pexor->sfp_tk_dsize = (long *) ((long)ph_pexor_seq +  (long) PEXOR_REP_TK_DSIZE);
-  ps_pexor->sfp_tk_sel  = (long *) ((long)ph_pexor_seq +  (long) PEXOR_TK_DSIZE_SEL);
-  ps_pexor->sfp_tk_sel  = (long *) ((long)ph_pexor_seq +  (long) PEXOR_TK_DSIZE_SEL);
+  ps_pexor->rx_moni    = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_RX_MONI);
+  ps_pexor->rx_rst     = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_RX_RST);
+  ps_pexor->sfp_disa   = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_SFP_DISA);
+  ps_pexor->sfp_fault  = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_SFP_FAULT);
+  ps_pexor->sfp_fifo   = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_SFP_FIFO);
+  ps_pexor->sfp_tk_stat = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REP_TK_STAT);
+  ps_pexor->sfp_tk_head = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REP_TK_HEAD);
+  ps_pexor->sfp_tk_foot = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REP_TK_FOOT);
+  ps_pexor->sfp_tk_dsize = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_REP_TK_DSIZE);
+  ps_pexor->sfp_tk_sel  = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_TK_DSIZE_SEL);
+  ps_pexor->sfp_tk_sel  = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_TK_DSIZE_SEL);
 
-  ps_pexor->tk_mem_size  = (long *) ((long)ph_pexor_seq +  (long) PEXOR_TK_MEM_SIZE);
+  ps_pexor->tk_mem_size  = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_TK_MEM_SIZE);
 
-  ps_pexor->tk_mem_0     = (long *) ((long)ph_pexor_seq +  (long) PEXOR_TK_MEM_0);
-  ps_pexor->tk_mem_1     = (long *) ((long)ph_pexor_seq +  (long) PEXOR_TK_MEM_1);
-  ps_pexor->tk_mem_2     = (long *) ((long)ph_pexor_seq +  (long) PEXOR_TK_MEM_2);
-  ps_pexor->tk_mem_3     = (long *) ((long)ph_pexor_seq +  (long) PEXOR_TK_MEM_3);
+  ps_pexor->tk_mem_0     = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_TK_MEM_0);
+  ps_pexor->tk_mem_1     = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_TK_MEM_1);
+  ps_pexor->tk_mem_2     = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_TK_MEM_2);
+  ps_pexor->tk_mem_3     = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_TK_MEM_3);
 
-  ps_pexor->pexor_version    = (long *) ((long)ph_pexor_seq +  (long) PEXOR_PROG_VERSION);
+  ps_pexor->pexor_version    = (volatile int *) (ph_pexor_seq +  (unsigned long) PEXOR_PROG_VERSION);
 
   //  printf ("pl_virt_sram: 0x%x \n", pl_virt_sram);
 
-  //  printf ("REP CLR: rep stat (bytes): 0x%x  0x%x \n",ps_pexor->rx_moni,*ps_pexor->rx_moni);
-  //  printf ("REP CLR: rep stat (bytes): 0x%x  0x%x \n",ps_pexor->req_comm,*ps_pexor->req_comm);
+//    printf ("REP CLR: rep stat (bytes): 0x%p  0x%x \n",ps_pexor->rx_moni,*ps_pexor->rx_moni);
+//    printf ("REP CLR: rep stat (bytes): 0x%p  0x%x \n",ps_pexor->req_comm,*ps_pexor->req_comm);
 	return(1);
 }
 
@@ -320,13 +326,14 @@ int PEXOR_RX_Clear( s_pexor *ps_pexor ){
 int PEXOR_RX_Clear_Ch( s_pexor *ps_pexor, long ch ){
   long val;
   val = 0x1<<ch;
-  while( (*(ps_pexor->rep_stat_0+ch)&0xf000)!=0x0|(*(ps_pexor->sfp_tk_stat+ch)&0xf000)!=0x0 ){
+  while( (*(ps_pexor->rep_stat_0+ch)&0xf000)!=0x0 || (*(ps_pexor->sfp_tk_stat+ch)&0xf000)!=0x0 ){
   //  while( (*ps_pexor->rep_stat)!=0x0 ){
     //    *ps_pexor->rep_clr=0xf;
     *ps_pexor->rep_clr=val;
-    //    sleep(1);
+ //       sleep(1);
 #ifdef DEBUG
-    //    printf ("PEXOR_RX_Clear: rep_stat: ch 0x%x 0x%x  0x%x \n",ch, *(ps_pexor->sfp_tk_stat+ch), *(ps_pexor->rep_stat_0+ch) );
+        printf ("PEXOR_RX_Clear: rep_stat: ch 0x%x 0x%x  0x%x , registers 0x%p and 0x%p\n",ch,
+            *(ps_pexor->sfp_tk_stat+ch), *(ps_pexor->rep_stat_0+ch), ps_pexor->sfp_tk_stat+ch, ps_pexor->rep_stat_0+ch);
 #endif
   }
   return(1);

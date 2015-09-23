@@ -160,6 +160,7 @@ static   INTS4    fd_pex;             // file descriptor for PEXOR device
 static   INTS4    l_sfp_slaves[MAX_SFP] = NR_SLAVES;
 
 static   INTS4    l_bar0_base;
+
 static   INTS4  volatile *pl_virt_bar0;
 
 static   int   l_i, l_j, l_k;
@@ -190,13 +191,14 @@ static  long  l_cha_id;
 static  INTS4 *pl_dat_save, *pl_tmp;
 static  long  l_dat_len_sum[MAX_SFP];
 static  long  l_dat_len_sum_long[MAX_SFP];
-static  long  volatile *pl_pex_sfp_mem_base[MAX_SFP];
 
-static  long  volatile *pl_dma_source_base;
-static  long  volatile *pl_dma_target_base;
-static  long  volatile *pl_dma_trans_size;
-static  long  volatile *pl_dma_burst_size;
-static  long  volatile *pl_dma_stat;
+static  int  volatile *pl_pex_sfp_mem_base[MAX_SFP];
+
+static  int  volatile *pl_dma_source_base;
+static  int  volatile *pl_dma_target_base;
+static  int  volatile *pl_dma_trans_size;
+static  int  volatile *pl_dma_burst_size;
+static  int  volatile *pl_dma_stat;
 static  long             l_dma_target_base;
 static  long            l_dma_trans_size;
 static  long            l_burst_size;
@@ -268,7 +270,7 @@ int f_user_get_virt_ptr (long  *pl_loc_hwacc, long  pl_rem_cam[])
     // map bar0 directly via pexor driver and access trixor base
     prot  = PROT_WRITE | PROT_READ;
     flags = MAP_SHARED | MAP_LOCKED;
-    if ((pl_virt_bar0 = (long *) mmap (NULL, PCI_BAR0_SIZE, prot, flags, fd_pex, 0)) == MAP_FAILED)
+    if ((pl_virt_bar0 = (INTS4 volatile *) mmap (NULL, PCI_BAR0_SIZE, prot, flags, fd_pex, 0)) == MAP_FAILED)
     {
       printm (RON"failed to mmap bar0 from pexor"RES", return: 0x%x, %d \n", pl_virt_bar0, pl_virt_bar0);
       perror ("mmap"); 
@@ -292,7 +294,7 @@ int f_user_get_virt_ptr (long  *pl_loc_hwacc, long  pl_rem_cam[])
     } 
     // open shared segment
     smem_remove(PCI_BAR0_NAME);
-    if((pl_virt_bar0 = (long *) smem_create (PCI_BAR0_NAME,
+    if((pl_virt_bar0 = (INTS4 volatile *) smem_create (PCI_BAR0_NAME,
             (char*) l_bar0_base, PCI_BAR0_SIZE, SM_READ | SM_WRITE))==NULL)
     {
       printm ("smem_create for PEXOR BAR0 failed");
@@ -311,15 +313,15 @@ int f_user_get_virt_ptr (long  *pl_loc_hwacc, long  pl_rem_cam[])
     {
       if (l_sfp_slaves[l_i] != 0)
       {
-        pl_pex_sfp_mem_base[l_i] = (long*)
+        pl_pex_sfp_mem_base[l_i] = (int volatile *)
          ((long)pl_virt_bar0 + (long)PEX_MEM_OFF + (long)(PEX_SFP_OFF * l_i));   
         l_pex_sfp_phys_mem_base[l_i] = (long)PEX_MEM_OFF + (long)(PEX_SFP_OFF * l_i);
 
-        pl_dma_source_base = (long*)((long)pl_virt_bar0 + (long)PEX_REG_OFF + (long) 0x0 );
-        pl_dma_target_base = (long*)((long)pl_virt_bar0 + (long)PEX_REG_OFF + (long) 0x4 );
-        pl_dma_trans_size  = (long*)((long)pl_virt_bar0 + (long)PEX_REG_OFF + (long) 0x8 );
-        pl_dma_burst_size  = (long*)((long)pl_virt_bar0 + (long)PEX_REG_OFF + (long) 0xc );
-        pl_dma_stat        = (long*)((long)pl_virt_bar0 + (long)PEX_REG_OFF + (long) 0x10);
+        pl_dma_source_base = (int volatile *)((unsigned long)pl_virt_bar0 + (unsigned long)PEX_REG_OFF + (unsigned long) 0x0 );
+        pl_dma_target_base = (int volatile *)((unsigned long)pl_virt_bar0 + (unsigned long)PEX_REG_OFF + (unsigned long) 0x4 );
+        pl_dma_trans_size  = (int volatile *)((unsigned long)pl_virt_bar0 + (unsigned long)PEX_REG_OFF + (unsigned long) 0x8 );
+        pl_dma_burst_size  = (int volatile *)((unsigned long)pl_virt_bar0 + (unsigned long)PEX_REG_OFF + (unsigned long) 0xc );
+        pl_dma_stat        = (int volatile *)((unsigned long)pl_virt_bar0 + (unsigned long)PEX_REG_OFF + (unsigned long) 0x10);
 
         l_sfp_pat |= (1<<l_i);
       }
@@ -327,12 +329,12 @@ int f_user_get_virt_ptr (long  *pl_loc_hwacc, long  pl_rem_cam[])
     printm ("sfp pattern: 0x%x \n", l_sfp_pat);     
   } // if (l_first2 == 0)
 
-  printm ("pl_virt_bar0: 0x%x \n", pl_virt_bar0); 
+  printm ("pl_virt_bar0: 0x%p \n", pl_virt_bar0);
   for (l_i=0; l_i<MAX_SFP; l_i++)
   {
     if (l_sfp_slaves[l_i] != 0)
     {
-      printm ("SFP id: %d, Pexor SFP virtual memory base: 0x%8x \n", 
+      printm ("SFP id: %d, Pexor SFP virtual memory base: 0x%p \n",
                                                 l_i, pl_pex_sfp_mem_base[l_i]);
       printm ("                     physical:            0x%8x \n",
                                                      l_pex_sfp_phys_mem_base[l_i]);
@@ -1075,10 +1077,12 @@ int f_pex_slave_init (long l_sfp, long l_n_slaves)
   l_comm = PEXOR_INI_REQ | (0x1<<16+l_sfp);
 
   PEXOR_RX_Clear_Ch (&sPEXOR, l_sfp); 
+  //printm ("After PEXOR_RX_Clear_Ch");
   PEXOR_TX (&sPEXOR, l_comm, 0, l_n_slaves  - 1) ;
+  //printm ("After PEXOR_TX of 0x%x",l_comm);
   for (l_j=1; l_j<=10; l_j++)
   {
-    //printm ("SFP %d: try nr. %d \n", l_sfp, l_j);
+    printm ("SFP %d: try nr. %d \n", l_sfp, l_j);
     l_dat1 = 0; l_dat2 = 0; l_dat3 = 0;
     l_stat = PEXOR_RX (&sPEXOR, l_sfp, &l_dat1 , &l_dat2, &l_dat3);
     if ( (l_stat != -1) && (l_dat2 > 0) && (l_dat2<=32))
