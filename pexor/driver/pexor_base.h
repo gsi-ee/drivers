@@ -94,17 +94,18 @@
 #define PEXOR_MAXOUTSTANDING 50
 
 
+
 /** size of interrupt status ringbuffer
  * actually we only need one buffer for mbs like
  * user readout mode! */
 #define PEXOR_IRSTATBUFFER_SIZE 10
 
-
+#define PEXOR_BUS_DELAY 20
 
 /** on some PCs, need maybe waitstates for simple bus io:*/
 #define pexor_bus_delay()                       \
   mb();      \
-  ndelay(20);
+  ndelay(PEXOR_BUS_DELAY);
 
 
 
@@ -173,6 +174,8 @@ struct pexor_privdata
   struct device *class_dev;     /**< Class device */
   struct cdev cdev;             /**< char device struct */
   struct dev_pexor pexor;       /**< mapped pexor address pointers */
+  u32 sfp_maxpolls; /**< number of retries when polling for sfp response ready */
+  u32 sfp_buswait; /**< sfp bus waitstates in ns for each bus read/write ioctl. To adjust for frontend slaves speed */
   unsigned long bases[6];       /**< contains pci resource bases */
   unsigned long reglen[6];      /**< contains pci resource length */
   void *iomem[6];               /**< points to mapped io memory of the bars */
@@ -396,6 +399,19 @@ ssize_t pexor_sysfs_codeversion_show(struct device *dev,
 ssize_t pexor_sysfs_dmaregs_show(struct device *dev,
                                  struct device_attribute *attr, char *buf);
 
+/* show number of retries Nr for sfp request until error is recognized.
+ * this will cause request timeout = Nr * (20 ns + arbitrary schedule() switch time)  */
+ssize_t pexor_sysfs_sfp_retries_show (struct device *dev, struct device_attribute *attr, char *buf);
+
+/* set number of retries for sfp request until error is recognized:*/
+ssize_t pexor_sysfs_sfp_retries_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count);
+
+/* show sfp bus read/write waitstate in microseconds.
+ * this will impose such wait time after each frontend address read/write ioctl */
+ssize_t pexor_sysfs_buswait_show (struct device *dev, struct device_attribute *attr, char *buf);
+
+/* set sfp bus read/write waitstate in microseconds. */
+ssize_t pexor_sysfs_buswait_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count);
 
 
 #endif

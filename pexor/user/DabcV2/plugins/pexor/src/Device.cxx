@@ -1067,12 +1067,24 @@ double pexorplugin::Device::ProcessTimeout(double last_diff)
     {
         DOUT0("pexorplugin::Device::ProcessTimeout could not find parameter %s", pexorplugin::parDaqRunningState);
     }
+    // here workaround for missing update of dabc run state:
+//    std::string statename=std::string("/App/")+dabc::Application::StateParName();
+//    dabc::Parameter statepar=Par(statename);
+//    if (statepar.null())
+//      DOUT0("pexorplugin::Device::ProcessTimeout could not find parameter %s", statename.c_str());
+//      dabc::Hierarchy statechld = fWorkerHierarchy.GetParent()->FindChildRef(statename.c_str());
+//        if (!statechld.null())
+//        {
+//             statepar.ScanParamFields(&statechld()->Fields());
+//             statechld.MarkChangedItems();
+//             //(dabc::HierarchyContainer*) (fWorkerHierarchy.GetParent())->MarkChangedItems();
+//
+//        }
+//        else
+//        {
+//            DOUT0("pexorplugin::Device::ProcessTimeout could not find parameter child %s", statename.c_str());
+//        }
 
 
-
-
-
-
-  fWorkerHierarchy.MarkChangedItems();
   return PEXORPLUGIN_REFRESHTIMEOUT;
 }

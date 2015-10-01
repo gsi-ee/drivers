@@ -1,7 +1,7 @@
 ----------------------------------------------------------------
 PCI Express Optical Receiver (PEXOR) 
 Linux driver and library package
-Version 1.1 - 2-Jul-2014 JAM
+Version 2.2 - 1-October-2015 JAM
 ----------------------------------------------------------------
 Copyright (C) 2011- Gesellschaft f. Schwerionenforschung, GSI
                     Planckstr. 1, 64291 Darmstadt, Germany
@@ -242,6 +242,6 @@ make uninstall - uninstalls all.
 NOTE that you need root priviliges for these make targets!
 
 
-README updated 2-Jul-2014 by JAM
+README updated 1-October-2015 by JAM
 ----------------------------------------------------------------
                       

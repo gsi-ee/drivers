@@ -195,7 +195,15 @@
 #define PEXOR_SFP_PT_ERR_REP 0x544
 
 
+/* default maximum number of polls for sfp request response.
+ * Initializes privdata->sfp_maxpolls
+ * This causes a timeout value =(PEXOR_SFP_MAXPOLLS * PEXOR_SFP_DELAY ns)
+ * note that this default can be tuned by setting privdata->sfp_maxpolls
+ * via sysfs handle*/
+#define PEXOR_SFP_MAXPOLLS 10000
 
+/* delay in nanoseconds (ns) for any operation on gosip sfp protocol*/
+#define PEXOR_SFP_DELAY 20
 
 #define pexor_sfp_assert_channel(ch)                                    \
   if(ch < 0 || ch >= PEXOR_SFP_NUMBER)                                  \
@@ -205,10 +213,11 @@
       return -EFAULT;                                                   \
     }
 
-
+/* pseudo function to work with delay:*/
 #define pexor_sfp_delay()                       \
-  mb();                                         \
-  ndelay(200);
+  mb();      \
+  ndelay(PEXOR_SFP_DELAY);
+
 
 /*udelay(10);*/
 

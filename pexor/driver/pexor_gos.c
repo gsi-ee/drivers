@@ -240,6 +240,7 @@ int pexor_ioctl_write_bus (struct pexor_privdata* priv, unsigned long arg)
   if (retval)
     return retval;
   retval = pexor_sfp_broadcast_write_bus (priv, &descriptor); /* everything is subfunctions now*/
+  if(priv->sfp_buswait) udelay(priv->sfp_buswait); // delay after each user bus ioctl to adjust frontend speed
   if (retval)
     return retval;
   retval = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pexor_bus_io));
@@ -254,6 +255,7 @@ int pexor_ioctl_read_bus (struct pexor_privdata* priv, unsigned long arg)
   if (retval)
     return retval;
   retval = pexor_sfp_read_bus (priv, &descriptor); /* everything is subfunctions now*/
+  if(priv->sfp_buswait) udelay(priv->sfp_buswait); // delay after each user bus ioctl to adjust frontend speed
   if (retval)
     return retval;
   retval = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pexor_bus_io));
@@ -278,6 +280,7 @@ int pexor_ioctl_configure_bus (struct pexor_privdata* priv, unsigned long arg)
   {
     struct pexor_bus_io data = descriptor.param[i];
     retval = pexor_sfp_broadcast_write_bus (priv, &data);
+    if(priv->sfp_buswait) udelay(priv->sfp_buswait); // delay after each user bus ioctl to adjust frontend speed
     if (retval)
     {
       pexor_msg(
@@ -777,11 +780,11 @@ int pexor_sfp_get_reply (struct pexor_privdata* privdata, int ch, u32* comm, u32
 
   do
   {
-    if (loopcount++ > 100000)/* 1000000*/
+    if (loopcount > privdata->sfp_maxpolls)/* 1000000*/
     {
-      pexor_msg(KERN_WARNING "**pexor_sfp_get_reply polled %d x without success, abort\n",loopcount-1);
-      print_register (" ... status after FAILED pexor_sfp_get_reply:", sfp->rep_stat[ch]);
-      return -EIO;
+      pexor_msg(KERN_WARNING "**pexor_sfp_get_reply polled %d times = %d ns without success, abort\n", loopcount, (loopcount* PEXOR_SFP_DELAY));
+      print_register (" ... status after FAILED pex_sfp_get_reply:", sfp->rep_stat[ch]);
+	return -EIO;
     }
     status = ioread32 (sfp->rep_stat[ch]);
     pexor_sfp_delay()
@@ -791,7 +794,7 @@ int pexor_sfp_get_reply (struct pexor_privdata* privdata, int ch, u32* comm, u32
 //    if (PEXOR_DMA_POLL_SCHEDULE)
 //      schedule (); /* probably this also may help, but must not be used from tasklet*/
 //    pexor_dbg(KERN_NOTICE "**pexor_sfp_get_reply after schedule\n",loopcount);
-
+	loopcount++;
   } while (((status & 0x3000) >> 12) != 0x02); /* packet received bit is set*/
   pexor_dbg(KERN_NOTICE "**pexor_sfp_get_reply after while loop with count=%d\n", loopcount);
   *comm = ioread32 (sfp->rep_stat[ch]);
@@ -830,21 +833,22 @@ int pexor_sfp_get_token_reply (struct pexor_privdata* privdata, int ch, u32* sta
 {
   u32 status = 0, loopcount = 0;
   struct pexor_sfp* sfp = &(privdata->pexor.sfp);
-  pexor_dbg(KERN_NOTICE "**pexor_sfp_get_reply ***\n");
+  pexor_dbg(KERN_NOTICE "**pexor_sfp_get_token_reply ***\n");
   pexor_sfp_assert_channel(ch);
 
   do
   {
-    if (loopcount++ > 1000000)
+    if (loopcount > privdata->sfp_maxpolls)
     {
-      pexor_msg(KERN_WARNING "**pexor_sfp_get_token reply polled %d x 20 ns without success, abort\n",loopcount);
-      print_register (" ... status after FAILED pexor_sfp_get_token_reply:0x%x", sfp->tk_stat[ch]);
-      return -EIO;
+      pexor_msg(KERN_WARNING "**pexor_sfp_get_token reply polled %d times = %d ns without success, abort\n", loopcount, (loopcount* PEXOR_SFP_DELAY));
+      print_register (" ... status after FAILED pex_sfp_get_token_reply:0x%x", sfp->tk_stat[ch]);
+	  return -EIO;
     }
     status = ioread32 (sfp->tk_stat[ch]);
     pexor_sfp_delay()
     ;
 
+    loopcount++;
   } while (((status & 0x3000) >> 12) != 0x02); /* packet received bit is set*/
 
   *stat = ioread32 (sfp->tk_stat[ch]);
@@ -894,10 +898,10 @@ int pexor_sfp_clear_all (struct pexor_privdata* privdata)
    pexor_sfp_delay();*/
   do
   {
-    if (loopcount++ > 1000000)
+    if (loopcount > privdata->sfp_maxpolls)
     {
-      pexor_msg(KERN_WARNING "**pexor_sfp_clear_all tried %d x without success, abort\n",loopcount);
-      print_register (" ... stat_clr after FAILED pexor_sfp_clear_all: 0x%x", sfp->rep_stat_clr);
+      pexor_msg(KERN_WARNING "**pexor_sfp_clear_all tried  %d times = %d ns  without success, abort\n", loopcount, (loopcount* 2 * PEXOR_SFP_DELAY));
+      print_register (" ... stat_clr after FAILED pex_sfp_clear_all: 0x%x", sfp->rep_stat_clr);
       return -EIO;
     }
     iowrite32 (clrval, sfp->rep_stat_clr);
@@ -906,6 +910,7 @@ int pexor_sfp_clear_all (struct pexor_privdata* privdata)
     status = ioread32 (sfp->rep_stat_clr);
     pexor_sfp_delay()
     ;
+    loopcount++;
   } while (status != 0x0);
   pexor_dbg(KERN_INFO "**after pexor_sfp_clear_all: loopcount:%d \n",loopcount);
   print_register (" ... stat_clr after pexor_sfp_clear_all:", sfp->rep_stat_clr);
@@ -923,12 +928,12 @@ int pexor_sfp_clear_channel (struct pexor_privdata* privdata, int ch)
    pexor_sfp_delay();*/
   do
   {
-    if (loopcount++ > 1000000)
+    if (loopcount > privdata->sfp_maxpolls)
     {
-      pexor_msg(KERN_WARNING "**pexor_sfp_clear_channel %d tried %d x 20 ns without success, abort\n",ch,loopcount);
-      print_register (" ... reply status after FAILED pexor_sfp_clear_channel:", sfp->rep_stat[ch]);
-      print_register (" ... token reply status after FAILED pexor_sfp_clear_channel:", sfp->tk_stat[ch]);
-      return -EIO;
+      pexor_msg(KERN_WARNING "**pexor_sfp_clear_channel %d tried %d times = %d ns without success, abort\n", ch, loopcount, (loopcount* (2 * PEXOR_SFP_DELAY+ 2 * PEXOR_BUS_DELAY)));
+      print_register (" ... reply status after FAILED pex_sfp_clear_channel:", sfp->rep_stat[ch]);
+      print_register (" ... token reply status after FAILED pex_sfp_clear_channel:", sfp->tk_stat[ch]);
+	 return -EIO;
     }
 
     iowrite32 (clrval, sfp->rep_stat_clr);
@@ -940,7 +945,8 @@ int pexor_sfp_clear_channel (struct pexor_privdata* privdata, int ch)
     pexor_bus_delay();
     chstatus = ioread32 (sfp->rep_stat_clr) & clrval;
     pexor_sfp_delay()
-    ;
+    ; 
+    loopcount++;
 
   } while ((repstatus != 0x0) || (tokenstatus != 0x0) || (chstatus != 0x0));
 
@@ -961,11 +967,11 @@ int pexor_sfp_clear_channelpattern (struct pexor_privdata* privdata, int pat)
   mask = (pat << 8) | (pat << 4) | pat;
   do
   {
-    if (loopcount++ > 1000000)
+    if (loopcount > privdata->sfp_maxpolls)
     {
       pexor_msg(
-          KERN_WARNING "**pex_sfp_clear_channelpattern 0x%x tried %d x 20 ns without success, abort\n", pat, loopcount);
-      print_register (" ... reply status after FAILED pex_sfp_clear_channelpattern:", sfp->rep_stat_clr);
+          KERN_WARNING "**pexor_sfp_clear_channelpattern 0x%x tried %d  times = %d ns without success, abort\n", pat, loopcount, (loopcount* 2 * PEXOR_SFP_DELAY));
+	  print_register (" ... reply status after FAILED pex_sfp_clear_channelpattern:", sfp->rep_stat_clr);
       return -EIO;
     }
     iowrite32 (clrval, sfp->rep_stat_clr);
@@ -974,7 +980,7 @@ int pexor_sfp_clear_channelpattern (struct pexor_privdata* privdata, int pat)
     repstatus = ioread32 (sfp->rep_stat_clr) & mask;
     pexor_sfp_delay()
     ;
-
+	loopcount++;
   } while ((repstatus != 0x0));
 
   pexor_dbg(KERN_INFO "**after pex_sfp_clear_channelpattern 0x%x : loopcount:%d \n", pat, loopcount);

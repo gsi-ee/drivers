@@ -184,90 +184,118 @@ function PexorDisplay(state){
 	this.fTrendingHistory=100;
 	this.fUpdateTimer=null;
 	this.fUpdateInterval=2000; // ms
-	this.fGaugeEv = null;
-	this.fGaugeDa = null;
-	this.fTrendEv = null;
-	this.fTrendDa = null;
-	this.fLogDevice=null;
-	this.fLogReadout=null;
 }
 
 // set up view elements of display:
 PexorDisplay.prototype.BuildView = function(){
+   var hpainter = new JSROOT.HierarchyPainter('root', null);
+   
+   var disp = new JSROOT.CustomDisplay();
+   disp.AddFrame("EvRateDisplay", "PexReadout/PexorEvents");
+   disp.AddFrame("DatRateDisplay", "PexReadout/PexorData");
+   disp.AddFrame("DeviceInfo", "PexDevice/PexDevInfo");
+   disp.AddFrame("ReadoutInfo", "PexReadout/PexorInfo");
 	
+	hpainter.SetDisplay(disp);
+	this.hpainter = null;
+   
+    var pthis = this;
+	hpainter.OpenOnline("/PEXOR/", function() {
+      
+      pthis.hpainter = hpainter;
+      
+      pthis.SetTrending(300);
+      // pthis.SetRateGauges();
+      
+      hpainter.display("PexDevice/PexDevInfo");
+      hpainter.display("PexReadout/PexorInfo");
+      //pthis.SetFileLogMode(4, 0, 0);   // init log window, but keep history and interval from server
+   });
 	
-	
-	this.fGaugeEv = new DABC.GaugeDrawElement();
-	this.fTrendEv=new DABC.RateHistoryDrawElement();
-	
-	this.fGaugeDa = new DABC.GaugeDrawElement();
-	this.fTrendDa=new DABC.RateHistoryDrawElement();
-	
-	this.fLogDevice= new DABC.LogDrawElement();
-	this.fLogDevice.itemname = "/PEXOR/PexDevice/PexDevInfo";
-	this.fLogDevice.EnableHistory(100);
-	this.fLogDevice.CreateFrames($("#DeviceInfo"));
-	
-	this.fLogReadout= new DABC.LogDrawElement();
-	this.fLogReadout.itemname = "/PEXOR/PexReadout/PexorInfo";
-	this.fLogReadout.EnableHistory(100);
-	this.fLogReadout.CreateFrames($("#ReadoutInfo"));
-	
-	this.SetRateGauges();
+//	this.fGaugeEv = new DABC.GaugeDrawElement();
+//	this.fTrendEv=new DABC.RateHistoryDrawElement();
+//	
+//	this.fGaugeDa = new DABC.GaugeDrawElement();
+//	this.fTrendDa=new DABC.RateHistoryDrawElement();
+//	
+//	this.fLogDevice= new DABC.LogDrawElement();
+//	this.fLogDevice.itemname = "/PEXOR/PexDevice/PexDevInfo";
+//	this.fLogDevice.EnableHistory(100);
+//	this.fLogDevice.CreateFrames($("#DeviceInfo"));
+//	
+//	this.fLogReadout= new DABC.LogDrawElement();
+//	this.fLogReadout.itemname = "/PEXOR/PexReadout/PexorInfo";
+//	this.fLogReadout.EnableHistory(100);
+//	this.fLogReadout.CreateFrames($("#ReadoutInfo"));
+//	
+//	this.SetRateGauges();
 	
 }
 
 
 PexorDisplay.prototype.SetRateGauges = function(){
 	
-	this.fTrendEv.Clear();
-	this.fTrendDa.Clear();
-	this.fGaugeEv.itemname = "/PEXOR/PexReadout/PexorEvents";
-	this.fGaugeEv.CreateFrames($("#EvRateDisplay"));
-	this.fGaugeDa.itemname = "/PEXOR/PexReadout/PexorData";
-	this.fGaugeDa.CreateFrames($("#DatRateDisplay"));
+   this.hpainter.display("PexReadout/PexorEvents", "gauge");
+   this.hpainter.display("PexReadout/PexorData", "gauge");
+  
+//	this.fTrendEv.Clear();
+//	this.fTrendDa.Clear();
+//	this.fGaugeEv.itemname = "/PEXOR/PexReadout/PexorEvents";
+//	this.fGaugeEv.CreateFrames($("#EvRateDisplay"));
+//	this.fGaugeDa.itemname = "/PEXOR/PexReadout/PexorData";
+//	this.fGaugeDa.CreateFrames($("#DatRateDisplay"));
 }
 
 PexorDisplay.prototype.SetRateTrending = function(history){
 	
 	this.fTrendingHistory=history;
-	this.fGaugeEv.Clear();
-	this.fGaugeDa.Clear();
-	this.fTrendEv.itemname="/PEXOR/PexReadout/PexorEvents";
-	this.fTrendEv.EnableHistory(this.fTrendingHistory); 
-	this.fTrendEv.CreateFrames($("#EvRateDisplay"));
-	this.fTrendDa.itemname="/PEXOR/PexReadout/PexorData";
-	this.fTrendDa.EnableHistory(this.fTrendingHistory);
-	this.fTrendDa.CreateFrames($("#DatRateDisplay"));	
+	
+   this.hpainter.display("PexReadout/PexorEvents", "line");
+   this.hpainter.display("PexReadout/PexorData", "line");
+	
+	
+//	this.fGaugeEv.Clear();
+//	this.fGaugeDa.Clear();
+//	this.fTrendEv.itemname="/PEXOR/PexReadout/PexorEvents";
+//	this.fTrendEv.EnableHistory(this.fTrendingHistory); 
+//	this.fTrendEv.CreateFrames($("#EvRateDisplay"));
+//	this.fTrendDa.itemname="/PEXOR/PexReadout/PexorData";
+//	this.fTrendDa.EnableHistory(this.fTrendingHistory);
+//	this.fTrendDa.CreateFrames($("#DatRateDisplay"));	
 }
 
 
 
 PexorDisplay.prototype.RefreshMonitor = function() {
 
-	if (this.fTrending) {
-		this.fTrendEv.force = true;
-		
-		this.fTrendEv.RegularCheck();
-		this.fTrendEv.CheckResize(true);			
-		this.fTrendDa.force = true;		
-		this.fTrendDa.RegularCheck();
-		this.fTrendDa.CheckResize(true);	
-		
-	} else {
-		this.fGaugeEv.force = true;
-		this.fGaugeEv.RegularCheck();
-		this.fGaugeEv.CheckResize(true);	
-		this.fGaugeDa.force = true;
-		this.fGaugeDa.RegularCheck();
-		this.fGaugeDa.CheckResize(true);
+	if (this.hpainter == null) return;
+   
+   this.hpainter.updateAll();
+	
+	
+//	if (this.fTrending) {
+//		this.fTrendEv.force = true;
+//		
+//		this.fTrendEv.RegularCheck();
+//		this.fTrendEv.CheckResize(true);			
+//		this.fTrendDa.force = true;		
+//		this.fTrendDa.RegularCheck();
+//		this.fTrendDa.CheckResize(true);	
+//		
+//	} else {
+//		this.fGaugeEv.force = true;
+//		this.fGaugeEv.RegularCheck();
+//		this.fGaugeEv.CheckResize(true);	
+//		this.fGaugeDa.force = true;
+//		this.fGaugeDa.RegularCheck();
+//		this.fGaugeDa.CheckResize(true);
+//
+//	}
 
-	}
-
-	this.fLogDevice.force = true;
-	this.fLogDevice.RegularCheck();
-	this.fLogReadout.force = true;
-	this.fLogReadout.RegularCheck();
+//	this.fLogDevice.force = true;
+//	this.fLogDevice.RegularCheck();
+//	this.fLogReadout.force = true;
+//	this.fLogReadout.RegularCheck();
 	
 	// optionally adjust scrollbars at info logs:
 	$("#daq_log").scrollTop($("#daq_log")[0].scrollHeight - $("#daq_log").height());

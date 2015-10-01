@@ -24,6 +24,10 @@ static DEVICE_ATTR(dmaregs, S_IRUGO, pexor_sysfs_dmaregs_show, NULL);
 
 #ifdef PEXOR_WITH_SFP
 static DEVICE_ATTR(sfpregs, S_IRUGO, pexor_sysfs_sfpregs_show, NULL);
+static DEVICE_ATTR(gosipretries, S_IWUGO | S_IRUGO , pexor_sysfs_sfp_retries_show, pexor_sysfs_sfp_retries_store);
+static DEVICE_ATTR(gosipbuswait, S_IWUGO | S_IRUGO , pexor_sysfs_buswait_show, pexor_sysfs_buswait_store);
+
+
 #endif
 
 #endif
@@ -2150,8 +2154,82 @@ ssize_t pexor_sysfs_dmaregs_show (struct device *dev, struct device_attribute *a
   return curs;
 }
 
+#ifdef PEXOR_WITH_SFP
+
+ssize_t pexor_sysfs_sfp_retries_show (struct device *dev, struct device_attribute *attr, char *buf)
+{
+  ssize_t curs = 0;
+   struct pexor_privdata *privdata;
+   privdata = (struct pexor_privdata*) dev_get_drvdata (dev);
+   //curs += snprintf (buf + curs, PAGE_SIZE - curs, "*** PEX gosip request retries:\n");
+   curs += snprintf (buf + curs, PAGE_SIZE - curs, "%d\n", privdata->sfp_maxpolls);
+   return curs;
+}
+
+ssize_t pexor_sysfs_sfp_retries_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+  unsigned int val=0;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+  int rev=0;
+#else
+  char* endp=0;
 #endif
+  struct pexor_privdata *privdata;
+  privdata = (struct pexor_privdata*) dev_get_drvdata (dev);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+  rev=kstrtouint(buf,0,&val); // this can handle both decimal, hex and octal formats if specified by prefix JAM
+  if(rev!=0) return rev;
+#else
+  val=simple_strtoul(buf,&endp, 0);
+  count= endp - buf; // do we need this?
 #endif
+   privdata->sfp_maxpolls=val;
+   pexor_msg( KERN_NOTICE "PEXOR: sfp maximum retries was set to %d => timeout = %d ns \n", privdata->sfp_maxpolls, (privdata->sfp_maxpolls * PEXOR_SFP_DELAY));
+  return count;
+}
+
+
+/* show sfp bus read/write waitstate in nanoseconds.
+ * this will impose such wait time after each frontend address read/write ioctl */
+ssize_t pexor_sysfs_buswait_show (struct device *dev, struct device_attribute *attr, char *buf)
+{
+  ssize_t curs = 0;
+   struct pexor_privdata *privdata;
+   privdata = (struct pexor_privdata*) dev_get_drvdata (dev);
+   //curs += snprintf (buf + curs, PAGE_SIZE - curs, "*** PEX gosip request retries:\n");
+   curs += snprintf (buf + curs, PAGE_SIZE - curs, "%d\n", privdata->sfp_buswait);
+   return curs;
+}
+
+/* set sfp bus read/write waitstate in nanoseconds. */
+ssize_t pexor_sysfs_buswait_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+
+{
+  unsigned int val=0;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+  int rev=0;
+#else
+  char* endp=0;
+#endif
+  struct pexor_privdata *privdata;
+  privdata = (struct pexor_privdata*) dev_get_drvdata (dev);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+  rev=kstrtouint(buf,0,&val); // this can handle both decimal, hex and octal formats if specified by prefix JAM
+  if(rev!=0) return rev;
+#else
+  val=simple_strtoul(buf,&endp, 0);
+  count= endp - buf; // do we need this?
+#endif
+   privdata->sfp_buswait=val;
+   pexor_msg( KERN_NOTICE "PEXOR: gosip bus io wait interval was set to %d microseconds\n", privdata->sfp_buswait);
+  return count;
+}
+
+
+#endif // WITH SFP
+
+#endif // KERNELVERSION CHECK
+#endif // PEXOR_SYSFS_ENABLE
 
 #ifdef PEXOR_DEBUGPRINT
 static unsigned char get_pci_revision (struct pci_dev *dev)
@@ -2268,6 +2346,8 @@ void cleanup_device (struct pexor_privdata* priv)
 #ifdef PEXOR_SYSFS_ENABLE
 #ifdef PEXOR_WITH_SFP
     device_remove_file (priv->class_dev, &dev_attr_sfpregs);
+  	device_remove_file (priv->class_dev, &dev_attr_gosipretries);
+    device_remove_file (priv->class_dev, &dev_attr_gosipbuswait);
 #endif
     device_remove_file (priv->class_dev, &dev_attr_dmaregs);
     device_remove_file (priv->class_dev, &dev_attr_codeversion);
@@ -2483,6 +2563,11 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
           "remapped memory to %lx with length %lx\n", (unsigned long) privdata->iomem[ix], privdata->reglen[ix]);
     }
   }    //for
+  
+   // initialize maximum polls value:
+  privdata->sfp_maxpolls=PEXOR_SFP_MAXPOLLS;
+  
+  
   set_pexor (&(privdata->pexor), privdata->iomem[0], privdata->bases[0]);
   
   print_pexor (&(privdata->pexor));
@@ -2687,6 +2772,15 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
     {
       pexor_msg(KERN_ERR "Could not add device file node for sfp registers.\n");
     }
+    
+    if (device_create_file (privdata->class_dev, &dev_attr_gosipretries) != 0)
+        {
+             pexor_msg(KERN_ERR "Could not add device file node for gosip retries.\n");
+        }
+    if (device_create_file (privdata->class_dev, &dev_attr_gosipbuswait) != 0)
+      {
+        pexor_msg(KERN_ERR "Could not add device file node for gosip bus wait.\n");
+      }
 #endif
 
 #endif
