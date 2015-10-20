@@ -6,7 +6,7 @@
 * Released according to the GNU GPL, version 2 or any later version
 *
 * Driver for VETAR VME board for IPV Linux
-* last changed: 12-October-2015
+* last changed: 20-October-2015 by JAM
 */
 #ifndef __VETARIPV_H__
 #define __VETARIPV_H__
@@ -47,7 +47,7 @@
 
 
 
-//#define DEBUG 1
+#define DEBUG 1
 
 #define VETAR_DUMP_REGISTERS 1
 
@@ -55,10 +55,13 @@
 #define VETAR_ENABLE_IRQ 1
 
 //#define VETAR_TRIGMOD_TEST 1
-//#define VETAR_CTRL_TEST 1
+#define VETAR_CTRL_TEST 1
 
 #define VETAR_MAP_REGISTERS 1
 #define VETAR_MAP_CONTROLSPACE 1
+
+/** define this to use ELB bus mapping for PEV1100. otherwise standard pci mapping */
+#define VETAR_MAP_ELB 1
 
 
 
@@ -81,8 +84,12 @@
 #define SDWB_ADDRESS  8
 
 /* some VME address modifiers used for the 3 mappings:*/
-#define VME_A24_USER_MBLT 0x39 // 0x38 before
-#define VME_A32_USER_MBLT 0x08
+#define VME_A24_USER_MBLT 0x38
+#define VME_A24_USER_DATA_SCT 0x39
+#define VME_A24_SUP_DATA_SCT   0x3d
+//#define VME_A32_USER_MBLT 0x08
+#define VME_A32_USER_DATA_SCT 0x09
+#define VME_A32_SUP_DATA_SCT 0x0d
 #define VME_CR_CSR 0x2f
 
 /* VME WB Interdace*/
@@ -173,7 +180,11 @@
 
 
 
+#define VETAR_BUS_DELAY 200
 
+#define vetar_bus_delay()                       \
+  mb();      \
+  ndelay(VETAR_BUS_DELAY);
 
 
 
@@ -208,20 +219,28 @@ struct vetar_privdata {
 	void __iomem *cr_csr;    /* kernel mapped address of board configuration/status space*/
     phys_addr_t cr_csr_phys; /* physical bus address of board configuration/status space*/
     unsigned long configlen; /* contains config space length to be mapped */
-
     uint32_t		vmebase; /* base adress in vme address space for wishbone memory*/
     uint32_t       ctrl_vmebase; /* base adress in vme address space for control memory*/
+#ifdef  VETAR_MAP_ELB
     struct vme_board vme_board_registers; /* for mapping of board register space*/
+#else
+    struct pev_ioctl_map_pg pev_vetar_regs; /* for mapping of board register space*/
+    phys_addr_t regs_phys; /* physical bus address of board register space*/
+#endif
     void __iomem *registers; /* kernel mapped address of board register space*/
 	unsigned long reglen; /* contains register length to be mapped */
-	//phys_addr_t regs_phys; /* physical bus address of board register space*/
 
+#ifdef  VETAR_MAP_ELB
 	struct vme_board vme_board_ctrl; /* for mapping of board control register space*/
+#else
+	 struct pev_ioctl_map_pg pev_vetar_ctrl_regs; /* for mapping of control register space*/
+	 phys_addr_t ctrl_regs_phys; /* physical bus address of control register space*/
+#endif
 	void __iomem *ctrl_registers; /* kernel mapped address of board control register space*/
     unsigned long ctrl_reglen; /* contains control register length to be mapped */
-    //phys_addr_t ctrl_regs_phys; /* physical bus address of control register space*/
 
 
+    unsigned int vme_itc; /* ioport for interrupt control register of vetar*/
 	unsigned long		irqcount; /* optional irq count*/
 	unsigned char sysfs_has_file; /* mark here if sysfs has exported files*/
 	unsigned char init_done; /* object is ready flag*/
