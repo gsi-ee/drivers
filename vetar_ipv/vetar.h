@@ -47,7 +47,7 @@
 
 
 
-#define DEBUG 1
+//#define DEBUG 1
 
 #define VETAR_DUMP_REGISTERS 1
 
@@ -63,7 +63,8 @@
 /** define this to use ELB bus mapping for PEV1100. otherwise standard pci mapping */
 #define VETAR_MAP_ELB 1
 
-
+/** enable this one to modify PEV vme settings*/
+//#define VETAR_CONFIGURE_VME 1
 
 
 #define VETAR_REGS_ADDR   0x1000000 /* this is default*/
@@ -92,7 +93,7 @@
 #define VME_A32_SUP_DATA_SCT 0x0d
 #define VME_CR_CSR 0x2f
 
-/* VME WB Interdace*/
+/* VME WB Interface*/
 #define CTRL 16
 #define MASTER_CTRL 24
 #define MASTER_ADD 32
@@ -180,7 +181,7 @@
 
 
 
-#define VETAR_BUS_DELAY 200
+#define VETAR_BUS_DELAY 500
 
 #define vetar_bus_delay()                       \
   mb();      \
