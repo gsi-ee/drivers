@@ -39,6 +39,9 @@
 #include <linux/in6.h>
 #include <asm/checksum.h>
 
+#include "mysnull_ioctl.h"
+
+
 MODULE_AUTHOR("Alessandro Rubini, Jonathan Corbet, JAM");
 MODULE_LICENSE("Dual BSD/GPL");
 
@@ -217,6 +220,7 @@ int snull_open(struct net_device *dev)
 	if (dev == snull_devs[1])
 		dev->dev_addr[ETH_ALEN-1]++; /* \0SNUL1 */
 	netif_start_queue(dev);
+	 printk(KERN_NOTICE "snull_open.\n");
 	return 0;
 }
 
@@ -225,6 +229,7 @@ int snull_release(struct net_device *dev)
     /* release ports, irq and such -- like fops->close */
 
 	netif_stop_queue(dev); /* can't transmit any more */
+	 printk(KERN_NOTICE "snull_release.\n");
 	return 0;
 }
 
@@ -233,6 +238,9 @@ int snull_release(struct net_device *dev)
  */
 int snull_config(struct net_device *dev, struct ifmap *map)
 {
+  printk(KERN_NOTICE "snull_config..\n");
+
+
 	if (dev->flags & IFF_UP) /* can't act on a running interface */
 		return -EBUSY;
 
@@ -561,11 +569,51 @@ void snull_tx_timeout (struct net_device *dev)
  */
 int snull_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 {
-	PDEBUG("ioctl\n");
-        printk (KERN_NOTICE "snull_ioctl with cmd=0x%x...\n",cmd);
-	return 0;
-}
+        int res=0;
 
+
+        struct pex_bus_io descriptor;
+        res = copy_from_user (&descriptor, (void __user *) rq->ifr_data, sizeof(struct pex_bus_io));
+          if (res)
+            return res;
+          printk (KERN_NOTICE "snull_ioctl with cmd=0x%x...\n",cmd);
+
+        switch(cmd)
+        {
+          case SIOCSNULLREAD:
+             descriptor.value=2*descriptor.address; //to check in test program
+             printk(KERN_NOTICE "snull_ioctl read from sl=%d dev=%ld - val(0x%lx)=0x%lx\n",
+                 descriptor.sfp, descriptor.slave,
+                 descriptor.address, descriptor.value);
+
+            break;
+
+          case SIOCSNULLWRITE:
+            printk(KERN_NOTICE "snull_ioctl wrote to sl=%d dev=%ld  - val(0x%lx)=0x%lx\n",
+                descriptor.sfp, descriptor.slave,
+                descriptor.address, descriptor.value);
+            break;
+
+          case SIOCSNULLRESET:
+
+              // do some actions here
+              descriptor.value=42; // for acknowledgement
+              printk(KERN_NOTICE "snull_ioctl Did reset!\n");
+            break;
+
+
+          case SIOCSNULLSTATS:
+            printk(KERN_NOTICE "snull_ioctl retrieve statistics .\n");
+            break;
+
+          default:
+            printk(KERN_NOTICE "snull_ioctl unknown code 0x%x.\n",cmd);
+            return -ENOIOCTLCMD;
+        };
+        res = copy_to_user ((void __user *) rq->ifr_data, &descriptor, sizeof(struct pex_bus_io));
+        return res;
+
+}
 /*
  * Return statistics to the caller
  */
@@ -617,7 +665,7 @@ int snull_change_mtu(struct net_device *dev, int new_mtu)
 	unsigned long flags;
 	struct snull_priv *priv = netdev_priv(dev);
 	spinlock_t *lock = &priv->lock;
-    
+	printk (KERN_NOTICE "snull_change_mtu...\n");
 	/* check ranges */
 	if ((new_mtu < 68) || (new_mtu > 1500))
 		return -EINVAL;
@@ -627,6 +675,7 @@ int snull_change_mtu(struct net_device *dev, int new_mtu)
 	spin_lock_irqsave(lock, flags);
 	dev->mtu = new_mtu;
 	spin_unlock_irqrestore(lock, flags);
+	printk (KERN_NOTICE "snull_change_mtu changed to %d\n",new_mtu);
 	return 0; /* success */
 }
 
@@ -641,8 +690,8 @@ static void snull_ethtool_get_drvinfo(struct net_device *dev,
 static int snull_ethtool_get_settings(struct net_device *dev,
                                         struct ethtool_cmd *cmd)
 {
-        const struct snull_priv *priv = netdev_priv(dev);
-        printk (KERN_NOTICE "snull_ethtool_get_settings...\n");
+        //const struct snull_priv *priv = netdev_priv(dev);
+        //printk (KERN_NOTICE "snull_ethtool_get_settings...\n");
         
         // JAM examples ripped from mellanox:
         cmd->autoneg = AUTONEG_DISABLE;
@@ -661,7 +710,7 @@ static int snull_ethtool_get_settings(struct net_device *dev,
 static int snull_ethtool_set_settings(struct net_device *dev,
                                         struct ethtool_cmd *cmd)
 {
-        const struct snull_priv *priv = netdev_priv(dev);
+        //const struct snull_priv *priv = netdev_priv(dev);
         printk (KERN_NOTICE "snull_ethtool_set_settings...\n");
         
         // JAM examples ripped from mellanox:
@@ -746,7 +795,7 @@ void snull_init(struct net_device *dev)
 	 * grabbed: this is done on open(). 
 	 */
 #endif
-
+	  printk(KERN_NOTICE "snull_init...\n");
     	/* 
 	 * Then, assign other fields in dev, using ether_setup() and some
 	 * hand assignments
@@ -807,7 +856,7 @@ struct net_device *snull_devs[2];
 void snull_cleanup(void)
 {
 	int i;
-    
+	 printk(KERN_NOTICE "snull_cleanup...\n");
 	for (i = 0; i < 2;  i++) {
 		if (snull_devs[i]) {
 			unregister_netdev(snull_devs[i]);
@@ -841,10 +890,16 @@ int snull_init_module(void)
 	ret = -ENODEV;
 	for (i = 0; i < 2;  i++)
 		if ((result = register_netdev(snull_devs[i])))
+		{
 			printk("snull: error %i registering device \"%s\"\n",
 					result, snull_devs[i]->name);
+		}
 		else
+		{
+		  printk(KERN_NOTICE "snull_init_module is registering device \"%s\"\n",
+		                        snull_devs[i]->name);
 			ret = 0;
+		}
    out:
 	if (ret) 
 		snull_cleanup();
