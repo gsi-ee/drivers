@@ -61,11 +61,13 @@
 #define VETAR_MAP_CONTROLSPACE 1
 
 /** define this to use ELB bus mapping for PEV1100. otherwise standard pci mapping */
-#define VETAR_MAP_ELB 1
+//#define VETAR_MAP_ELB 1
 
 /** enable this one to modify PEV vme settings*/
 //#define VETAR_CONFIGURE_VME 1
 
+/** additional special configuration of pev1100 vme master:*/
+//#define VETAR_CONFIGURE_PEV 1
 
 #define VETAR_REGS_ADDR   0x1000000 /* this is default*/
 //#define VETAR_REGS_ADDR 0x0
@@ -88,7 +90,7 @@
 #define VME_A24_USER_MBLT 0x38
 #define VME_A24_USER_DATA_SCT 0x39
 #define VME_A24_SUP_DATA_SCT   0x3d
-//#define VME_A32_USER_MBLT 0x08
+#define VME_A32_USER_MBLT 0x08
 #define VME_A32_USER_DATA_SCT 0x09
 #define VME_A32_SUP_DATA_SCT 0x0d
 #define VME_CR_CSR 0x2f
@@ -181,7 +183,7 @@
 
 
 
-#define VETAR_BUS_DELAY 500
+#define VETAR_BUS_DELAY 20
 
 #define vetar_bus_delay()                       \
   mb();      \
