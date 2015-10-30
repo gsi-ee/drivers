@@ -49,19 +49,23 @@
 
 //#define DEBUG 1
 
-#define VETAR_DUMP_REGISTERS 1
+/** define this to use ELB bus mapping for PEV1100. otherwise standard pci mapping */
+#define VETAR_MAP_ELB 1
+//#define VETAR_ENABLE_IRQ 1
+
+//#define VETAR_DUMP_REGISTERS 1
 
 #define VETAR_SYSFS_ENABLE 1
-#define VETAR_ENABLE_IRQ 1
 
-//#define VETAR_TRIGMOD_TEST 1
-#define VETAR_CTRL_TEST 1
+
+//#define VETAR_CTRL_TEST 1
+
+/* when set, dump bus error registers*/
+//#define VETAR_PEV_DUMP 1
 
 #define VETAR_MAP_REGISTERS 1
 #define VETAR_MAP_CONTROLSPACE 1
 
-/** define this to use ELB bus mapping for PEV1100. otherwise standard pci mapping */
-//#define VETAR_MAP_ELB 1
 
 /** enable this one to modify PEV vme settings*/
 //#define VETAR_CONFIGURE_VME 1
@@ -70,15 +74,13 @@
 //#define VETAR_CONFIGURE_PEV 1
 
 #define VETAR_REGS_ADDR   0x1000000 /* this is default*/
-//#define VETAR_REGS_ADDR 0x0
 #define VETAR_REGS_SIZE   0x1000000;
 
 #define VETAR_CTRLREGS_SIZE 0xA0
 
-//#define TRIGMOD_REGS_ADDR   0x2000000
-//#define TRIGMOD_REGS_SIZE   0x100
 
-
+#define TRIGMOD_VME_AM      0x9
+#define TRIGMOD_REGS_ADDR   0x2000000
 
 
 
@@ -149,9 +151,11 @@
 #define ENABLE_CORE 0x10
 
 
-
-
-
+/** JAM these identifiers are for the elb map window
+ * vetar control space, vetar data space, and external triva/vme mapping from mbs: */
+#define VETAR_ELB_CONTROL VME_A24_USER_DATA_SCT
+#define VETAR_ELB_DATA    VME_A32_USER_DATA_SCT
+#define VETAR_ELB_TRIVA   0
 
 
 
@@ -183,7 +187,7 @@
 
 
 
-#define VETAR_BUS_DELAY 20
+#define VETAR_BUS_DELAY 50
 
 #define vetar_bus_delay()                       \
   mb();      \
@@ -225,6 +229,7 @@ struct vetar_privdata {
     uint32_t		vmebase; /* base adress in vme address space for wishbone memory*/
     uint32_t       ctrl_vmebase; /* base adress in vme address space for control memory*/
 #ifdef  VETAR_MAP_ELB
+    unsigned char elb_am_mode; /* remember last elb address modifier mode: VETAR_ELB_CONTROL or VETAR_ELB_DATA*/
     struct vme_board vme_board_registers; /* for mapping of board register space*/
 #else
     struct pev_ioctl_map_pg pev_vetar_regs; /* for mapping of board register space*/
@@ -283,7 +288,8 @@ int vetar_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsign
 long vetar_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
 #endif
 
-
+void vetar_elb_set_window( uint am, uint32_t base);
+char __iomem* vetar_elb_map( struct vme_board *v);
 
 #ifdef VETAR_SYSFS_ENABLE
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
