@@ -51,6 +51,8 @@
 
 /** define this to use ELB bus mapping for PEV1100. otherwise standard pci mapping */
 #define VETAR_MAP_ELB 1
+
+
 //#define VETAR_ENABLE_IRQ 1
 
 //#define VETAR_DUMP_REGISTERS 1
@@ -187,7 +189,7 @@
 
 
 
-#define VETAR_BUS_DELAY 50
+#define VETAR_BUS_DELAY 20
 
 #define vetar_bus_delay()                       \
   mb();      \

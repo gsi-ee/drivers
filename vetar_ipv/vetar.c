@@ -179,6 +179,7 @@ static void vetar_dump_error_regs()
 void vetar_elb_switch_control(struct vetar_privdata *privdata)
 {
   if(privdata->elb_am_mode== VETAR_ELB_CONTROL) return;
+  //ndelay(50);
   vetar_elb_set_window(VETAR_ELB_CONTROL, privdata->ctrl_vmebase);
   privdata->elb_am_mode= VETAR_ELB_CONTROL;
   ndelay(50); // keep this independent from vme bus delay
@@ -193,6 +194,7 @@ void vetar_elb_switch_control(struct vetar_privdata *privdata)
 void vetar_elb_switch_data(struct vetar_privdata *privdata)
 {
   if(privdata->elb_am_mode== VETAR_ELB_DATA) return;
+  //ndelay(50);
   vetar_elb_set_window(VETAR_ELB_DATA, privdata->vmebase);
   privdata->elb_am_mode= VETAR_ELB_DATA;
   ndelay(50);
@@ -208,6 +210,7 @@ void vetar_elb_switch_data(struct vetar_privdata *privdata)
 void vetar_elb_switch_triva(struct vetar_privdata *privdata)
 {
   if(privdata->elb_am_mode== VETAR_ELB_TRIVA) return;
+  //ndelay(50);
   vetar_elb_set_window(TRIGMOD_VME_AM, TRIGMOD_REGS_ADDR);
   //JAM note: this address TRIGMOD_REGS_ADDR=0x2000000 has high address nibble 0 which is in conflict with ours=5
   // then mbs might see no vme addressing problems unless all read out modules stay below ad=0xF000000 with A32
@@ -231,7 +234,6 @@ static unsigned int vetar_read_control( struct vetar_privdata *privdata, unsigne
   vetar_elb_switch_control(privdata) ;
   dat=be32_to_cpu(ioread32be(privdata->ctrl_registers +offset));
   vetar_bus_delay();
-  vetar_elb_switch_data(privdata);
   vetar_dump_error_regs();
 #endif
   return dat;
@@ -245,7 +247,6 @@ static void vetar_write_control( struct vetar_privdata *privdata, unsigned int d
   vetar_elb_switch_control(privdata) ;
   iowrite32be(cpu_to_be32(dat), privdata->ctrl_registers + offset);
   vetar_bus_delay();
-  //vetar_elb_switch_data(privdata);
   vetar_dump_error_regs();
 #endif
 }
@@ -259,8 +260,6 @@ static unsigned int vetar_read_data( struct vetar_privdata *privdata, unsigned l
 #ifdef VETAR_MAP_REGISTERS
   vetar_elb_switch_data(privdata) ;
   dat=be32_to_cpu(ioread32be(privdata->registers +offset));
-  //vetar_elb_switch_control(privdata);
-  // <-we keep data mapping whenever going out (for mbs). probably have to restore also mbs address window?
   vetar_dump_error_regs();
 #endif
   return dat;
@@ -274,7 +273,6 @@ static void vetar_write_data( struct vetar_privdata *privdata, unsigned int dat,
   vetar_elb_switch_data(privdata) ;
   iowrite32be(cpu_to_be32(dat), privdata->registers + offset);
   vetar_bus_delay();
-  vetar_elb_switch_control(privdata);
   vetar_dump_error_regs();
 #endif
 }
@@ -291,9 +289,10 @@ static void vetar_wb_cycle(struct wishbone* wb, int on)
    vetar_write_control(privdata, (on ? 0x80000000UL : 0) + 0x40000000UL, CTRL);
    if (!on)
      {
-       mutex_unlock(&privdata->wb_mutex);
        vetar_elb_switch_triva(privdata); // probably it is enough to switch back to mbs at end of wb cycle only JAM
+       mutex_unlock(&privdata->wb_mutex);
      }
+
 }
 
 
@@ -313,6 +312,7 @@ static wb_data_t vetar_wb_read_cfg(struct wishbone *wb, wb_addr_t addr)
    }
    mb(); /* ensure serial ordering of non-posted operations for wishbone */
    vetar_dbg(KERN_ERR "*** Vetar_WB:: READ real CFG  value 0x%x \n", out);
+   vetar_elb_switch_triva(privdata);
    return out;
 }
 
@@ -331,6 +331,7 @@ static void vetar_wb_write (struct wishbone* wb, wb_addr_t addr, wb_data_t data)
   }
   vetar_dbg(KERN_ERR "*** Vetar_WB: WRITE(0x%x) => 0x%x\n", data, addr);
   vetar_write_data (privdata, data, (addr & WINDOW_LOW));
+  vetar_elb_switch_triva(privdata);
 }
 
 static wb_data_t vetar_wb_read (struct wishbone* wb, wb_addr_t addr)
@@ -349,6 +350,7 @@ static wb_data_t vetar_wb_read (struct wishbone* wb, wb_addr_t addr)
   }
   out = vetar_read_data (privdata, (addr & WINDOW_LOW));
   vetar_dbg(KERN_ALERT "*** Vetar_WB: READ (%x) = %x \n", (addr), out);
+  vetar_elb_switch_triva(privdata);
   return out;
 }
 
@@ -370,6 +372,7 @@ static int vetar_wb_request(struct wishbone *wb, struct wishbone_request *req)
                   "WB REQUEST:Request ctrl %x addr %x data %x mask %x return %x \n",
                   ctrl, req->addr, req->data, req->mask,
                   (ctrl & 0x80000000) != 0);
+  vetar_elb_switch_triva(privdata);
   return out;
 }
 
@@ -381,6 +384,7 @@ static void vetar_wb_reply(struct wishbone *wb, int err, wb_data_t data)
   vetar_write_control(privdata, data, MASTER_DATA);
   vetar_write_control(privdata, (err + 2), MASTER_CTRL);
   vetar_dbg(KERN_ALERT "WB REPLY: pushing data %x reply %x\n", data, err + 2);
+  vetar_elb_switch_triva(privdata);
 }
 
 
@@ -390,6 +394,7 @@ static void vetar_wb_byteenable(struct wishbone* wb, unsigned char be)
   vetar_dbg(KERN_ERR "*** Vetar_WB: vetar_wb_byteenable.. ");
   privdata = container_of(wb, struct vetar_privdata, wb);
   vetar_write_control(privdata, be, EMUL_DAT_WD);
+  vetar_elb_switch_triva(privdata);
 }
 
 static const struct wishbone_operations vetar_wb_ops = {
