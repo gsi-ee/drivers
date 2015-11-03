@@ -251,9 +251,13 @@ static void vetar_cleanup_dev (struct vetar_privdata *privdata, unsigned int ind
 
   if (privdata == 0)
     return;
-  wishbone_unregister (&privdata->wb);
+  
+  if(privdata->wb_is_registered!=0)
+	  wishbone_unregister (&privdata->wb);
   /* disable the core */
-  vetar_csr_write (ENABLE_CORE, privdata->cr_csr, BIT_CLR_REG);
+  
+  if(privdata->cr_csr)
+  	vetar_csr_write (ENABLE_CORE, privdata->cr_csr, BIT_CLR_REG);
 
 #ifdef VETAR_MAP_CONTROLSPACE
   if (privdata->ctrl_registers)
@@ -316,9 +320,11 @@ static void vetar_cleanup_dev (struct vetar_privdata *privdata, unsigned int ind
   if (privdata->class_dev)
   {
 #ifdef VETAR_SYSFS_ENABLE
+if(privdata->sysfs_has_file){
     device_remove_file (privdata->class_dev, &dev_attr_vmecrcsr);
     device_remove_file (privdata->class_dev, &dev_attr_wbctrl);
     device_remove_file (privdata->class_dev, &dev_attr_codeversion);
+	}
 #endif
     device_destroy (vetar_class, privdata->devno);
     privdata->class_dev = 0;
@@ -785,6 +791,13 @@ static int vetar_probe_vme (unsigned int index)
     {
       vetar_msg(KERN_ERR "Could not add device file node for code version.\n");
     }
+     else
+    {
+      // TODO: check validitiy of dev_att directly?
+      privdata->sysfs_has_file=1;
+    }
+    
+    
     if (device_create_file (privdata->class_dev, &dev_attr_wbctrl) != 0)
     {
       vetar_msg(KERN_ERR "Could not add device file node for wishbone control registers.\n");
@@ -815,16 +828,19 @@ static int vetar_probe_vme (unsigned int index)
     vetar_cleanup_dev (privdata, index);
     return err;
   }
-
+#ifdef VETAR_MAP_CONTROLSPACE
   vetar_dbg(KERN_NOTICE "Init control registers\n");
 
   iowrite32be (0, privdata->ctrl_registers + EMUL_DAT_WD);
+	vetar_bus_delay();
   iowrite32be (0, privdata->ctrl_registers + WINDOW_OFFSET_LOW);
+	vetar_bus_delay();
   iowrite32be (0, privdata->ctrl_registers + MASTER_CTRL);
-  privdata->init_done = 1;
-  vetar_dbg(KERN_NOTICE "\nvetar_probe_vme has finished for index %d.\n", index);
-  return result;
-
+	vetar_bus_delay();
+#endif
+ privdata->init_done = 1;
+ vetar_dbg(KERN_NOTICE "\nvetar_probe_vme has finished for index %d.\n", index);
+   return result;
 }
 
 int __init vetar_init (void)

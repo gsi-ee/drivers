@@ -142,12 +142,12 @@ extern int xpc_vme_request_irq (unsigned int vec, unsigned int lev, void (*handl
 extern void xpc_vme_free_irq (unsigned int vec);
 #endif
 
-#define VETAR_BUS_DELAY 5
+#define VETAR_BUS_DELAY 0
 #define vetar_bus_delay()                       \
   mb();      \
   ndelay(VETAR_BUS_DELAY);
 
-#define VETAR_CRCSR_DELAY 20
+#define VETAR_CRCSR_DELAY 0
 #define vetar_crcsr_delay()                       \
   mb();      \
   ndelay(VETAR_CRCSR_DELAY);
@@ -165,6 +165,7 @@ struct vetar_privdata
   struct cdev cdev;                 /** char device struct */
   struct wishbone wb;               /** wishbone structure*/
   struct mutex wb_mutex;            /** wishbone mutex*/
+  unsigned char wb_is_registered; /* mark here if wishbone has been registered*/
   unsigned int wb_low_addr;         /** wishbone access parameters*/
   unsigned int wb_width;            /** wishbone access parameters*/
   unsigned int wb_shift;            /** wishbone access parameters */
@@ -181,6 +182,8 @@ struct vetar_privdata
   void __iomem *ctrl_registers;     /** kernel mapped address of board control register space*/
   unsigned long ctrl_reglen;        /** contains control register length to be mapped */
   phys_addr_t ctrl_regs_phys;       /** physical bus address of control register space*/
+  unsigned char sysfs_has_file;     /** mark here if sysfs has exported files*/
+  
   unsigned char init_done;          /** object is ready flag*/
 };
 
