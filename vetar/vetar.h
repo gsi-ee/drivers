@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2012-2013 GSI (www.gsi.de)
+* Copyright (C) 2012-2015 GSI (www.gsi.de)
 * Author: Cesar Prados, Joern Adamczewski-Musch
 *
 * Released according to the GNU GPL, version 2 or any later version
@@ -28,23 +28,23 @@
 #include <linux/scatterlist.h>
 
 
-
+// switch on debug output in dmesg
 //#define DEBUG 1
 
-#define VETAR_DUMP_REGISTERS 1
+// dump crcsr registers at probe time
+//#define VETAR_DUMP_REGISTERS 1
+
+// enable dmesg output of some ctrl registers when doing "cat /dev/vetar0"
+//#define VETAR_CTRL_TEST 1
+
 
 #define VETAR_SYSFS_ENABLE 1
 #define VETAR_ENABLE_IRQ 1
 
-//#define VETAR_TRIGMOD_TEST 1
-//#define VETAR_CTRL_TEST 1
 #define VETAR_MAP_REGISTERS 1
 #define VETAR_MAP_CONTROLSPACE 1
 
-//#define VETAR_IRQ_VECTOR  0x50
-//#define VETAR_IRQ_MASK    ((1 << 3) | (1 << 4)) /* interrupt happens at level 3 or 4 */
 #define VETAR_REGS_ADDR   0x1000000 /* this is default*/
-//#define VETAR_REGS_ADDR 0x0
 #define VETAR_REGS_SIZE   0x1000000;
 
 #define VETAR_CTRLREGS_SIZE 0xA0
@@ -55,7 +55,6 @@
 #define CONTROL_REGISTER 0
 #define ERROR_FLAG    0
 #define SDWB_ADDRESS  8
-#define VME_A24_USER_MBLT 0x38
 
 
 /* VME WB Interdace*/
@@ -72,11 +71,18 @@
 #define WINDOW_HIGH 0xFFFF0000UL
 #define WINDOW_LOW  0x0000FFFCUL
 
+/* some VME address modifiers used for the 3 mappings:*/
+#define VME_A24_USER_MBLT 0x38
+#define VME_A24_USER_DATA_SCT 0x39
+#define VME_A24_SUP_DATA_SCT   0x3d
+#define VME_A32_USER_MBLT 0x08
+#define VME_A32_USER_DATA_SCT 0x09
+#define VME_A32_SUP_DATA_SCT 0x0d
+#define VME_CR_CSR 0x2f
 
 
 
-
-#define VETARVERSION     "1.0"
+#define VETARVERSION     "1.1.0"
 #define VETARNAME       "vetar"
 #define VETARNAMEFMT    "vetar%d"
 
@@ -158,7 +164,11 @@ extern void xpc_vme_free_irq(unsigned int vec);
 #endif
 
 
+#define VETAR_BUS_DELAY 20
 
+#define vetar_bus_delay()                       \
+  mb();      \
+  ndelay(VETAR_BUS_DELAY);
 
 
 
@@ -168,10 +178,6 @@ struct vetar_privdata {
 	int			slot;  /* slot number (do we have configuration space from this?) */
 	int			vector;
 	int			level;
-	//char			*fw_name;
-	//struct device		*dev; /* kernel device reference*/
-	//char			driver[16];
-	//char			description[80];
     dev_t devno; /* device number (major and minor) */
     char irqname[64]; /* private name for irq */
     struct device *class_dev; /* Class device */
@@ -183,7 +189,6 @@ struct vetar_privdata {
     unsigned int wb_shift;    /* wishbone access parameters */
     unsigned int wb_window_offset; /* wishbone access parameters */
 
-    struct semaphore ramsem;      /* protects read/write access to mapped ram */
     uint32_t        configbase; /* base adress in vme address space*/
 	void __iomem *cr_csr;    /* kernel mapped address of board configuration/status space*/
     phys_addr_t cr_csr_phys; /* physical bus address of board configuration/status space*/
@@ -213,30 +218,25 @@ void vetar_csr_write(u8 value, void *base, u32 offset);
 
 void vetar_setup_csr_fa(struct vetar_privdata *privdata);
 
-/* File operations:*/
+///* File operations:*/
+#ifdef VETAR_CTRL_TEST
 int vetar_open(struct inode *inode, struct file *filp);
 int vetar_release(struct inode *inode, struct file *filp);
 loff_t vetar_llseek(struct file *filp, loff_t off, int whence);
 ssize_t vetar_read(struct file *filp, char __user * buf, size_t count,
                    loff_t * f_pos);
-ssize_t vetar_write(struct file *filp, const char __user * buf, size_t count,
-                    loff_t * f_pos);
 
+#endif
 /*
  * Here we probe vetar device of index in module parameter array*/
 static int vetar_probe_vme(unsigned int index);
 
 /* cleanup device with private device data*/
-static void vetar_cleanup_dev(struct vetar_privdata *privdata);
+static void vetar_cleanup_dev(struct vetar_privdata *privdata, unsigned int index);
 
+void vetar_csr_write(u8 value, void *base, u32 offset);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
-int vetar_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
-#else
-long vetar_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
-#endif
-
-
+u32 vetar_csr_read(void *base, u32 offset);
 
 #ifdef VETAR_SYSFS_ENABLE
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
@@ -244,9 +244,13 @@ long vetar_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
 ssize_t vetar_sysfs_codeversion_show(struct device *dev,
                                      struct device_attribute *attr,
                                      char *buf);
+ssize_t vetar_sysfs_wbctrl_show(struct device *dev,
+                                     struct device_attribute *attr,
+                                     char *buf);
 
-
-
+ssize_t vetar_sysfs_vmecrcsr_show(struct device *dev,
+                                     struct device_attribute *attr,
+                                     char *buf);
 #endif
 #endif
 
@@ -254,7 +258,4 @@ ssize_t vetar_sysfs_codeversion_show(struct device *dev,
  static void vetar_irqhandler(int vec, int prio, void *arg);
 #endif
 
-#ifdef VETAR_TRIGMOD_TEST
-int vetar_dump_trigmod(struct vetar_privdata *privdata);
-#endif
 #endif /* __VETAR_H__ */

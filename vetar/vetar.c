@@ -1,9 +1,3 @@
-// #include <linux/kernel.h>
-// #include <linux/module.h>
-// #include <linux/fs.h>
-// #include <linux/uaccess.h>
-// #include <linux/io.h>
-//#include <linux/byteorder/little_endian.h>
 
 #include "vetar.h"
 //#include "vetar_ioctl.h"
@@ -55,8 +49,57 @@ MODULE_PARM_DESC(lun, "Index value for VETAR card");
 #ifdef VETAR_SYSFS_ENABLE
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
 static DEVICE_ATTR(codeversion, S_IRUGO, vetar_sysfs_codeversion_show, NULL);
+static DEVICE_ATTR(wbctrl, S_IRUGO, vetar_sysfs_wbctrl_show, NULL);
+static DEVICE_ATTR(vmecrcsr, S_IRUGO, vetar_sysfs_vmecrcsr_show, NULL);
+
 #endif
 #endif
+
+
+
+/** wrap read access to wishbone control space.*/
+static unsigned int vetar_read_control( struct vetar_privdata *privdata, unsigned long offset)
+{
+  unsigned int dat=0;
+#ifdef VETAR_MAP_CONTROLSPACE
+  dat=be32_to_cpu(ioread32be(privdata->ctrl_registers +offset));
+  vetar_bus_delay();
+#endif
+  return dat;
+
+}
+
+/** wrap write access to wishbone control space.*/
+static void vetar_write_control( struct vetar_privdata *privdata, unsigned int dat, unsigned long offset)
+{
+#ifdef VETAR_MAP_CONTROLSPACE
+  iowrite32be(cpu_to_be32(dat), privdata->ctrl_registers + offset);
+  vetar_bus_delay();
+#endif
+}
+
+
+
+/** wrap read access to wishbone data space.*/
+static unsigned int vetar_read_data( struct vetar_privdata *privdata, unsigned long offset)
+{
+  unsigned int dat=0;
+#ifdef VETAR_MAP_REGISTERS
+  dat=be32_to_cpu(ioread32be(privdata->registers +offset));
+#endif
+  return dat;
+
+}
+
+/** wrap write access to wishbone data space.*/
+static void vetar_write_data( struct vetar_privdata *privdata, unsigned int dat, unsigned long offset)
+{
+#ifdef VETAR_MAP_REGISTERS
+  iowrite32be(cpu_to_be32(dat), privdata->registers + offset);
+  vetar_bus_delay();
+#endif
+}
+
 
 
 
@@ -68,16 +111,12 @@ static void vetar_wb_cycle(struct wishbone* wb, int on)
    //vetar_dbg(KERN_ERR "*** vetar_wb_cycle...\n");
    //if (on) mutex_lock_interruptible(&privdata->wb_mutex);
    if (on) mutex_lock(&privdata->wb_mutex);
-   //vetar_dbg(KERN_ERR "*** Vetar_WB: cycle(%d)\n",on);
-
-
-// TODO NEW from vme_wb_external
-//   iowrite32(cpu_to_be32((on ? 0x80000000UL : 0) + 0x40000000UL),
-//             ctrl_win + CTRL);
-#ifdef VETAR_MAP_CONTROLSPACE
-   iowrite32be(cpu_to_be32((on ? 0x80000000UL : 0) + 0x40000000UL), privdata->ctrl_registers + CTRL);
-#endif
-   if (!on) mutex_unlock(&privdata->wb_mutex);
+   vetar_dbg(KERN_ERR "*** Vetar_WB: cycle(%d)\n",on);
+   vetar_write_control(privdata, (on ? 0x80000000UL : 0) + 0x40000000UL, CTRL);
+   if (!on)
+     {
+       mutex_unlock(&privdata->wb_mutex);
+     }
 }
 
 
@@ -89,35 +128,17 @@ static wb_data_t vetar_wb_read_cfg(struct wishbone *wb, wb_addr_t addr)
    struct vetar_privdata *privdata;
    privdata = container_of(wb, struct vetar_privdata, wb);
 
-   //vetar_msg(KERN_ERR "*** Vetar_WB:: READ CFG  addr 0x%x \n", addr);
+   vetar_dbg(KERN_ERR "*** Vetar_WB:: READ CFG  addr 0x%x \n", addr);
 
    switch (addr) {
    case 0:  out = 0; break;
-
-#ifdef VETAR_MAP_CONTROLSPACE
-   case 4:  out = ioread32be(privdata->ctrl_registers + ERROR_FLAG);
-#else
-   case 4:  out =0;
-#endif
-    break;
-   case 8:  out = 0; break;
-
-
-#ifdef VETAR_MAP_CONTROLSPACE
-   case 12: out = ioread32be(privdata->ctrl_registers + SDWB_ADDRESS);
-#else
-   case 12: out = 0x300000; /* this is expected value*/
-#endif
-
-
-   /* JAM note we have sometimes problems to get correct address here!*/
-   break;
-   default: out = 0; break;
-   }
+   case 4:  out = vetar_read_control(privdata, ERROR_FLAG); break;
+   case 12: out = vetar_read_control(privdata, SDWB_ADDRESS); break;
+   //  case 12: out = 0x300000; /* this was expected value*/
+ 	default: out = 0; break;
+   };
    mb(); /* ensure serial ordering of non-posted operations for wishbone */
-   //ndelay(100);
-   //vetar_msg(KERN_ERR "*** Vetar_WB:: READ CFG  value 0x%x \n", out);
-
+   vetar_dbg(KERN_ERR "*** Vetar_WB:: READ CFG  value 0x%x \n", out);
    return out;
 }
 
@@ -127,275 +148,74 @@ static void vetar_wb_write(struct wishbone* wb, wb_addr_t addr, wb_data_t data)
    wb_addr_t window_offset;
    vetar_dbg(KERN_ERR "*** Vetar_WB: vetar_wb_write.. ");
    privdata = container_of(wb, struct vetar_privdata, wb);
-
-
    addr = addr & WBM_ADD_MASK;
-
-         window_offset = addr & WINDOW_HIGH;
-         if (window_offset != privdata->wb_window_offset) {
-           iowrite32be(window_offset, privdata->ctrl_registers  + WINDOW_OFFSET_LOW);
+   window_offset = addr & WINDOW_HIGH;
+  if (window_offset != privdata->wb_window_offset)
+  {
+    vetar_write_control (privdata, window_offset, WINDOW_OFFSET_LOW);
              privdata->wb_window_offset = window_offset;
          }
-
-         vetar_dbg(KERN_ERR "*** Vetar_WB: WRITE(0x%x) => 0x%x\n", data, addr);
-
-        iowrite32be(data, privdata->registers  + (addr & WINDOW_LOW));
-
-// from vme_wb_external for comparison:
-//   struct vme_wb_dev *dev;
-//       unsigned char *reg_win;
-//       unsigned char *ctrl_win;
-//       wb_addr_t window_offset;
-//
-//       dev = container_of(wb, struct vme_wb_dev, wb);
-//       reg_win = dev->vme_res.map[MAP_REG]->kernel_va;
-//       ctrl_win = dev->vme_res.map[MAP_CTRL]->kernel_va;
-//
-//      addr = addr & WBM_ADD_MASK;
-//
-//       window_offset = addr & WINDOW_HIGH;
-//       if (window_offset != dev->window_offset) {
-//           iowrite32(cpu_to_be32(window_offset), ctrl_win + WINDOW_OFFSET_LOW);
-//           dev->window_offset = window_offset;
-//       }
-//
-//      if (unlikely(debug))
-//         printk(KERN_ALERT VME_WB ": WRITE (0x%x) = 0x%x)\n",
-//                data, addr);
-//      iowrite32(cpu_to_be32(data), reg_win + (addr & WINDOW_LOW));
-
-
-///////////////// OLD IMPLEMENTATION:
-//   addr = addr << 2 ;
-//   switch (privdata->wb_width) {
-//   case 4:
-//      vetar_dbg(KERN_ERR "*** Vetar_WB: iowrite32(0x%x, 0x%x)\n", data, addr);
-//      iowrite32be(data, privdata->registers  + addr);
-//      break;
-//   case 2:
-//      vetar_dbg(KERN_ERR "*** Vetar_WB: iowrite16(0x%x, 0x%x)\n", data >> privdata->wb_shift, addr);
-//      iowrite16be(data >> privdata->wb_shift, privdata->registers  + addr);
-//      break;
-//   case 1:
-//      vetar_dbg(KERN_ERR "*** Vetar_WB: : iowrite8(0x%x, 0x%x)\n", data >> privdata->wb_shift, addr);
-//      iowrite8 (data >> privdata->wb_shift, privdata->registers  + addr);
-//      break;
-//   }
-///////////////////
-
-
-
-
-   /* printk(KERN_ALERT VME_WB ": WRITE \n"); */
-}
+  vetar_dbg(KERN_ERR "*** Vetar_WB: WRITE(0x%x) => 0x%x\n", data, addr);
+  vetar_write_data (privdata, data, (addr & WINDOW_LOW));
+ }
 
 static wb_data_t vetar_wb_read(struct wishbone* wb, wb_addr_t addr)
 {
-// OLD:
-//  wb_data_t out;
-//     struct vetar_privdata *privdata;
-//     vetar_dbg(KERN_ERR "*** Vetar_WB: vetar_wb_read.. ");
-//     privdata = container_of(wb, struct vetar_privdata, wb);
-//     addr= addr << 2; /* conversion of the map from VME to WB32 */
-//     out = be32_to_cpu(ioread32be(privdata->registers +(addr)));
-//     vetar_dbg(KERN_ERR "*** Vetar_WB: READ (%x) = %x \n", (addr), out);
-//     mb();
-//     return out;
-
-
-    wb_data_t out;
-    wb_addr_t window_offset;
-    struct vetar_privdata *privdata;
-    vetar_dbg(KERN_ERR "*** Vetar_WB: vetar_wb_read.. ");
-    privdata = container_of(wb, struct vetar_privdata, wb);
-    addr = addr & WBM_ADD_MASK;
-    window_offset = addr & WINDOW_HIGH;
-           if (window_offset !=  privdata->wb_window_offset) {
-             iowrite32be(window_offset, privdata->ctrl_registers  + WINDOW_OFFSET_LOW);
-             privdata->wb_window_offset = window_offset;
-           }
-           out = be32_to_cpu(ioread32be(privdata->registers  + (addr & WINDOW_LOW)));
-           vetar_dbg(KERN_ALERT "*** Vetar_WB: READ (%x) = %x \n", (addr), out);
-      mb();
+  wb_data_t out = 0;
+  wb_addr_t window_offset;
+  struct vetar_privdata *privdata;
+  //vetar_dbg(KERN_ERR "*** Vetar_WB: vetar_wb_read.. ");
+  privdata = container_of(wb, struct vetar_privdata, wb);
+  addr = addr & WBM_ADD_MASK;
+  window_offset = addr & WINDOW_HIGH;
+  if (window_offset != privdata->wb_window_offset)
+  {
+    vetar_write_control (privdata, window_offset, WINDOW_OFFSET_LOW);
+    privdata->wb_window_offset = window_offset;
+  }
+  	out = vetar_read_data (privdata, (addr & WINDOW_LOW));
+    vetar_dbg(KERN_ALERT "*** Vetar_WB: READ (%x) = %x \n", (addr), out);
     return out;
-
-// from vme_wb_external:
-//    wb_data_t out;
-//        struct vme_wb_dev *dev;
-//        unsigned char *reg_win;
-//        unsigned char *ctrl_win;
-//        wb_addr_t window_offset;
-//
-//        dev = container_of(wb, struct vme_wb_dev, wb);
-//        reg_win = dev->vme_res.map[MAP_REG]->kernel_va;
-//        ctrl_win = dev->vme_res.map[MAP_CTRL]->kernel_va;
-//
-//       addr = addr & WBM_ADD_MASK;
-//
-//       window_offset = addr & WINDOW_HIGH;
-//        if (window_offset != dev->window_offset) {
-//            iowrite32(cpu_to_be32(window_offset), ctrl_win + WINDOW_OFFSET_LOW);
-//            dev->window_offset = window_offset;
-//        }
-//
-//        out = be32_to_cpu(ioread32(reg_win + (addr & WINDOW_LOW)));
-//
-//        if (unlikely(debug))
-//            printk(KERN_ALERT VME_WB ": READ (0x%x) = 0x%x \n", (addr), out);
-//
-//        mb();
-//        return out;
-
-
-
 }
 
 static int vetar_wb_request(struct wishbone *wb, struct wishbone_request *req)
 {
-  /* no old version of this, was not implemented before JAM*/
-
   struct vetar_privdata *privdata;
+  int out;
   uint32_t ctrl;
-  vetar_dbg(KERN_ERR "*** Vetar_WB: vetar_wb_write.. ");
+  vetar_dbg(KERN_ERR "*** Vetar_WB: vetar_wb_request.. ");
   privdata = container_of(wb, struct vetar_privdata, wb);
-  ctrl = be32_to_cpu(ioread32be(privdata->ctrl_registers  + MASTER_CTRL));
-  req->addr = be32_to_cpu(ioread32be(privdata->ctrl_registers  + MASTER_ADD));
-  req->data = be32_to_cpu(ioread32be(privdata->ctrl_registers  + MASTER_DATA));
+  ctrl = vetar_read_control(privdata, MASTER_CTRL);
+  req->addr =  vetar_read_control(privdata, MASTER_ADD);
+  req->data = vetar_read_control(privdata, MASTER_DATA);
   req->mask = ctrl & 0xf;
   req->write = (ctrl & 0x40000000) != 0;
-  iowrite32be(cpu_to_be32(1), privdata->ctrl_registers  + MASTER_CTRL);
-                                       /*dequeue operation*/
+  out = (ctrl & 0x80000000) != 0; // new fix by wesley from vme_wb_external git JAM
+  if (out) vetar_write_control(privdata, 1, MASTER_CTRL); /*dequeue operation*/
   vetar_dbg(KERN_ALERT
                   "WB REQUEST:Request ctrl %x addr %x data %x mask %x return %x \n",
                   ctrl, req->addr, req->data, req->mask,
                   (ctrl & 0x80000000) != 0);
-  return (ctrl & 0x80000000) != 0;
-
-  /* from from vme_wb_external:
-   * struct vme_wb_dev *dev;
-      unsigned char *ctrl_win;
-      uint32_t ctrl;
-
-      dev = container_of(wb, struct vme_wb_dev, wb);
-      ctrl_win = dev->vme_res.map[MAP_CTRL]->kernel_va;
-
-      ctrl = be32_to_cpu(ioread32(ctrl_win + MASTER_CTRL));
-      req->addr = be32_to_cpu(ioread32(ctrl_win + MASTER_ADD));
-      req->data = be32_to_cpu(ioread32(ctrl_win + MASTER_DATA));
-      req->mask = ctrl & 0xf;
-      req->write = (ctrl & 0x40000000) != 0;
-
-      iowrite32(cpu_to_be32(1), ctrl_win + MASTER_CTRL);   dequeue operation
-
-      if (unlikely(debug))
-          printk(KERN_ALERT
-                 "WB REQUEST:Request ctrl %x addr %x data %x mask %x return %x \n",
-                 ctrl, req->addr, req->data, req->mask,
-                 (ctrl & 0x80000000) != 0);
-
-      return (ctrl & 0x80000000) != 0;
-  */
-
-
-
-
-return 0;
+  return out;
 }
 
 static void vetar_wb_reply(struct wishbone *wb, int err, wb_data_t data)
 {
-  // no old implementation was existing.
-
-  struct vetar_privdata *privdata;
-  vetar_dbg(KERN_ERR "*** Vetar_WB: vetar_wb_write.. ");
+   struct vetar_privdata *privdata;
+  vetar_dbg(KERN_ERR "*** Vetar_WB: vetar_wb_reply.. ");
   privdata = container_of(wb, struct vetar_privdata, wb);
-  iowrite32be(cpu_to_be32(data), privdata->ctrl_registers + MASTER_DATA);
-  iowrite32be(cpu_to_be32(err + 2),  privdata->ctrl_registers + MASTER_CTRL);
+  vetar_write_control(privdata, data, MASTER_DATA);
+  vetar_write_control(privdata, (err + 2), MASTER_CTRL);
   vetar_dbg(KERN_ALERT "WB REPLY: pushing data %x reply %x\n", data, err + 2);
-
-// from   vme_wb_external:
-//  struct vme_wb_dev *dev;
-//      unsigned char *ctrl_win;
-//
-//      dev = container_of(wb, struct vme_wb_dev, wb);
-//      ctrl_win = dev->vme_res.map[MAP_CTRL]->kernel_va;
-//
-//      iowrite32(cpu_to_be32(data), ctrl_win + MASTER_DATA);
-//      iowrite32(cpu_to_be32(err + 2), ctrl_win + MASTER_CTRL);
-//
-//      if (unlikely(debug))
-//          printk(KERN_ALERT "WB REPLY: pushing data %x reply %x\n", data,
-//                 err + 2);
-//////////////////////////////////
-
 }
 
 
 static void vetar_wb_byteenable(struct wishbone* wb, unsigned char be)
 {
-
-//////////////// OLD
-//  struct vetar_privdata *privdata;
-//  vetar_dbg(KERN_ERR "*** Vetar_WB: vetar_wb_byteenable.. ");
-//  privdata = container_of(wb, struct vetar_privdata, wb);
-//
-//   switch (be) {
-//   case 0x1:
-//      privdata->wb_width = 1;
-//      privdata->wb_shift = 0;
-//      privdata->wb_low_addr = endian_addr(1, 0);
-//      break;
-//   case 0x2:
-//      privdata->wb_width = 1;
-//      privdata->wb_shift = 8;
-//      privdata->wb_low_addr = endian_addr(1, 1);
-//      break;
-//   case 0x4:
-//      privdata->wb_width = 1;
-//      privdata->wb_shift = 16;
-//      privdata->wb_low_addr = endian_addr(1, 2);
-//      break;
-//   case 0x8:
-//      privdata->wb_width = 1;
-//      privdata->wb_shift = 24;
-//      privdata->wb_low_addr = endian_addr(1, 3);
-//      break;
-//   case 0x3:
-//      privdata->wb_width = 2;
-//      privdata->wb_shift = 0;
-//      privdata->wb_low_addr = endian_addr(2, 0);
-//      break;
-//   case 0xC:
-//      privdata->wb_width = 2;
-//      privdata->wb_shift = 16;
-//      privdata->wb_low_addr = endian_addr(2, 2);
-//      break;
-//   case 0xF:
-//      privdata->wb_width = 4;
-//      privdata->wb_shift = 0;
-//      privdata->wb_low_addr = endian_addr(4, 0);
-//      break;
-//   default:
-//      /* noop -- ignore the strange bitmask */
-//      break;
-//   }
-/////////////////////////////////
-
   struct vetar_privdata *privdata;
-  vetar_dbg(KERN_ERR "*** Vetar_WB: vetar_wb_byteenable.. ");
+  vetar_dbg(KERN_ERR "*** Vetar_WB: vetar_wb_byteenable..\n");
   privdata = container_of(wb, struct vetar_privdata, wb);
-  iowrite32be(cpu_to_be32(be), privdata->ctrl_registers + EMUL_DAT_WD);
-
-////////////////////////////////////
-// from   vme_wb_external:
-//   struct vme_wb_dev *dev;
-//       unsigned char *ctrl_win;
-//
-//       dev = container_of(wb, struct vme_wb_dev, wb);
-//       ctrl_win = dev->vme_res.map[MAP_CTRL]->kernel_va;
-//       iowrite32(cpu_to_be32(be), ctrl_win + EMUL_DAT_WD);
-//
-
+  vetar_write_control(privdata, be, EMUL_DAT_WD);
 }
 
 static const struct wishbone_operations vetar_wb_ops = {
@@ -434,33 +254,14 @@ struct vetar_privdata* get_privdata(struct file *filp)
                     (unsigned int) arg);
  wishbone_slave_ready(&priv->wb);
  return;
-
-// from vme_wb_external:
-// 	int irq_handler(void *dev_id)
-// 	{
-// 	    struct vme_wb_dev *dev = dev_id;
-//
-// 	   if (unlikely(debug))
-// 	        printk(KERN_ALERT VME_WB ": IRQ!!\n");
-//
-// 	    wishbone_slave_ready(&dev->wb);
-//
-// 	    return IRQ_HANDLED;
-// 	}
-
-
-
  }
 
 #endif
 
-static void vetar_cleanup_dev(struct vetar_privdata *privdata) {
+static void vetar_cleanup_dev(struct vetar_privdata *privdata, unsigned int index) {
 
   if(privdata==0) return;
-
-
    wishbone_unregister(&privdata->wb);
-
    /* disable the core */
     vetar_csr_write(ENABLE_CORE, privdata->cr_csr, BIT_CLR_REG);
 
@@ -529,6 +330,8 @@ static void vetar_cleanup_dev(struct vetar_privdata *privdata) {
   if (privdata->class_dev)
     {
 #ifdef VETAR_SYSFS_ENABLE
+      device_remove_file(privdata->class_dev, &dev_attr_vmecrcsr);
+      device_remove_file(privdata->class_dev, &dev_attr_wbctrl);
       device_remove_file(privdata->class_dev, &dev_attr_codeversion);
 #endif
       device_destroy(vetar_class, privdata->devno);
@@ -540,36 +343,21 @@ static void vetar_cleanup_dev(struct vetar_privdata *privdata) {
   /* character device cleanup*/
   if(privdata->cdev.owner)
     cdev_del(&privdata->cdev);
-
-
-
   kfree(privdata);
+  vetar_devices[index]=0;
 
 }
 
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
-int vetar_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg)
-#else
-long vetar_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
-#endif
-{
-	int retval = 0;
-//	struct vetar_user_data *user_data = filp->private_data;
-
-  debug ((KERN_INFO "BEGIN vetar_ioctl \n"));
-
-	switch (cmd) {
-
-	  default:
-		retval = -EINVAL;
-	}
-  debug ((KERN_INFO "END   vetar_ioctl \n"));
-	return retval;
-}
 
 
+/** JAM here we implement some file operations to optionally dump values to kernel log
+ * when doing "cat /dev/vetar0"
+ * Note that there is no output in user space (gets error for simplification)
+ * debug information is available in dmesg*/
 
+// TODO: later put this into sysfs node
+#ifdef VETAR_CTRL_TEST
 
 int vetar_open(struct inode *inode, struct file *filp)
 {
@@ -589,6 +377,8 @@ int vetar_release(struct inode *inode, struct file *filp)
 
 
 
+
+
 loff_t vetar_llseek(struct file *filp, loff_t off, int whence)
 {
   loff_t newpos;  
@@ -599,8 +389,6 @@ loff_t vetar_llseek(struct file *filp, loff_t off, int whence)
   privdata= get_privdata(filp);
   if(!privdata) return -EFAULT;
 
-  
-  
   switch(whence) {
   case 0: /* SEEK_SET */
     newpos = off;
@@ -631,259 +419,160 @@ ssize_t vetar_read(struct file *filp, char __user *buf, size_t count,
                           loff_t *f_pos)
 {
   /* here we read from mapped vetar memory into user buffer for testing and debug*/
-  int i;
+//  int i;
+  u32 out=0;
   ssize_t retval = 0;
   struct vetar_privdata *privdata;
-  void* memstart;
-  int lcount=count>>2;
-  u32* kbuf=0;
-#ifdef VETAR_CTRL_TEST
-  u32 out=0;
-#endif
+//  void* memstart;
+//  int lcount=count>>2;
+//  u32* kbuf=0;
+
   /*  u32 kbuf[lcount];*/
+
   vetar_dbg(KERN_NOTICE "** starting vetar_read for f_pos=%d count=%d\n", (int) *f_pos, (int) count);
   privdata= get_privdata(filp);
   if(!privdata) return -EFAULT;
 
-#ifdef VETAR_TRIGMOD_TEST
-  /* this is to debug access to trigger module*/
-  vetar_dump_trigmod(privdata);
-  /* this is to debug the config spaced setup*/
-  vetar_is_present(privdata);
-  return -EFAULT;
-  /* end debug cscsr*/
-#endif
 
-#ifdef VETAR_CTRL_TEST
 
   out = be32_to_cpu(ioread32(privdata->ctrl_registers + ERROR_FLAG));
   mb(); ndelay(100);
-  vetar_msg(KERN_INFO "vetar_read: be32_to_cpu(ioread32 control register va 0x%0x = 0x%x \n",privdata->ctrl_registers + ERROR_FLAG, out);
+  vetar_msg(KERN_INFO "vetar_read: be32_to_cpu(ioread32 control register va 0x%0x = 0x%x \n",(unsigned) privdata->ctrl_registers + ERROR_FLAG, out);
   out = be32_to_cpu(ioread32(privdata->ctrl_registers + SDWB_ADDRESS));
   mb(); ndelay(100); mdelay(10);
-  vetar_msg(KERN_INFO "vetar_read: be32_to_cpu(ioread32 control register va 0x%0x = 0x%x \n",privdata->ctrl_registers + SDWB_ADDRESS, out);
+  vetar_msg(KERN_INFO "vetar_read: be32_to_cpu(ioread32 control register va 0x%0x = 0x%x \n",(unsigned) privdata->ctrl_registers + SDWB_ADDRESS, out);
 
    out = be32_to_cpu(ioread32be(privdata->ctrl_registers + ERROR_FLAG));
    mb(); ndelay(100); mdelay(10);
-   vetar_msg(KERN_INFO "vetar_read: be32_to_cpu(ioread32be control register va 0x%0x = 0x%x \n",privdata->ctrl_registers + ERROR_FLAG, out);
+   vetar_msg(KERN_INFO "vetar_read: be32_to_cpu(ioread32be control register va 0x%0x = 0x%x \n",(unsigned) privdata->ctrl_registers + ERROR_FLAG, out);
    out = be32_to_cpu(ioread32be(privdata->ctrl_registers + SDWB_ADDRESS));
    mb(); ndelay(100); mdelay(10);
-   vetar_msg(KERN_INFO "vetar_read: be32_to_cpu(ioread32be control register va 0x%0x = 0x%x \n",privdata->ctrl_registers + SDWB_ADDRESS, out);
+   vetar_msg(KERN_INFO "vetar_read: be32_to_cpu(ioread32be control register va 0x%0x = 0x%x \n",(unsigned) privdata->ctrl_registers + SDWB_ADDRESS, out);
 
    out = ioread32be(privdata->ctrl_registers + ERROR_FLAG);
    mb(); ndelay(100); mdelay(10);
-   vetar_msg(KERN_INFO "vetar_read: ioread32be control register va 0x%0x = 0x%x \n",privdata->ctrl_registers + ERROR_FLAG, out);
+   vetar_msg(KERN_INFO "vetar_read: ioread32be control register va 0x%0x = 0x%x \n",(unsigned) privdata->ctrl_registers + ERROR_FLAG, out);
    out = ioread32be(privdata->ctrl_registers + SDWB_ADDRESS);
    mb(); ndelay(100); mdelay(10);
-   vetar_msg(KERN_INFO "vetar_read: ioread32be control register va 0x%0x = 0x%x \n",privdata->ctrl_registers + SDWB_ADDRESS, out);
+   vetar_msg(KERN_INFO "vetar_read: ioread32be control register va 0x%0x = 0x%x \n",(unsigned) privdata->ctrl_registers + SDWB_ADDRESS, out);
 
    out = ioread32(privdata->ctrl_registers + ERROR_FLAG);
    mb(); ndelay(100); mdelay(10);
-   vetar_msg(KERN_INFO "vetar_read: ioread32 control register va 0x%0x = 0x%x \n",privdata->ctrl_registers + ERROR_FLAG, out);
+   vetar_msg(KERN_INFO "vetar_read: ioread32 control register va 0x%0x = 0x%x \n",(unsigned) privdata->ctrl_registers + ERROR_FLAG, out);
    out = ioread32(privdata->ctrl_registers + SDWB_ADDRESS);
    mb(); ndelay(100); mdelay(10);
-   vetar_msg(KERN_INFO "vetar_read: ioread32 control register va 0x%0x = 0x%x \n",privdata->ctrl_registers + SDWB_ADDRESS, out);
-
-
-
+   vetar_msg(KERN_INFO "vetar_read: ioread32 control register va 0x%0x = 0x%x \n",(unsigned) privdata->ctrl_registers + SDWB_ADDRESS, out);
 
    return -EFAULT;
+}
+
 #endif
 
-  if (down_interruptible(&privdata->ramsem))
-    return -ERESTARTSYS;
-  if (*f_pos >= privdata->reglen)
-    goto out;
-  kbuf= (u32*) kmalloc(count,GFP_KERNEL);
-  if(!kbuf)
-    {
-      vetar_msg(KERN_ERR "vetar_read: could not alloc %d buffer space! \n",lcount);
-      retval = -ENOMEM;
-      goto out;
-    }
-  if (*f_pos + count > privdata->reglen)
-    {
-      /* TODO: better return error to inform user we exceed ram size?*/
-      count = privdata->reglen - *f_pos;
-      lcount=count>>2;
-      vetar_dbg(KERN_NOTICE "** vetar_read truncates count to =%d\n", (int) count);
-    }
-  memstart=(void*) (privdata->registers) + *f_pos;
-  /* try to use intermediate kernel buffer here:*/
-  vetar_dbg(KERN_NOTICE "** vetar_read begins io loop at memstart=%lx\n", (long) memstart);
-  /*wmb();
-    memcpy_fromio(&kbuf, memstart, count);*/
-  mb();
-  for(i=0;i<lcount;++i)
-    {
-
-      vetar_dbg(KERN_NOTICE "%d ..", i);
-    if((i%10)==0) vetar_msg(KERN_NOTICE "\n");
-    mb();
-      kbuf[i]=ioread32be(memstart+(i<<2));/*JAM just like pexor, but big endian vme bus*/
-      mb();
-      ndelay(100);
-      vetar_dbg(KERN_NOTICE "0x%x from %lx  \n", kbuf[i],(long unsigned )memstart+(i<<2));
-      /*udelay(1);*/
-    }
 
 
-  vetar_dbg(KERN_NOTICE "** vetar_read begins copy to user from stack buffer=%lx\n", (long) kbuf);
-  if (copy_to_user(buf, kbuf, count)) {
-    vetar_dbg(KERN_ERR "** vetar_read copytouser error!\n");
-    retval = -EFAULT;
-    goto out;
-  }
-  *f_pos += count;
-  retval = count;
- out:
-  kfree(kbuf);
-  up(&privdata->ramsem);
-  return retval;
-
-}
-
-ssize_t vetar_write(struct file *filp, const char __user *buf, size_t count,
-            loff_t *f_pos)
-{
-  int i;
-  ssize_t retval = -ENOMEM; /* value used in "goto out" statements */
-  struct vetar_privdata *privdata;
-  void* memstart;
-  int lcount=count>>2;
-  u32* kbuf=0;
-  /*u32 kbuf[lcount];*/
-  vetar_dbg(KERN_NOTICE "** starting vetar_write for f_pos=%d count=%d\n", (int) *f_pos, (int) count);
-  privdata= get_privdata(filp);
-  if(!privdata) return -EFAULT;
-  if (down_interruptible(&privdata->ramsem))
-    return -ERESTARTSYS;
-  if (*f_pos >= privdata->reglen)
-    goto out;
-  kbuf= (u32*) kmalloc(count,GFP_KERNEL);
-  if(!kbuf)
-    {
-      vetar_msg(KERN_ERR "vetar_write: could not alloc %d buffer space! \n",lcount);
-      retval = -ENOMEM;
-      goto out;
-    }
-
-  if (*f_pos + count >= privdata->reglen )
-    {
-      /* TODO: better return error to inform user we exceed ram size?*/
-      count = privdata->reglen  - *f_pos;
-      lcount=count>>2;
-      vetar_dbg(KERN_NOTICE "** vetar_write truncates count to =%d\n", (int) count);
-    }
-  memstart=(void*) (privdata->registers) + *f_pos;
-  vetar_dbg(KERN_NOTICE "** vetar_write begins copy from user at stack buffer=%lx\n", (long) kbuf);
-  mb();
-  if (copy_from_user(kbuf, buf, count))
-    {
-      retval = -EFAULT;
-      goto out;
-    }
-  vetar_dbg(KERN_NOTICE "** vetar_write begins copy loop at memstart=%lx\n", (long) memstart);
-  /*memcpy_toio(memstart, kbuf , count);*/
-  mb();
-  for(i=0;i<lcount;++i)
-    {
-
-      /*vetar_dbg(KERN_NOTICE "kbuf[%d]=%x to %lx..", i,kbuf[i],memstart+(i<<2));*/
-      /*vetar_dbg(KERN_NOTICE "%d..", i);
-    if((i%10)==0) vetar_msg(KERN_NOTICE "\n");*/
-      iowrite32be(kbuf[i], memstart+(i<<2)); /*JAM just like pexor, but big endian vme bus*/
-      mb();
-      ndelay(20);
-    }
-  *f_pos += count;
-  retval = count;
- out:
-  kfree(kbuf);
-  up(&privdata->ramsem);
-  return retval;
-
-}
 
 
 ssize_t vetar_sysfs_codeversion_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
   char vstring[128];
   ssize_t curs=0;
-  struct pexor_privdata *privdata;
-  privdata= (struct pexor_privdata*) dev_get_drvdata(dev);
   curs=snprintf(vstring, 128, "*** This is VETAR driver for CES VME Linux, version %s build on %s at %s \n\t", VETARVERSION, __DATE__, __TIME__);
   return snprintf(buf, PAGE_SIZE, "%s\n", vstring);
 }
 
+ssize_t vetar_sysfs_wbctrl_show (struct device *dev, struct device_attribute *attr, char *buf)
+{
+  ssize_t curs = 0;
+  struct vetar_privdata *privdata;
+  privdata = (struct vetar_privdata*) dev_get_drvdata (dev);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "*** VETAR wishbone control register dump:\n");
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t CTRL:               \t0x%x\n",vetar_read_control(privdata, CTRL));
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t MASTER_CTRL:        \t0x%x\n",vetar_read_control(privdata, MASTER_CTRL));
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t MASTER_ADD:         \t0x%x\n",vetar_read_control(privdata, MASTER_ADD));
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t MASTER_DATA:        \t0x%x\n",vetar_read_control(privdata, MASTER_DATA));
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t EMUL_DAT_WD:        \t0x%x\n",vetar_read_control(privdata, EMUL_DAT_WD));
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t WINDOW_OFFSET_LOW:  \t0x%x\n",vetar_read_control(privdata, WINDOW_OFFSET_LOW));
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t WINDOW_OFFSET_HIGH: \t0x%x\n",vetar_read_control(privdata, WINDOW_OFFSET_HIGH));
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t ERROR_FLAG:         \t0x%x\n",  vetar_read_control(privdata, ERROR_FLAG));
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t SDWB_ADDRESS:       \t0x%x\n",  vetar_read_control(privdata, SDWB_ADDRESS));
+  return curs;
+}
 
-
+ssize_t vetar_sysfs_vmecrcsr_show (struct device *dev, struct device_attribute *attr, char *buf)
+{
+  ssize_t curs = 0;
+  struct vetar_privdata *privdata;
+  privdata = (struct vetar_privdata*) dev_get_drvdata (dev);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "*** VETAR VME configuration register dump:\n");
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t VME_VENDOR_ID:    \t0x%x\n",
+      vetar_csr_read(privdata->cr_csr, VME_VENDOR_ID_OFFSET));
+  mb();ndelay(100);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t VME_VENDOR_ID + 4:\t0x%x\n",
+        vetar_csr_read(privdata->cr_csr, VME_VENDOR_ID_OFFSET+4));
+  mb();ndelay(100);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t VME_VENDOR_ID + 8:\t0x%x\n",
+      vetar_csr_read(privdata->cr_csr, VME_VENDOR_ID_OFFSET+8));
+  mb();ndelay(100);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t INTVECTOR:        \t0x%x\n",
+       vetar_csr_read(privdata->cr_csr, INTVECTOR));
+  mb();ndelay(100);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t INT_LEVEL:        \t0x%x\n",
+      vetar_csr_read(privdata->cr_csr, INT_LEVEL));
+  mb();ndelay(100);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t FUN0ADER:         \t0x%x\n",
+      vetar_csr_read(privdata->cr_csr, FUN0ADER));
+  mb();ndelay(100);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t FUN0ADER + 4:     \t0x%x\n",
+        vetar_csr_read(privdata->cr_csr, FUN0ADER + 4));
+    mb();ndelay(100);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t FUN0ADER + 8:     \t0x%x\n",
+          vetar_csr_read(privdata->cr_csr, FUN0ADER + 8));
+  mb();ndelay(100);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t FUN0ADER +12:     \t0x%x\n",
+            vetar_csr_read(privdata->cr_csr, FUN0ADER + 12));
+  mb();ndelay(100);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t FUN1ADER:         \t0x%x\n",
+        vetar_csr_read(privdata->cr_csr, FUN1ADER));
+  mb();ndelay(100);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t FUN1ADER + 4:     \t0x%x\n",
+          vetar_csr_read(privdata->cr_csr, FUN1ADER + 4));
+  mb();ndelay(100);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t FUN1ADER + 8:     \t0x%x\n",
+            vetar_csr_read(privdata->cr_csr, FUN1ADER + 8));
+  mb();ndelay(100);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t FUN1ADER +12:     \t0x%x\n",
+              vetar_csr_read(privdata->cr_csr, FUN1ADER + 12));
+  mb();ndelay(100);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t WB_32_64:         \t0x%x\n",
+                vetar_csr_read(privdata->cr_csr, WB_32_64));
+  mb();ndelay(100);
+  mb();ndelay(100);
+     curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t BIT_SET_REG:   \t0x%x\n",
+              vetar_csr_read(privdata->cr_csr, BIT_SET_REG));
+  mb();ndelay(100);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t BIT_CLR_REG:      \t0x%x\n",
+      vetar_csr_read(privdata->cr_csr, BIT_CLR_REG));
+  mb();ndelay(100);
+  return curs;
+}
 
 static struct file_operations vetar_fops = {
-	.open           = vetar_open,
-	.release        = vetar_release,
-	.llseek =   vetar_llseek,
-	.read =           vetar_read,
-	.write =          vetar_write,
-	#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
-	.ioctl        = vetar_ioctl,
-	#else
-	    .unlocked_ioctl    = vetar_ioctl,
-	#endif
-};
-
-
-#ifdef VETAR_TRIGMOD_TEST
-int vetar_dump_trigmod(struct vetar_privdata *privdata)
-{
-  // trigger module register
- unsigned int *pl_stat;
- unsigned int *pl_ctrl;
- unsigned int *pl_fcti;
- unsigned int *pl_cvti;
- void* addr_stat;
- void* addr_ctrl;
-
-
-  vetar_msg(KERN_NOTICE "Check trigmod registers at base address 0x%x\n",privdata->vmebase);
-  // map TRIVA register
-      pl_stat = (unsigned int*) ((long)privdata->registers + 0x0);
-      pl_ctrl = (unsigned int*) ((long)privdata->registers + 0x4);
-      pl_fcti = (unsigned int*) ((long)privdata->registers + 0x8);
-      pl_cvti = (unsigned int*) ((long)privdata->registers + 0xc);
-
-      printk (KERN_INFO " Ptr. TRIVA stat: 0x%x \n", (unsigned int)pl_stat);
-      printk (KERN_INFO " Ptr. TRIVA ctrl: 0x%x \n", (unsigned int)pl_ctrl);
-      printk (KERN_INFO " Ptr. TRIVA fcti: 0x%x \n", (unsigned int)pl_fcti);
-      printk (KERN_INFO " Ptr. TRIVA cvti: 0x%x \n", (unsigned int)pl_cvti);
-
-      //out_be32 (pl_cvti, 0x50);
-
-      printk (KERN_INFO " TRIVA registers content \n");
-      printk (KERN_INFO " TRIVA stat: .... 0x%x \n", in_be32(pl_stat));
-      printk (KERN_INFO " TRIVA ctrl: .... 0x%x \n", in_be32(pl_ctrl));
-      printk (KERN_INFO " TRIVA fcti: .... 0x%x \n", 0x10000 - in_be32(pl_fcti));
-      printk (KERN_INFO " TRIVA cvti: .... 0x%x \n", 0x10000 - in_be32(pl_cvti));
-
-      /* above is same as in vmetrigmod.c, below use other read function:*/
-
-      addr_stat=privdata->registers;
-      addr_ctrl=privdata->registers + 0x04;
-
-      printk (KERN_INFO " ioread32be -      TRIVA stat: .... 0x%x \n", ioread32be(addr_stat));
-      printk (KERN_INFO " ioread32be -      TRIVA ctrl: .... 0x%x \n",  ioread32be(addr_ctrl));
-return 0;
-}
+#ifdef VETAR_CTRL_TEST
+	.open           =   vetar_open,
+	.release        =   vetar_release,
+	.llseek =           vetar_llseek,
+	.read =             vetar_read,
 #endif
+};
 
 
 int vetar_is_present(struct vetar_privdata *privdata)
 {
     uint32_t idc;
     void* addr;
-    vetar_msg(KERN_ERR "Check if VETAR is present at slot %d, config base address 0x%x\n", privdata->slot, privdata->configbase);
+    vetar_dbg(KERN_ERR "Check if VETAR is present at slot %d, config base address 0x%x\n", privdata->slot, privdata->configbase);
     addr = privdata->cr_csr + VME_VENDOR_ID_OFFSET;
-    vetar_msg(KERN_NOTICE "Reading Vendor id from address 0x%x ...\n", (unsigned) addr);
+    vetar_dbg(KERN_NOTICE "Reading Vendor id from address 0x%x ...\n", (unsigned) addr);
     mb();
     idc = be32_to_cpu(ioread32be(addr)) << 16;
     mb();ndelay(100);
@@ -934,7 +623,7 @@ void vetar_setup_csr_fa(struct vetar_privdata *privdata)
 {
     //int i;
     u8 fa[4];       /* FUN0 ADER contents */
-    xpc_vme_type_e am=0;
+    u8 am=0;
     /* reset the core */
     vetar_csr_write(RESET_CORE, privdata->cr_csr, BIT_SET_REG);
     msleep(10);
@@ -973,13 +662,14 @@ void vetar_setup_csr_fa(struct vetar_privdata *privdata)
 
 
 #ifdef VETAR_MAP_REGISTERS
-
+    am = VME_A32_USER_MBLT; /*0x08*/
+    vetar_dbg(KERN_NOTICE "vetar_setup_csr_fa sets register space address modifier 0x%x\n",am);
     /* do address relocation for FUN0 */
     fa[0] = (privdata->vmebase >> 24) & 0xFF;
     fa[1] = (privdata->vmebase >> 16) & 0xFF;
     fa[2] = (privdata->vmebase >> 8 ) & 0xFF;
-    fa[3] = (XPC_VME_A32_STD_USER & 0x3F) << 2;
-            /* DFSR and XAM are zero */
+    fa[3] = (am & 0x3F) << 2;
+    /* DFSR and XAM are zero */
 
     vetar_csr_write(fa[0], privdata->cr_csr, FUN0ADER);
     vetar_csr_write(fa[1], privdata->cr_csr, FUN0ADER + 4);
@@ -991,19 +681,7 @@ void vetar_setup_csr_fa(struct vetar_privdata *privdata)
     /*do address relocation for FUN1, WB control mapping*/
     //am=0x39; /* JAM This is what we actually see on the vmebus monitor for (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_BLT | XPC_VME_PTYPE_USER)*/
     am = VME_A24_USER_MBLT; /*0x38*/
-    //am= (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_MBLT | XPC_VME_PTYPE_USER); /* 0x44*/
-    //am= (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_BLT | XPC_VME_PTYPE_USER); /* 0x42*/
-    //am= XPC_VME_A24_STD_USER;
-
-    vetar_msg(KERN_NOTICE "vetar_setup_csr_fa sets address modifier 0x%x\n",am);
-
-// PREVIOUS:
-//     fa[0] = 0x00;
-//     fa[1] = 0x00;
-//     fa[2] = (privdata->vmebase >> 24 ) & 0xFF;
-//     //fa[3] = (am & 0x3F) << 2;
-//     fa[3] = am  << 2;
-
+    vetar_dbg(KERN_NOTICE "vetar_setup_csr_fa sets control space address modifier 0x%x\n",am);
 
      fa[0] = (privdata->ctrl_vmebase >> 24) & 0xFF;
      fa[1] = (privdata->ctrl_vmebase >> 16) & 0xFF;
@@ -1017,61 +695,9 @@ void vetar_setup_csr_fa(struct vetar_privdata *privdata)
 
 #endif
 
-
     /* enable module, hence make FUN0/FUN1 available */
     vetar_csr_write(ENABLE_CORE, privdata->cr_csr, BIT_SET_REG);
     msleep(100);
-
-
-
-// from vme_wb_external for comparison:
-//    u8 fa[4];       /* FUN0 ADER contents */
-//        u32 wb_add = wb_vme << 28;
-//        u32 wb_ctrl_add = wb_vme << 10;
-//
-//        /* reset the core */
-//        vme_csr_write(RESET_CORE, base, BIT_SET_REG);
-//        msleep(10);
-//
-//        /* disable the core */
-//        vme_csr_write(ENABLE_CORE, base, BIT_CLR_REG);
-//
-//        /* default to 32bit WB interface */
-//        vme_csr_write(WB32, base, WB_32_64);
-//
-//        /* irq vector */
-//        vme_csr_write(vector, base, IRQ_VECTOR);
-//
-//        /* irq level */
-//        vme_csr_write(level, base, IRQ_LEVEL);
-//
-//        /*do address relocation for FUN0, WB data mapping */
-//        fa[0] = (wb_add >> 24) & 0xFF;
-//        fa[1] = (wb_add >> 16) & 0xFF;
-//        fa[2] = (wb_add >> 8) & 0xFF;
-//        fa[3] = (VME_A32_USER_MBLT & 0x3F) << 2;    /* or VME_A32_USER_DATA_SCT */
-//
-//        vme_csr_write(fa[0], base, FUN0ADER);
-//        vme_csr_write(fa[1], base, FUN0ADER + 4);
-//        vme_csr_write(fa[2], base, FUN0ADER + 8);
-//        vme_csr_write(fa[3], base, FUN0ADER + 12);
-//
-//        /*do address relocation for FUN1, WB control mapping */
-//        fa[0] = (wb_ctrl_add >> 24) & 0xFF;
-//        fa[1] = (wb_ctrl_add >> 16) & 0xFF;
-//        fa[2] = (wb_ctrl_add >> 8) & 0xFF;
-//        fa[3] = (VME_A24_USER_MBLT & 0x3F) << 2;    /* or VME_A24_USER_DATA_SCT */
-//
-//        vme_csr_write(fa[0], base, FUN1ADER);
-//        vme_csr_write(fa[1], base, FUN1ADER + 4);
-//        vme_csr_write(fa[2], base, FUN1ADER + 8);
-//        vme_csr_write(fa[3], base, FUN1ADER + 12);
-//
-//        /* enable module, hence make FUN0 and FUN1 available */
-//        vme_csr_write(ENABLE_CORE, base, BIT_SET_REG);
-
-
-
 }
 
 
@@ -1092,7 +718,7 @@ static int vetar_probe_vme(unsigned int index)
     privdata = kzalloc(sizeof(struct vetar_privdata), GFP_KERNEL);
     if (privdata == NULL)
       {
-        vetar_cleanup_dev(privdata);
+        vetar_cleanup_dev(privdata, index);
         return -ENOMEM;
       }
   vetar_devices[index]=privdata;
@@ -1122,7 +748,7 @@ static int vetar_probe_vme(unsigned int index)
     if (privdata->cr_csr_phys == 0xffffffffffffffffULL) {
       vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at configbase 0x%x with length 0x%x !\n",
                privdata->configbase, privdata->configlen);
-        vetar_cleanup_dev(privdata);
+        vetar_cleanup_dev(privdata, index);
         return -ENOMEM;
     }
 #else
@@ -1131,7 +757,7 @@ static int vetar_probe_vme(unsigned int index)
     if (privdata->cr_csr_phys == 0xffffffffULL) {
       vetar_msg(KERN_ERR "** vetar_probe_vme could not xpc_vme_master_map at configbase 0x%x with length 0x%lx !\n",
           privdata->configbase, privdata->configlen);
-        vetar_cleanup_dev(privdata);
+        vetar_cleanup_dev(privdata, index);
         return -ENOMEM;
     }
 #endif
@@ -1142,7 +768,7 @@ static int vetar_probe_vme(unsigned int index)
     if (!privdata->cr_csr) {
       vetar_msg(KERN_ERR "** vetar_probe_vme could not ioremap_nocache at config physical address 0x%x with length 0x%lx !\n",
           (unsigned int) privdata->cr_csr_phys, privdata->configlen);
-        vetar_cleanup_dev(privdata);
+        vetar_cleanup_dev(privdata, index);
         return -ENOMEM;
      }
 
@@ -1153,7 +779,7 @@ static int vetar_probe_vme(unsigned int index)
   //  may check for vendor id etc...
 if(!vetar_is_present(privdata))
   {
-    vetar_cleanup_dev(privdata);
+    vetar_cleanup_dev(privdata, index);
     return -EFAULT;
   }
 
@@ -1162,70 +788,25 @@ if(!vetar_is_present(privdata))
   // setup interrupts:
 #ifdef VETAR_ENABLE_IRQ
 snprintf(privdata->irqname, 64, VETARNAMEFMT,privdata->lun);
-  result = xpc_vme_request_irq(INTVECTOR, (1 << INT_LEVEL) , vetar_irqhandler, privdata, privdata->irqname);
-    if (result)
+result = xpc_vme_request_irq(privdata->vector, (1 << privdata->level) , vetar_irqhandler, privdata, privdata->irqname);
+  if (result)
     {
+      vetar_msg(KERN_ERR "** vetar_probe_vme could not register irq handler, result=%d \n",result);
     }
-  vetar_msg(KERN_ERR "** vetar_probe_vme with irq handler, result=%d \n",result);
+  vetar_msg(KERN_NOTICE "** vetar_probe_vme assigned irq vector=0x%x level=0x%x \n",privdata->vector, privdata->level);
 
 #endif
-
-
-#ifdef VETAR_TRIGMOD_TEST
-
-    privdata->vmebase=TRIGMOD_REGS_ADDR;
-    privdata->reglen=TRIGMOD_REGS_SIZE;
-    vetar_msg(KERN_ERR "** vetar_probe_vme TEST: mapping triva vmebase 0x%x with length 0x%lx !\n",
-                privdata->vmebase, privdata->reglen);
-
-#ifdef VETAR_NEW_XPCLIB
-        privdata->regs_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->vmebase, privdata->reglen, XPC_VME_A32_STD_USER);
-        if (privdata->regs_phys == 0xffffffffffffffffULL) {
-          vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at vmebase 0x%x with length 0x%x !\n",
-                   privdata->vmebase, privdata->reglen);
-            vetar_cleanup_dev(privdata);
-            return -ENOMEM;
-        }
-    #else
-        privdata->regs_phys = xpc_vme_master_map(privdata->vmebase, 0, privdata->reglen, XPC_VME_A32_STD_USER, 0);
-        if (privdata->regs_phys == 0xffffffffULL) {
-          vetar_msg(KERN_ERR "** vetar_probe_vme could not xpc_vme_master_map at vmebase 0x%x with length 0x%lx !\n",
-              privdata->vmebase, privdata->reglen);
-            vetar_cleanup_dev(privdata);
-            return -ENOMEM;
-        }
-    #endif
-        mb();
-        vetar_dbg(KERN_NOTICE "** vetar_probe_vme mapped vmebase 0x%x with length 0x%lx to physical address 0x%x!\n",
-                privdata->vmebase, privdata->reglen, (unsigned int) privdata->regs_phys);
-        privdata->registers = ioremap_nocache(privdata->regs_phys, privdata->reglen);
-        if (!privdata->registers) {
-          vetar_msg(KERN_ERR "** vetar_probe_vme could not ioremap_nocache at physical address 0x%x with length 0x%lx !\n",
-              (unsigned int) privdata->regs_phys, privdata->reglen);
-            vetar_cleanup_dev(privdata);
-            return -ENOMEM;
-         }
-        mb();
-        vetar_dbg(KERN_NOTICE "** vetar_probe_vme remapped physical address 0x%x to kernel address 0x%lx\n",
-              (unsigned int) privdata->regs_phys,  (unsigned long) privdata->registers);
-#endif
-/********** END access to triggermodule test */
-
 
 vetar_setup_csr_fa(privdata);
 
 #ifdef VETAR_MAP_REGISTERS
-
-
-
-
     // map register space:
 #ifdef VETAR_NEW_XPCLIB
     privdata->regs_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->vmebase, privdata->reglen, XPC_VME_A32_STD_USER);
     if (privdata->regs_phys == 0xffffffffffffffffULL) {
       vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at vmebase 0x%x with length 0x%x !\n",
                privdata->vmebase, privdata->reglen);
-        vetar_cleanup_dev(privdata);
+        vetar_cleanup_dev(privdata, index);
         return -ENOMEM;
     }
 #else
@@ -1233,7 +814,7 @@ vetar_setup_csr_fa(privdata);
     if (privdata->regs_phys == 0xffffffffULL) {
       vetar_msg(KERN_ERR "** vetar_probe_vme could not xpc_vme_master_map at vmebase 0x%x with length 0x%lx !\n",
           privdata->vmebase, privdata->reglen);
-        vetar_cleanup_dev(privdata);
+        vetar_cleanup_dev(privdata, index);
         return -ENOMEM;
     }
 #endif
@@ -1244,7 +825,7 @@ vetar_setup_csr_fa(privdata);
     if (!privdata->registers) {
       vetar_msg(KERN_ERR "** vetar_probe_vme could not ioremap_nocache at physical address 0x%x with length 0x%lx !\n",
           (unsigned int) privdata->regs_phys, privdata->reglen);
-        vetar_cleanup_dev(privdata);
+        vetar_cleanup_dev(privdata, index);
         return -ENOMEM;
      }
     mb();
@@ -1254,26 +835,18 @@ vetar_setup_csr_fa(privdata);
 #endif
 
 #ifdef VETAR_MAP_CONTROLSPACE
-//    else if (map_type == MAP_CTRL) {
-//            am = VME_A24_USER_MBLT;
-//            dw = VME_D32;
-//            base = vme_dev->vme_res.vmebase;
-//            size = 0xA0;
-//            map_type_c = "WB MAP CTRL";
-//
     privdata->ctrl_reglen=VETAR_CTRLREGS_SIZE;
     am= (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_MBLT | XPC_VME_PTYPE_USER); /* 0x44*/
     //am= (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_BLT | XPC_VME_PTYPE_USER); /* 0x42*/
     //am= XPC_VME_A24_STD_USER ;
-    //am = VME_A24_USER_MBLT;
-    vetar_msg(KERN_NOTICE "vetar_probe_vme maps with  controlspace address modifier 0x%x\n",am);
+    //am = VME_A24_USER_MBLT; this is real AM on vmebus, will be set by the XPC definitions JAM
 
  #ifdef VETAR_NEW_XPCLIB
      privdata->ctrl_regs_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->ctrl_vmebase, privdata->reglen, am);
      if (privdata->regs_phys == 0xffffffffffffffffULL) {
        vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at vmebase 0x%x with length 0x%x !\n",
                 privdata->ctrl_vmebase, privdata->reglen);
-         vetar_cleanup_dev(privdata);
+         vetar_cleanup_dev(privdata, index);
          return -ENOMEM;
      }
  #else
@@ -1281,7 +854,7 @@ vetar_setup_csr_fa(privdata);
      if (privdata->ctrl_regs_phys == 0xffffffffULL) {
        vetar_msg(KERN_ERR "** vetar_probe_vme could not xpc_vme_master_map at vmebase 0x%x with length 0x%lx !\n",
            privdata->ctrl_vmebase, privdata->reglen);
-         vetar_cleanup_dev(privdata);
+         vetar_cleanup_dev(privdata, index);
          return -ENOMEM;
      }
  #endif
@@ -1292,7 +865,7 @@ vetar_setup_csr_fa(privdata);
      if (!privdata->registers) {
        vetar_msg(KERN_ERR "** vetar_probe_vme could not ioremap_nocache at physical address 0x%x with length 0x%lx !\n",
            (unsigned int) privdata->ctrl_regs_phys, privdata->reglen);
-         vetar_cleanup_dev(privdata);
+         vetar_cleanup_dev(privdata, index);
          return -ENOMEM;
       }
      mb();
@@ -1305,12 +878,6 @@ vetar_setup_csr_fa(privdata);
 
 #endif
 
-    /* mutex for read/write access of mapped memory (JAM: redundant!)*/
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 37)
-  init_MUTEX(&(privdata->ramsem));
-#else
-  sema_init(&(privdata->ramsem),1);
-#endif
 
 /* this is wishbone mutex:*/
   mutex_init(&privdata->wb_mutex);
@@ -1327,7 +894,7 @@ vetar_setup_csr_fa(privdata);
    if (err)
      {
        vetar_msg( "Vetar couldn't add character device.\n" );
-       vetar_cleanup_dev(privdata);
+       vetar_cleanup_dev(privdata, index);
        return err;
      }
 
@@ -1345,14 +912,25 @@ vetar_setup_csr_fa(privdata);
                        VETARNAMEFMT, MINOR(vetar_devt) + privdata->lun);
  #endif
        dev_set_drvdata(privdata->class_dev, privdata);
-       vetar_msg(KERN_NOTICE "Added VETAR device: ");
+       vetar_msg(KERN_NOTICE "VETAR device ");
        vetar_msg(KERN_NOTICE VETARNAMEFMT, MINOR(vetar_devt) + privdata->lun);
+       vetar_msg(KERN_NOTICE " has been added. \n");
+
 
  #ifdef VETAR_SYSFS_ENABLE
   if(device_create_file(privdata->class_dev, &dev_attr_codeversion) != 0)
      {
        vetar_msg(KERN_ERR "Could not add device file node for code version.\n");
      }
+  if(device_create_file(privdata->class_dev, &dev_attr_wbctrl) != 0)
+       {
+         vetar_msg(KERN_ERR "Could not add device file node for wishbone control registers.\n");
+       }
+  if(device_create_file(privdata->class_dev, &dev_attr_vmecrcsr) != 0)
+  {
+           vetar_msg(KERN_ERR "Could not add device file node for vme config registers.\n");
+  }
+
 
  #endif
      }
@@ -1374,11 +952,11 @@ vetar_setup_csr_fa(privdata);
    err=wishbone_register(&privdata->wb);
    if (err< 0) {
         vetar_msg(KERN_ERR "Could not register wishbone bus, error %d\n",err);
-        vetar_cleanup_dev(privdata);
+        vetar_cleanup_dev(privdata, index);
         return err;
       }
 
-vetar_msg(KERN_NOTICE "Init control registers\n");
+    vetar_dbg(KERN_NOTICE "Init control registers\n");
        
 	iowrite32be(0, privdata->ctrl_registers + EMUL_DAT_WD);
 	iowrite32be(0, privdata->ctrl_registers + WINDOW_OFFSET_LOW);
@@ -1386,7 +964,6 @@ vetar_msg(KERN_NOTICE "Init control registers\n");
 
 
 #ifdef   VETAR_DUMP_REGISTERS
-
 /* here dump registers */
    vetar_dumpregisters(privdata->cr_csr, VME_VENDOR_ID_OFFSET, "VME_VENDOR_ID_OFFSET");
    vetar_dumpregisters(privdata->cr_csr, VME_VENDOR_ID_OFFSET+4, "VME_VENDOR_ID_OFFSET");
@@ -1404,23 +981,13 @@ vetar_msg(KERN_NOTICE "Init control registers\n");
    vetar_dumpregisters(privdata->cr_csr, WB_32_64, "WB_32_64");
    vetar_dumpregisters(privdata->cr_csr, BIT_SET_REG, "BIT_SET_REG");
    vetar_dumpregisters(privdata->cr_csr, BIT_CLR_REG, "BIT_CLR_REG");
-/*   IRQ_VECTOR                    0x7FF5F
-     IRQ_LEVEL                       0x7FF5B
-     VME_VENDOR_ID_OFFSET  0x24
-     FUN0ADER                       0x7FF63
-     FUN1ADER                       0x7FF73
-     WB_32_64                       0x7ff33
-     BIT_SET_REG                   0x7FFFB
-     BIT_CLR_REG                   0x7FFF7
-*/
-
 #endif
 
 
 
 
    privdata->init_done=1;
-   vetar_msg(KERN_NOTICE "vetar_probe_vme has finished for index %d.\n",index);
+   vetar_dbg(KERN_NOTICE "\nvetar_probe_vme has finished for index %d.\n",index);
    return result;
 
 
@@ -1483,14 +1050,6 @@ int __init vetar_init(void)
 
 	    #endif
 
-
-//	      vetar_devices= (struct vetar_privdata**) kzalloc(VETAR_MAX_DEVICES*sizeof(struct vetar_privdata*), GFP_KERNEL);
-//	      if (vetar_devices == NULL)
-//	            {
-//	              vetar_msg(KERN_ALERT "Could not allocate memory for device list!\n");
-//	              return -ENOMEM;
-//	            }
-
 	    for (i=0;i<vmebase_num;++i)
 	    {
 	       vetar_probe_vme(i);
@@ -1513,8 +1072,7 @@ void vetar_exit(void)
   for(i=0;i<VETAR_MAX_DEVICES;++i)
   {
     if(vetar_devices[i]==0) continue;
-    vetar_cleanup_dev(vetar_devices[i]);
-    vetar_devices[i]=0;
+    vetar_cleanup_dev(vetar_devices[i], i);
   }
   unregister_chrdev_region(vetar_devt, VETAR_MAX_DEVICES);
 
@@ -1534,3 +1092,4 @@ module_exit(vetar_exit);
 MODULE_AUTHOR("Cesar Prados, Joern Adamczewski-Musch, GSI");
 MODULE_DESCRIPTION("VETAR2 VME driver for CES xpc Linux");
 MODULE_LICENSE("GPL");
+MODULE_VERSION(VETARVERSION);
