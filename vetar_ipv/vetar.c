@@ -168,7 +168,7 @@ static void vetar_dump_error_regs()
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////
-#ifdef VETAR_MAP_ELB
+#ifdef VETAR_MAP_ELB_CTRL
 /* switch elb mapping to wb control space*/
 void vetar_elb_switch_control(struct vetar_privdata *privdata)
 {
@@ -176,14 +176,13 @@ void vetar_elb_switch_control(struct vetar_privdata *privdata)
   //ndelay(50);
   vetar_elb_set_window(VETAR_ELB_CONTROL, privdata->ctrl_vmebase);
   privdata->elb_am_mode= VETAR_ELB_CONTROL;
-  ndelay(50); // keep this independent from vme bus delay
-  mb();
+  vetar_elb_delay();
 }
 #else
 #define vetar_elb_switch_control(x) ;
 #endif
 
-#ifdef VETAR_MAP_ELB
+#ifdef VETAR_MAP_ELB_REG
 /* switch elb mapping to wb data space*/
 void vetar_elb_switch_data(struct vetar_privdata *privdata)
 {
@@ -191,15 +190,17 @@ void vetar_elb_switch_data(struct vetar_privdata *privdata)
   //ndelay(50);
   vetar_elb_set_window(VETAR_ELB_DATA, privdata->vmebase);
   privdata->elb_am_mode= VETAR_ELB_DATA;
-  ndelay(50);
-  mb();
+  vetar_elb_delay();
 }
 #else
 #define vetar_elb_switch_data(x) ;
 #endif
 
 
-#ifdef VETAR_MAP_ELB
+
+
+#if defined(VETAR_MAP_ELB_REG) || defined(VETAR_MAP_ELB_CTRL)
+/* switch elb mapping to wb data space*/
 /* switch elb mapping to wb data space*/
 void vetar_elb_switch_triva(struct vetar_privdata *privdata)
 {
@@ -209,8 +210,7 @@ void vetar_elb_switch_triva(struct vetar_privdata *privdata)
   //JAM note: this address TRIGMOD_REGS_ADDR=0x2000000 has high address nibble 0 which is in conflict with ours=5
   // then mbs might see no vme addressing problems unless all read out modules stay below ad=0xF000000 with A32
   privdata->elb_am_mode= VETAR_ELB_TRIVA;
-  ndelay(50);
-  mb();
+  vetar_elb_delay();
 }
 #else
 #define vetar_elb_switch_triva(x) ;
@@ -483,7 +483,7 @@ static void vetar_cleanup_dev(struct vetar_privdata *privdata, unsigned int inde
                     (unsigned int) privdata->ctrl_registers);
     }
 
-#ifndef VETAR_MAP_ELB
+#ifndef VETAR_MAP_ELB_CTRL
   if(privdata->ctrl_regs_phys)
       {
 
@@ -502,7 +502,7 @@ static void vetar_cleanup_dev(struct vetar_privdata *privdata, unsigned int inde
       vetar_dbg(KERN_NOTICE "** vetar_cleanup_dev iounmapped registers 0x%x !\n",
                     (unsigned int) privdata->registers);
     }
-#ifndef VETAR_MAP_ELB
+#ifndef VETAR_MAP_ELB_REG
   if(privdata->regs_phys)
       {
 
@@ -1126,7 +1126,7 @@ vetar_setup_csr_fa(privdata);
 #ifdef VETAR_MAP_REGISTERS
 
 
-#ifdef VETAR_MAP_ELB
+#ifdef VETAR_MAP_ELB_REG
 
 privdata->vme_board_registers.irq = -1;
 privdata->vme_board_registers.base = privdata->vmebase;
@@ -1208,7 +1208,7 @@ privdata->elb_am_mode=VETAR_ELB_DATA; // initialize address window mode
 // JAM: third time for control space:
     privdata->ctrl_reglen=VETAR_CTRLREGS_SIZE;
 
-#ifdef VETAR_MAP_ELB
+#ifdef VETAR_MAP_ELB_CTRL
     privdata->vme_board_ctrl.irq = -1;
     privdata->vme_board_ctrl.base = privdata->ctrl_vmebase;
     privdata->vme_board_ctrl.size = privdata->ctrl_reglen;
@@ -1326,6 +1326,7 @@ privdata->elb_am_mode=VETAR_ELB_DATA; // initialize address window mode
        dev_set_drvdata(privdata->class_dev, privdata);
     vetar_msg(KERN_NOTICE "VETAR device ");
        vetar_msg(KERN_NOTICE VETARNAMEFMT, MINOR(vetar_devt) + privdata->lun);
+    vetar_msg(KERN_NOTICE " has been added. \n");
 
  #ifdef VETAR_SYSFS_ENABLE
   if(device_create_file(privdata->class_dev, &dev_attr_codeversion) != 0)
@@ -1374,7 +1375,7 @@ privdata->elb_am_mode=VETAR_ELB_DATA; // initialize address window mode
    privdata->wb_is_registered=1;
 
 #ifdef VETAR_MAP_CONTROLSPACE
-vetar_msg(KERN_NOTICE "Init control registers\n");
+vetar_dbg(KERN_NOTICE "Init control registers\n");
        
 	iowrite32be(0, privdata->ctrl_registers + EMUL_DAT_WD);
 	vetar_bus_delay();

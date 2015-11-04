@@ -48,8 +48,12 @@
 
 //#define DEBUG 1
 
-/** define this to use ELB bus mapping for PEV1100. otherwise standard pci mapping */
-//#define VETAR_MAP_ELB 1
+/** define this to use ELB bus mapping for PEV1100 on wb register space. otherwise standard pci mapping */
+//#define VETAR_MAP_ELB_REG 1
+
+/** define this to use ELB bus mapping for PEV1100 on wb control space. otherwise standard pci mapping */
+//#define VETAR_MAP_ELB_CTRL 1
+
 
 
 //#define VETAR_ENABLE_IRQ 1
@@ -201,6 +205,12 @@
   ndelay(VETAR_CRCSR_DELAY);
 
 
+#define VETAR_ELB_DELAY 50
+#define vetar_elb_delay()                       \
+  mb();      \
+  ndelay(VETAR_ELB_DELAY);
+
+
 /* Our device's private structure */
 struct vetar_privdata {
 	int			lun;   /* logical device unit */
@@ -228,7 +238,7 @@ struct vetar_privdata {
     unsigned long configlen; /* contains config space length to be mapped */
     uint32_t		vmebase; /* base adress in vme address space for wishbone memory*/
     uint32_t       ctrl_vmebase; /* base adress in vme address space for control memory*/
-#ifdef  VETAR_MAP_ELB
+#ifdef  VETAR_MAP_ELB_REG
     unsigned char elb_am_mode; /* remember last elb address modifier mode: VETAR_ELB_CONTROL or VETAR_ELB_DATA*/
     struct vme_board vme_board_registers; /* for mapping of board register space*/
 #else
@@ -238,7 +248,7 @@ struct vetar_privdata {
     void __iomem *registers; /* kernel mapped address of board register space*/
 	unsigned long reglen; /* contains register length to be mapped */
 
-#ifdef  VETAR_MAP_ELB
+#ifdef  VETAR_MAP_ELB_CTRL
 	struct vme_board vme_board_ctrl; /* for mapping of board control register space*/
 #else
 	 struct pev_ioctl_map_pg pev_vetar_ctrl_regs; /* for mapping of control register space*/
