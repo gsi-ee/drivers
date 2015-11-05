@@ -348,6 +348,22 @@ ssize_t vetar_sysfs_codeversion_show (struct device *dev, struct device_attribut
   curs += snprintf (buf + curs, PAGE_SIZE, "*** This is %s, version %s build on %s at %s \n",
       VETARDESC, VETARVERSION, __DATE__, __TIME__);
   curs += snprintf (buf + curs, PAGE_SIZE, "\tmodule authors: %s \n", VETARAUTHORS);
+  curs += snprintf (buf + curs, PAGE_SIZE, "\tcompiled settings: \n");
+#ifdef VETAR_NEW_XPCLIB
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\tVME windows mapped with new CesXpcBridge lib.\n");
+#else
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\tVME windows mapped with classic xpc lib.\n");
+#endif
+
+
+#ifdef VETAR_ENABLE_IRQ
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\tVETAR Interrupts are enabled.\n");
+#else
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\tVETAR Interrupts are disabled.\n");
+#endif
+  
+  
+  
   return curs;
 }
 

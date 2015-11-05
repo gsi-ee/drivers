@@ -28,7 +28,8 @@ endif
 
 all:
 	make -C $(TOPDIR) SUBDIRS=$(PWD) modules
-
+	@mv wishbone.ko wishbone_$(shell uname -r).ko 
+	@mv vetar.ko vetar_$(shell uname -r).ko 
 
 #install:
 #	install -D -m 644 vetar_wb.ko $(SHL_ROOTDIR)/lib/modules/$(KVER)/ces/vetar_wb.ko
