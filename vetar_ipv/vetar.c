@@ -577,6 +577,25 @@ ssize_t vetar_sysfs_codeversion_show(struct device *dev, struct device_attribute
   curs += snprintf (buf + curs, PAGE_SIZE, "*** This is %s, version %s build on %s at %s \n",
       VETARDESC, VETARVERSION, __DATE__, __TIME__);
   curs += snprintf (buf + curs, PAGE_SIZE, "\tmodule authors: %s \n", VETARAUTHORS);
+  curs += snprintf (buf + curs, PAGE_SIZE, "\tcompiled settings: \n");
+
+#ifdef VETAR_MAP_ELB_REG
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\tWB data window mapped with ELB\n");
+#else
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\tWB data window mapped with PEV1100/PCI\n");
+#endif
+#ifdef VETAR_MAP_ELB_CTRL
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\tWB ctrl window mapped with ELB\n");
+#else
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\tWB ctrl window mapped with PEV1100/PCI\n");
+#endif
+#ifdef VETAR_ENABLE_IRQ
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\tVETAR Interrupts are enabled.\n");
+#else
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\tVETAR Interrupts are disabled.\n");
+#endif
+
+
   return curs;
 }
 
@@ -1198,7 +1217,7 @@ privdata->elb_am_mode=VETAR_ELB_DATA; // initialize address window mode
 
 
     mb();
-    vetar_msg(KERN_NOTICE "** vetar_probe_vme remapped vme base 0x%x to kernel address 0x%lx\n",
+    vetar_dbg(KERN_NOTICE "** vetar_probe_vme remapped vme base 0x%x to kernel address 0x%lx\n",
           (unsigned int) privdata->vmebase,  (unsigned long) privdata->registers);
 
 #endif
@@ -1280,7 +1299,7 @@ privdata->elb_am_mode=VETAR_ELB_DATA; // initialize address window mode
 ///////////////////////// JAM end third region
 
      mb();
-     vetar_msg(KERN_NOTICE "** vetar_probe_vme remapped control vme base address 0x%x to kernel address 0x%lx\n",
+     vetar_dbg(KERN_NOTICE "** vetar_probe_vme remapped control vme base address 0x%x to kernel address 0x%lx\n",
            (unsigned int) privdata->ctrl_vmebase,  (unsigned long) privdata->ctrl_registers);
 
 
@@ -1324,9 +1343,11 @@ privdata->elb_am_mode=VETAR_ELB_DATA; // initialize address window mode
                        VETARNAMEFMT, MINOR(vetar_devt) + privdata->lun);
  #endif
        dev_set_drvdata(privdata->class_dev, privdata);
-    vetar_msg(KERN_NOTICE "VETAR device ");
-       vetar_msg(KERN_NOTICE VETARNAMEFMT, MINOR(vetar_devt) + privdata->lun);
-    vetar_msg(KERN_NOTICE " has been added. \n");
+//    vetar_msg(KERN_NOTICE "VETAR device ");
+//       vetar_msg(KERN_NOTICE VETARNAMEFMT, MINOR(vetar_devt) + privdata->lun);
+//    vetar_msg(KERN_NOTICE " has been added. \n");
+
+    vetar_msg(KERN_NOTICE "VETAR device:\t "VETARNAMEFMT" has been added. \n", MINOR(vetar_devt) + privdata->lun);
 
  #ifdef VETAR_SYSFS_ENABLE
   if(device_create_file(privdata->class_dev, &dev_attr_codeversion) != 0)

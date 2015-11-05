@@ -1,8 +1,9 @@
 #!/bin/sh
-module="vetar"
+KV=`uname -r`
+module="vetar_$KV"
 modulex="vetar"
 device="vetar"
-wishmodule="wishbone"
+wishmodule="wishbone_$KV"
 wishbone="wbm"
 wishboneslave="wbs"
 

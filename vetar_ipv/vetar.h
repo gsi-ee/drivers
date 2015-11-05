@@ -6,7 +6,8 @@
 * Released according to the GNU GPL, version 2 or any later version
 *
 * Driver for VETAR VME board for IPV Linux
-* last changed: 20-October-2015 by JAM
+* last changes:
+* 05.November 2015 JAM - provide MBS installation version: no ELB mapping, no interrupt handling
 */
 #ifndef __VETARIPV_H__
 #define __VETARIPV_H__

@@ -4,14 +4,15 @@
 #    filename : Makefile
 #    author   : JFG
 #    company  : IOxOS
-#    creation : may 15,2009
-#    version  : 0.0.1
+#    creation : may 15,2009 - nov 5 2015 
+#    version  : 0.0.2
 #
 #----------------------------------------------------------------------------
 #  Description
 #
 #    This Makefile allows to build the device driver module for the PEV1100
 #    hotplug driver
+#	 JAM: added appending of kernel version to module name
 #
 #----------------------------------------------------------------------------
 #  Copyright Notice
@@ -30,7 +31,6 @@
 #=============================< end file header >============================
 obj-m := vetar.o wishbone.o
 
-#trigmod-objs := vmetrigmod.o
 KERNELDIR = /rootfs_ppc/usr/src/linux
 ARCH      = powerpc
 CROSS_COMPILE = /tools_ppc/powerpc-linux-gnuspe-
@@ -38,5 +38,7 @@ ADD_CFLAGS=-DPPC
 PWD := $(shell pwd)
 default:
 	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNELDIR) M=$(PWD) modules
+	@mv wishbone.ko wishbone_$(shell uname -r).ko 
+	@mv vetar.ko vetar_$(shell uname -r).ko 
 clean:
 	$(RM) *.o *.ko *.mod.c
