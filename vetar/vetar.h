@@ -8,6 +8,7 @@
  *
  * Last Changes:
  *  03.November 2015 JAM - cleanup, remove redundant parts used for initial tests
+ *  05.November 2015 JAM - adjusted for kernel 2.6.33, bug fixes in  VETAR_NEW_XPCLIB part
  */
 #ifndef __VETAR_H__
 #define __VETAR_H__
@@ -33,6 +34,9 @@
 // switch on debug output in dmesg
 //#define DEBUG 1
 
+
+
+
 #define VETAR_SYSFS_ENABLE 1
 #define VETAR_ENABLE_IRQ 1
 #define VETAR_MAP_REGISTERS 1
@@ -40,8 +44,10 @@
 
 #define VETAR_CONFIGSIZE 0x80000 /* size of cr/csr space if any*/
 #define VETAR_REGS_ADDR   0x1000000 /* this is default*/
-#define VETAR_REGS_SIZE     0x1000000;
+#define VETAR_REGS_SIZE     0x1000000
 #define VETAR_CTRLREGS_SIZE 0xA0
+
+#define VETAR_VTRANS_BASE 0x800000000ULL
 
 #define CONTROL_REGISTER 0
 #define ERROR_FLAG    0

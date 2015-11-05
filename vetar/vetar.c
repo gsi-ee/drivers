@@ -73,7 +73,11 @@ static unsigned int vetar_read_data (struct vetar_privdata *privdata, unsigned l
 {
   unsigned int dat = 0;
 #ifdef VETAR_MAP_REGISTERS
+#ifdef VETAR_VTRANS
+  dat = *((u32*) (privdata->registers + offset));
+#else
   dat = be32_to_cpu (ioread32be (privdata->registers + offset));
+#endif
   vetar_bus_delay();
 #endif
   return dat;
@@ -84,7 +88,11 @@ static unsigned int vetar_read_data (struct vetar_privdata *privdata, unsigned l
 static void vetar_write_data (struct vetar_privdata *privdata, unsigned int dat, unsigned long offset)
 {
 #ifdef VETAR_MAP_REGISTERS
+#ifdef VETAR_VTRANS
+  *((u32*) (privdata->registers + offset))=dat;
+#else
   iowrite32be (cpu_to_be32 (dat), privdata->registers + offset);
+#endif
   vetar_bus_delay()
   ;
 #endif
@@ -354,7 +362,11 @@ ssize_t vetar_sysfs_codeversion_show (struct device *dev, struct device_attribut
 #else
   curs += snprintf (buf + curs, PAGE_SIZE, "\t\tVME windows mapped with classic xpc lib.\n");
 #endif
-
+#ifdef VETAR_VTRANS
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\twb data window uses VTRANS mapping\n");
+#else
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\twb data window uses CesXpcBridge_MasterMap64.\n");
+#endif
 
 #ifdef VETAR_ENABLE_IRQ
   curs += snprintf (buf + curs, PAGE_SIZE, "\t\tVETAR Interrupts are enabled.\n");
@@ -593,7 +605,8 @@ static int vetar_probe_vme (unsigned int index)
 {
   int result = 0;
   int err = 0;
-  xpc_vme_type_e am = 0;
+  //xpc_vme_type_e am = 0;
+  u32 am=0;
   struct vetar_privdata *privdata;
   vetar_msg(KERN_NOTICE "VETAR vme driver starts probe for index %d\n",index);
   vetar_msg(KERN_NOTICE "Use parameters address 0x%x, slot number 0x%x, lun 0x%x vector 0x%x\n",
@@ -630,10 +643,18 @@ static int vetar_probe_vme (unsigned int index)
    * it will be translated on accessing the vmebus to the correct CS_CSR modifier 0x2f */
   /*am=VME_CR_CSR; this one will not work for xpc*/
 #ifdef VETAR_NEW_XPCLIB
+
+    vme_bridge = CesXpcBridge_GetByName("VME Bridge");
+    if (!vme_bridge) {
+        vetar_msg(KERN_ERR "** vetar_probe_vme could not access CesXpcBridge!\n");
+        vetar_cleanup_dev(privdata, index);
+        return -ENOSYS;
+    }
+
   privdata->cr_csr_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->configbase, privdata->configlen, am);
   if (privdata->cr_csr_phys == 0xffffffffffffffffULL)
   {
-    vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at configbase 0x%x with length 0x%x !\n",
+    vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at configbase 0x%x with length 0x%lx !\n",
         privdata->configbase, privdata->configlen);
     vetar_cleanup_dev(privdata, index);
     return -ENOMEM;
@@ -690,15 +711,25 @@ static int vetar_probe_vme (unsigned int index)
 #ifdef VETAR_MAP_REGISTERS
   // map register space:
 #ifdef VETAR_NEW_XPCLIB
+
+#ifdef  VETAR_VTRANS
+  // in vtrans case, we have already premapped bus addresses
+  privdata->regs_phys =VETAR_VTRANS_BASE + privdata->vmebase;
+
+#else
   privdata->regs_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->vmebase, privdata->reglen, XPC_VME_A32_STD_USER);
   if (privdata->regs_phys == 0xffffffffffffffffULL)
   {
-    vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at vmebase 0x%x with length 0x%x !\n",
+    vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at vmebase 0x%x with length 0x%lx !\n",
         privdata->vmebase, privdata->reglen);
     vetar_cleanup_dev(privdata, index);
     return -ENOMEM;
   }
+#endif   // VTRANS
 #else
+
+
+
   privdata->regs_phys = xpc_vme_master_map (privdata->vmebase, 0, privdata->reglen, XPC_VME_A32_STD_USER, 0);
   if (privdata->regs_phys == 0xffffffffULL)
   {
@@ -707,7 +738,7 @@ static int vetar_probe_vme (unsigned int index)
     vetar_cleanup_dev (privdata, index);
     return -ENOMEM;
   }
-#endif
+#endif // NEWXPCLIB
   mb();
   vetar_dbg(
       KERN_NOTICE "** vetar_probe_vme mapped vmebase 0x%x with length 0x%lx to physical address 0x%x!\n", privdata->vmebase, privdata->reglen, (unsigned int) privdata->regs_phys);
@@ -733,11 +764,11 @@ static int vetar_probe_vme (unsigned int index)
   //am = VME_A24_USER_MBLT; this is real AM on vmebus, will be set by the XPC definitions JAM
 
 #ifdef VETAR_NEW_XPCLIB
-  privdata->ctrl_regs_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->ctrl_vmebase, privdata->reglen, am);
-  if (privdata->regs_phys == 0xffffffffffffffffULL)
+  privdata->ctrl_regs_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->ctrl_vmebase, privdata->ctrl_reglen, am);
+  if (privdata->ctrl_regs_phys == 0xffffffffffffffffULL)
   {
-    vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at vmebase 0x%x with length 0x%x !\n",
-        privdata->ctrl_vmebase, privdata->reglen);
+    vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at vmebase 0x%x with length 0x%lx !\n",
+        privdata->ctrl_vmebase, privdata->ctrl_reglen);
     vetar_cleanup_dev(privdata, index);
     return -ENOMEM;
   }
@@ -767,6 +798,21 @@ static int vetar_probe_vme (unsigned int index)
       KERN_NOTICE "** vetar_probe_vme remapped physical address 0x%x to kernel address 0x%lx\n", (unsigned int) privdata->ctrl_regs_phys, (unsigned long) privdata->ctrl_registers);
 
 #endif
+
+
+#ifdef VETAR_NEW_XPCLIB
+    vetar_msg("VETAR VME windows are mapped with CesXpcBridge lib.\n");
+#else
+    vetar_msg("VETAR VME windows are mapped with classic xpc lib.\n");
+#endif
+
+#ifdef VETAR_VTRANS
+    vetar_msg("wb data window uses VTRANS mapping\n");
+#else
+    vetar_msg("wb data window uses CesXpcBridge_MasterMap64.\n");
+#endif
+
+
 
   /* this is wishbone mutex:*/
   mutex_init(&privdata->wb_mutex);
@@ -798,9 +844,8 @@ static int vetar_probe_vme (unsigned int index)
         VETARNAMEFMT, MINOR(vetar_devt) + privdata->lun);
 #endif
     dev_set_drvdata (privdata->class_dev, privdata);
-    vetar_msg(KERN_NOTICE "VETAR device ");
-    vetar_msg(KERN_NOTICE VETARNAMEFMT, MINOR(vetar_devt) + privdata->lun);
-    vetar_msg(KERN_NOTICE " has been added. \n");
+
+    vetar_msg(KERN_NOTICE "VETAR device:\t "VETARNAMEFMT" has been added. \n", MINOR(vetar_devt) + privdata->lun);
 
 #ifdef VETAR_SYSFS_ENABLE
     if (device_create_file (privdata->class_dev, &dev_attr_codeversion) != 0)
@@ -844,6 +889,8 @@ static int vetar_probe_vme (unsigned int index)
     vetar_cleanup_dev (privdata, index);
     return err;
   }
+
+  privdata->wb_is_registered=1;
 #ifdef VETAR_MAP_CONTROLSPACE
   vetar_dbg(KERN_NOTICE "Init control registers\n");
 
@@ -854,6 +901,10 @@ static int vetar_probe_vme (unsigned int index)
   iowrite32be (0, privdata->ctrl_registers + MASTER_CTRL);
 	vetar_bus_delay();
 #endif
+
+
+
+
  privdata->init_done = 1;
  vetar_dbg(KERN_NOTICE "\nvetar_probe_vme has finished for index %d.\n", index);
    return result;
