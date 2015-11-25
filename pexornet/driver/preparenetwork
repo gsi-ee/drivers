@@ -1,0 +1,7 @@
+#!/bin/bash
+# JAM helper script to prepare network setup of diskless system
+# after reboot. Later these things will be put to boot server permanently
+cp /etc/networks /etc/networks.orig
+cp /etc/hosts /etc/hosts.orig
+cp -f ./etchosts /etc/hosts
+cp -f ./etcnetworks /etc/networks
