@@ -15,7 +15,7 @@ EXTRA_CFLAGS +=  -I$(SHL_ROOTDIR)/usr/include/ces/cesXpcLib
 
 ifeq ($(KV), 2.6.33.7-shl-3.3-up)
 EXTRA_CFLAGS += -DVETAR_NEW_XPCLIB
-#EXTRA_CFLAGS += -DVETAR_VTRANS
+EXTRA_CFLAGS += -DVETAR_VTRANS
 endif
 
 EXTRA_CFLAGS += -D__Linux__

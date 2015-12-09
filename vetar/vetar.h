@@ -47,7 +47,9 @@
 #define VETAR_REGS_SIZE     0x1000000
 #define VETAR_CTRLREGS_SIZE 0xA0
 
-#define VETAR_VTRANS_BASE 0x800000000ULL
+#define VETAR_VTRANS_BASE_A32 0x800000000ULL
+#define VETAR_VTRANS_BASE_A24 0x8FF000000ULL
+
 
 #define CONTROL_REGISTER 0
 #define ERROR_FLAG    0
@@ -76,7 +78,7 @@
 #define VME_A32_SUP_DATA_SCT 0x0d
 #define VME_CR_CSR 0x2f
 
-#define VETARVERSION     "1.1.0"
+#define VETARVERSION     "1.1.1"
 #define VETARAUTHORS     "Joern Adamczewski-Musch, Cesar Prados, GSI Darmstadt (www.gsi.de)"
 #define VETARDESC        "VETAR2 xpc/VME driver for CES RIO4 Linux"
 

@@ -363,9 +363,9 @@ ssize_t vetar_sysfs_codeversion_show (struct device *dev, struct device_attribut
   curs += snprintf (buf + curs, PAGE_SIZE, "\t\tVME windows mapped with classic xpc lib.\n");
 #endif
 #ifdef VETAR_VTRANS
-  curs += snprintf (buf + curs, PAGE_SIZE, "\t\twb data window uses VTRANS mapping\n");
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\twb data and control windows use VTRANS mapping\n");
 #else
-  curs += snprintf (buf + curs, PAGE_SIZE, "\t\twb data window uses CesXpcBridge_MasterMap64.\n");
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\twb data and control windows use CesXpcBridge_MasterMap64.\n");
 #endif
 
 #ifdef VETAR_ENABLE_IRQ
@@ -714,7 +714,7 @@ static int vetar_probe_vme (unsigned int index)
 
 #ifdef  VETAR_VTRANS
   // in vtrans case, we have already premapped bus addresses
-  privdata->regs_phys =VETAR_VTRANS_BASE + privdata->vmebase;
+  privdata->regs_phys =VETAR_VTRANS_BASE_A32 + privdata->vmebase;
 
 #else
   privdata->regs_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->vmebase, privdata->reglen, XPC_VME_A32_STD_USER);
@@ -764,6 +764,12 @@ static int vetar_probe_vme (unsigned int index)
   //am = VME_A24_USER_MBLT; this is real AM on vmebus, will be set by the XPC definitions JAM
 
 #ifdef VETAR_NEW_XPCLIB
+#ifdef  VETAR_VTRANS
+  // in vtrans case, we have already premapped bus addresses
+  privdata->ctrl_regs_phys =VETAR_VTRANS_BASE_A24 + privdata->ctrl_vmebase;
+#else
+
+
   privdata->ctrl_regs_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->ctrl_vmebase, privdata->ctrl_reglen, am);
   if (privdata->ctrl_regs_phys == 0xffffffffffffffffULL)
   {
@@ -772,6 +778,7 @@ static int vetar_probe_vme (unsigned int index)
     vetar_cleanup_dev(privdata, index);
     return -ENOMEM;
   }
+#endif
 #else
   privdata->ctrl_regs_phys = xpc_vme_master_map (privdata->ctrl_vmebase, 0, privdata->ctrl_reglen, am, 0);
   if (privdata->ctrl_regs_phys == 0xffffffffULL)
@@ -807,9 +814,9 @@ static int vetar_probe_vme (unsigned int index)
 #endif
 
 #ifdef VETAR_VTRANS
-    vetar_msg("wb data window uses VTRANS mapping\n");
+    vetar_msg("wb data and control windows use VTRANS mapping\n");
 #else
-    vetar_msg("wb data window uses CesXpcBridge_MasterMap64.\n");
+    vetar_msg("wb data and control windows use CesXpcBridge_MasterMap64.\n");
 #endif
 
 
