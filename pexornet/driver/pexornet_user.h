@@ -18,10 +18,14 @@
 #define PEXORNETVERSION  "0.1"
 
 /** identify name in dev : */
-#define PEXORNETNAME 		"pexornet"
+#define PEXORNETNAME 	 "pexornet"
+#define PEXORIFNAMEFMT   "pex%d"
+
 #define PEXORNAMEFMT 	"pexor%d"
 #define PEXARIANAMEFMT  "pexaria%d"
 #define KINPEXNAMEFMT   "kinpex%d"
+
+
 
 
 

@@ -15,6 +15,9 @@
 
 #include "pexornet_user.h"
 
+#include <net/if.h>
+#include <netinet/in.h>
+
 #ifdef PEXORNET_NOMBS
 #define printm printf
 #else
@@ -32,36 +35,45 @@ void printm (char *, ...); /* use mbs logger, or for gosipcmd this will be reimp
 
 
 #define pexornet_assert_handle(handle)                                    \
-  if(handle < 0)                                  \
+  if((handle==0) || (handle->fSockhandle <=0))                                  \
     {                                                                   \
-      printm("Error: illegal file handle %d \n", \
-                handle);                            \
+      printm("Error: illegal pexornet handle %d, socket:%d \n", \
+                handle, (handle ? handle->fSockhandle : 0));                            \
       return -1;                                                   \
     }
 
+/** This is general ioctle handle structure.
+ * It is created at pexornet_open() time and destroyed at pexornet_close()
+ * Any process/thread using this library has individual handle*/
+typedef struct
+{
+  int fSockhandle;        /**< socket file handle*/
+  struct ifreq fIfreq;    /**< socket file handle*/
+} pexornet_handle_t;
+
 /** open file handle of pex device number devnum. Return value is handle*/
-int pexornet_open (int devnum);
+pexornet_handle_t* pexornet_open (int devnum);
 
 /** close file handle*/
-int pexornet_close (int handle);
+int pexornet_close (pexornet_handle_t* handle);
 
 /** reset dma and sfp engines */
-int pexornet_reset (int handle);
+int pexornet_reset (pexornet_handle_t* handle);
 
 /** read data word *l_dat from sfp, slave and memory offset l_slave_off*/
-int pexornet_slave_rd (int handle, long l_sfp, long l_slave, long l_slave_off, long *l_dat);
+int pexornet_slave_rd (pexornet_handle_t*, long l_sfp, long l_slave, long l_slave_off, long *l_dat);
 
 /** write data word l_dat to sfp, slave and memory offset l_slave_off*/
-int pexornet_slave_wr (int handle, long l_sfp, long l_slave, long l_slave_off, long l_dat);
+int pexornet_slave_wr (pexornet_handle_t* handle, long l_sfp, long l_slave, long l_slave_off, long l_dat);
 
 /** initialize chain at l_sfp with l_s_slaves number of slaves*/
-int pexornet_slave_init (int handle, long l_sfp, long l_n_slaves);
+int pexornet_slave_init (pexornet_handle_t* handle, long l_sfp, long l_n_slaves);
 
 /** write block of configuration data to driver*/
-int pexornet_slave_config (int handle, struct pex_bus_config* config);
+int pexornet_slave_config (pexornet_handle_t* handle, struct pex_bus_config* config);
 
 /** retrieve actual slave configuration at sfp chains and put to external structure*/
-int pexornet_get_configured_slaves(int handle , struct pex_sfp_links* setup);
+int pexornet_get_configured_slaves(pexornet_handle_t* handle , struct pex_sfp_links* setup);
 
 
 #endif

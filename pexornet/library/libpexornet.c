@@ -8,45 +8,63 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include <stdlib.h>
+
 
 #define RON  "\x1B[7m"
 #define RES  "\x1B[0m"
 
 
-
-int pexornet_open(int devnum)
+pexornet_handle_t* pexornet_open(int devnum)
 {
-  int filehandle,errsv;
-  char devname[64];
-  char fname[256];
-
-  snprintf(devname,64,PEXORNAMEFMT, devnum);
-  snprintf(fname,256,"/dev/%s",devname);
-  /*printm("pexornet: opening %s...\n",fname);*/
-  filehandle = open(fname, O_RDWR );
-  errsv = errno;
-
-  if (filehandle < 0)
+  int sockhandle,errsv;
+  sockhandle=socket(AF_INET,SOCK_DGRAM,0);
+  errsv=errno;
+  if (sockhandle < 0)
   {
-    printm("pexornet: error %d (%s) opening device %s...\n",errsv, strerror(errsv), fname);
+    printm("pexornet: error %d (%s) opening socket handle for interface %d...\n",errsv, strerror(errsv), devnum);
+    return 0;
   }
-  return filehandle;
+  pexornet_handle_t* handle= (pexornet_handle_t*) malloc(sizeof(pexornet_handle_t));
+  errsv=errno;
+  if(handle==0)
+  {
+    printm("pexornet: error %d (%s) allocating handle memory for interface %d...\n",errsv, strerror(errsv), devnum);
+    return 0;
+  }
+  memset(handle,0,sizeof(pexornet_handle_t));
+  handle->fSockhandle=sockhandle;
+  snprintf(handle->fIfreq.ifr_name,sizeof(handle->fIfreq.ifr_name),PEXORIFNAMEFMT, devnum);
+  //printm("pexornet: opening socket for interface %s...\n",handle->fIfreq.ifr_name);
+
+
+  return handle;
 }
 
-int pexornet_close(int handle)
+int pexornet_close(pexornet_handle_t* handle)
 {
+  int res=0, errsv=0;
   pexornet_assert_handle(handle);
-  close(handle);
-  /* add all cleanup actions here*/
+  res=close(handle->fSockhandle);
+  errsv=errno;
+  if(res<0)
+    {
+      printm("pexornet: error %d (%s) closing socket handle for %s...\n",errsv, strerror(errsv), handle->fIfreq.ifr_name);
+      return res;
+    }
+  free(handle);
+  /* add other cleanup actions here*/
+  return res;
 }
 
 
-int pexornet_reset (int handle)
+int pexornet_reset (pexornet_handle_t* handle)
 {
   int rev, errsv=0;;
   pexornet_assert_handle(handle);
+
   printm ("pexornet: resetting pex device\n");
-  rev = ioctl (handle, PEX_IOC_RESET);
+  rev = ioctl (handle->fSockhandle, PEXORNET_IOC_RESET, &(handle->fIfreq));
   errsv = errno;
     if (rev)
     {
@@ -57,28 +75,31 @@ int pexornet_reset (int handle)
 
 /*****************************************************************************/
 
-int  pexornet_slave_init (int handle, long l_sfp, long l_n_slaves)
+int  pexornet_slave_init (pexornet_handle_t* handle, long l_sfp, long l_n_slaves)
 
 {
 
   int rev = 0, errsv=0;
   struct pexornet_bus_io descriptor;
+
   pexornet_assert_handle(handle);
   descriptor.sfp = l_sfp;
   descriptor.slave = l_n_slaves;
+  handle->fIfreq.ifr_data= (void*) &descriptor;
   printm ("pexornet: initialize SFP chain %d with %d slaves\n", l_sfp, l_n_slaves);
-  rev = ioctl (handle, PEX_IOC_INIT_BUS, &descriptor);
+  rev = ioctl (handle->fSockhandle, PEXORNET_IOC_INIT_BUS, &(handle->fIfreq));
   errsv = errno;
   if (rev)
   {
     printm ("\n\nError %d  on initializing channel %lx, maxdevices %lx - %s\n", errsv, l_sfp, l_n_slaves, strerror (errsv));
   }
+  handle->fIfreq.ifr_data=0;
   return rev;
 }
 
 
 /*****************************************************************************/
-int pexornet_slave_wr (int handle, long l_sfp, long l_slave, long l_slave_off, long l_dat)
+int pexornet_slave_wr (pexornet_handle_t* handle, long l_sfp, long l_slave, long l_slave_off, long l_dat)
 {
   int rev = 0, errsv=0;
   struct pexornet_bus_io descriptor;
@@ -88,56 +109,56 @@ int pexornet_slave_wr (int handle, long l_sfp, long l_slave, long l_slave_off, l
   descriptor.value = l_dat;
   descriptor.sfp = l_sfp;
   descriptor.slave = l_slave;
-  rev = ioctl (handle, PEX_IOC_WRITE_BUS, &descriptor);
+  handle->fIfreq.ifr_data= (void*) &descriptor;
+  rev = ioctl (handle->fSockhandle, PEXORNET_IOC_WRITE_BUS, &(handle->fIfreq));
   errsv = errno;
   if (rev)
   {
     printm (RON"ERROR>>"RES"Error %d  on writing value 0x%lx to address 0x%lx (sfp:%d, slave:%d)- %s\n", errsv, l_dat,  l_slave_off, l_sfp,
         l_slave, strerror (errsv));
   }
+  handle->fIfreq.ifr_data=0;
   return rev;
 }
 
-int pexornet_slave_config (int handle, struct pexornet_bus_config* config)
+int pexornet_slave_config (pexornet_handle_t* handle, struct pexornet_bus_config* config)
 {
   int rev = 0, errsv=0, i=0;
   pexornet_assert_handle(handle);
   if(!config) return -EINVAL;
-  /* need to copy config structure to stack?*/
-//  struct pexornet_bus_config theConfig;
-//  for(i=0;(i<config->numpars) && (i< PEX_MAXCONFIG_VALS);++i){
-//    theConfig.param[i]=config->param[i];
-//    printf("pexornet_slave_config- s:%d d:%d a:0x%x val:0x%x\n",
-//        theConfig.param[i].sfp, theConfig.param[i].slave,theConfig.param[i].address,theConfig.param[i].value);
-//  }
-//  theConfig.numpars=config->numpars;
-  rev = ioctl (handle, PEX_IOC_CONFIG_BUS, config);
+
+  handle->fIfreq.ifr_data= (void*) config;
+  rev = ioctl (handle->fSockhandle, PEXORNET_IOC_CONFIG_BUS, &(handle->fIfreq));
    errsv = errno;
     if (rev)
     {
       printm (RON"ERROR>>"RES"Error %d  on writing configuration to bus- %s\n", errsv, strerror (errsv));
     }
+    handle->fIfreq.ifr_data=0;
     return rev;
 }
 
-int pexornet_get_configured_slaves(int handle , struct pexornet_sfp_links* setup)
+int pexornet_get_configured_slaves(pexornet_handle_t* handle , struct pexornet_sfp_links* setup)
 {
   int rev = 0, errsv = 0;
   pexornet_assert_handle(handle);
-  rev = ioctl (handle, PEXORNET_IOC_GET_SFP_LINKS, setup);
-    errsv = errno;
-    if (rev)
+  handle->fIfreq.ifr_data= (void*) setup;
+  rev = ioctl (handle->fSockhandle, PEXORNET_IOC_GET_SFP_LINKS,  &(handle->fIfreq));
+
+  errsv = errno;
+  if (rev)
     {
       printm (RON"ERROR>>"RES"Error %d  on retrieving slave link configuration- %s\n", errsv, strerror (errsv));
     }
-    return rev;
+  handle->fIfreq.ifr_data=0;
+  return rev;
 }
 
 
 
 
 /*****************************************************************************/
-int pexornet_slave_rd (int handle, long l_sfp, long l_slave, long l_slave_off, long *l_dat)
+int pexornet_slave_rd (pexornet_handle_t* handle, long l_sfp, long l_slave, long l_slave_off, long *l_dat)
 {
   int rev = 0, errsv=0;
   struct pexornet_bus_io descriptor;
@@ -146,15 +167,18 @@ int pexornet_slave_rd (int handle, long l_sfp, long l_slave, long l_slave_off, l
   descriptor.value = 0;
   descriptor.sfp = l_sfp;
   descriptor.slave = l_slave;
-  rev = ioctl (handle, PEX_IOC_READ_BUS, &descriptor);
+  handle->fIfreq.ifr_data= (void*) &descriptor;
+  rev = ioctl (handle->fSockhandle, PEXORNET_IOC_READ_BUS, &(handle->fIfreq));
+  handle->fIfreq.ifr_data=0;
   errsv = errno;
   if (rev)
   {
-    printm (RON"ERROR>>"RES" Error %d  on reading from address %0xlx (sfp:%d, slave:%d)- %s\n", errsv, l_slave_off, l_sfp, l_slave,
+    printm (RON"ERROR>>"RES" Error %d  on reading from address 0x%lx (sfp:%d, slave:%d)- %s\n", errsv, l_slave_off, l_sfp, l_slave,
         strerror (errsv));
     return rev;
   }
   *l_dat = descriptor.value;
+  //printm("pexornet_slave_rd on sfp:%d sl:%d has value(0x%x)=0x%x\n",l_sfp,l_slave, l_slave_off, *l_dat);
   return 0;
 
 }
