@@ -11,8 +11,6 @@
 #include <stdlib.h>
 
 
-#define RON  "\x1B[7m"
-#define RES  "\x1B[0m"
 
 
 pexornet_handle_t* pexornet_open(int devnum)
@@ -91,7 +89,7 @@ int  pexornet_slave_init (pexornet_handle_t* handle, long l_sfp, long l_n_slaves
   errsv = errno;
   if (rev)
   {
-    printm ("\n\nError %d  on initializing channel %lx, maxdevices %lx - %s\n", errsv, l_sfp, l_n_slaves, strerror (errsv));
+    printm ("pexornet: \n\nError %d  on initializing channel %lx, maxdevices %lx - %s\n", errsv, l_sfp, l_n_slaves, strerror (errsv));
   }
   handle->fIfreq.ifr_data=0;
   return rev;
@@ -114,7 +112,7 @@ int pexornet_slave_wr (pexornet_handle_t* handle, long l_sfp, long l_slave, long
   errsv = errno;
   if (rev)
   {
-    printm (RON"ERROR>>"RES"Error %d  on writing value 0x%lx to address 0x%lx (sfp:%d, slave:%d)- %s\n", errsv, l_dat,  l_slave_off, l_sfp,
+    printm ("pexornet:"RON"ERROR>>"RES"Error %d  on writing value 0x%lx to address 0x%lx (sfp:%d, slave:%d)- %s\n", errsv, l_dat,  l_slave_off, l_sfp,
         l_slave, strerror (errsv));
   }
   handle->fIfreq.ifr_data=0;
@@ -132,7 +130,7 @@ int pexornet_slave_config (pexornet_handle_t* handle, struct pexornet_bus_config
    errsv = errno;
     if (rev)
     {
-      printm (RON"ERROR>>"RES"Error %d  on writing configuration to bus- %s\n", errsv, strerror (errsv));
+      printm ("pexornet:"RON"ERROR>>"RES"Error %d  on writing configuration to bus- %s\n", errsv, strerror (errsv));
     }
     handle->fIfreq.ifr_data=0;
     return rev;
@@ -148,7 +146,7 @@ int pexornet_get_configured_slaves(pexornet_handle_t* handle , struct pexornet_s
   errsv = errno;
   if (rev)
     {
-      printm (RON"ERROR>>"RES"Error %d  on retrieving slave link configuration- %s\n", errsv, strerror (errsv));
+      printm ("pexornet:"RON"ERROR>>"RES"Error %d  on retrieving slave link configuration- %s\n", errsv, strerror (errsv));
     }
   handle->fIfreq.ifr_data=0;
   return rev;
@@ -173,7 +171,7 @@ int pexornet_slave_rd (pexornet_handle_t* handle, long l_sfp, long l_slave, long
   errsv = errno;
   if (rev)
   {
-    printm (RON"ERROR>>"RES" Error %d  on reading from address 0x%lx (sfp:%d, slave:%d)- %s\n", errsv, l_slave_off, l_sfp, l_slave,
+    printm ("pexornet:"RON"ERROR>>"RES" Error %d  on reading from address 0x%lx (sfp:%d, slave:%d)- %s\n", errsv, l_slave_off, l_sfp, l_slave,
         strerror (errsv));
     return rev;
   }
@@ -184,7 +182,76 @@ int pexornet_slave_rd (pexornet_handle_t* handle, long l_sfp, long l_slave, long
 }
 
 
+int pexornet_acquisition_start(pexornet_handle_t* handle)
+{
+  int rev = 0, errsv=0;
+  struct pexornet_trixor_set descriptor;
+  pexornet_assert_handle(handle);
+  descriptor.command=PEXORNET_TRIX_GO;
+  handle->fIfreq.ifr_data= (void*) &descriptor;
+  printm("STA pexornet_acquisition_start for interface %s...\n",handle->fIfreq.ifr_name);
+  rev = ioctl (handle->fSockhandle, PEXORNET_IOC_SET_TRIXOR, &(handle->fIfreq));
+  handle->fIfreq.ifr_data=0;
+  errsv = errno;
+   if (rev)
+   {
+     printm ("pexornet:"RON"ERROR>>"RES" Error %d  on starting acquisition - %s\n", errsv,  strerror (errsv));
+   }
 
+   return rev;
+}
 
+int pexornet_acquisition_stop(pexornet_handle_t* handle)
+{
+
+  int rev = 0, errsv=0;
+   struct pexornet_trixor_set descriptor;
+   pexornet_assert_handle(handle);
+   descriptor.command=PEXORNET_TRIX_HALT;
+   handle->fIfreq.ifr_data= (void*) &descriptor;
+   printm("STO pexornet_acquisition_stop for interface %s...\n",handle->fIfreq.ifr_name);
+   rev = ioctl (handle->fSockhandle, PEXORNET_IOC_SET_TRIXOR, &(handle->fIfreq));
+   handle->fIfreq.ifr_data=0;
+   errsv = errno;
+    if (rev)
+    {
+      printm ("pexornet:"RON"ERROR>>"RES" Error %d  on starting acquisition - %s\n", errsv,  strerror (errsv));
+    }
+    return rev;
+}
+int pexornet_trigger_reset(pexornet_handle_t* handle)
+{
+  int rev = 0, errsv=0;
+  struct pexornet_trixor_set descriptor;
+  pexornet_assert_handle(handle);
+  descriptor.command=PEXORNET_TRIX_RES;
+  handle->fIfreq.ifr_data= (void*) &descriptor;
+  rev = ioctl (handle->fSockhandle, PEXORNET_IOC_SET_TRIXOR, &(handle->fIfreq));
+  handle->fIfreq.ifr_data=0;
+  errsv = errno;
+      if (rev)
+      {
+        printm ("pexornet:"RON"ERROR>>"RES" Error %d  on trigger reset - %s\n", errsv,  strerror (errsv));
+      }
+return rev;
+}
+
+int pexornet_trigger_timeset(pexornet_handle_t* handle, unsigned short fctime, unsigned short cvtime)
+{
+   int rev = 0, errsv=0;
+   struct pexornet_trixor_set descriptor;
+   descriptor.command=PEXORNET_TRIX_TIMESET;
+   descriptor.fct=fctime;
+   descriptor.cvt=cvtime;
+   handle->fIfreq.ifr_data= (void*) &descriptor;
+   rev = ioctl (handle->fSockhandle, PEXORNET_IOC_SET_TRIXOR, &(handle->fIfreq));
+   handle->fIfreq.ifr_data=0;
+   errsv = errno;
+        if (rev)
+        {
+          printm ("pexornet:"RON"ERROR>>"RES" Error %d  on trigger reset - %s\n", errsv,  strerror (errsv));
+        }
+  return rev;
+}
 
 

@@ -151,6 +151,9 @@ struct pexornet_sfp;
 #define PEXORNET_WAIT_TIMEOUT 1
 //(1*HZ)
 
+
+
+
 /** timeout for trigger wait queue */
 //#define PEXORNET_TRIG_TIMEOUT (10*HZ)
 
@@ -193,6 +196,14 @@ struct pexornet_sfp;
 #define PEXORNET_DEFAULTBUFFERNUM 100
 
 
+/** internal states:*/
+#define PEXORNET_STATE_STOPPED 0        /**< daq stopped*/
+#define PEXORNET_STATE_TRIGGERED_READ 1 /**< trigger interrupt will fill dma buffer automatically with token data*/
+
+
+
+
+
 struct dev_pexornet
 {
 
@@ -225,10 +236,10 @@ struct dev_pexornet
 struct pexornet_dmabuf
 {
   struct list_head queue_list;  /**< linked into free or receive queue list */
-  unsigned long virt_addr;      /**< user space virtual address (=buffer id) */
+  //unsigned long virt_addr;      /**< user space virtual address (=buffer id) */
   unsigned long size;           /**< buffer size in bytes */
   unsigned long used_size;      /**< filled payload size*/
-  u32 triggerstatus;            /**< optional triggerstatus for automatic readout mode */
+  struct pexornet_trigger_status trigger_status; /**< decoded trixor status register */
   /* the following members are used for kernel buffers only:*/
   dma_addr_t dma_addr;          /**< dma engine (pci) address*/
   unsigned long kernel_addr;    /**< mapped kernel address  */
@@ -240,19 +251,14 @@ struct pexornet_dmabuf
 };
 
 
-struct pexornet_trigger_buf
-{
-  struct list_head queue_list;    /**< linked into queue list */
-  u32 trixorstat;      /**< trixor status register related at trigger interrupt  time*/
-
-};
 
 struct pexornet_privdata
 {
   atomic_t state;               /**< run state of device */
-//  int devid;                    /**< local id (counter number) */
   u8 board_type;                /**< pexornet, pexaria, kinpex, ...*/
   char irqname[64];             /**< private name for irq */
+  u32 send_host;                /**< ip host address of virtual sender*/
+  u32 recv_host;                /**< ip host address of recevier, i.e. this node*/
   struct pci_dev *pdev;         /**< PCI device */
   struct device *class_dev;     /**< Class device */
   struct net_device *net_dev;   /**< Network device */
@@ -271,7 +277,6 @@ struct pexornet_privdata
 
   spinlock_t buffers_lock;      /**< protect any buffer lists operations */
   spinlock_t dma_lock;      /**< protects DMA Buffer */
-  spinlock_t trigstat_lock;       /**< protects trigger status queue */
 
   atomic_t irq_count;           /**< counter for irqs */
   spinlock_t irq_lock;         /**< optional lock between top and bottom half? */
@@ -282,10 +287,6 @@ struct pexornet_privdata
   wait_queue_head_t irq_dma_queue;      /**< wait queue between bottom
                                            half and wait dma ioctl */
   atomic_t dma_outstanding;     /**< outstanding dma counter */
-  wait_queue_head_t irq_trig_queue;     /**< wait queue between bottom half
-                                           and user wait trigger ioctl */
-  atomic_t trig_outstanding;    /**< outstanding triggers counter */
-  struct list_head trig_status; /**< list (queue) of trigger status words corresponding to interrupts*/
   unsigned int wait_timeout; /**< configurable wait timeout for trigger and dma buffer queues. in seconds */
 };
 
@@ -326,23 +327,6 @@ void set_pexornet(struct dev_pexornet *pg, void *base, unsigned long bar);
 
 
 
-//int pexornet_open(struct inode *inode, struct file *filp);
-//int pexornet_release(struct inode *inode, struct file *filp);
-//loff_t pexornet_llseek(struct file *filp, loff_t off, int whence);
-//ssize_t pexornet_read(struct file *filp, char __user * buf, size_t count,
-//                   loff_t * f_pos);
-//ssize_t pexornet_write(struct file *filp, const char __user * buf, size_t count,
-//                    loff_t * f_pos);
-//
-//int pexornet_mmap(struct file *filp, struct vm_area_struct *vma);
-
-/** the general fops ioctl */
-//#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
-//int pexornet_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
-//#else
-//long pexornet_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
-//#endif
-
 /** ioctl hook via network device:*/
 int pexornet_ioctl(struct net_device *dev, struct ifreq *rq, int cmd);
 
@@ -352,42 +336,10 @@ int pexornet_ioctl_reset(struct pexornet_privdata *priv, unsigned long arg);
 
 
 
-///** map existing user buffer into sglist and register in driver pool*/
-//int pexornet_ioctl_mapbuffer(struct pexornet_privdata *priv, unsigned long arg);
-//
-//
-///** unmap user buffer sglist and remove from driver pool*/
-//int pexornet_ioctl_unmapbuffer(struct pexornet_privdata *priv, unsigned long arg);
-//
-//
-///** free dma buffer from usage (put back to free list) */
-//int pexornet_ioctl_freebuffer(struct pexornet_privdata *priv, unsigned long arg);
-//
-///** take (acquire) a dma buffer for usage in application space
-// * (take from free list)*/
-//int pexornet_ioctl_usebuffer(struct pexornet_privdata *priv, unsigned long arg);
-//
-//
 
 ///** empty remaining buffers in receive queue and put back to free list */
 //int pexornet_ioctl_clearreceivebuffers(struct pexornet_privdata *priv,
 //                                    unsigned long arg);
-
-//
-///** delete dma buffer from pool */
-//int pexornet_ioctl_deletebuffer(struct pexornet_privdata *priv, unsigned long arg);
-//
-///** get next filled dma buffer (descriptor pointer) from receive queue.
-// * Will wait for dma complete interrupt if receive queue is empty on calling */
-//int pexornet_ioctl_waitreceive(struct pexornet_privdata *priv, unsigned long arg);
-
-///** switch internal run state of device (e.g. start/stop daq)
-// * when daq is started, driver will receive dma buffers
-// * and put them into receive queue, etc */
-//int pexornet_ioctl_setrunstate(struct pexornet_privdata *priv, unsigned long arg);
-//
-///** this one may be used for different tests with the device on kernel level */
-//int pexornet_ioctl_test(struct pexornet_privdata *priv, unsigned long arg);
 
 
 /** Write a value to an address at the "bus" connected via the optical links
@@ -402,21 +354,6 @@ int pexornet_ioctl_read_bus(struct pexornet_privdata *priv, unsigned long arg);
  * pexornet_bus_io structure may specify which channel and device to init */
 int pexornet_ioctl_init_bus(struct pexornet_privdata *priv, unsigned long arg);
 
-///** Write a value to a register on the board, mapped to a PCI BAR.
-// * address, value and optionally the BAR are passed
-// * via pexornet_reg_io structure */
-//int pexornet_ioctl_write_register(struct pexornet_privdata *priv,
-//                               unsigned long arg);
-//
-///** Read a value from a register on the board, mapped to a PCI BAR.
-// * address, value and optionally the BAR are passed
-// * via pexornet_reg_io structure */
-//int pexornet_ioctl_read_register(struct pexornet_privdata *priv, unsigned long arg);
-
-
-///** change timeout in waitqueues for trigger or dma buffers.
-// * argument specifies timeout in seconds. */
-//int pexornet_ioctl_set_wait_timeout(struct pexornet_privdata* priv, unsigned long arg);
 
 
 #ifdef PEXORNET_WITH_TRIXOR
@@ -493,9 +430,8 @@ int pexornet_wait_dma_buffer(struct pexornet_privdata *priv,
 
 /** poll for dma completion and move received buffer into receive queue.
  * Wake up consuming process (that should wait in call of pexornet_wait_dma_buffer)
- * Optionally after direct dma the used size may be set in receive buffer.
- * for automatic readout mode, triggerstatus can be appended to dma buffer structure*/
-int pexornet_receive_dma_buffer(struct pexornet_privdata *priv, unsigned long used_size, u32 triggerstatus);
+ * Optionally after direct dma the used size may be set in receive buffer.*/
+int pexornet_receive_dma_buffer(struct pexornet_privdata *priv, unsigned long used_size);
 
 
 /** general cleanup function*/

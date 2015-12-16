@@ -410,7 +410,7 @@ int goscmd_configure (struct gosip_cmd* com)
   int rev = 0;
 #ifdef GOSIPCMD_BLOCKCONFIG
   int numconfs = 0;
-  struct pex_bus_config theConfig;
+  struct pexornet_bus_config theConfig;
 #else
 
   gos_cmd_id mastercommand;
@@ -441,7 +441,7 @@ int goscmd_configure (struct gosip_cmd* com)
     theConfig.param[numconfs].address = com->address;
     theConfig.param[numconfs].value = com->value;
     theConfig.numpars = ++numconfs;
-    if (numconfs >= PEX_MAXCONFIG_VALS)
+    if (numconfs >= PEXORNET_MAXCONFIG_VALS)
       break;
 #else
     if ((com->command == GOSIP_SETBIT) || (com->command == GOSIP_CLEARBIT))
@@ -572,12 +572,12 @@ int goscmd_broadcast (struct gosip_cmd* com)
     sfpbroadcast = 1;
   if (com->slave < 0)
     slavebroadcast = 1;
-  struct pex_sfp_links slavesetup;
+  struct pexornet_sfp_links slavesetup;
   if (pexornet_get_configured_slaves (com->sd_pex, &slavesetup) < 0)
     return -1;
   if (sfpbroadcast) /* broadcast over sfps*/
   {
-    for (com->sfp = 0; com->sfp < PEX_SFP_NUMBER; ++com->sfp)
+    for (com->sfp = 0; com->sfp < PEXORNET_SFP_NUMBER; ++com->sfp)
     {
       slavemax = slavesetup.numslaves[com->sfp];
       if (slavemax == 0)
@@ -661,10 +661,10 @@ void goscmd_usage (const char *progname)
   printf ("***************************************************************************\n");
 
   printf (" %s for pexornet library  \n", progname);
-  printf (" v0.50 10-Dec-2015 by JAM (j.adamczewski@gsi.de)\n");
+  printf (" v0.50 11-Dec-2015 by JAM (j.adamczewski@gsi.de)\n");
   printf ("***************************************************************************\n");
   printf (
-      "  usage: %s [-h|-z] [[-i|-r|-w|-s|-u] [-b] | [-c|-v FILE] [-n DEVICE |-d|-x] sfp slave [address [value [words]|[words]]]] \n",
+      "  usage: %s [-h|-z] [[-i|-r|-w|-s|-u] [-b] | [-c|-v FILE] [-n IF |-d|-x] sfp slave [address [value [words]|[words]]]] \n",
       progname);
   printf ("\t Options:\n");
   printf ("\t\t -h        : display this help\n");
@@ -677,7 +677,7 @@ void goscmd_usage (const char *progname)
   printf ("\t\t -b        : broadcast io operations to all slaves in range (0-sfp)(0-slave)\n");
   printf ("\t\t -c FILE   : configure registers with values from FILE.gos\n");
   printf ("\t\t -v FILE   : verify register contents (compare with FILE.gos)\n");
-  printf ("\t\t -n DEVICE : specify device number N (/dev/pexorN, default:0) \n");
+  printf ("\t\t -n IF     : specify interface unit number N (pexN, default:0) \n");
   printf ("\t\t -d        : debug mode (verbose output) \n");
   printf ("\t\t -x        : numbers in hex format (defaults: decimal, or defined by prefix 0x) \n");
   printf ("\t Arguments:\n");
@@ -687,7 +687,7 @@ void goscmd_usage (const char *progname)
   printf ("\t\t value    - value to write on slave \n");
   printf ("\t\t words    - number of words to read/write/set incrementally\n");
   printf ("\t Examples:\n");
-  printf ("\t  %s -z -n 1                   : master gosip reset of board /dev/pexor1 \n", progname);
+  printf ("\t  %s -z -n 1                   : master gosip reset of board /sys/class/net/pex1 \n", progname);
   printf ("\t  %s -i 0 24                   : initialize chain at sfp 0 with 24 slave devices\n", progname);
   printf ("\t  %s -r -x 1 0 0x1000          : read from sfp 1, slave 0, address 0x1000 and printout value\n", progname);
   printf ("\t  %s -r -x 0 3 0x1000 5        : read from sfp 0, slave 3, address 0x1000 next 5 words\n", progname);

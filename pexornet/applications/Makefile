@@ -7,9 +7,9 @@ LDINC += $(addprefix -L ,$(LIBDIR))
 LDFLAGS += -Wl,-rpath,/usr/lib -lrt
 # avoid shared lib for the moment due to more easy testing
 #PEXLIB = -Wl,-rpath,/usr/lib -Wl,-rpath,$(LIBDIR) -lmbspex
-#PEXLIB = $(LIBDIR)/libmbspex.a
+PEXLIB = $(LIBDIR)/libpexornet.a
 
-BINARIES = ioctl_test
+BINARIES = ioctl_test readout_test
 
 ###############################################################
 # Target definitions
@@ -26,7 +26,7 @@ $(BINARIES) : % : $(BINDIR)/% ;
 $(BINDIR)/%: $(OBJDIR)/%.o
 	@echo -e "LD \t$@"
 #	$(Q)$(CXX) $(LDINC) $(LDFLAGS) $(PEXLIB) $(CFLAGS) -o $@ $<
-	$(Q)$(CXX) $(LDFLAGS) $(CFLAGS) -o  $@  $< 
+	$(Q)$(CXX) $(LDFLAGS) $(CFLAGS) -o  $@  $< $(PEXLIB)
 
 
 

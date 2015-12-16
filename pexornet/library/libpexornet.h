@@ -25,6 +25,10 @@ void printm (char *, ...); /* use mbs logger, or for gosipcmd this will be reimp
 #endif
 
 
+#define RON  "\x1B[7m"
+#define RES  "\x1B[0m"
+
+
 //////////////
 
 /** these internal registers are used from library instead of implementing dedicated ioctl calls.
@@ -70,10 +74,31 @@ int pexornet_slave_wr (pexornet_handle_t* handle, long l_sfp, long l_slave, long
 int pexornet_slave_init (pexornet_handle_t* handle, long l_sfp, long l_n_slaves);
 
 /** write block of configuration data to driver*/
-int pexornet_slave_config (pexornet_handle_t* handle, struct pex_bus_config* config);
+int pexornet_slave_config (pexornet_handle_t* handle, struct pexornet_bus_config* config);
 
 /** retrieve actual slave configuration at sfp chains and put to external structure*/
-int pexornet_get_configured_slaves(pexornet_handle_t* handle , struct pex_sfp_links* setup);
+int pexornet_get_configured_slaves(pexornet_handle_t* handle , struct pexornet_sfp_links* setup);
+
+/** Start the triggered acquisition into socket buffers formatted in MBS lmd structure.
+ * Each trixor interrupt will issue an automatic readout of the next event buffer.
+ * Like in MBS, first event buffer is empty and marked with trigger type 14.
+ * the user can fetch this data via a socket connection to pex#devnum# interface.
+ * Acquisition is suspended in back-pressure manner if driver buffers are not fetched*/
+int pexornet_acquisition_start(pexornet_handle_t* handle);
+
+/** Stop the triggered acquisition.
+ * Like in MBS, last event buffer is empty and marked with trigger type 15.
+ */
+int pexornet_acquisition_stop(pexornet_handle_t* handle);
+
+/** reset trigger on TRIXOR module.
+ * Usually not necessary, since interrupt readout tasklet is doing this automatically*/
+int pexornet_trigger_reset(pexornet_handle_t* handle);
+
+ /** Set time windows for trigger module:
+ * fast clear time, conversion time, see TRIXOR manual*/
+int pexornet_trigger_timeset(pexornet_handle_t* handle, unsigned short fctime, unsigned short cvtime);
+
 
 
 #endif

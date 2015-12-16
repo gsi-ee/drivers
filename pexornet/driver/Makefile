@@ -7,7 +7,7 @@ pexornet-objs := pexornet_base.o pexornet_gosip.o
 INCDIR = $(PEXORSYS)/include
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 PWD       := $(shell pwd)
- 
+
 
 
 all:
