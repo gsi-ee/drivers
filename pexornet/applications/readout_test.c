@@ -17,11 +17,17 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <stdlib.h>
+#include <signal.h>
 
 #include <sys/select.h>
 
 #include <sys/socket.h>
 #include <netdb.h>
+
+//#define SIMPLE_UDP 1
+//#define NOREADOUT 1
+//#define SNIFFRAWSOCKET 1
+
 
 // nr of slaves on SFP 0  1  2  3
 //                     |  |  |  |
@@ -75,6 +81,10 @@ static long l_qfw_ctrl;
 
 static unsigned int ErrorScaler[QFWNUM] = { 0 };
 
+static int sock = 0;
+static pexornet_handle_t* handle;
+
+
 /* helper macro for check_event to check if payload pointer is still inside delivered region:*/
 /* this one to be called at top data processing loop*/
 #define  QFWRAW_CHECK_PDATA                                    \
@@ -123,6 +133,21 @@ void my_usage (const char *progname)
   printf ("\t\t -h        : display this help\n");
   printf ("\t\t -i        : initialize before readout\n");
   printf ("\t\t -n IF     : specify interface unit number N (pexN, default:0) \n");
+}
+
+void cleanup (pexornet_handle_t* h, int sock)
+{
+  pexornet_acquisition_stop (h);
+  pexornet_close (h);
+  close (sock);
+}
+
+void my_signal_handler(int sig, siginfo_t *extra, void *cruft)
+{
+  printf ("Keyboard interrupt, cleaning up acquisition... \n");
+  if(handle && sock) cleanup (handle, sock);
+  exit(0);
+
 }
 
 void init_poland (pexornet_handle_t* handle)
@@ -241,17 +266,66 @@ void init_poland (pexornet_handle_t* handle)
 int open_interface (const char* name)
 {
   int i,errsav, rev, fd = 0;
+
+#ifdef SIMPLE_UDP
+  // note: this approach will not specify that we use interface pex0
+
+  struct sockaddr_in sa;
+  int port=PEXORNET_RECVPORT; //23452; // currently hardcoded in driver todo configure it.
+  /** do it like code as in hadaq, we explicitely set port number*/
+  printf ("Opening interface with simple udp receiver on port %d\n", port);
+  fd = socket(AF_INET, SOCK_DGRAM, 0);
+  if (fd == -1)
+    {
+      printm ("Could not open udp socket. Good bye!\n");
+      exit (EXIT_FAILURE);
+    }
+
+  // here may set socket options as in daqdata/hadaq/nettrans.c
+
+  sa.sin_family = AF_INET;
+  sa.sin_port = htons(port);
+  sa.sin_addr.s_addr = htonl(INADDR_ANY);
+  rev = bind(fd, &sa, sizeof(sa));
+  if(rev!=0)
+    {
+      printm ("Could not bind udp socket. Good bye!\n");
+      exit (EXIT_FAILURE);
+    }
+
+
+#else
   struct addrinfo s_sockhint;
   struct addrinfo *p_sockinfo, *p_sockcursor;
   struct hostent host;
-  printf ("Opening interface %s\n", name);
+  char service[256];
+  int rcvBufLenRet;
+  int rcvBufLenReq = 3000; //1 * (1 << 20);
+  size_t rcvBufLenLen = (size_t) sizeof(rcvBufLenReq);
 
+
+  printf ("Opening interface %s\n", name);
   /** JAM the following is mostly stolen from man 3 getaddrinfo : */
   s_sockhint.ai_family = AF_INET;
-  s_sockhint.ai_socktype = SOCK_DGRAM;  //SOCK_RAW; //SOCK_DGRAM;    //SOCK_STREAM
+
+#ifdef SNIFFRAWSOCKET
+  s_sockhint.ai_socktype = SOCK_RAW; //SOCK_STREAM
   s_sockhint.ai_protocol = 0;
-  s_sockhint.ai_flags = AI_ADDRCONFIG;
-  rev = getaddrinfo (name, NULL, &s_sockhint, &p_sockinfo);
+  s_sockhint.ai_flags = 0;
+#else
+  s_sockhint.ai_socktype = SOCK_DGRAM;//SOCK_DGRAM;//SOCK_RAW; //SOCK_STREAM
+  s_sockhint.ai_protocol = IPPROTO_UDP; //0;// IPPROTO_RAW ;
+  s_sockhint.ai_flags = AI_ADDRCONFIG | AI_NUMERICSERV;
+#endif
+
+
+  snprintf(service,256,"%d",PEXORNET_RECVPORT);
+#ifdef SNIFFRAWSOCKET
+  rev = getaddrinfo (name, 0, &s_sockhint, &p_sockinfo); // service NULL
+#else
+  rev = getaddrinfo (name, service, &s_sockhint, &p_sockinfo); // service NULL
+#endif
+
   if (rev != 0)
   {
     printm ("getaddrinfo: %s\n", gai_strerror (rev));
@@ -271,18 +345,21 @@ int open_interface (const char* name)
       printm ("%u .", (unsigned char) (p_sockcursor->ai_addr->sa_data[i]));
      printm("\n");
 
+
     fd = socket (p_sockcursor->ai_family, p_sockcursor->ai_socktype, p_sockcursor->ai_protocol);
     if (fd == -1)
       continue;
-//    else
-//      break; // for raw sockets we do not bind
+#ifdef SNIFFRAWSOCKET
+    else
+      break; // for raw sockets we do not bind/connect ?
+#endif
 
-//    if (bind(fd, p_sockcursor->ai_addr, p_sockcursor->ai_addrlen) == 0)
-//          break;                  /* Success */
+    if (bind(fd, p_sockcursor->ai_addr, p_sockcursor->ai_addrlen) == 0)
+          break;                  /* Success */
 
 
-    if (connect (fd, p_sockcursor->ai_addr, p_sockcursor->ai_addrlen) != -1)
-      break; /* Success */
+//    if (connect (fd, p_sockcursor->ai_addr, p_sockcursor->ai_addrlen) != -1)
+//      break; /* Success */
 
     close (fd);
   }    // for
@@ -292,10 +369,28 @@ int open_interface (const char* name)
     printm ("Could not connect to any of them. Good bye!\n");
     exit (EXIT_FAILURE);
   }
-  printm ("Successfully connected to socket: (family:%d, type:%d, protocol:%d)\n", p_sockcursor->ai_family,
+  printm ("Successfully opened socket: (family:%d, type:%d, protocol:%d)\n", p_sockcursor->ai_family,
       p_sockcursor->ai_socktype, p_sockcursor->ai_protocol);
 
+  // here specify explicitely the receive buffer, again stolen from hadaq:
+//  if (setsockopt (fd, SOL_SOCKET, SO_RCVBUF, &rcvBufLenReq, rcvBufLenLen) == -1)
+//  {
+//    printm ("setsockopt(..., SO_RCVBUF, ...): %s", strerror (errno));
+//  }
+
+  if (getsockopt (fd, SOL_SOCKET, SO_RCVBUF, &rcvBufLenRet, (socklen_t *) &rcvBufLenLen) == -1)
+  {
+    printm ("getsockopt(..., SO_RCVBUF, ...): %s", strerror (errno));
+  }
+//  if (rcvBufLenRet < rcvBufLenReq)
+//  {
+//    printm ("UDP receive buffer length (%d) smaller than requested buffer length (%d)", rcvBufLenRet, rcvBufLenReq);
+//  }
+  printm ("UDP receive buffer length is set to %d bytes\n", rcvBufLenRet);
   freeaddrinfo (p_sockinfo);    // clean up structure created by getaddrinfo
+
+#endif
+
   return fd;
 
 }
@@ -305,6 +400,9 @@ int open_interface (const char* name)
 int read_event (int sock, char* data)
 {
   printm ("readout test: read_event...\n");
+  struct sockaddr_storage peer_addr;
+  socklen_t peer_addr_len;
+
   int errsav,flags;
   int numbytes = 0;
   struct pexornet_data_header* phead;
@@ -315,7 +413,8 @@ int read_event (int sock, char* data)
   // first need to read the header part of pexor buffer:
   //numbytes = read (sock, cursor, sizeof(struct pexornet_data_header));
   //numbytes = recv (sock, cursor, sizeof(struct pexornet_data_header),flags);
-  numbytes = recvfrom (sock, cursor, sizeof(struct pexornet_data_header),flags, 0,0);
+  flags=MSG_PEEK | MSG_WAITALL ; // look at the input buffer, but do not remove the contents
+  numbytes = recvfrom (sock, cursor, sizeof(struct pexornet_data_header),flags, (struct sockaddr *) &peer_addr, &peer_addr_len);
   errsav = errno;
   if (numbytes != sizeof(struct pexornet_data_header))
   {
@@ -325,7 +424,7 @@ int read_event (int sock, char* data)
   }
   printm ("readout test: read_event header of length %d \n", numbytes);
   phead = (struct pexornet_data_header*) cursor;
-  cursor += sizeof(struct pexornet_data_header);
+  //cursor += sizeof(struct pexornet_data_header);
   buflen = phead->datalen;
   printm ("readout test: found data length %d \n", buflen);
   if(buflen<=0)
@@ -334,16 +433,17 @@ int read_event (int sock, char* data)
       return 0;
     }
   // then we know how many bytes will follow:
-  //numbytes = read (sock, cursor, buflen);    // todo: need to implement multiple reads up to MTU for jumbo events?
   //numbytes = recv (sock, cursor, buflen, flags);
-  numbytes = recvfrom(sock, cursor, buflen, flags,0,0);
+  flags=MSG_WAITALL;
+  //flags=MSG_DONTWAIT;
+  numbytes = recvfrom(sock, cursor, buflen + sizeof(struct pexornet_data_header), flags,0,0);
   errsav = errno;
   if (numbytes == -1)
   {
     printm ("readout test: error %d (%s) on socket read\n", errsav, strerror (errsav));
     return -1;
   }
-  else if (numbytes != buflen)
+  else if (numbytes != buflen + sizeof(struct pexornet_data_header))
   {
     printm ("readout test: did not read complete payload length %d (read %d bytes), error:%d (%s)\n", buflen, numbytes,
         errsav, strerror (errsav));
@@ -352,6 +452,22 @@ int read_event (int sock, char* data)
   return 0;
 }
 
+int sniff_raw(int sock, char* data)
+{
+  int numbytes=0;
+  int errsav;
+  struct sockaddr_storage peer_addr;
+  socklen_t peer_addr_len;
+  printm ("readout test: sniff_raw...\n");
+  numbytes = recvfrom (sock, data, READBUFLEN,0, (struct sockaddr *) &peer_addr, &peer_addr_len);
+  errsav = errno;
+  if (numbytes < 0)
+    {
+      printm ("readout test error %d (%s) on socket redvfrom\n", errsav, strerror (errsav));
+      return -1;
+    }
+  return 0;
+}
 
 
 
@@ -512,18 +628,12 @@ int check_event (const char* data)
   return 0;
 }
 
-void cleanup (pexornet_handle_t* h, int sock)
-{
-  pexornet_acquisition_stop (h);
-  pexornet_close (h);
-  close (sock);
-}
 
 int main (int argc, char *argv[])
 {
   int rev=0;
-  int sock = 0;
-  pexornet_handle_t* handle;
+//  int sock = 0;
+//  pexornet_handle_t* handle;
 
   int errsav = 0, cmdlen = 0, i = 0, opt = 0;
   int ifnum = 0;
@@ -532,7 +642,7 @@ int main (int argc, char *argv[])
   int initfirst = 0;
   char hname[256];
   char data[READBUFLEN];
-
+  struct sigaction s_sact;
 
   optind = 1;
   while ((opt = getopt (argc, argv, "hin:")) != -1)
@@ -568,17 +678,48 @@ int main (int argc, char *argv[])
       printm ("warning: argument at position %d is empty!", optind + i);
   }
 
+  /** ctrl-C signal handler here:*/
+  sigemptyset (&s_sact.sa_mask);
+  s_sact.sa_flags = SA_SIGINFO;
+  s_sact.sa_sigaction = my_signal_handler;
+  if (sigaction (SIGINT, &s_sact, NULL ) < 0)
+    {
+      printm("!!Error calling sigaction, exiting..\n");
+      exit (0);
+    }
+
   handle = pexornet_open (ifnum);
   if (!handle)
     exit (0);
   if (initfirst)
     init_poland (handle);
+#ifndef NOREADOUT
   snprintf (hname, 64, "pexor%d", ifnum);    // we need pseudo host name, not interface name here
   sock = open_interface (hname);
-
+#endif
   printm ("Reading %d  events... \n", numevents);
   pexornet_acquisition_start (handle);
-  for (i = 0; i < numevents; ++i)
+#ifdef NOREADOUT
+    sleep(60);
+    printm ("After sleep without readout.\n");
+#else
+
+#ifdef SNIFFRAWSOCKET
+    while(1)
+    {
+      rev=sniff_raw(sock,data);
+      printm ("Sniffed data of size %d :\n", rev);
+      for(i=0; i<rev; ++i)
+        {
+          printm ("\t 0x%x", data[i]);
+          if((i%8) == 0)  printm ("\n");
+        }
+    }
+
+
+#else
+
+for (i = 0; i < numevents; ++i)
   {
     rev=read_event(sock,data);
     if(rev<0)
@@ -586,7 +727,7 @@ int main (int argc, char *argv[])
         cleanup (handle, sock);
         exit (EXIT_FAILURE);
       }
-
+    printm ("Read event %d.\n", i);
     if (check_event (data) != 0)
     {
       numcorrupt++;
@@ -597,7 +738,8 @@ int main (int argc, char *argv[])
   if (numevents)
     printm ("Read %d  events, corrupt:%d (ratio %f)\n", numevents, numcorrupt,
         (double) numcorrupt / (double) numevents);
-
+#endif
+#endif
   cleanup (handle, sock);
   return 0;
 }

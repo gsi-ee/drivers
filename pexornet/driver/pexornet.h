@@ -35,6 +35,7 @@
 #include <linux/etherdevice.h> /* eth_type_trans */
 #include <linux/ip.h>          /* struct iphdr */
 #include <linux/tcp.h>         /* struct tcphdr */
+#include <linux/udp.h>         /* struct udphdr */
 #include <linux/skbuff.h>
 
 

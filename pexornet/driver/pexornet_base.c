@@ -2089,22 +2089,25 @@ int pexornet_header(struct sk_buff *skb, struct net_device *dev,
     if(saddr)
     {
       pexornet_dbg(KERN_NOTICE "pexornet_header: source:");
-      for(i=0;i<ETH_ALEN;++i) pexornet_msg(KERN_NOTICE "%d.",(unsigned int) ((char*)saddr)[i]);
-      pexornet_msg(KERN_NOTICE "\n");
+      for(i=0;i<ETH_ALEN;++i) pexornet_dbg(KERN_NOTICE "%d.",(unsigned int) ((char*)saddr)[i]);
+      pexornet_dbg(KERN_NOTICE "\n");
     }
     if(daddr)
     {
       pexornet_dbg(KERN_NOTICE "pexornet_header: destination:");
-      for(i=0;i<ETH_ALEN;++i) pexornet_msg(KERN_NOTICE "%d.",(unsigned int) ((char*)daddr)[i]);
-      pexornet_msg(KERN_NOTICE "\n");
+      for(i=0;i<ETH_ALEN;++i) pexornet_dbg(KERN_NOTICE "%d.",(unsigned int) ((char*)daddr)[i]);
+      pexornet_dbg(KERN_NOTICE "\n");
     }
 
 
     memcpy(eth->h_source, saddr ? saddr : dev->dev_addr, dev->addr_len);
     memcpy(eth->h_dest,   daddr ? daddr : dev->dev_addr, dev->addr_len);
-    pexornet_msg(KERN_NOTICE "pexornet_header: setting addresses for destination:");
-    for(i=0;i<ETH_ALEN;++i) pexornet_msg(KERN_NOTICE "%d.",(unsigned int) ((char*)eth->h_dest)[i]);
-      pexornet_msg(KERN_NOTICE "\n");
+//    pexornet_msg(KERN_NOTICE "pexornet_header: setting addresses for destination:");
+//    for(i=0;i<ETH_ALEN;++i) pexornet_msg(KERN_NOTICE "%d.",(unsigned int) ((char*)eth->h_dest)[i]);
+//      pexornet_msg(KERN_NOTICE "\n");
+//      pexornet_dbg(KERN_NOTICE "pexornet_header: source:");
+//          for(i=0;i<ETH_ALEN;++i) pexornet_msg(KERN_NOTICE "%d.",(unsigned int) ((char*)eth->h_source)[i]);
+//          pexornet_msg(KERN_NOTICE "\n");
 
 
 
@@ -2121,20 +2124,22 @@ int pexornet_header(struct sk_buff *skb, struct net_device *dev,
  */
 void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
 {
-  int rev = 0;
+  int rev = 0, i;
   unsigned long datacnt = 0;
   struct sk_buff *skb;
   struct ethhdr *eth;
   struct iphdr *iph;
+  struct udphdr *udph;
   struct pexornet_data_header *dathead;
   struct pexornet_privdata *priv = pexornet_get_privdata (dev);
-  int maxheadroom = sizeof(struct ethhdr) + sizeof(struct iphdr) + 2; /* add 2 bytes to align IP on 16B boundary */
+  int maxheadroom = sizeof(struct ethhdr) + sizeof(struct iphdr)   + sizeof(struct udphdr) + 2; /* add 2 bytes to align IP on 16B boundary? */
+
 
   /*
    * The dma buffer pkt has been retrieved from the transmission
    * medium. Build an skb around it, so upper layers can handle it
    */
-  skb = dev_alloc_skb (pkt->size + maxheadroom);
+  skb = dev_alloc_skb (pkt->used_size + sizeof(struct pexornet_data_header)+ maxheadroom);
   if (!skb)
   {
     if (printk_ratelimit())
@@ -2145,21 +2150,34 @@ void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
 
   skb_reserve (skb, maxheadroom);    // reserve front of buffer for headers
 
+  // JAM 2016: we first have to construct udp header (goes from inside to outside of buffer)
+  // must be pushed here:
+  udph = (struct udphdr *) skb_push (skb, sizeof(struct udphdr));
+  skb_reset_transport_header(skb); // assign current data position for transport (udp) header
+  udph->source=htons(0);// use same port for source and dest? htons(0); // udp port number
+  udph->dest=htons(PEXORNET_RECVPORT);
+  udph->len= htons(sizeof(struct udphdr) + sizeof(struct pexornet_data_header) + pkt->used_size);
+  udph->check=0; // no checksum used
+
+
+
+
   // add pseudo ip header:
-  iph = (struct iphdr *) skb_push (skb, sizeof(struct iphdr));
+  iph = (struct iphdr *) skb_push (skb, sizeof(struct iphdr)); //
   skb_reset_network_header (skb);    // assign current cursor position as network (ip) header
   iph->saddr = htonl (priv->send_host); /* set pseudo remote data sender*/
   iph->daddr = htonl (priv->recv_host); /* set our local receiver host address*/
+  iph->ihl = 5;    // unit 4 bytes, extra word for options
+  iph->ttl = 64; // hop count (time to live) probably should not be zero
+  iph->version = 4;
+  iph->tot_len = htons(sizeof(struct udphdr) + sizeof(struct iphdr) + 4 + sizeof(struct pexornet_data_header) + pkt->used_size);
+  iph->protocol = IPPROTO_UDP;// IPPROTO_RAW; //IPPROTO_UDP
   iph->check = 0; /* rebuild the checksum (ip needs it) */
   iph->check = ip_fast_csum ((unsigned char *) iph, iph->ihl);
 
-  iph->ihl = 4;    // unit 4 bytes
-  iph->version = 4;
-  iph->tot_len = sizeof(struct iphdr) + sizeof(struct pexornet_data_header) + pkt->used_size;
-  iph->protocol = IPPROTO_RAW;
 
   /* just call socket buffer header function explicitely thus emulating what would have been done on a virtual sender: */
-  skb_push (skb, 2);    // 2 padding bytes at the end of 14byte ethernet header (instead of skb_reserve here) for 16 byte alignment
+  //skb_push (skb, 2);    // 2 padding bytes at the end of 14byte ethernet header (instead of skb_reserve here) for 16 byte alignment
   pexornet_header (skb, dev, ETH_P_IP, dev->dev_addr, dev->dev_addr, 0);
   skb_reset_mac_header (skb);    // remember eth header location in buffer
   eth = (struct ethhdr*) skb_mac_header (skb);
@@ -2170,7 +2188,18 @@ void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
   skb->ip_summed = CHECKSUM_UNNECESSARY; /* don't check it */
 
   // !!! shift data cursor back to location after ip header to fill with actual payload:
-  skb_pull (skb, 2 + sizeof(struct iphdr));
+  //skb_pull (skb, 2 + sizeof(struct iphdr));
+  // we do not need this, since push does not modify tail pointer and pull does not impact head pointer.
+
+
+  // TODO TODO: try to put valid udp header here - must be done above!
+  // somehow IPPROTO_RAW does not arrive at client socket connection
+  // readout_test can only establish socket to SOCK_DGRAM, not SOCK_RAW ?
+  // do we need to connect to virtual remote data sender here?
+  //
+  // may try to peek with wireshark if this interface pex0 does receive something?
+  // end TODO 2016 JAM
+
 
   /** here we have to place user payload header with
    * trigger number etc.  For the moment we use own structure.
@@ -2181,9 +2210,14 @@ void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
   dathead->datalen = pkt->used_size;
   datacnt += sizeof(struct pexornet_data_header);
 
+
+
+
   /** rest of skb is filled with actual dma payload:*/
   memcpy (skb_put (skb, pkt->used_size), (unsigned char*) pkt->kernel_addr, pkt->used_size);
   datacnt += pkt->used_size;
+
+
 
   priv->stats.rx_packets++;
   priv->stats.rx_bytes += datacnt;
@@ -2192,6 +2226,29 @@ void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
   pexornet_msg(
       KERN_NOTICE "pexornet_rx received packet of size %ld, trigtyp:0x%x si:0x%x mis:0x%x lec:0x%x di:0x%x tdt:0x%x eon:0x%x \n",pkt->used_size,
       dathead->trigger.typ, dathead->trigger.si, dathead->trigger.mis, dathead->trigger.lec, dathead->trigger.di, dathead->trigger.tdt, dathead->trigger.eon);
+
+  pexornet_msg(
+       KERN_NOTICE "pexornet_rx skb dump: head:0x%x data:0x%x tail:0x%x end:0x%x ethhdr:0x%x iphdr:0x%x udphdr:0x%x maxheadroom:0x%x packet type:0x%x\n",
+       skb->head, skb->data, skb->tail, skb->end, skb_mac_header (skb), skb_network_header(skb), skb_transport_header(skb), maxheadroom, skb->pkt_type);
+  pexornet_msg(
+          KERN_NOTICE "pexornet_rx udp dump: srcport:%d destport:%d len:%d\n",
+          ntohs(udph->source), ntohs(udph->dest), ntohs(udph->len));
+
+  pexornet_msg(
+        KERN_NOTICE "pexornet_rx ip dump: srcadd:0x%x destadd:0x%x proto:0x%x, totlen:%d\n",
+        ntohl(iph->saddr), ntohl(iph->daddr), iph->protocol, ntohs(iph->tot_len));
+  pexornet_msg(
+          KERN_NOTICE "pexornet_rx eth dump: protocol:0x%x ",
+          ntohs(eth->h_proto));
+
+  pexornet_msg(KERN_NOTICE "destination:");
+  for(i=0;i<ETH_ALEN;++i) pexornet_msg(KERN_NOTICE "%d.",(unsigned int) ((char*)eth->h_dest)[i]);
+  pexornet_msg(KERN_NOTICE "\n");
+  pexornet_msg(KERN_NOTICE "source:");
+  for(i=0;i<ETH_ALEN;++i) pexornet_msg(KERN_NOTICE "%d.",(unsigned int) ((char*)eth->h_source)[i]);
+  pexornet_msg(KERN_NOTICE "\n");
+
+
 
   rev = netif_rx (skb);
 //    if (printk_ratelimit())
@@ -2357,7 +2414,8 @@ void pexornet_init_netdev(struct net_device *dev)
 
     dev->watchdog_timeo = timeout;
     /* keep the default flags, just add NOARP */
-    dev->flags           |= IFF_NOARP;
+    //dev->flags           |= IFF_NOARP;
+
     //dev->features        |= NETIF_F_NO_CSUM;
     dev->features      = dev->features & ~(NETIF_F_ALL_CSUM); // for kernel 3 JAM
 
