@@ -29,6 +29,7 @@
 /* This are default addresses of virtual data sender and our receving host in the pexornet
  * TODO: configure these by ioctl later */
 #define PEXORNET_SENDHOST  0xC0A80002 //192 .168 .0 .2
+//#define PEXORNET_SENDHOST  0xC0A80001 //192 .168 .0 .1 test send from local interface
 #define PEXORNET_RECVHOST  0xC0A80001 //192 .168 .0 .1
 #define PEXORNET_RECVPORT 50256 // todo configurable later
 

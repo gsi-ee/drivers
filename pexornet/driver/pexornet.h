@@ -59,6 +59,9 @@
 //#define PEXORNET_DEBUGPRINT 1
 
 
+/* enable this to use udp checksumming*/
+//#define PEXORNET_UDP_CSUM 1
+
 #define PEXORNET_ENABLE_IRQ 1
 
 #define PEXORNET_SYSFS_ENABLE 1

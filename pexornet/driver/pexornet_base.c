@@ -1,5 +1,6 @@
 #include "pexornet.h"
 
+#include <net/udp.h>
 
 static atomic_t pexornet_numdevs = ATOMIC_INIT(0);
 
@@ -1987,6 +1988,9 @@ int pexornet_open(struct net_device *dev)
      */
     memcpy(dev->dev_addr, "\0PEXOR", ETH_ALEN);
 
+    /* JAM test: set LG bit*/
+    dev->dev_addr[0] |= 0x2;
+
     /** allocate some dma buffers here:*/
     pexornet_build_buffers(priv, dev->mtu, PEXORNET_DEFAULTBUFFERNUM);
 
@@ -2130,10 +2134,12 @@ void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
   struct ethhdr *eth;
   struct iphdr *iph;
   struct udphdr *udph;
-  struct pexornet_data_header *dathead;
+  struct pexornet_data_header dathead;
   struct pexornet_privdata *priv = pexornet_get_privdata (dev);
   int maxheadroom = sizeof(struct ethhdr) + sizeof(struct iphdr)   + sizeof(struct udphdr) + 2; /* add 2 bytes to align IP on 16B boundary? */
-
+  //__sum16
+  __wsum csum;
+  unsigned short len;
 
   /*
    * The dma buffer pkt has been retrieved from the transmission
@@ -2150,6 +2156,47 @@ void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
 
   skb_reserve (skb, maxheadroom);    // reserve front of buffer for headers
 
+
+  /** first fill user data after headers:*/
+
+
+  /** here we have to place user payload header with
+    * trigger number etc.  For the moment we use own structure.
+    * Later probably directly write mbs header?*/
+
+// need to add data with internal checksumming:
+  dathead.trigger  = pkt->trigger_status;
+  dathead.datalen = pkt->used_size;
+#ifdef PEXORNET_UDP_CSUM
+  skb_add_data(skb,(char*) &dathead, sizeof(struct pexornet_data_header)); // internally does memcopy, skb_put and checksumming
+#else
+  memcpy (skb_put (skb, sizeof(struct pexornet_data_header)), (unsigned char*) &dathead, sizeof(struct pexornet_data_header));
+#endif
+  datacnt += sizeof(struct pexornet_data_header);
+
+// old without checksumming:
+  //  struct pexornet_data_header* dathead;
+   //dathead = (struct pexornet_data_header*) skb_put (skb, sizeof(struct pexornet_data_header));
+//   dathead->trigger = pkt->trigger_status;
+//   dathead->datalen = pkt->used_size;
+//   datacnt += sizeof(struct pexornet_data_header);
+
+
+
+
+   /** rest of skb is filled with actual dma payload:*/
+
+#ifdef PEXORNET_UDP_CSUM
+  // JAM again we try function that internally provides checksum:
+  skb_add_data(skb,(char*) pkt->kernel_addr, pkt->used_size); // internally does memcopy, skb_put and checksumming
+  //! beware: this does a copy from user (may sleep) and we are inside ir tasklet?
+  // we see kernel dump: BUG: scheduling while atomic: swapper/2/0/0x10000100
+#else
+  memcpy (skb_put (skb, pkt->used_size), (unsigned char*) pkt->kernel_addr, pkt->used_size);
+#endif
+  datacnt += pkt->used_size;
+   /** Now prepare the layered headers in the headroom section:*/
+
   // JAM 2016: we first have to construct udp header (goes from inside to outside of buffer)
   // must be pushed here:
   udph = (struct udphdr *) skb_push (skb, sizeof(struct udphdr));
@@ -2157,65 +2204,63 @@ void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
   udph->source=htons(0);// use same port for source and dest? htons(0); // udp port number
   udph->dest=htons(PEXORNET_RECVPORT);
   udph->len= htons(sizeof(struct udphdr) + sizeof(struct pexornet_data_header) + pkt->used_size);
-  udph->check=0; // no checksum used
+  udph->check=0; // by default no checksum used
 
 
 
 
-  // add pseudo ip header:
+
+
+  // add ip header:
   iph = (struct iphdr *) skb_push (skb, sizeof(struct iphdr)); //
   skb_reset_network_header (skb);    // assign current cursor position as network (ip) header
   iph->saddr = htonl (priv->send_host); /* set pseudo remote data sender*/
   iph->daddr = htonl (priv->recv_host); /* set our local receiver host address*/
   iph->ihl = 5;    // unit 4 bytes, extra word for options
   iph->ttl = 64; // hop count (time to live) probably should not be zero
+  iph->frag_off = htons((1 << 14)); // set DF bit in fragment offset field
+//  A three-bit field follows and is used to control or identify fragments. They are (in order, from high order to low order):
+//
+//          bit 0: Reserved; must be zero.[note 1]
+//          bit 1: Don't Fragment (DF)
+//          bit 2: More Fragments (MF)
+
+
+
   iph->version = 4;
   iph->tot_len = htons(sizeof(struct udphdr) + sizeof(struct iphdr) + 4 + sizeof(struct pexornet_data_header) + pkt->used_size);
   iph->protocol = IPPROTO_UDP;// IPPROTO_RAW; //IPPROTO_UDP
   iph->check = 0; /* rebuild the checksum (ip needs it) */
   iph->check = ip_fast_csum ((unsigned char *) iph, iph->ihl);
 
-
+#ifdef PEXORNET_UDP_CSUM
+  //try to deliver udp checksum, to be sure:
+  // JAM stolen from  net/ipv4/udp.c :
+   csum = udp_csum(skb); // this is checksum of udp header and data payload of socket buffer (from skb_add_data above)
+   len = skb->len - skb_transport_offset(skb); // JAM that is why we first have to fill the payload
+   //len=ntohs(udph->len); // is the same value as previous line (wireshark)
+  /* add protocol-dependent pseudo-header */
+   udph->check = csum_tcpudp_magic( iph->saddr, iph->daddr, len,
+       iph->protocol, csum);
+   pexornet_msg(
+            KERN_NOTICE "pexornet_rx udp check: 0x%x for length 0x%x, csum:0x%x",udph->check, len, csum);
+#endif
   /* just call socket buffer header function explicitely thus emulating what would have been done on a virtual sender: */
   //skb_push (skb, 2);    // 2 padding bytes at the end of 14byte ethernet header (instead of skb_reserve here) for 16 byte alignment
   pexornet_header (skb, dev, ETH_P_IP, dev->dev_addr, dev->dev_addr, 0);
   skb_reset_mac_header (skb);    // remember eth header location in buffer
   eth = (struct ethhdr*) skb_mac_header (skb);
+
+  // test: localhost sends via our interface-
   eth->h_source[ETH_ALEN - 1] ^= 0x01; /* emulate virtual remote source by setting to us xor 1. adapted from snull example */
 
   skb->dev = dev;
-  skb->protocol = eth_type_trans (skb, dev);    // this will shift cursor to location after ethheader
-  skb->ip_summed = CHECKSUM_UNNECESSARY; /* don't check it */
-
-  // !!! shift data cursor back to location after ip header to fill with actual payload:
-  //skb_pull (skb, 2 + sizeof(struct iphdr));
-  // we do not need this, since push does not modify tail pointer and pull does not impact head pointer.
-
-
-  // TODO TODO: try to put valid udp header here - must be done above!
-  // somehow IPPROTO_RAW does not arrive at client socket connection
-  // readout_test can only establish socket to SOCK_DGRAM, not SOCK_RAW ?
-  // do we need to connect to virtual remote data sender here?
-  //
-  // may try to peek with wireshark if this interface pex0 does receive something?
-  // end TODO 2016 JAM
-
-
-  /** here we have to place user payload header with
-   * trigger number etc.  For the moment we use own structure.
-   * Later probably directly write mbs header?*/
-
-  dathead = (struct pexornet_data_header*) skb_put (skb, sizeof(struct pexornet_data_header));
-  dathead->trigger = pkt->trigger_status;
-  dathead->datalen = pkt->used_size;
-  datacnt += sizeof(struct pexornet_data_header);
+  skb->protocol = eth_type_trans (skb, dev);    // this will shift data cursor to location after ethheader
+  skb->ip_summed =CHECKSUM_UNNECESSARY; /* don't check it */
 
 
 
 
-  /** rest of skb is filled with actual dma payload:*/
-  memcpy (skb_put (skb, pkt->used_size), (unsigned char*) pkt->kernel_addr, pkt->used_size);
-  datacnt += pkt->used_size;
 
 
 
@@ -2225,7 +2270,7 @@ void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
   //    if (printk_ratelimit())
   pexornet_msg(
       KERN_NOTICE "pexornet_rx received packet of size %ld, trigtyp:0x%x si:0x%x mis:0x%x lec:0x%x di:0x%x tdt:0x%x eon:0x%x \n",pkt->used_size,
-      dathead->trigger.typ, dathead->trigger.si, dathead->trigger.mis, dathead->trigger.lec, dathead->trigger.di, dathead->trigger.tdt, dathead->trigger.eon);
+      dathead.trigger.typ, dathead.trigger.si, dathead.trigger.mis, dathead.trigger.lec, dathead.trigger.di, dathead.trigger.tdt, dathead.trigger.eon);
 
   pexornet_msg(
        KERN_NOTICE "pexornet_rx skb dump: head:0x%x data:0x%x tail:0x%x end:0x%x ethhdr:0x%x iphdr:0x%x udphdr:0x%x maxheadroom:0x%x packet type:0x%x\n",
@@ -2414,9 +2459,10 @@ void pexornet_init_netdev(struct net_device *dev)
 
     dev->watchdog_timeo = timeout;
     /* keep the default flags, just add NOARP */
-    //dev->flags           |= IFF_NOARP;
+    dev->flags           |= IFF_NOARP;
 
     //dev->features        |= NETIF_F_NO_CSUM;
+
     dev->features      = dev->features & ~(NETIF_F_ALL_CSUM); // for kernel 3 JAM
 
      //   dev->hard_header_cache = NULL;      /* Disable caching */

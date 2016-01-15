@@ -24,6 +24,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+
 //#define SIMPLE_UDP 1
 //#define NOREADOUT 1
 //#define SNIFFRAWSOCKET 1
@@ -125,7 +126,7 @@ void my_usage (const char *progname)
 {
   printf ("***************************************************************************\n");
   printf (" %s for pexornet network driver of POLAND example  \n", progname);
-  printf (" v0.02 11-Dec-2015 by JAM (j.adamczewski@gsi.de)\n");
+  printf (" v0.03 14-Jan-2016 by JAM (j.adamczewski@gsi.de)\n");
   printf ("***************************************************************************\n");
   printf ("  usage: %s [-h][-i][-n IF] [numevents]] \n", progname);
   printf ("\t  reads out numevents from POLAND via pex0 socket interface. \n");
@@ -137,15 +138,18 @@ void my_usage (const char *progname)
 
 void cleanup (pexornet_handle_t* h, int sock)
 {
+  if(h==0)
+    h=pexornet_open(0); // TEST: if handle was closed after start acquisition
+
   pexornet_acquisition_stop (h);
   pexornet_close (h);
-  close (sock);
+  if(sock) close (sock);
 }
 
 void my_signal_handler(int sig, siginfo_t *extra, void *cruft)
 {
   printf ("Keyboard interrupt, cleaning up acquisition... \n");
-  if(handle && sock) cleanup (handle, sock);
+  cleanup (handle, sock);
   exit(0);
 
 }
@@ -302,17 +306,23 @@ int open_interface (const char* name)
   int rcvBufLenRet;
   int rcvBufLenReq = 3000; //1 * (1 << 20);
   size_t rcvBufLenLen = (size_t) sizeof(rcvBufLenReq);
+  int udpCheckReq=1;
+  size_t udpCheckLen = (size_t) sizeof(udpCheckReq);
+
 
 
   printf ("Opening interface %s\n", name);
   /** JAM the following is mostly stolen from man 3 getaddrinfo : */
-  s_sockhint.ai_family = AF_INET;
+
 
 #ifdef SNIFFRAWSOCKET
+  /* sniffraw mode now used to poll without blocking*/
+  s_sockhint.ai_family = AF_PACKET;
   s_sockhint.ai_socktype = SOCK_RAW; //SOCK_STREAM
   s_sockhint.ai_protocol = 0;
   s_sockhint.ai_flags = 0;
 #else
+  s_sockhint.ai_family = AF_INET;
   s_sockhint.ai_socktype = SOCK_DGRAM;//SOCK_DGRAM;//SOCK_RAW; //SOCK_STREAM
   s_sockhint.ai_protocol = IPPROTO_UDP; //0;// IPPROTO_RAW ;
   s_sockhint.ai_flags = AI_ADDRCONFIG | AI_NUMERICSERV;
@@ -320,7 +330,9 @@ int open_interface (const char* name)
 
 
   snprintf(service,256,"%d",PEXORNET_RECVPORT);
+
 #ifdef SNIFFRAWSOCKET
+//#if 0
   rev = getaddrinfo (name, 0, &s_sockhint, &p_sockinfo); // service NULL
 #else
   rev = getaddrinfo (name, service, &s_sockhint, &p_sockinfo); // service NULL
@@ -387,6 +399,23 @@ int open_interface (const char* name)
 //    printm ("UDP receive buffer length (%d) smaller than requested buffer length (%d)", rcvBufLenRet, rcvBufLenReq);
 //  }
   printm ("UDP receive buffer length is set to %d bytes\n", rcvBufLenRet);
+
+  // now explicitely disable check of UDP checksum:
+
+// JAM this option likely only has effect when sending via this socket...
+//    if (setsockopt (fd, SOL_SOCKET, SO_NO_CHECK, &udpCheckReq, udpCheckLen) == -1)
+//    {
+//      printm ("setsockopt(..., SO_NO_CHECK, ...): %s", strerror (errno));
+//    }
+//    printm ("Disabled UDP checksum test %d\n",udpCheckReq);
+////
+//    if (getsockopt (fd, SOL_SOCKET,SO_NO_CHECK, &udpCheckReq, (socklen_t *) &udpCheckLen) == -1)
+//     {
+//       printm ("getsockopt(..., SO_RCVBUF, ...): %s", strerror (errno));
+//     }
+//    printm ("UDP checksum test disable is %d\n",udpCheckReq);
+
+
   freeaddrinfo (p_sockinfo);    // clean up structure created by getaddrinfo
 
 #endif
@@ -456,17 +485,19 @@ int sniff_raw(int sock, char* data)
 {
   int numbytes=0;
   int errsav;
+  int flags=MSG_DONTWAIT;
   struct sockaddr_storage peer_addr;
   socklen_t peer_addr_len;
-  printm ("readout test: sniff_raw...\n");
-  numbytes = recvfrom (sock, data, READBUFLEN,0, (struct sockaddr *) &peer_addr, &peer_addr_len);
+  //printm ("readout test: sniff_raw...\n");
+  numbytes = recvfrom (sock, data, READBUFLEN,flags, (struct sockaddr *) &peer_addr, &peer_addr_len);
   errsav = errno;
   if (numbytes < 0)
     {
-      printm ("readout test error %d (%s) on socket redvfrom\n", errsav, strerror (errsav));
+      if(errsav==EAGAIN) return -2;
+      printm ("readout test error %d (%s) on socket recvfrom\n", errsav, strerror (errsav));
       return -1;
     }
-  return 0;
+  return numbytes;
 }
 
 
@@ -699,15 +730,24 @@ int main (int argc, char *argv[])
 #endif
   printm ("Reading %d  events... \n", numevents);
   pexornet_acquisition_start (handle);
+  // TEST: free control socket before receiving
+  //pexornet_close(handle);
+  //handle=0;
+
 #ifdef NOREADOUT
     sleep(60);
     printm ("After sleep without readout.\n");
 #else
 
 #ifdef SNIFFRAWSOCKET
+    printm ("Entering nonblocking polling loop... \n");
     while(1)
     {
       rev=sniff_raw(sock,data);
+      if(rev==-2) {
+        usleep(10000); // non blocking polling
+        continue;
+      }
       printm ("Sniffed data of size %d :\n", rev);
       for(i=0; i<rev; ++i)
         {
