@@ -25,7 +25,7 @@
 #include <netdb.h>
 
 
-#define VERBOSE 1
+//#define VERBOSE 1
 
 #ifdef VERBOSE
 #define debprint( args... )                    \
@@ -141,7 +141,7 @@ void my_usage (const char *progname)
 {
   printf ("***************************************************************************\n");
   printf (" %s for pexornet network driver of POLAND example  \n", progname);
-  printf (" v0.1 21-Jan-2016 by JAM (j.adamczewski@gsi.de)\n");
+  printf (" v0.2 21-Jan-2016 by JAM (j.adamczewski@gsi.de)\n");
   printf ("***************************************************************************\n");
   printf ("  usage: %s [-h][-i][-n IF] [numevents]] \n", progname);
   printf ("\t  reads out numevents from POLAND via pex0 socket interface. \n");
@@ -183,16 +183,7 @@ void init_poland (pexornet_handle_t* handle)
     printm ("");
   }
 
-  //sleep (1);
 
-//   if (l_first == 0)
-//   {
-//     l_first = 1;
-//     for (l_i=0; l_i<MAX_TRIG_TYPE; l_i++)
-//     {
-//       l_tr_ct[l_i] = 0;
-//     }
-//   }
 
   for (l_i = 0; l_i < MAX_SFP; l_i++)
   {
@@ -396,9 +387,12 @@ int read_event (int sock, char* data)
   struct pexornet_data_header* phead;
   char* cursor;
   int buflen = 0;
-  flags=MSG_WAITALL;// MSG_DONTWAIT, MSG_WAITALL, MSG_PEEK
+  flags=MSG_PEEK | MSG_WAITALL;// MSG_DONTWAIT, MSG_WAITALL, MSG_PEEK
   cursor = data;
   // first need to read the header part of pexor buffer:
+  // option MSG_PEEK makes sure that this buffer is completely kept until next read
+  // so we have to read header again in data readout below
+  // todo: probably read larger buffers per call and scan events afterwards.
   numbytes = recvfrom (sock, cursor, sizeof(struct pexornet_data_header),flags, (struct sockaddr *) &peer_addr, &peer_addr_len);
   errsav = errno;
   if (numbytes != sizeof(struct pexornet_data_header))
@@ -409,28 +403,24 @@ int read_event (int sock, char* data)
   }
   debprint ("readout test: read_event header of length %d \n", numbytes);
   phead = (struct pexornet_data_header*) cursor;
-  cursor += sizeof(struct pexornet_data_header);
+  //cursor += sizeof(struct pexornet_data_header);
   debprint ("readout test: found trigger type %d, evcount:%d \n", phead->trigger.typ, phead->trigger.lec);
 
 
   buflen = phead->datalen;
   debprint ("readout test: found data length %d \n", buflen);
-  if(buflen<=0)
-    {
-      debprint ("readout test: header with zero payload, try next event...\n");
-      return 0;
-    }
   // then we know how many bytes will follow:
-  numbytes = recvfrom(sock, cursor, buflen, flags,0,0); //+ sizeof(struct pexornet_data_header)
+  flags= MSG_WAITALL; // read again everything, thus flushing receive buffer:
+  numbytes = recvfrom(sock, cursor, buflen + sizeof(struct pexornet_data_header), flags,0,0);
   errsav = errno;
   if (numbytes == -1)
   {
     printm ("readout test: error %d (%s) on socket read\n", errsav, strerror (errsav));
     return -1;
   }
-  else if (numbytes != buflen ) // + sizeof(struct pexornet_data_header)
+  else if (numbytes != buflen + sizeof(struct pexornet_data_header) ) // + sizeof(struct pexornet_data_header)
   {
-    printm ("readout test: did not read complete payload length %d (read %d bytes), error:%d (%s)\n", buflen, numbytes,
+    printm ("readout test: did not read complete payload length %d (read %d bytes), error:%d (%s)\n", buflen + sizeof(struct pexornet_data_header), numbytes,
         errsav, strerror (errsav));
     // error handling or todo: repeat read  until fragmented event is complete? no sooner than driver supports this!
   }
@@ -443,16 +433,15 @@ int check_event (const char* data)
 {
 
   ///////////////// this code is mostly taken from Go4 unpacker at https://subversion.gsi.de/go4/app/qfw/pexor
-  int i, j, l, loop, sl, ch, qfw;
+  int i, j, l, loop, sl, ch, qfw,n;
   unsigned trig_head, trig_type, sfp_id, device_id, channel_id;
-  int *pdata, *pdatastart;
+  int *pdata, *pdatastart, *pdatabuf;
   int lwords, usedsize, opticlen=-1, eventcounter, QfwSetup;
   int loopsize[QFWLOOPS];
   int looptime[QFWLOOPS];
   struct pexornet_data_header* phead;
-  pdata = (int*) data;
   /* for pexornet, evaluate triggerstatus header:*/
-  phead = (struct pexornet_data_header*) pdata;
+  phead = (struct pexornet_data_header*) data;
   usedsize = phead->datalen;
   trig_head = phead->trigger.typ;
 
@@ -472,23 +461,33 @@ int check_event (const char* data)
     printm ("ERROR: received packet with invalid trigger type %d !\n", trig_head);
     return 1;
   }
+  else
+  {
+    debprint ("Check event has trigger type %d, used size=%d \n", trig_head, usedsize);
+  }
 
-  pdata += sizeof(struct pexornet_data_header);
+//  pdata = (int*) (data + sizeof(struct pexornet_data_header));
+  pdata = (int*) (phead +1);
   /** here comes the actual unpacker:*/
 
-  pdatastart = pdata;
+  pdatabuf = pdata;
   lwords = usedsize / sizeof(int);    // this is true filled size from DMA, not total buffer length
+  debprint("data:0x%x, pdata:0x%x, pdatastart:0x%x, headeroffset:0x%x, lwords:%d\n",data, pdata,pdatastart,
+      sizeof(struct pexornet_data_header), lwords);
   // loop over single subevent data:
-  i=5;
-  while (pdata - pdatastart < lwords)
+  i=50;
+  n=0;
+  while (pdata - pdatabuf < lwords)
   {
+    debprint("pdata=0x%x, pdata[%d]=0x%x\n",pdata, n++,*pdata);
+
     if ((*pdata & 0xff) != 0x34)    // regular channel data
     {
       if(--i>0) debprint ("**** unpack_qfw: Skipping Non-header format 0x%x - (0x34 are expected) ...\n", (*pdata & 0xff));
       pdata++;
       continue;    // we have to skip it, since the dedicated padding pattern is added by mbs and not available here!
     }
-
+    pdatastart = pdata;
     trig_type = (*pdata & 0xf00) >> 8;
     sfp_id = (*pdata & 0xf000) >> 12;
     device_id = (*pdata & 0xff0000) >> 16;
@@ -603,7 +602,7 @@ void cleanup (pexornet_handle_t* h, int sock)
 
   pexornet_acquisition_stop (h);
 #ifndef NOREADOUT
-  if(read_event(sock,data)>=0) // also get the stop acquisition trigger packet here?
+  if(evcount && read_event(sock,data)>=0) // also get the stop acquisition trigger packet here if we got any data before
   {
     evcount++;
     if(check_event(data)!=0) numcorrupt++;
