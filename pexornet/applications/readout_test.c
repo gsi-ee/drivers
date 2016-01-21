@@ -32,7 +32,8 @@
 
 // nr of slaves on SFP 0  1  2  3
 //                     |  |  |  |
-#define NR_SLAVES     {1, 1, 0, 0}
+//#define NR_SLAVES     {1, 1, 0, 0}
+#define NR_SLAVES     {0, 2, 0, 0}
 
 /** receivebuffer length in bytes:*/
 #define READBUFLEN 65536
@@ -278,10 +279,17 @@ int open_interface (const char* name)
   int port=PEXORNET_RECVPORT; //23452; // currently hardcoded in driver todo configure it.
   /** do it like code as in hadaq, we explicitely set port number*/
   printf ("Opening interface with simple udp receiver on port %d\n", port);
+#ifdef  SNIFFRAWSOCKET
+  printf ("Opening interface with simple raw socket\n");
+  fd = socket(PF_INET , SOCK_DGRAM ,  0);
+#else
+  printf ("Opening interface with simple udp receiver on port %d\n", port);
   fd = socket(AF_INET, SOCK_DGRAM, 0);
+#endif
+  errsav = errno;
   if (fd == -1)
     {
-      printm ("Could not open udp socket. Good bye!\n");
+      printm ("Could not open simple socket. error:%d (%s) Good bye!\n",errsav, strerror (errsav));
       exit (EXIT_FAILURE);
     }
 
@@ -304,7 +312,7 @@ int open_interface (const char* name)
   struct hostent host;
   char service[256];
   int rcvBufLenRet;
-  int rcvBufLenReq = 3000; //1 * (1 << 20);
+  int rcvBufLenReq = 1 * (1 << 20);
   size_t rcvBufLenLen = (size_t) sizeof(rcvBufLenReq);
   int udpCheckReq=1;
   size_t udpCheckLen = (size_t) sizeof(udpCheckReq);
@@ -361,10 +369,10 @@ int open_interface (const char* name)
     fd = socket (p_sockcursor->ai_family, p_sockcursor->ai_socktype, p_sockcursor->ai_protocol);
     if (fd == -1)
       continue;
-#ifdef SNIFFRAWSOCKET
-    else
-      break; // for raw sockets we do not bind/connect ?
-#endif
+//#ifdef SNIFFRAWSOCKET
+//    else
+//      break; // for raw sockets we do not bind/connect ?
+//#endif
 
     if (bind(fd, p_sockcursor->ai_addr, p_sockcursor->ai_addrlen) == 0)
           break;                  /* Success */
@@ -385,10 +393,10 @@ int open_interface (const char* name)
       p_sockcursor->ai_socktype, p_sockcursor->ai_protocol);
 
   // here specify explicitely the receive buffer, again stolen from hadaq:
-//  if (setsockopt (fd, SOL_SOCKET, SO_RCVBUF, &rcvBufLenReq, rcvBufLenLen) == -1)
-//  {
-//    printm ("setsockopt(..., SO_RCVBUF, ...): %s", strerror (errno));
-//  }
+  if (setsockopt (fd, SOL_SOCKET, SO_RCVBUF, &rcvBufLenReq, rcvBufLenLen) == -1)
+  {
+    printm ("setsockopt(..., SO_RCVBUF, ...): %s", strerror (errno));
+  }
 
   if (getsockopt (fd, SOL_SOCKET, SO_RCVBUF, &rcvBufLenRet, (socklen_t *) &rcvBufLenLen) == -1)
   {

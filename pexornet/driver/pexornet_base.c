@@ -1988,6 +1988,7 @@ int pexornet_open(struct net_device *dev)
      */
     memcpy(dev->dev_addr, "\0PEXOR", ETH_ALEN);
 
+
     /* JAM test: set LG bit*/
     dev->dev_addr[0] |= 0x2;
 
@@ -2137,10 +2138,11 @@ void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
   struct pexornet_data_header dathead;
   struct pexornet_privdata *priv = pexornet_get_privdata (dev);
   int maxheadroom = sizeof(struct ethhdr) + sizeof(struct iphdr)   + sizeof(struct udphdr) + 2; /* add 2 bytes to align IP on 16B boundary? */
-  //__sum16
+  static __be16 ipid=1;
+#ifdef PEXORNET_UDP_CSUM
   __wsum csum;
   unsigned short len;
-
+#endif
   /*
    * The dma buffer pkt has been retrieved from the transmission
    * medium. Build an skb around it, so upper layers can handle it
@@ -2216,7 +2218,7 @@ void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
   skb_reset_network_header (skb);    // assign current cursor position as network (ip) header
   iph->saddr = htonl (priv->send_host); /* set pseudo remote data sender*/
   iph->daddr = htonl (priv->recv_host); /* set our local receiver host address*/
-  iph->ihl = 5;    // unit 4 bytes, extra word for options
+  iph->ihl = 5;    // unit 4 bytes
   iph->ttl = 64; // hop count (time to live) probably should not be zero
   iph->frag_off = htons((1 << 14)); // set DF bit in fragment offset field
 //  A three-bit field follows and is used to control or identify fragments. They are (in order, from high order to low order):
@@ -2228,8 +2230,11 @@ void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
 
 
   iph->version = 4;
-  iph->tot_len = htons(sizeof(struct udphdr) + sizeof(struct iphdr) + 4 + sizeof(struct pexornet_data_header) + pkt->used_size);
+  iph->tot_len = htons(sizeof(struct udphdr) + sizeof(struct iphdr) + sizeof(struct pexornet_data_header) + pkt->used_size);
+
   iph->protocol = IPPROTO_UDP;// IPPROTO_RAW; //IPPROTO_UDP
+
+  iph->id=htons(ipid++); /* always increment non zero id, does this prevent our packets being dropped?*/
   iph->check = 0; /* rebuild the checksum (ip needs it) */
   iph->check = ip_fast_csum ((unsigned char *) iph, iph->ihl);
 
@@ -2252,7 +2257,10 @@ void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
   eth = (struct ethhdr*) skb_mac_header (skb);
 
   // test: localhost sends via our interface-
+
   eth->h_source[ETH_ALEN - 1] ^= 0x01; /* emulate virtual remote source by setting to us xor 1. adapted from snull example */
+  // JAM2015 DEBUG
+  //eth->h_dest[ETH_ALEN - 1] ^= 0x01; /* do we still receive these ones in wireshark? yes!*/
 
   skb->dev = dev;
   skb->protocol = eth_type_trans (skb, dev);    // this will shift data cursor to location after ethheader
@@ -2365,7 +2373,8 @@ static int pexornet_ethtool_get_settings(struct net_device *dev,
         cmd->advertising = ADVERTISED_10000baseT_Full;
         cmd->duplex = DUPLEX_FULL;
         cmd->port = PORT_FIBRE;
-        cmd->transceiver = XCVR_EXTERNAL;
+        cmd->speed = SPEED_1000;
+        cmd->transceiver = XCVR_INTERNAL;
         cmd->supported |= SUPPORTED_FIBRE;
         cmd->advertising |= ADVERTISED_FIBRE;
 
