@@ -25,10 +25,18 @@
 #include <netdb.h>
 
 
+#define VERBOSE 1
+
+#ifdef VERBOSE
+#define debprint( args... )                    \
+  printm( args );
+#else
+#define debprint( args... ) ;
+#endif
+
+
 //#define SIMPLE_UDP 1
 //#define NOREADOUT 1
-//#define SNIFFRAWSOCKET 1
-
 
 // nr of slaves on SFP 0  1  2  3
 //                     |  |  |  |
@@ -85,7 +93,9 @@ static unsigned int ErrorScaler[QFWNUM] = { 0 };
 
 static int sock = 0;
 static pexornet_handle_t* handle;
-
+static char data[READBUFLEN];
+static unsigned long evcount=0;
+static unsigned long numcorrupt=0;
 
 /* helper macro for check_event to check if payload pointer is still inside delivered region:*/
 /* this one to be called at top data processing loop*/
@@ -104,6 +114,10 @@ if((pdata - pdatastart) > (opticlen/4)) \
 }
 
 #define Debugmode 0
+
+
+void cleanup (pexornet_handle_t* h, int sock);
+
 
 #ifndef PEXORNET_NOMBS
 /*****************************************************************/
@@ -127,7 +141,7 @@ void my_usage (const char *progname)
 {
   printf ("***************************************************************************\n");
   printf (" %s for pexornet network driver of POLAND example  \n", progname);
-  printf (" v0.03 14-Jan-2016 by JAM (j.adamczewski@gsi.de)\n");
+  printf (" v0.1 21-Jan-2016 by JAM (j.adamczewski@gsi.de)\n");
   printf ("***************************************************************************\n");
   printf ("  usage: %s [-h][-i][-n IF] [numevents]] \n", progname);
   printf ("\t  reads out numevents from POLAND via pex0 socket interface. \n");
@@ -137,15 +151,6 @@ void my_usage (const char *progname)
   printf ("\t\t -n IF     : specify interface unit number N (pexN, default:0) \n");
 }
 
-void cleanup (pexornet_handle_t* h, int sock)
-{
-  if(h==0)
-    h=pexornet_open(0); // TEST: if handle was closed after start acquisition
-
-  pexornet_acquisition_stop (h);
-  pexornet_close (h);
-  if(sock) close (sock);
-}
 
 void my_signal_handler(int sig, siginfo_t *extra, void *cruft)
 {
@@ -271,21 +276,13 @@ void init_poland (pexornet_handle_t* handle)
 int open_interface (const char* name)
 {
   int i,errsav, rev, fd = 0;
-
 #ifdef SIMPLE_UDP
   // note: this approach will not specify that we use interface pex0
-
   struct sockaddr_in sa;
   int port=PEXORNET_RECVPORT; //23452; // currently hardcoded in driver todo configure it.
   /** do it like code as in hadaq, we explicitely set port number*/
   printf ("Opening interface with simple udp receiver on port %d\n", port);
-#ifdef  SNIFFRAWSOCKET
-  printf ("Opening interface with simple raw socket\n");
-  fd = socket(PF_INET , SOCK_DGRAM ,  0);
-#else
-  printf ("Opening interface with simple udp receiver on port %d\n", port);
   fd = socket(AF_INET, SOCK_DGRAM, 0);
-#endif
   errsav = errno;
   if (fd == -1)
     {
@@ -321,31 +318,13 @@ int open_interface (const char* name)
 
   printf ("Opening interface %s\n", name);
   /** JAM the following is mostly stolen from man 3 getaddrinfo : */
-
-
-#ifdef SNIFFRAWSOCKET
-  /* sniffraw mode now used to poll without blocking*/
-  s_sockhint.ai_family = AF_PACKET;
-  s_sockhint.ai_socktype = SOCK_RAW; //SOCK_STREAM
-  s_sockhint.ai_protocol = 0;
-  s_sockhint.ai_flags = 0;
-#else
   s_sockhint.ai_family = AF_INET;
   s_sockhint.ai_socktype = SOCK_DGRAM;//SOCK_DGRAM;//SOCK_RAW; //SOCK_STREAM
   s_sockhint.ai_protocol = IPPROTO_UDP; //0;// IPPROTO_RAW ;
   s_sockhint.ai_flags = AI_ADDRCONFIG | AI_NUMERICSERV;
-#endif
-
-
   snprintf(service,256,"%d",PEXORNET_RECVPORT);
 
-#ifdef SNIFFRAWSOCKET
-//#if 0
-  rev = getaddrinfo (name, 0, &s_sockhint, &p_sockinfo); // service NULL
-#else
   rev = getaddrinfo (name, service, &s_sockhint, &p_sockinfo); // service NULL
-#endif
-
   if (rev != 0)
   {
     printm ("getaddrinfo: %s\n", gai_strerror (rev));
@@ -364,23 +343,11 @@ int open_interface (const char* name)
     for(i=0; i<p_sockcursor->ai_addrlen;++i)
       printm ("%u .", (unsigned char) (p_sockcursor->ai_addr->sa_data[i]));
      printm("\n");
-
-
     fd = socket (p_sockcursor->ai_family, p_sockcursor->ai_socktype, p_sockcursor->ai_protocol);
     if (fd == -1)
       continue;
-//#ifdef SNIFFRAWSOCKET
-//    else
-//      break; // for raw sockets we do not bind/connect ?
-//#endif
-
     if (bind(fd, p_sockcursor->ai_addr, p_sockcursor->ai_addrlen) == 0)
           break;                  /* Success */
-
-
-//    if (connect (fd, p_sockcursor->ai_addr, p_sockcursor->ai_addrlen) != -1)
-//      break; /* Success */
-
     close (fd);
   }    // for
 
@@ -408,22 +375,6 @@ int open_interface (const char* name)
 //  }
   printm ("UDP receive buffer length is set to %d bytes\n", rcvBufLenRet);
 
-  // now explicitely disable check of UDP checksum:
-
-// JAM this option likely only has effect when sending via this socket...
-//    if (setsockopt (fd, SOL_SOCKET, SO_NO_CHECK, &udpCheckReq, udpCheckLen) == -1)
-//    {
-//      printm ("setsockopt(..., SO_NO_CHECK, ...): %s", strerror (errno));
-//    }
-//    printm ("Disabled UDP checksum test %d\n",udpCheckReq);
-////
-//    if (getsockopt (fd, SOL_SOCKET,SO_NO_CHECK, &udpCheckReq, (socklen_t *) &udpCheckLen) == -1)
-//     {
-//       printm ("getsockopt(..., SO_RCVBUF, ...): %s", strerror (errno));
-//     }
-//    printm ("UDP checksum test disable is %d\n",udpCheckReq);
-
-
   freeaddrinfo (p_sockinfo);    // clean up structure created by getaddrinfo
 
 #endif
@@ -436,7 +387,7 @@ int open_interface (const char* name)
 /** read a single event from socket into the buffer data*/
 int read_event (int sock, char* data)
 {
-  printm ("readout test: read_event...\n");
+  debprint ("readout test: read_event...\n");
   struct sockaddr_storage peer_addr;
   socklen_t peer_addr_len;
 
@@ -445,12 +396,9 @@ int read_event (int sock, char* data)
   struct pexornet_data_header* phead;
   char* cursor;
   int buflen = 0;
-  flags=0;//MSG_WAITALL;// MSG_DONTWAIT, MSG_WAITALL, MSG_PEEK
+  flags=MSG_WAITALL;// MSG_DONTWAIT, MSG_WAITALL, MSG_PEEK
   cursor = data;
   // first need to read the header part of pexor buffer:
-  //numbytes = read (sock, cursor, sizeof(struct pexornet_data_header));
-  //numbytes = recv (sock, cursor, sizeof(struct pexornet_data_header),flags);
-  flags=MSG_PEEK | MSG_WAITALL ; // look at the input buffer, but do not remove the contents
   numbytes = recvfrom (sock, cursor, sizeof(struct pexornet_data_header),flags, (struct sockaddr *) &peer_addr, &peer_addr_len);
   errsav = errno;
   if (numbytes != sizeof(struct pexornet_data_header))
@@ -459,28 +407,28 @@ int read_event (int sock, char* data)
         errsav, strerror (errsav));
     return -1;
   }
-  printm ("readout test: read_event header of length %d \n", numbytes);
+  debprint ("readout test: read_event header of length %d \n", numbytes);
   phead = (struct pexornet_data_header*) cursor;
-  //cursor += sizeof(struct pexornet_data_header);
+  cursor += sizeof(struct pexornet_data_header);
+  debprint ("readout test: found trigger type %d, evcount:%d \n", phead->trigger.typ, phead->trigger.lec);
+
+
   buflen = phead->datalen;
-  printm ("readout test: found data length %d \n", buflen);
+  debprint ("readout test: found data length %d \n", buflen);
   if(buflen<=0)
     {
-      printm ("readout test: header with zero payload, try next event...\n");
+      debprint ("readout test: header with zero payload, try next event...\n");
       return 0;
     }
   // then we know how many bytes will follow:
-  //numbytes = recv (sock, cursor, buflen, flags);
-  flags=MSG_WAITALL;
-  //flags=MSG_DONTWAIT;
-  numbytes = recvfrom(sock, cursor, buflen + sizeof(struct pexornet_data_header), flags,0,0);
+  numbytes = recvfrom(sock, cursor, buflen, flags,0,0); //+ sizeof(struct pexornet_data_header)
   errsav = errno;
   if (numbytes == -1)
   {
     printm ("readout test: error %d (%s) on socket read\n", errsav, strerror (errsav));
     return -1;
   }
-  else if (numbytes != buflen + sizeof(struct pexornet_data_header))
+  else if (numbytes != buflen ) // + sizeof(struct pexornet_data_header)
   {
     printm ("readout test: did not read complete payload length %d (read %d bytes), error:%d (%s)\n", buflen, numbytes,
         errsav, strerror (errsav));
@@ -488,26 +436,6 @@ int read_event (int sock, char* data)
   }
   return 0;
 }
-
-int sniff_raw(int sock, char* data)
-{
-  int numbytes=0;
-  int errsav;
-  int flags=MSG_DONTWAIT;
-  struct sockaddr_storage peer_addr;
-  socklen_t peer_addr_len;
-  //printm ("readout test: sniff_raw...\n");
-  numbytes = recvfrom (sock, data, READBUFLEN,flags, (struct sockaddr *) &peer_addr, &peer_addr_len);
-  errsav = errno;
-  if (numbytes < 0)
-    {
-      if(errsav==EAGAIN) return -2;
-      printm ("readout test error %d (%s) on socket recvfrom\n", errsav, strerror (errsav));
-      return -1;
-    }
-  return numbytes;
-}
-
 
 
 /** small unpacker to verify data integrity. May also display something*/
@@ -518,7 +446,7 @@ int check_event (const char* data)
   int i, j, l, loop, sl, ch, qfw;
   unsigned trig_head, trig_type, sfp_id, device_id, channel_id;
   int *pdata, *pdatastart;
-  int lwords, usedsize, opticlen, eventcounter, QfwSetup;
+  int lwords, usedsize, opticlen=-1, eventcounter, QfwSetup;
   int loopsize[QFWLOOPS];
   int looptime[QFWLOOPS];
   struct pexornet_data_header* phead;
@@ -551,12 +479,12 @@ int check_event (const char* data)
   pdatastart = pdata;
   lwords = usedsize / sizeof(int);    // this is true filled size from DMA, not total buffer length
   // loop over single subevent data:
+  i=5;
   while (pdata - pdatastart < lwords)
   {
-
     if ((*pdata & 0xff) != 0x34)    // regular channel data
     {
-      printf ("**** unpack_qfw: Skipping Non-header format 0x%x - (0x34 are expected) ...\n", (*pdata & 0xff));
+      if(--i>0) debprint ("**** unpack_qfw: Skipping Non-header format 0x%x - (0x34 are expected) ...\n", (*pdata & 0xff));
       pdata++;
       continue;    // we have to skip it, since the dedicated padding pattern is added by mbs and not available here!
     }
@@ -569,7 +497,7 @@ int check_event (const char* data)
     pdata++;
 
     opticlen = *pdata++;
-    printf ("Token header: trigid:0x%x sfp:0x%x modid:0x%x memid:0x%x opticlen:0x%x\n", trig_type, sfp_id, device_id,
+    debprint ("Token header: trigid:0x%x sfp:0x%x modid:0x%x memid:0x%x opticlen:0x%x\n", trig_type, sfp_id, device_id,
         channel_id, opticlen);
     //
     if (opticlen > lwords * 4)
@@ -580,13 +508,13 @@ int check_event (const char* data)
     }
     QFWRAW_CHECK_PDATA;
     eventcounter = *pdata;
-    printf (" - Internal Event number 0x%x\n", eventcounter);
+    debprint (" - Internal Event number 0x%x\n", eventcounter);
     // board id calculated from SFP and device id:
 
     pdata += 1;
     QFWRAW_CHECK_PDATA;
     QfwSetup = *pdata;
-    printf (" - QFW SEtup %d\n", QfwSetup);
+    debprint (" - QFW SEtup %d\n", QfwSetup);
     for (j = 0; j < 4; ++j)
     {
       QFWRAW_CHECK_PDATA_BREAK;
@@ -598,7 +526,7 @@ int check_event (const char* data)
     {
       QFWRAW_CHECK_PDATA_BREAK;
       loopsize[l] = *pdata++;
-      printf (" - Loopsize[%d] = 0x%x\n", l, loopsize[l]);
+      debprint (" - Loopsize[%d] = 0x%x\n", l, loopsize[l]);
     }    // first loop loop
 
     QFWRAW_CHECK_PDATA;
@@ -606,7 +534,7 @@ int check_event (const char* data)
     {
       QFWRAW_CHECK_PDATA_BREAK;
       looptime[loop] = *pdata++;
-      printf (" - Looptime[%d] = 0x%x\n", loop, looptime[loop]);
+      debprint (" - Looptime[%d] = 0x%x\n", loop, looptime[loop]);
     }    // second loop loop
 
     for (j = 0; j < 21; ++j)
@@ -627,7 +555,7 @@ int check_event (const char* data)
           //loopData->fQfwTrace[ch].push_back(value);
           // TODO: pseudo trace graphics on terminal
           if (Debugmode)
-            printf (" -- loop %d slice %d ch %d = 0x%x\n", loop, sl, ch, value);
+            debprint (" -- loop %d slice %d ch %d = 0x%x\n", loop, sl, ch, value);
         }
     }    //loop
 
@@ -637,7 +565,7 @@ int check_event (const char* data)
     {
       QFWRAW_CHECK_PDATA_BREAK;
       ErrorScaler[qfw] = (unsigned int) (*pdata++);
-      printf (" - ErrorScaler[%d] = 0x%x\n", qfw, ErrorScaler[qfw]);
+      debprint (" - ErrorScaler[%d] = 0x%x\n", qfw, ErrorScaler[qfw]);
     }
     QFWRAW_CHECK_PDATA;
 
@@ -645,7 +573,7 @@ int check_event (const char* data)
     while (pdata - pdatastart <= (opticlen / 4))    // note that trailer is outside opticlen!
     {
       if (Debugmode)
-        printf ("######### skipping word 0x%x\n ", *pdata);
+        debprint ("######### skipping word 0x%x\n ", *pdata);
       pdata++;
     }
 
@@ -657,30 +585,47 @@ int check_event (const char* data)
     }
     else
     {
-      printf ("Found trailing Eventcounter 0x%x \n", *pdata);
+      debprint ("Found trailing Eventcounter 0x%x \n", *pdata);
     }
     pdata++;
   }    // while pdata - pdatastart < lwords
 
+  if(opticlen<0) return -1; // no any valid data in packet!
   ////////////////////////////// end go4 unpacker
 
   return 0;
 }
 
+void cleanup (pexornet_handle_t* h, int sock)
+{
+  if(h==0)
+    h=pexornet_open(0); // TEST: if handle was closed after start acquisition
+
+  pexornet_acquisition_stop (h);
+#ifndef NOREADOUT
+  if(read_event(sock,data)>=0) // also get the stop acquisition trigger packet here?
+  {
+    evcount++;
+    if(check_event(data)!=0) numcorrupt++;
+  }
+  if (evcount)
+     printm ("Read %d  events, corrupt:%d (ratio %f)\n", evcount, numcorrupt,
+         (double) numcorrupt / (double) evcount);
+#endif
+
+  pexornet_close (h);
+  if(sock) close (sock);
+}
 
 int main (int argc, char *argv[])
 {
   int rev=0;
-//  int sock = 0;
-//  pexornet_handle_t* handle;
-
   int errsav = 0, cmdlen = 0, i = 0, opt = 0;
   int ifnum = 0;
-  int numevents = -1, numcorrupt = 0;
+  int numevents = -1;
 
   int initfirst = 0;
   char hname[256];
-  char data[READBUFLEN];
   struct sigaction s_sact;
 
   optind = 1;
@@ -738,36 +683,12 @@ int main (int argc, char *argv[])
 #endif
   printm ("Reading %d  events... \n", numevents);
   pexornet_acquisition_start (handle);
-  // TEST: free control socket before receiving
-  //pexornet_close(handle);
-  //handle=0;
 
 #ifdef NOREADOUT
     sleep(60);
     printm ("After sleep without readout.\n");
 #else
-
-#ifdef SNIFFRAWSOCKET
-    printm ("Entering nonblocking polling loop... \n");
-    while(1)
-    {
-      rev=sniff_raw(sock,data);
-      if(rev==-2) {
-        usleep(10000); // non blocking polling
-        continue;
-      }
-      printm ("Sniffed data of size %d :\n", rev);
-      for(i=0; i<rev; ++i)
-        {
-          printm ("\t 0x%x", data[i]);
-          if((i%8) == 0)  printm ("\n");
-        }
-    }
-
-
-#else
-
-for (i = 0; i < numevents; ++i)
+for (evcount = 0; evcount < (unsigned long) numevents; ++evcount)
   {
     rev=read_event(sock,data);
     if(rev<0)
@@ -775,18 +696,13 @@ for (i = 0; i < numevents; ++i)
         cleanup (handle, sock);
         exit (EXIT_FAILURE);
       }
-    printm ("Read event %d.\n", i);
+    debprint ("Read event %d.\n", evcount);
     if (check_event (data) != 0)
     {
       numcorrupt++;
     }
 
   }    // for
-
-  if (numevents)
-    printm ("Read %d  events, corrupt:%d (ratio %f)\n", numevents, numcorrupt,
-        (double) numcorrupt / (double) numevents);
-#endif
 #endif
   cleanup (handle, sock);
   return 0;
