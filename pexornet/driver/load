@@ -4,4 +4,6 @@ export PATH=/sbin:/bin
 
 # Use a pathname, as new modutils don't look in the current dir by default
 insmod ./pexornet.ko $*
-ifconfig pex0 pexor0
+ifconfig pex0 pexor0 
+ifconfig pex0 mtu 65500
+

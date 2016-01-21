@@ -2051,7 +2051,7 @@ int pexornet_change_mtu(struct net_device *dev, int new_mtu)
     //    spinlock_t *lock = &priv->lock;
 //    printk (KERN_NOTICE "snull_change_mtu...\n");
     /* check ranges */
-    if ((new_mtu < 68) || (new_mtu > 1500))
+    if ((new_mtu < 68) || (new_mtu > PEXORNET_MAXMTU))
         return -EINVAL;
 
 //    spin_lock_irqsave(lock, flags);
@@ -2164,7 +2164,7 @@ void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
 
   /** here we have to place user payload header with
     * trigger number etc.  For the moment we use own structure.
-    * Later probably directly write mbs header?*/
+    * Later probably directly write mbs header? or hadtu header for existing trbnet clients?*/
 
 // need to add data with internal checksumming:
   dathead.trigger  = pkt->trigger_status;
@@ -2175,16 +2175,6 @@ void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
   memcpy (skb_put (skb, sizeof(struct pexornet_data_header)), (unsigned char*) &dathead, sizeof(struct pexornet_data_header));
 #endif
   datacnt += sizeof(struct pexornet_data_header);
-
-// old without checksumming:
-  //  struct pexornet_data_header* dathead;
-   //dathead = (struct pexornet_data_header*) skb_put (skb, sizeof(struct pexornet_data_header));
-//   dathead->trigger = pkt->trigger_status;
-//   dathead->datalen = pkt->used_size;
-//   datacnt += sizeof(struct pexornet_data_header);
-
-
-
 
    /** rest of skb is filled with actual dma payload:*/
 
@@ -2247,20 +2237,15 @@ void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
   /* add protocol-dependent pseudo-header */
    udph->check = csum_tcpudp_magic( iph->saddr, iph->daddr, len,
        iph->protocol, csum);
-   pexornet_msg(
+   pexornet_dbg(
             KERN_NOTICE "pexornet_rx udp check: 0x%x for length 0x%x, csum:0x%x",udph->check, len, csum);
 #endif
   /* just call socket buffer header function explicitely thus emulating what would have been done on a virtual sender: */
-  //skb_push (skb, 2);    // 2 padding bytes at the end of 14byte ethernet header (instead of skb_reserve here) for 16 byte alignment
   pexornet_header (skb, dev, ETH_P_IP, dev->dev_addr, dev->dev_addr, 0);
   skb_reset_mac_header (skb);    // remember eth header location in buffer
   eth = (struct ethhdr*) skb_mac_header (skb);
 
-  // test: localhost sends via our interface-
-
   eth->h_source[ETH_ALEN - 1] ^= 0x01; /* emulate virtual remote source by setting to us xor 1. adapted from snull example */
-  // JAM2015 DEBUG
-  //eth->h_dest[ETH_ALEN - 1] ^= 0x01; /* do we still receive these ones in wireshark? yes!*/
 
   skb->dev = dev;
   skb->protocol = eth_type_trans (skb, dev);    // this will shift data cursor to location after ethheader
@@ -2276,36 +2261,36 @@ void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
   priv->stats.rx_bytes += datacnt;
 
   //    if (printk_ratelimit())
-  pexornet_msg(
+  pexornet_dbg(
       KERN_NOTICE "pexornet_rx received packet of size %ld, trigtyp:0x%x si:0x%x mis:0x%x lec:0x%x di:0x%x tdt:0x%x eon:0x%x \n",pkt->used_size,
       dathead.trigger.typ, dathead.trigger.si, dathead.trigger.mis, dathead.trigger.lec, dathead.trigger.di, dathead.trigger.tdt, dathead.trigger.eon);
 
-  pexornet_msg(
+  pexornet_dbg(
        KERN_NOTICE "pexornet_rx skb dump: head:0x%x data:0x%x tail:0x%x end:0x%x ethhdr:0x%x iphdr:0x%x udphdr:0x%x maxheadroom:0x%x packet type:0x%x\n",
        skb->head, skb->data, skb->tail, skb->end, skb_mac_header (skb), skb_network_header(skb), skb_transport_header(skb), maxheadroom, skb->pkt_type);
-  pexornet_msg(
+  pexornet_dbg(
           KERN_NOTICE "pexornet_rx udp dump: srcport:%d destport:%d len:%d\n",
           ntohs(udph->source), ntohs(udph->dest), ntohs(udph->len));
 
-  pexornet_msg(
+  pexornet_dbg(
         KERN_NOTICE "pexornet_rx ip dump: srcadd:0x%x destadd:0x%x proto:0x%x, totlen:%d\n",
         ntohl(iph->saddr), ntohl(iph->daddr), iph->protocol, ntohs(iph->tot_len));
-  pexornet_msg(
+  pexornet_dbg(
           KERN_NOTICE "pexornet_rx eth dump: protocol:0x%x ",
           ntohs(eth->h_proto));
 
-  pexornet_msg(KERN_NOTICE "destination:");
-  for(i=0;i<ETH_ALEN;++i) pexornet_msg(KERN_NOTICE "%d.",(unsigned int) ((char*)eth->h_dest)[i]);
-  pexornet_msg(KERN_NOTICE "\n");
-  pexornet_msg(KERN_NOTICE "source:");
-  for(i=0;i<ETH_ALEN;++i) pexornet_msg(KERN_NOTICE "%d.",(unsigned int) ((char*)eth->h_source)[i]);
-  pexornet_msg(KERN_NOTICE "\n");
+  pexornet_dbg(KERN_NOTICE "destination:");
+  for(i=0;i<ETH_ALEN;++i) pexornet_dbg(KERN_NOTICE "%d.",(unsigned int) ((char*)eth->h_dest)[i]);
+  pexornet_dbg(KERN_NOTICE "\n");
+  pexornet_dbg(KERN_NOTICE "source:");
+  for(i=0;i<ETH_ALEN;++i) pexornet_dbg(KERN_NOTICE "%d.",(unsigned int) ((char*)eth->h_source)[i]);
+  pexornet_dbg(KERN_NOTICE "\n");
 
 
 
   rev = netif_rx (skb);
 //    if (printk_ratelimit())
- pexornet_msg(KERN_NOTICE "pexornet_rx: netif_rx has return value %d !!!\n",rev);
+ pexornet_dbg(KERN_NOTICE "pexornet_rx: netif_rx has return value %d !!!\n",rev);
 
   out: return;
 }

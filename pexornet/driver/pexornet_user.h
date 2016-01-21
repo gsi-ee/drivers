@@ -37,6 +37,9 @@
 
 #define PEXORNET_RECVPORT 50256 // todo configurable later
 
+#define PEXORNET_MAXMTU 0x1FFFF
+// 128 k
+
 
 
 

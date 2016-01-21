@@ -28,6 +28,9 @@ $(BINDIR)/%: $(OBJDIR)/%.o
 #	$(Q)$(CXX) $(LDINC) $(LDFLAGS) $(PEXLIB) $(CFLAGS) -o $@ $<
 	$(Q)$(CXX) $(LDFLAGS) $(CFLAGS) -o  $@  $< $(PEXLIB)
 
+$(BINDIR)/readout_test: $(OBJDIR)/readout_test.o $(OBJDIR)/timing.o
+	@echo -e "LD \t$@"
+	$(Q)$(CC) $(LDINC) $(LDFLAGS) $(CFLAGS) -o $@ $(OBJDIR)/readout_test.o $(OBJDIR)/timing.o $(PEXLIB)
 
 
 

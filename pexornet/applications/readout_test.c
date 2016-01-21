@@ -24,6 +24,8 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#include "timing.h"
+
 
 //#define VERBOSE 1
 
@@ -43,8 +45,8 @@
 //#define NR_SLAVES     {1, 1, 0, 0}
 #define NR_SLAVES     {0, 2, 0, 0}
 
-/** receivebuffer length in bytes:*/
-#define READBUFLEN 65536
+/** receivebuffer length in bytes, should be mtu as defined in pexornet_user.h:*/
+#define READBUFLEN PEXORNET_MAXMTU
 
 #define MAX_SFP PEXORNET_SFP_NUMBER
 #define MAX_SLAVE         16
@@ -96,6 +98,7 @@ static pexornet_handle_t* handle;
 static char data[READBUFLEN];
 static unsigned long evcount=0;
 static unsigned long numcorrupt=0;
+static unsigned long bytecount=0;
 
 /* helper macro for check_event to check if payload pointer is still inside delivered region:*/
 /* this one to be called at top data processing loop*/
@@ -591,25 +594,31 @@ int check_event (const char* data)
 
   if(opticlen<0) return -1; // no any valid data in packet!
   ////////////////////////////// end go4 unpacker
+  bytecount+=usedsize;
 
   return 0;
 }
 
 void cleanup (pexornet_handle_t* h, int sock)
 {
+  double clockdelta;
   if(h==0)
     h=pexornet_open(0); // TEST: if handle was closed after start acquisition
-
+  clockdelta=Pexortest_ClockDelta();
   pexornet_acquisition_stop (h);
 #ifndef NOREADOUT
-  if(evcount && read_event(sock,data)>=0) // also get the stop acquisition trigger packet here if we got any data before
-  {
-    evcount++;
-    if(check_event(data)!=0) numcorrupt++;
-  }
+//  if(evcount && read_event(sock,data)>=0) // also get the stop acquisition trigger packet here if we got any data before
+//  {
+//    evcount++;
+//    if(check_event(data)!=0) numcorrupt++;
+//  }
   if (evcount)
-     printm ("Read %d  events, corrupt:%d (ratio %f)\n", evcount, numcorrupt,
-         (double) numcorrupt / (double) evcount);
+  {
+     printm ("Read %d  events (%ld bytes), corrupt:%d (ratio %f), evrate=%f /s\n", evcount, bytecount, numcorrupt,
+         (double) numcorrupt / (double) evcount, (double) evcount/clockdelta);
+     Pexortest_ShowRate("Clock:  udp readout", bytecount, clockdelta);
+  }
+
 #endif
 
   pexornet_close (h);
@@ -670,6 +679,7 @@ int main (int argc, char *argv[])
       printm("!!Error calling sigaction, exiting..\n");
       exit (0);
     }
+  //Pexortest_TimerInit();
 
   handle = pexornet_open (ifnum);
   if (!handle)
@@ -682,6 +692,10 @@ int main (int argc, char *argv[])
 #endif
   printm ("Reading %d  events... \n", numevents);
   pexornet_acquisition_start (handle);
+
+  /** re-use very old benchmarking tools...*/
+  Pexortest_ClockStart();
+  //Pexortest_TimerStart();
 
 #ifdef NOREADOUT
     sleep(60);
