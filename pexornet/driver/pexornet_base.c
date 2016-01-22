@@ -2304,7 +2304,7 @@ int pexornet_tx(struct sk_buff *skb, struct net_device *dev)
 {
   struct pexornet_privdata *priv = pexornet_get_privdata(dev);
 
-  pexornet_msg(KERN_WARNING "pexornet_tx is called.");
+  pexornet_dbg(KERN_WARNING "pexornet_tx is called.");
 
   priv->stats.tx_packets++;
   priv->stats.tx_bytes += skb->len;

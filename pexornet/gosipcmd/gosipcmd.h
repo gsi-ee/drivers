@@ -46,7 +46,9 @@ typedef enum
   GOSIP_SETBIT,
   GOSIP_CLEARBIT,
   GOSIP_CONFIGURE,
-  GOSIP_VERIFY
+  GOSIP_VERIFY,
+  GOSIP_PEXORNET_STA_AQ,
+  GOSIP_PEXORNET_STO_AQ,
 } gos_cmd_id;
 
 
@@ -127,6 +129,15 @@ int goscmd_busio(struct gosip_cmd* com);
 
 /* initialize sfp chain*/
 int goscmd_init(struct gosip_cmd* com);
+
+/* reset pexor device*/
+int goscmd_reset (struct gosip_cmd* com);
+
+/* start acquisition in interrupt handler (mbs like trigger 14)*/
+int goscmd_start_acq (struct gosip_cmd* com);
+
+/* start acquisition in interrupt handler (mbs like trigger 15)*/
+int goscmd_stop_acq (struct gosip_cmd* com);
 
 /* load register values from configuration file*/
 int goscmd_configure(struct gosip_cmd* com);

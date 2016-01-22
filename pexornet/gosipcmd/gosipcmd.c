@@ -141,6 +141,14 @@ char* goscmd_get_description (struct gosip_cmd* com)
     case GOSIP_CLEARBIT:
       snprintf (CommandDescription, GOSIP_MAXTEXT, "Clear Bitmask");
       break;
+    case GOSIP_PEXORNET_STA_AQ:
+      snprintf (CommandDescription, GOSIP_MAXTEXT, "Start Acquisition (pexornet readout)");
+      break;
+
+    case GOSIP_PEXORNET_STO_AQ:
+      snprintf (CommandDescription, GOSIP_MAXTEXT, "Stop Acquisition (pexornet readout)");
+      break;
+
     default:
       snprintf (CommandDescription, GOSIP_MAXTEXT, "Unknown command");
       break;
@@ -396,6 +404,26 @@ int goscmd_reset (struct gosip_cmd* com)
     goscmd_dump_command (com);
   return (pexornet_reset (com->sd_pex));
 }
+
+
+int goscmd_start_acq (struct gosip_cmd* com)
+{
+  goscmd_assert_command (com);
+  if (com->verboselevel)
+    goscmd_dump_command (com);
+  return (pexornet_acquisition_start(com->sd_pex));
+}
+
+int goscmd_stop_acq (struct gosip_cmd* com)
+{
+  goscmd_assert_command (com);
+  if (com->verboselevel)
+    goscmd_dump_command (com);
+  return (pexornet_acquisition_stop(com->sd_pex));
+}
+
+
+
 
 int goscmd_init (struct gosip_cmd* com)
 {
@@ -661,7 +689,7 @@ void goscmd_usage (const char *progname)
   printf ("***************************************************************************\n");
 
   printf (" %s for pexornet library  \n", progname);
-  printf (" v0.50 11-Dec-2015 by JAM (j.adamczewski@gsi.de)\n");
+  printf (" v0.60 22-Jan-2016 by JAM (j.adamczewski@gsi.de)\n");
   printf ("***************************************************************************\n");
   printf (
       "  usage: %s [-h|-z] [[-i|-r|-w|-s|-u] [-b] | [-c|-v FILE] [-n IF |-d|-x] sfp slave [address [value [words]|[words]]]] \n",
@@ -670,6 +698,8 @@ void goscmd_usage (const char *progname)
   printf ("\t\t -h        : display this help\n");
   printf ("\t\t -z        : reset (zero) pexor/kinpex board \n");
   printf ("\t\t -i        : initialize sfp chain \n");
+  printf ("\t\t -a        : stArt acquisition (pexornet interrupt readout) \n");
+  printf ("\t\t -o        : stOp  acquisition (pexornet interrupt readout) \n");
   printf ("\t\t -r        : read from register \n");
   printf ("\t\t -w        : write to  register\n");
   printf ("\t\t -s        : set bits of given mask in  register\n");
@@ -729,6 +759,13 @@ int goscmd_execute_command (struct gosip_cmd* com)
     case GOSIP_INIT:
       rev = goscmd_init (com);
       break;
+    case GOSIP_PEXORNET_STA_AQ:
+      rev = goscmd_start_acq(com);
+      break;
+    case GOSIP_PEXORNET_STO_AQ:
+      rev = goscmd_stop_acq(com);
+      break;
+
     case GOSIP_READ:
     case GOSIP_WRITE:
     case GOSIP_SETBIT:
@@ -761,7 +798,7 @@ int main (int argc, char *argv[])
 
   /* get arguments*/
   optind = 1;
-  while ((opt = getopt (argc, argv, "hzwrsuin:c:v:dxb")) != -1)
+  while ((opt = getopt (argc, argv, "hzwrsuaoin:c:v:dxb")) != -1)
   {
     switch (opt)
     {
@@ -791,6 +828,12 @@ int main (int argc, char *argv[])
         break;
       case 'i':
         goscmd_set_command (&theCommand, GOSIP_INIT);
+        break;
+      case 'a':
+        goscmd_set_command (&theCommand, GOSIP_PEXORNET_STA_AQ);
+        break;
+      case 'o':
+        goscmd_set_command (&theCommand, GOSIP_PEXORNET_STO_AQ);
         break;
       case 'c':
         goscmd_set_command (&theCommand, GOSIP_CONFIGURE);
