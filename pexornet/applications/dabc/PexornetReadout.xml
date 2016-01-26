@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<dabc version="2">
+
+<Context host="localhost" name="Pexortest">
+		<Run>
+			<lib value="libDabcMbs.so" />
+      	    <lib value="libDabcHttp.so"/>  
+			<lib value="libDabcPexornet.so" />
+			<logfile value="ReadoutPexornet.log" />
+			<!-- <runtime value="20"/> -->
+			<debuglevel value="1"/>
+		</Run>
+
+		<MemoryPool name="Pool">
+			<BufferSize value="200000" />
+			<NumBuffers value="100" />
+		</MemoryPool>
+
+
+
+		<HttpServer name="http">
+			<port value="8091" />
+		</HttpServer>
+
+
+
+
+
+		
+
+
+		<Module name="PexornetReadout" class="pexornet::ReadoutModule">
+			<!-- these parameters will force to create inputs/oputputs of module -->
+			<NumInputs value="1" />
+			<NumOutputs value="1" />
+
+	   		<InputPort name="Input0" url="pexornet://host:50256" urlopt1="cratid=0&procid=9&ctrlid=3"/>
+       
+       		<InputPort name="Input*" queue="10" urlopt="udpbuf=200000&mtu=64512&flush=2&debug&dummy"/>
+
+
+			<OutputPort name="Output0" url="mbs://Stream:6900" />
+			<OutputPort name="Output1" url="lmd:///data/pexortest.lmd?maxsize=1500&log=2" />
+			
+			<Ratemeter name="*" debug="true" interval="3" width="5"
+				prec="2" />
+
+		</Module>
+
+	</Context>
+</dabc>
