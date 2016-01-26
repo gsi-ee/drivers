@@ -29,7 +29,7 @@
 #include "dabc/timing.h"
 #include "dabc/Manager.h"
 
-#include "pexornet_user.h"
+
 
 
 
@@ -46,7 +46,7 @@ pexornet::DataSocketAddon::DataSocketAddon(int fd, int nport, int mtu, double fl
    fReduce(reduce < 1. ? reduce : 1.),
    fTotalRecvPacket(0),
    fTotalDiscardPacket(0),
-   fTotalDiscard32Packet(0),
+   fTotalLostPacket(0),
    fTotalRecvBytes(0),
    fTotalDiscardBytes(0),
    fTotalProducedBuffers(0),
@@ -61,6 +61,12 @@ pexornet::DataSocketAddon::DataSocketAddon(int fd, int nport, int mtu, double fl
 
 pexornet::DataSocketAddon::~DataSocketAddon()
 {
+
+  DOUT0("pexornet::DataSocketAddon destructor:");
+  DOUT0("UDP:%d - packets: %ld received (%ld bytes), %ld discarded (%ld bytes), %ld lost - buffers: produced %ld ", fNPort,
+      fTotalRecvPacket, fTotalRecvBytes, fTotalDiscardPacket, fTotalDiscardBytes, fTotalLostPacket, fTotalProducedBuffers);
+
+
 }
 
 void pexornet::DataSocketAddon::ProcessEvent(const dabc::EventId& evnt)
@@ -160,6 +166,21 @@ unsigned pexornet::DataSocketAddon::ReadUdp()
       unsigned int msgsize=pexhead->datalen;
       unsigned int trigtype=pexhead->trigger.typ;
 
+      DOUT3("UDP:%d receives trigtyp:0x%x si:0x%x mis:0x%x lec:0x%x di:0x%x tdt:0x%x eon:0x%x \n", fNPort, pexhead->trigger.typ, pexhead->trigger.si, pexhead->trigger.mis, pexhead->trigger.lec, pexhead->trigger.di, pexhead->trigger.tdt, pexhead->trigger.eon);
+
+
+      // check for lost udp packets by local event counter:
+      int deltapack=( (int) (pexhead->trigger.lec) - ((int)(fLastTrigStat.lec) +1));
+     if(fLastTrigStat.typ !=0 && fLastTrigStat.typ < 14 && pexhead->trigger.typ< 14 && deltapack !=0 && deltapack!=-32) // exclude initial event, start/stop triggers and  wraparound of local event counter
+      {
+        if(deltapack<0) deltapack = 31 - deltapack; // this happens at lec wraparound, assume at least one complete 32 chunk as lost
+        fTotalLostPacket += deltapack;
+        DOUT0("UDP:%d local event counter mismatch - last:%d current:%d - assume %d lost packets, total lost %d packets",
+            fNPort, (int) (fLastTrigStat.lec), (int)(pexhead->trigger.lec), deltapack, fTotalLostPacket);
+      }
+
+
+
 
       std::string errmsg;
       if ((unsigned) res != msgsize + sizeof(struct pexornet_data_header) )
@@ -194,6 +215,8 @@ unsigned pexornet::DataSocketAddon::ReadUdp()
       fTotalRecvPacket++;
       fTotalRecvBytes += res;
 
+      fLastTrigStat=pexhead->trigger; // remember trigger status word for sequence check
+
       // now overwrite headroom with correct mbs headers:
       unsigned int filled_size = 0, used_size = 0;
       mbs::EventHeader* evhdr = PutMbsEventHeader (headerPtr, fNumEvents, trigtype);
@@ -212,6 +235,9 @@ unsigned pexornet::DataSocketAddon::ReadUdp()
 
 
       fTgtPtr.shift(used_size);
+
+
+
 
       // when rest size is smaller that mtu, one should close buffer
       if (fTgtPtr.rawsize() < fMTU)
@@ -293,7 +319,7 @@ void pexornet::DataSocketAddon::ClearCounters()
 {
    fTotalRecvPacket = 0;
    fTotalDiscardPacket = 0;
-   fTotalDiscard32Packet = 0;
+   fTotalLostPacket = 0;
    fTotalRecvBytes = 0;
    fTotalDiscardBytes = 0;
    fTotalProducedBuffers = 0;

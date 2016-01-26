@@ -34,6 +34,7 @@
 #endif
 
 #include "mbs/MbsTypeDefs.h"
+#include "pexornet_user.h"
 
 #include <sched.h>
 
@@ -62,7 +63,7 @@ namespace pexornet {
 
          uint64_t           fTotalRecvPacket;
          uint64_t           fTotalDiscardPacket;
-         uint64_t           fTotalDiscard32Packet;
+         uint64_t           fTotalLostPacket;
          uint64_t           fTotalRecvBytes;
          uint64_t           fTotalDiscardBytes;
          uint64_t           fTotalProducedBuffers;
@@ -79,6 +80,9 @@ namespace pexornet {
 
           /** for mbs format: sequence number since readout start*/
           unsigned int fNumEvents;
+
+          /** for lost packets check: last trigger statujs with local event counter etc*/
+          struct pexornet_trigger_status fLastTrigStat;
 
          pid_t fPid;                        ///< process id
          bool   fDebug;                     ///< when true, produce more debug output
