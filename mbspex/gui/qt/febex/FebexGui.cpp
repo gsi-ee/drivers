@@ -20,15 +20,17 @@
 
 
 // *********************************************************
-
+#ifdef USE_MBSPEX_LIB
 FebexGui* FebexGui::fInstance = 0;
+#endif
+
 
 /*
  *  Constructs a FebexGui which is a child of 'parent', with the
  *  name 'name'.'
  */
 FebexGui::FebexGui (QWidget* parent) :
-    QWidget (parent), fDebug (false), fSaveConfig (false), fChannel (0), fSlave (0), fChannelSave (0), fSlaveSave (0),
+    QWidget (parent), fSetup(), fDebug (false), fSaveConfig (false), fChannel (0), fSlave (0), fChannelSave (0), fSlaveSave (0),
         fConfigFile (0)
 {
   setupUi (this);
@@ -91,7 +93,7 @@ FebexGui::~FebexGui ()
 
 void FebexGui::ShowBtn_clicked ()
 {
-  std::cout << "FebexGui::ShowBtn_clicked()"<< std::endl;
+  //std::cout << "FebexGui::ShowBtn_clicked()"<< std::endl;
   EvaluateSlave ();
   GetRegisters ();
   RefreshView ();
@@ -99,13 +101,12 @@ void FebexGui::ShowBtn_clicked ()
 
 void FebexGui::ApplyBtn_clicked ()
 {
-std::cout << "FebexGui::ApplyBtn_clicked()"<< std::endl;
+//std::cout << "FebexGui::ApplyBtn_clicked()"<< std::endl;
 
   char buffer[1024];
   EvaluateSlave ();
-  //std::cout << "InitChainBtn_clicked()"<< std::endl;
 
-// JAM disabled confirm window as wished by Henning H.
+// JAM maybe disable confirm window ?
   snprintf (buffer, 1024, "Really apply FEBEX settings  to SFP %d Device %d?", fChannel, fSlave);
   if (QMessageBox::question (this, "FEBEX GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
       != QMessageBox::Yes)
@@ -409,6 +410,7 @@ void FebexGui::RefreshView ()
   int theDAC= dacBox->value ();
   int theChannel= chanBox->value ();
   int val=fSetup.GetDACValue(theDAC,theChannel);
+  //std::cout<< "RefreshView with dac:"<<theDAC<<", chan:"<<theChannel<<"val="<<val << std::endl;
   DACvalue_lineEdit->setText (pre+text.setNum (val, fNumberBase));
 
 // JAM 2016 TODO: add more elements to show all channels simultaneously!
@@ -428,10 +430,10 @@ void FebexGui::RefreshView ()
 void FebexGui::EvaluateView ()
 {
   // here the current gui display is just copied to setup structure in local memory
+
+  int value=DACvalue_lineEdit->text ().toUInt (0, fNumberBase);
   int theDAC= dacBox->value ();
   int theChannel= chanBox->value ();
-  int value=DACvalue_lineEdit->text ().toUInt (0, fNumberBase);
-
   fSetup.SetDACValue(theDAC,theChannel, value);
   fSetup.fDAC=theDAC;
   fSetup.fChannel=theChannel; // remember the last visible indices to apply them.
@@ -442,6 +444,9 @@ void FebexGui::EvaluateSlave ()
 {
   fChannel = SFPspinBox->value ();
   fSlave = SlavespinBox->value ();
+
+  fSetup.fDAC=dacBox->value ();
+  fSetup.fChannel=chanBox->value (); // remember the last visible indices to show them.
 }
 
 void FebexGui::SetRegisters ()
@@ -469,8 +474,10 @@ void FebexGui::GetRegisters ()
   EnableI2C ();
 
   // beginners gui will only read the currently set index:
+  int val=ReadDAC_FebexI2c (fSetup.fDAC, fSetup.fChannel);
+  if(val<0) return; // TODO error message
 
-  fSetup.GetDACValue(fSetup.fDAC, fSetup.fChannel);
+  fSetup.SetDACValue(fSetup.fDAC, fSetup.fChannel,val);
   // JAM2016 TODO loop over complete structure to get alltogether
 
 
@@ -717,6 +724,8 @@ void FebexGui::I2c_sleep ()
 //    l_depp++;
 //  }
 }
+
+
 
 #endif
 

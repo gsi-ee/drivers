@@ -8,7 +8,8 @@
 #include <QProcess>
 #include <QString>
 
-/** this define will switch between direct call of mbspex lib or external shell call of gosipcmd*/
+/** this define will switch between direct call of mbspex lib or external shell call of gosipcmd*
+ * note that we need to call "make nombspex" if we disable this define here!  */
 #define USE_MBSPEX_LIB 1
 
 #ifdef USE_MBSPEX_LIB
@@ -20,7 +21,7 @@ extern "C"
 
 
 
-
+#include <iostream>
 
 
 #define GOS_I2C_DWR  0x208010  // i2c data write reg.   addr
@@ -91,6 +92,7 @@ public:
   int GetDACValue(int chip, int chan)
   {
     if(chip<0 || chip>=FEBEX_MCP433_NUMCHIPS || chan <0 || chan >=FEBEX_MCP433_NUMCHAN) return -1; // error handling
+    //std::cout << "GetDACValue ("<<chip<<","<<chan<<")="<< (int)(fDACValueSet[chip][chan])<< std::endl;
     return fDACValueSet[chip][chan];
   }
 
@@ -98,6 +100,7 @@ public:
     {
       if(chip<0 || chip>=FEBEX_MCP433_NUMCHIPS || chan <0 || chan >=FEBEX_MCP433_NUMCHAN) return -1; // error handling
       fDACValueSet[chip][chan]=value;
+      //std::cout << "SetDACValue ("<<chip<<","<<chan<<")="<< (int)(fDACValueSet[chip][chan])<<", val="<<(int) value<< std::endl;
     }
 
 };

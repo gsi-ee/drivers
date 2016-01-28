@@ -25,29 +25,34 @@ endif
 endif
 
 
-.PHONY: all clean set gui cleanset cleangui install
+.PHONY: all nombspex clean set gui gui-nombspex cleanset cleangui install
 
 
 
 ifneq ($(QTVERSION),4)
 
 all:
-	@echo "No qt4 found, Nyxor gui cannot be compiled"
+	@echo "No qt4 found, Febex gui cannot be compiled"
 
 clean:
-	@echo "No qt4 found, Nyxor gui was not compiled"
+	@echo "No qt4 found, Febex gui was not compiled"
 
 else
 
 
 all: gui
 
+nombspex: gui-nombspex
 
 gui:
 	@echo "Generating Makefile.qt"
 	$(QMAKE) FebexGui.pro -o Makefile.qt "QMAKE_LFLAGS += -Wl,-rpath,$(PEX_LIBPATH)" "INCLUDEPATH += $(PEX_INCPATH)" "LIBS+= -L $(PEX_LIBPATH) -lmbspex"
 	+$(MAKE) -f Makefile.qt
 
+gui-nombspex: 
+	@echo "Generating Makefile.qt without mbspex"
+	$(QMAKE) FebexGui.pro -o Makefile.qt 
+	+$(MAKE) -f Makefile.qt
 
 
 cleangui:
