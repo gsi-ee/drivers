@@ -26,8 +26,6 @@ extern "C"
 
 #define GOS_I2C_DWR  0x208010  // i2c data write reg.   addr
 #define GOS_I2C_DRR1 0x208020  // i2c data read  reg. 1 addr
-//#define GOS_I2C_DWR2 0x8040  // i2c data read  reg. 2 addr
-//#define GOS_I2C_SR   0x8080  // i2c status     reg.   addr
 
 
 /** i2c address of first mcp443x/5x/ chip on febex for writing values. Used as base
@@ -50,15 +48,17 @@ extern "C"
 /** number of dac/adc channels per chip*/
 #define FEBEX_MCP433_NUMCHAN 4
 
-//#define I2C_CTRL_A   0x01
-//#define I2C_COTR_A   0x03
-//
-//#define CHECK_DAT    0xa9000000
-//
-//
-//// write address modifiers for different nxyters on nyxor
-//#define I2C_ADDR_NX0 0x12
-//#define I2C_ADDR_NX1 0x22
+
+/** adress to read actual adc value. adc id and channel must be
+ * written to this address first*/
+#define FEBEX_ADC_PORT  0x20001c
+
+/** number of adc units per febex*/
+#define FEBEX_ADC_NUMADC 2
+
+/** number of channels per adc unit*/
+#define FEBEX_ADC_NUMCHAN 8
+
 
 
 /** this is a class (structure) to remember the previous setup read, and the
@@ -124,11 +124,9 @@ public:
          }
 
 
-#ifdef USE_MBSPEX_LIB
 
-   /** singleton pointer to forward mbspex output*/
-     static FebexGui* fInstance;
-#endif
+   /** singleton pointer to forward mbspex lib output, also useful without mbspex lib:*/
+  static FebexGui* fInstance;
 
 protected:
 
@@ -217,6 +215,8 @@ protected:
     int GetChannelOffsetDAC(uint8_t chan);
 
 
+    /** Read value from adc channel of currently selected slave. adc unit id and local channel id are specified*/
+    int ReadADC_Febex (uint8_t adc, uint8_t chan);
 
 
 

@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-//#include <stdio.h>
 #include <iostream>
 #include <QProcess>
 #include <stdlib.h>
@@ -20,9 +19,38 @@
 
 
 // *********************************************************
-#ifdef USE_MBSPEX_LIB
+
+
+// this we need to implement for output of mbspex library, but also useful to format output without it:
 FebexGui* FebexGui::fInstance = 0;
+
+
+#include <stdarg.h>
+
+void printm (char *fmt, ...)
+{
+  char c_str[256];
+  va_list args;
+  va_start(args, fmt);
+  vsprintf (c_str, fmt, args);
+//printf ("%s", c_str);
+  FebexGui::fInstance->AppendTextWindow (c_str);
+
+  va_end(args);
+}
+
+#ifdef USE_MBSPEX_LIB
+/** this one is used to speed down direct mbspex io:*/
+void FebexGui::I2c_sleep ()
+{
+  //usleep(300);
+
+  usleep(900); // JAM2016 need to increase wait time since some problems with adc read?
+}
+
 #endif
+
+
 
 
 /*
@@ -77,10 +105,8 @@ FebexGui::FebexGui (QWidget* parent) :
     printm ("ERROR>> open /dev/pexor%d \n", 0);
     exit (1);
   }
-
-  fInstance = this;
 #endif
-
+  fInstance = this;
   show ();
 }
 
@@ -107,12 +133,12 @@ void FebexGui::ApplyBtn_clicked ()
   EvaluateSlave ();
 
 // JAM maybe disable confirm window ?
-  snprintf (buffer, 1024, "Really apply FEBEX settings  to SFP %d Device %d?", fChannel, fSlave);
-  if (QMessageBox::question (this, "FEBEX GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
-      != QMessageBox::Yes)
-  {
-    return;
-  }
+//  snprintf (buffer, 1024, "Really apply FEBEX settings  to SFP %d Device %d?", fChannel, fSlave);
+//  if (QMessageBox::question (this, "FEBEX GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
+//      != QMessageBox::Yes)
+//  {
+//    return;
+//  }
 
   EvaluateView (); // from gui to memory
 
@@ -331,12 +357,32 @@ void FebexGui::DumpBtn_clicked ()
   EvaluateSlave ();
 
   if (!AssertNoBroadcast ())
-    return;    // for nyxor we can not dump all connected frontends at once, NxI2c works on current slave only
+    return;    // for febex we can not dump all connected frontends at once, NxI2c works on current slave only
 
   char buffer[1024];
-  AppendTextWindow ("--- Register Dump ---:");
+  AppendTextWindow ("--- ADC Dump ---:");
 
-  // JAM 2016 TODO
+  // JAM 2016 first demonstration how to get the actual adc values:
+  printm("SFP %d DEV:%d :)",fChannel, fSlave);
+  for(int adc=0; adc<FEBEX_ADC_NUMADC; ++adc){
+    for (int chan=0; chan<FEBEX_ADC_NUMCHAN; ++chan){
+      int val=ReadADC_Febex(adc,chan);
+      if(val<0)
+        printm("Read error for adc:%d chan:%d",adc,chan);
+      else
+        {
+          if(fNumberBase==16)
+            printm("Val (adc:0x%x chan:0x%x)=0x%x",adc,chan,val);
+          else
+            printm("Val (adc:%d chan:%d)=%d",adc,chan,val);
+      }
+    }
+
+  }
+
+
+
+
 
 }
 
@@ -344,7 +390,7 @@ void FebexGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "FebexGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.10 of 27-Januar-2016 by JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.11 of 28-Januar-2016 by JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -475,8 +521,10 @@ void FebexGui::GetRegisters ()
 
   // beginners gui will only read the currently set index:
   int val=ReadDAC_FebexI2c (fSetup.fDAC, fSetup.fChannel);
-  if(val<0) return; // TODO error message
-
+  if(val<0){
+    AppendTextWindow("GetRegisters has error!");
+    return; // TODO error message
+  }
   fSetup.SetDACValue(fSetup.fDAC, fSetup.fChannel,val);
   // JAM2016 TODO loop over complete structure to get alltogether
 
@@ -504,6 +552,35 @@ int FebexGui::ReadDAC_FebexI2c (uint8_t mcpchip, uint8_t chan)
   if(val < 0) return val; // error case, propagate it upwards
   return (val & 0xFF); // mask to use only l.s. byte
 }
+
+
+
+int  FebexGui::ReadADC_Febex (uint8_t adc, uint8_t chan)
+{
+  if(adc>FEBEX_ADC_NUMADC || chan > FEBEX_ADC_NUMCHAN) return -1;
+
+  int val=0;
+  int dat=(adc << 2) + chan; //l_wr_d  = (l_k*4) + l_l;
+
+  WriteGosip (fChannel, fSlave, FEBEX_ADC_PORT, dat); // first specify channel number
+
+  val = ReadGosip (fChannel, fSlave, FEBEX_ADC_PORT); // read back the value
+
+  // check if channel id matches the requested ones:
+  if ( ((val >> 24) & 0xf) != dat)
+      {
+         printm ("#Error: ReadADC_Febex channel id mismatch, requested 0x%x, received 0x%x",dat, (val>>24));
+         return -1;
+      }
+
+
+  return (val & 0x3fff);
+
+
+}
+
+
+
 
 int FebexGui::ReadGosip (int sfp, int slave, int address)
 {
@@ -564,10 +641,10 @@ int FebexGui::GetChannelOffsetDAC(uint8_t chan)
   switch(chan)
    {
      case 0:
-       channeloffset=0;
+       channeloffset=0x1000; // JAM note that order of first channels is swapped (verified with go4 readout)
        break;
      case 1:
-       channeloffset=0x1000;
+       channeloffset=0x0000;
      break;
      case 2:
        channeloffset=0x6000;
@@ -692,40 +769,4 @@ bool FebexGui::AssertNoBroadcast (bool verbose)
   return true;
 }
 
-// this we need to implement for output of mbspex library:
-#ifdef USE_MBSPEX_LIB
-#include <stdarg.h>
-
-void printm (char *fmt, ...)
-{
-  char c_str[256];
-  va_list args;
-  va_start(args, fmt);
-  vsprintf (c_str, fmt, args);
-//printf ("%s", c_str);
-  FebexGui::fInstance->AppendTextWindow (c_str);
-
-  va_end(args);
-}
-
-/** this one from Nik to speed down direct mbspex io*/
-void FebexGui::I2c_sleep ()
-{
-  usleep(300);
-
-// JAM: test avoid arbirtrary loop
-//#define N_LOOP 300000
-//
-//  int l_ii;
-//  int volatile l_depp = 0;
-//
-//  for (l_ii = 0; l_ii < N_LOOP; l_ii++)
-//  {
-//    l_depp++;
-//  }
-}
-
-
-
-#endif
 
