@@ -530,7 +530,7 @@ int pex_mmap (struct file *filp, struct vm_area_struct *vma)
   int ret = 0;
   unsigned long bufsize, barsize;
   privdata = (struct pex_privdata*) filp->private_data;
-  pex_dbg(KERN_NOTICE "** starting pex_mmap...\n");
+  pex_dbg(KERN_NOTICE "** starting pex_mmap for vm_start=0x%p\n", vma->vm_start);
   if (!privdata)
     return -EFAULT;
   bufsize = (vma->vm_end - vma->vm_start);

@@ -57,7 +57,7 @@
 #define BOARDTYPE_KINPEX 2
 
 
-#define PEXVERSION     "1.8"
+#define PEXVERSION     "1.85"
 
 
 //#define PEX_DEBUGPRINT 1

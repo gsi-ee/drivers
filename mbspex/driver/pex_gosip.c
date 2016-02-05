@@ -330,8 +330,8 @@ int pex_ioctl_wait_token (struct pex_privdata* priv, unsigned long arg)
    pex_msg(KERN_NOTICE "** pex_ioctl_request_token from_sfp 0x%x, bufid 0x%x\n",chan,bufid);*/
   pex_sfp_assert_channel(chan);
  pex_tdbg(KERN_ERR "pex_ioctl_wait_token waits for reply...\n");
-  if ((retval = pex_sfp_get_reply (priv, chan, &rstat, &radd, &rdat, 0)) != 0)    // debug: do not check reply status
-  //if((retval=pex_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEX_SFP_PT_TK_R_REP))!=0)
+  //if ((retval = pex_sfp_get_reply (priv, chan, &rstat, &radd, &rdat, 0)) != 0)    // debug: do not check reply status
+  if((retval=pex_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEX_SFP_PT_TK_R_REP))!=0) // JAM2016 enabled
   {
     pex_msg(KERN_ERR "** pex_ioctl_wait_token: error %d at sfp_reply \n", retval);
     pex_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
@@ -454,8 +454,8 @@ int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigne
         continue;    // check for channel pattern
     }
     pex_tdbg(KERN_ERR "pex_ioctl_request_receive_token_parallel waits for reply of sfp %d...\n", sfp);
-    if ((retval = pex_sfp_get_reply (priv, sfp, &rstat, &radd, &rdat, 0)) != 0)    // debug: do not check reply status
-    //if((retval=pex_sfp_get_reply(priv, sfp, &rstat, &radd, &rdat, PEX_SFP_PT_TK_R_REP))!=0)
+    //if ((retval = pex_sfp_get_reply (priv, sfp, &rstat, &radd, &rdat, 0)) != 0)    // debug: do not check reply status
+    if((retval=pex_sfp_get_reply(priv, sfp, &rstat, &radd, &rdat, PEX_SFP_PT_TK_R_REP))!=0) // JAM2016
     {
       pex_msg(KERN_ERR "** pex_ioctl_request_receive_token_parallel: wait token error %d at sfp_%d reply \n", retval, sfp);
       pex_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
@@ -669,7 +669,8 @@ int pex_sfp_get_reply (struct pex_privdata* privdata, int ch, u32* comm, u32 *ad
   ;pex_dbg(KERN_NOTICE "pex_sfp_get_reply from SFP: %x got status:%x address:%x data: %x \n", ch, *comm, *addr, *data);
   if (checkvalue == 0)
     return 0;    // no check of reply structure
-  if ((*comm & 0xfff) == checkvalue)
+  //if ((*comm & 0xfff) == checkvalue) // bugfix JAM2016
+  if ((*comm & checkvalue) == checkvalue)
   {
     if ((*comm & 0x4000) != 0)
     {
@@ -737,13 +738,21 @@ int pex_sfp_init_request (struct pex_privdata* privdata, int ch, int numslaves)
   comm = PEX_SFP_INI_REQ | (0x1 << (16 + sfp));
   pex_dbg(KERN_NOTICE "**pex_sfp_init_request for sfp:%d with maxslave=%d ***\n",sfp, maxslave);
   pex_sfp_request (privdata, comm, 0, maxslave);
-  if ((retval = pex_sfp_get_reply (privdata, sfp, &rstat, &radd, &rdat, 0)) != 0)
-  //if((retval=pex_sfp_get_reply(privdata, sfp, &rstat, &radd, &rdat, PEX_SFP_PT_INI_REP))!=0)
+  //if ((retval = pex_sfp_get_reply (privdata, sfp, &rstat, &radd, &rdat, 0)) != 0)
+  // JAM2016: exact check of expected reply status:
+  if((retval=pex_sfp_get_reply(privdata, sfp, &rstat, &radd, &rdat, PEX_SFP_PT_INI_REP))!=0)
   {
     pex_msg(KERN_ERR "** pex_sfp_init_request: error %d at sfp_reply \n", retval);
     pex_msg(KERN_ERR "   pex_sfp_init_request: incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat);
     return -EIO;
   }
+  // JAM new: check reply for correct number of slaves:
+  if(maxslave!=rdat)
+    {
+      pex_msg(KERN_ERR "** pex_sfp_init_request: slave max index mismatch: returned %d != requested %d \n", rdat, maxslave);
+      return -EIO;
+    }
+
   return retval;
 }
 
