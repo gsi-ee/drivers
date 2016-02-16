@@ -70,7 +70,7 @@ FebexGui::FebexGui (QWidget* parent) :
 
   SFPspinBox->setValue (fChannel);
   SlavespinBox->setValue (fSlave);
-
+  DAC_spinBox_all->setValue (500);
   TextOutput->setCenterOnScroll (false);
   ClearOutputBtn_clicked ();
 
@@ -90,6 +90,7 @@ FebexGui::FebexGui (QWidget* parent) :
   QObject::connect(HexBox, SIGNAL(stateChanged(int)), this, SLOT(HexBox_changed(int)));
   QObject::connect(SFPspinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
   QObject::connect(SlavespinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
+  QObject::connect(DAC_spinBox_all, SIGNAL(valueChanged(int)), this, SLOT(DAC_spinBox_all_changed(int)));
 
 // here optional components for febex:
 
@@ -390,7 +391,7 @@ void FebexGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "FebexGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.11 of 28-Januar-2016 by JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.5 of 16-February-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -449,19 +450,116 @@ void FebexGui::RefreshView ()
   QString text;
   QString pre;
   fNumberBase == 16 ? pre = "0x" : pre = "";
-
+int val,percent;
+int Adc;
 // here refresh of number displays:
 
   // the beginning gui can only display the channel that is currently set:
-  int theDAC= dacBox->value ();
-  int theChannel= chanBox->value ();
-  int val=fSetup.GetDACValue(theDAC,theChannel);
+ /* int theDAC= dacBox->value ();
+  int theChannel= chanBox->value ();*/
+//   int val=fSetup.GetDACValue(theDAC,theChannel);
   //std::cout<< "RefreshView with dac:"<<theDAC<<", chan:"<<theChannel<<"val="<<val << std::endl;
-  DACvalue_lineEdit->setText (pre+text.setNum (val, fNumberBase));
-
+ //DACvalue_lineEdit->setText (pre+text.setNum (val, fNumberBase));
+   val=fSetup.GetDACValue(0,0);
+   percent=1000.0-(val*1000.0/255.0) ;
+// std::cout<<"RefreshView: percent="<<percent<<", value="<<val <<std::endl;
+// printm("RefreshView: percent=%d, value=%d",percent,val);
+  DAC_spinBox_00->setValue (percent);
+  Adc=ReadADC_Febex(0,0);
 // JAM 2016 TODO: add more elements to show all channels simultaneously!
-
+ADC_Value_00->setText (pre+text.setNum (Adc, fNumberBase));
   // status header text with refresh time etc.:
+ val=fSetup.GetDACValue(0,1);
+   percent=1000.0-(val*1000.0/255.0) ;
+   DAC_spinBox_01->setValue (percent);
+  Adc=ReadADC_Febex(0,1);
+ADC_Value_01->setText (pre+text.setNum (Adc, fNumberBase));
+
+ val=fSetup.GetDACValue(0,2);
+   percent=1000.0-(val*1000.0/255.0) ;
+   DAC_spinBox_02->setValue (percent);
+  Adc=ReadADC_Febex(0,2);
+ADC_Value_02->setText (pre+text.setNum (Adc, fNumberBase));
+
+ val=fSetup.GetDACValue(0,3);
+   percent=1000.0-(val*1000.0/255.0) ;
+   DAC_spinBox_03->setValue (percent);
+  Adc=ReadADC_Febex(0,3);
+ADC_Value_03->setText (pre+text.setNum (Adc, fNumberBase));
+ 
+val=fSetup.GetDACValue(1,0);
+   percent=1000.0-(val*1000.0/255.0) ;
+   DAC_spinBox_04->setValue (percent);
+  Adc=ReadADC_Febex(0,4);
+ADC_Value_04->setText (pre+text.setNum (Adc, fNumberBase));
+
+ val=fSetup.GetDACValue(1,1);
+   percent=1000.0-(val*1000.0/255.0) ;
+   DAC_spinBox_05->setValue (percent);
+  Adc=ReadADC_Febex(0,5);
+ADC_Value_05->setText (pre+text.setNum (Adc, fNumberBase));
+
+ val=fSetup.GetDACValue(1,2);
+   percent=1000.0-(val*1000.0/255.0) ;
+   DAC_spinBox_06->setValue (percent);
+  Adc=ReadADC_Febex(0,6);
+ADC_Value_06->setText (pre+text.setNum (Adc, fNumberBase));
+
+ val=fSetup.GetDACValue(1,3);
+   percent=1000.0-(val*1000.0/255.0) ;
+   DAC_spinBox_07->setValue (percent);
+  Adc=ReadADC_Febex(0,7);
+ADC_Value_07->setText (pre+text.setNum (Adc, fNumberBase));
+
+ val=fSetup.GetDACValue(2,0);
+   percent=1000.0-(val*1000.0/255.0) ;
+   DAC_spinBox_08->setValue (percent);
+  Adc=ReadADC_Febex(1,0);
+ADC_Value_08->setText (pre+text.setNum (Adc, fNumberBase));
+
+ val=fSetup.GetDACValue(2,1);
+   percent=1000.0-(val*1000.0/255.0) ;
+   DAC_spinBox_09->setValue (percent);
+  Adc=ReadADC_Febex(1,1);
+ADC_Value_09->setText (pre+text.setNum (Adc, fNumberBase));
+
+ val=fSetup.GetDACValue(2,2);
+   percent=1000.0-(val*1000.0/255.0) ;
+   DAC_spinBox_10->setValue (percent);
+  Adc=ReadADC_Febex(1,2);
+ADC_Value_10->setText (pre+text.setNum (Adc, fNumberBase));
+
+ val=fSetup.GetDACValue(2,3);
+   percent=1000.0-(val*1000.0/255.0) ;
+   DAC_spinBox_11->setValue (percent);
+  Adc=ReadADC_Febex(1,3);
+ADC_Value_11->setText (pre+text.setNum (Adc, fNumberBase));
+
+ val=fSetup.GetDACValue(3,0);
+   percent=1000.0-(val*1000.0/255.0) ;
+   DAC_spinBox_12->setValue (percent);
+  Adc=ReadADC_Febex(1,4);
+ADC_Value_12->setText (pre+text.setNum (Adc, fNumberBase));
+
+ val=fSetup.GetDACValue(3,1);
+   percent=1000.0-(val*1000.0/255.0) ;
+   DAC_spinBox_13->setValue (percent);
+  Adc=ReadADC_Febex(1,5);
+ADC_Value_13->setText (pre+text.setNum (Adc, fNumberBase));
+
+ val=fSetup.GetDACValue(3,2);
+   percent=1000.0-(val*1000.0/255.0) ;
+   DAC_spinBox_14->setValue (percent);
+  Adc=ReadADC_Febex(1,6);
+ADC_Value_14->setText (pre+text.setNum (Adc, fNumberBase));
+
+ val=fSetup.GetDACValue(3,3);
+   percent=1000.0-(val*1000.0/255.0) ;
+   DAC_spinBox_15->setValue (percent);
+  Adc=ReadADC_Febex(1,7);
+ADC_Value_15->setText (pre+text.setNum (Adc, fNumberBase));
+
+
   QString statustext;
   statustext.append ("SFP ");
   statustext.append (text.setNum (fChannel));
@@ -477,12 +575,107 @@ void FebexGui::EvaluateView ()
 {
   // here the current gui display is just copied to setup structure in local memory
 
-  int value=DACvalue_lineEdit->text ().toUInt (0, fNumberBase);
-  int theDAC= dacBox->value ();
-  int theChannel= chanBox->value ();
-  fSetup.SetDACValue(theDAC,theChannel, value);
-  fSetup.fDAC=theDAC;
-  fSetup.fChannel=theChannel; // remember the last visible indices to apply them.
+  //int value=DACvalue_lineEdit->text ().toUInt (0, fNumberBase);
+//   int theDAC= dacBox->value ();
+//   int theChannel= chanBox->value ();
+int percent =DAC_spinBox_00->value ();
+
+int value=255.0-(percent*255.0/1000.0) ;
+std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+printm("EvaluateView: percent=%d, value=%d",percent,value);
+  fSetup.SetDACValue(0,0, value);
+//   fSetup.fDAC=theDAC;
+//   fSetup.fChannel=theChannel; // remember the last visible indices to apply them.
+
+percent =DAC_spinBox_01->value ();
+value=255.0-(percent*255.0/1000.0) ;
+std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+printm("EvaluateView: percent=%d, value=%d",percent,value); 
+fSetup.SetDACValue(0,1, value);
+
+percent =DAC_spinBox_02->value ();
+value=255.0-(percent*255.0/1000.0) ;
+std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+printm("EvaluateView: percent=%d, value=%d",percent,value);
+fSetup.SetDACValue(0,2, value);
+
+percent =DAC_spinBox_03->value ();
+value=255.0-(percent*255.0/1000.0) ;
+std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+printm("EvaluateView: percent=%d, value=%d",percent,value);
+fSetup.SetDACValue(0,3, value);
+
+percent =DAC_spinBox_04->value ();
+value=255.0-(percent*255.0/1000.0) ;
+std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+printm("EvaluateView: percent=%d, value=%d",percent,value);
+fSetup.SetDACValue(1,0, value);
+
+percent =DAC_spinBox_05->value ();
+value=255.0-(percent*255.0/1000.0) ;
+std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+printm("EvaluateView: percent=%d, value=%d",percent,value);
+fSetup.SetDACValue(1,1, value);
+
+percent =DAC_spinBox_06->value ();
+value=255.0-(percent*255.0/1000.0) ;
+std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+printm("EvaluateView: percent=%d, value=%d",percent,value);
+fSetup.SetDACValue(1,2, value);
+
+percent =DAC_spinBox_07->value ();
+value=255.0-(percent*255.0/1000.0) ;
+std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+printm("EvaluateView: percent=%d, value=%d",percent,value);
+fSetup.SetDACValue(1,3, value);
+
+percent =DAC_spinBox_08->value ();
+value=255.0-(percent*255.0/1000.0) ;
+std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+printm("EvaluateView: percent=%d, value=%d",percent,value);
+fSetup.SetDACValue(2,0, value);
+
+percent =DAC_spinBox_09->value ();
+value=255.0-(percent*255.0/1000.0) ;
+std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+printm("EvaluateView: percent=%d, value=%d",percent,value);
+fSetup.SetDACValue(2,1, value);
+
+percent =DAC_spinBox_10->value ();
+value=255.0-(percent*255.0/1000.0) ;
+std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+printm("EvaluateView: percent=%d, value=%d",percent,value);
+fSetup.SetDACValue(2,2, value);
+
+percent =DAC_spinBox_11->value ();
+value=255.0-(percent*255.0/1000.0) ;
+std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+printm("EvaluateView: percent=%d, value=%d",percent,value);
+fSetup.SetDACValue(2,3, value);
+
+percent =DAC_spinBox_12->value ();
+value=255.0-(percent*255.0/1000.0) ;
+std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+printm("EvaluateView: percent=%d, value=%d",percent,value);
+fSetup.SetDACValue(3,0, value);
+
+percent =DAC_spinBox_13->value ();
+value=255.0-(percent*255.0/1000.0) ;
+std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+printm("EvaluateView: percent=%d, value=%d",percent,value);
+fSetup.SetDACValue(3,1, value);
+
+percent =DAC_spinBox_14->value ();
+value=255.0-(percent*255.0/1000.0) ;
+std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+printm("EvaluateView: percent=%d, value=%d",percent,value);
+fSetup.SetDACValue(3,2, value);
+
+percent =DAC_spinBox_15->value ();
+value=255.0-(percent*255.0/1000.0) ;
+std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+printm("EvaluateView: percent=%d, value=%d",percent,value);
+fSetup.SetDACValue(3,3, value);
 
 }
 
@@ -491,8 +684,8 @@ void FebexGui::EvaluateSlave ()
   fChannel = SFPspinBox->value ();
   fSlave = SlavespinBox->value ();
 
-  fSetup.fDAC=dacBox->value ();
-  fSetup.fChannel=chanBox->value (); // remember the last visible indices to show them.
+//   fSetup.fDAC=dacBox->value ();
+//   fSetup.fChannel=chanBox->value (); // remember the last visible indices to show them.
 }
 
 void FebexGui::SetRegisters ()
@@ -501,7 +694,17 @@ void FebexGui::SetRegisters ()
 // write register values from strucure with gosipcmd
 
   // beginners gui will only write the currently set index:
-  WriteDAC_FebexI2c (fSetup.fDAC, fSetup.fChannel, fSetup.GetDACValue(fSetup.fDAC, fSetup.fChannel));
+ // WriteDAC_FebexI2c (fSetup.fDAC, fSetup.fChannel, fSetup.GetDACValue(fSetup.fDAC, fSetup.fChannel));
+  
+  
+    for (int m = 0; m < FEBEX_MCP433_NUMCHIPS; ++m)
+    {
+      for (int c = 0; c < FEBEX_MCP433_NUMCHAN; ++c)
+       {
+          WriteDAC_FebexI2c (m, c, fSetup.GetDACValue(m, c));
+       }
+    }
+  
 
 // JAM2016 TODO loop over complete structure to set alltogether
 
@@ -518,22 +721,36 @@ void FebexGui::GetRegisters ()
   if (!AssertNoBroadcast ())
     return;
   EnableI2C ();
-
+  
+ for (int m = 0; m < FEBEX_MCP433_NUMCHIPS; ++m)
+    {
+      for (int c = 0; c < FEBEX_MCP433_NUMCHAN; ++c)
+       {
+         
+	  int val=ReadDAC_FebexI2c (m, c); 
+	  std::cout<<"GetRegisters val="<<val<<std::endl;
+  
+	  if(val<0){
+	  AppendTextWindow("GetRegisters has error!");
+	  return; // TODO error message 
+	  }
+	  fSetup.SetDACValue(m, c,val);
+	 
+       }
+    }
   // beginners gui will only read the currently set index:
-  int val=ReadDAC_FebexI2c (fSetup.fDAC, fSetup.fChannel);
-  if(val<0){
-    AppendTextWindow("GetRegisters has error!");
-    return; // TODO error message
-  }
-  fSetup.SetDACValue(fSetup.fDAC, fSetup.fChannel,val);
+ 
   // JAM2016 TODO loop over complete structure to get alltogether
 
 
   DisableI2C ();
-
+  
+ 
 }
 
+  
 
+    
 int FebexGui::ReadDAC_FebexI2c (uint8_t mcpchip, uint8_t chan)
 {
   int val = 0;
@@ -560,7 +777,7 @@ int  FebexGui::ReadADC_Febex (uint8_t adc, uint8_t chan)
   if(adc>FEBEX_ADC_NUMADC || chan > FEBEX_ADC_NUMCHAN) return -1;
 
   int val=0;
-  int dat=(adc << 2) + chan; //l_wr_d  = (l_k*4) + l_l;
+  int dat=(adc << 3) + chan; //l_wr_d  = (l_k*4) + l_l;
 
   WriteGosip (fChannel, fSlave, FEBEX_ADC_PORT, dat); // first specify channel number
 
