@@ -86,16 +86,30 @@ FebexGui::FebexGui (QWidget* parent) :
   QObject::connect (SaveConfigButton, SIGNAL (clicked ()), this, SLOT (SaveConfigBtn_clicked ()));
   QObject::connect (ClearOutputButton, SIGNAL (clicked ()), this, SLOT (ClearOutputBtn_clicked ()));
 
-  QObject::connect(DebugBox, SIGNAL(stateChanged(int)), this, SLOT(DebugBox_changed(int)));
-  QObject::connect(HexBox, SIGNAL(stateChanged(int)), this, SLOT(HexBox_changed(int)));
-  QObject::connect(SFPspinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
-  QObject::connect(SlavespinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
-  QObject::connect(DAC_spinBox_all, SIGNAL(valueChanged(int)), this, SLOT(DAC_spinBox_all_changed(int)));
+  QObject::connect (DebugBox, SIGNAL(stateChanged(int)), this, SLOT(DebugBox_changed(int)));
+  QObject::connect (HexBox, SIGNAL(stateChanged(int)), this, SLOT(HexBox_changed(int)));
+  QObject::connect (SFPspinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
+  QObject::connect (SlavespinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
+  QObject::connect (DAC_spinBox_all, SIGNAL(valueChanged(int)), this, SLOT(DAC_spinBox_all_changed(int)));
+  QObject::connect (DAC_spinBox_00, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
+  QObject::connect (DAC_spinBox_01, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int))); 
+  QObject::connect (DAC_spinBox_02, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
+  QObject::connect (DAC_spinBox_03, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
+  QObject::connect (DAC_spinBox_04, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
+  QObject::connect (DAC_spinBox_05, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
+  QObject::connect (DAC_spinBox_06, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
+  QObject::connect (DAC_spinBox_07, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
+  QObject::connect (DAC_spinBox_08, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
+  QObject::connect (DAC_spinBox_09, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
+  QObject::connect (DAC_spinBox_10, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
+  QObject::connect (DAC_spinBox_11, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
+  QObject::connect (DAC_spinBox_12, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
+  QObject::connect (DAC_spinBox_13, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
+  QObject::connect (DAC_spinBox_14, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
+  QObject::connect (DAC_spinBox_15, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
 
-// here optional components for febex:
 
-
-
+  // here optional components for febex:
 
 
 #ifdef USE_MBSPEX_LIB
@@ -391,7 +405,7 @@ void FebexGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "FebexGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.5 of 16-February-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.51 of 16-February-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -444,6 +458,40 @@ void FebexGui::Slave_changed (int)
 
 }
 
+ void FebexGui::DAC_spinBox_all_changed(int val)
+{
+  //std::cout << "FebexGui::DAC_spinBox_all_changed, val="<<val << std::endl;
+  DAC_spinBox_00->setValue (val); 
+  DAC_spinBox_01->setValue (val);
+  DAC_spinBox_02->setValue (val);
+  DAC_spinBox_03->setValue (val);
+  DAC_spinBox_04->setValue (val);
+  DAC_spinBox_05->setValue (val);
+  DAC_spinBox_06->setValue (val);
+  DAC_spinBox_07->setValue (val);
+  DAC_spinBox_08->setValue (val);
+  DAC_spinBox_09->setValue (val);
+  DAC_spinBox_10->setValue (val);
+  DAC_spinBox_11->setValue (val);
+  DAC_spinBox_12->setValue (val);
+  DAC_spinBox_13->setValue (val);
+  DAC_spinBox_14->setValue (val);
+  DAC_spinBox_15->setValue (val);
+  
+}
+
+ void FebexGui::Any_spinBox_changed(int val) 
+{
+  //std::cout << "FebexGui::Value_changed" << std::endl; 
+  if(checkBox_AA->isChecked()) 
+  {
+    ApplyBtn_clicked(); 
+    ShowBtn_clicked();
+  //std::cout<< "Did apply" << std::endl;  
+  }
+    
+} 
+ 
 void FebexGui::RefreshView ()
 {
 // display setup structure to gui:
@@ -581,100 +629,100 @@ void FebexGui::EvaluateView ()
 int percent =DAC_spinBox_00->value ();
 
 int value=255.0-(percent*255.0/1000.0) ;
-std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-printm("EvaluateView: percent=%d, value=%d",percent,value);
+/*std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+printm("EvaluateView: percent=%d, value=%d",percent,value);*/
   fSetup.SetDACValue(0,0, value);
 //   fSetup.fDAC=theDAC;
 //   fSetup.fChannel=theChannel; // remember the last visible indices to apply them.
 
 percent =DAC_spinBox_01->value ();
 value=255.0-(percent*255.0/1000.0) ;
-std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-printm("EvaluateView: percent=%d, value=%d",percent,value); 
+// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+// printm("EvaluateView: percent=%d, value=%d",percent,value); 
 fSetup.SetDACValue(0,1, value);
 
 percent =DAC_spinBox_02->value ();
 value=255.0-(percent*255.0/1000.0) ;
-std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-printm("EvaluateView: percent=%d, value=%d",percent,value);
+// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+// printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(0,2, value);
 
 percent =DAC_spinBox_03->value ();
 value=255.0-(percent*255.0/1000.0) ;
-std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-printm("EvaluateView: percent=%d, value=%d",percent,value);
+// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+// printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(0,3, value);
 
 percent =DAC_spinBox_04->value ();
 value=255.0-(percent*255.0/1000.0) ;
-std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-printm("EvaluateView: percent=%d, value=%d",percent,value);
+// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+// printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(1,0, value);
 
 percent =DAC_spinBox_05->value ();
 value=255.0-(percent*255.0/1000.0) ;
-std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-printm("EvaluateView: percent=%d, value=%d",percent,value);
+// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+// printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(1,1, value);
 
 percent =DAC_spinBox_06->value ();
 value=255.0-(percent*255.0/1000.0) ;
-std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-printm("EvaluateView: percent=%d, value=%d",percent,value);
+// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+// printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(1,2, value);
 
 percent =DAC_spinBox_07->value ();
 value=255.0-(percent*255.0/1000.0) ;
-std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-printm("EvaluateView: percent=%d, value=%d",percent,value);
+// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+// printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(1,3, value);
 
 percent =DAC_spinBox_08->value ();
 value=255.0-(percent*255.0/1000.0) ;
-std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-printm("EvaluateView: percent=%d, value=%d",percent,value);
+// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+// printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(2,0, value);
 
 percent =DAC_spinBox_09->value ();
 value=255.0-(percent*255.0/1000.0) ;
-std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-printm("EvaluateView: percent=%d, value=%d",percent,value);
+// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+// printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(2,1, value);
 
 percent =DAC_spinBox_10->value ();
 value=255.0-(percent*255.0/1000.0) ;
-std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-printm("EvaluateView: percent=%d, value=%d",percent,value);
+// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+// printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(2,2, value);
 
 percent =DAC_spinBox_11->value ();
 value=255.0-(percent*255.0/1000.0) ;
-std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-printm("EvaluateView: percent=%d, value=%d",percent,value);
+// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+// printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(2,3, value);
 
 percent =DAC_spinBox_12->value ();
 value=255.0-(percent*255.0/1000.0) ;
-std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-printm("EvaluateView: percent=%d, value=%d",percent,value);
+// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+// printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(3,0, value);
 
 percent =DAC_spinBox_13->value ();
 value=255.0-(percent*255.0/1000.0) ;
-std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-printm("EvaluateView: percent=%d, value=%d",percent,value);
+// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+// printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(3,1, value);
 
 percent =DAC_spinBox_14->value ();
 value=255.0-(percent*255.0/1000.0) ;
-std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-printm("EvaluateView: percent=%d, value=%d",percent,value);
+// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+// printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(3,2, value);
 
 percent =DAC_spinBox_15->value ();
 value=255.0-(percent*255.0/1000.0) ;
-std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-printm("EvaluateView: percent=%d, value=%d",percent,value);
+// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
+// printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(3,3, value);
 
 }
@@ -728,7 +776,7 @@ void FebexGui::GetRegisters ()
        {
          
 	  int val=ReadDAC_FebexI2c (m, c); 
-	  std::cout<<"GetRegisters val="<<val<<std::endl;
+	  //std::cout<<"GetRegisters val="<<val<<std::endl;
   
 	  if(val<0){
 	  AppendTextWindow("GetRegisters has error!");

@@ -265,7 +265,8 @@ public slots:
   virtual void DebugBox_changed (int on);
   virtual void HexBox_changed(int on);
   virtual void Slave_changed(int val);
-  //virtual void DAC_spinBox_all_changed(int val);
+  virtual void DAC_spinBox_all_changed(int val);
+  virtual void Any_spinBox_changed(int val);
 };
 
 #endif
