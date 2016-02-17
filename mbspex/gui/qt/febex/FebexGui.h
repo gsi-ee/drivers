@@ -235,7 +235,8 @@ protected:
   /** append text to currently open config file*/
   int WriteConfigFile(const QString& text);
 
-
+  /** Set relativ DAC value dac to FEBEXchannel, returns ADC value*/
+  int autoApply(int channel, int dac);
 
 
 
@@ -266,7 +267,22 @@ public slots:
   virtual void HexBox_changed(int on);
   virtual void Slave_changed(int val);
   virtual void DAC_spinBox_all_changed(int val);
-  virtual void Any_spinBox_changed(int val);
+  virtual void Any_spinBox00_changed(int val);
+  virtual void Any_spinBox01_changed(int val);
+  virtual void Any_spinBox02_changed(int val);
+  virtual void Any_spinBox03_changed(int val);
+  virtual void Any_spinBox04_changed(int val);
+  virtual void Any_spinBox05_changed(int val);
+  virtual void Any_spinBox06_changed(int val);
+  virtual void Any_spinBox07_changed(int val);
+  virtual void Any_spinBox08_changed(int val);
+  virtual void Any_spinBox09_changed(int val);
+  virtual void Any_spinBox10_changed(int val);
+  virtual void Any_spinBox11_changed(int val);
+  virtual void Any_spinBox12_changed(int val);
+  virtual void Any_spinBox13_changed(int val);
+  virtual void Any_spinBox14_changed(int val);
+  virtual void Any_spinBox15_changed(int val);
 };
 
 #endif

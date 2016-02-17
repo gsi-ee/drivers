@@ -91,22 +91,22 @@ FebexGui::FebexGui (QWidget* parent) :
   QObject::connect (SFPspinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
   QObject::connect (SlavespinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
   QObject::connect (DAC_spinBox_all, SIGNAL(valueChanged(int)), this, SLOT(DAC_spinBox_all_changed(int)));
-  QObject::connect (DAC_spinBox_00, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
-  QObject::connect (DAC_spinBox_01, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int))); 
-  QObject::connect (DAC_spinBox_02, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
-  QObject::connect (DAC_spinBox_03, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
-  QObject::connect (DAC_spinBox_04, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
-  QObject::connect (DAC_spinBox_05, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
-  QObject::connect (DAC_spinBox_06, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
-  QObject::connect (DAC_spinBox_07, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
-  QObject::connect (DAC_spinBox_08, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
-  QObject::connect (DAC_spinBox_09, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
-  QObject::connect (DAC_spinBox_10, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
-  QObject::connect (DAC_spinBox_11, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
-  QObject::connect (DAC_spinBox_12, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
-  QObject::connect (DAC_spinBox_13, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
-  QObject::connect (DAC_spinBox_14, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
-  QObject::connect (DAC_spinBox_15, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox_changed(int)));
+  QObject::connect (DAC_spinBox_00, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox00_changed(int)));
+  QObject::connect (DAC_spinBox_01, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox01_changed(int))); 
+  QObject::connect (DAC_spinBox_02, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox02_changed(int)));
+  QObject::connect (DAC_spinBox_03, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox03_changed(int)));
+  QObject::connect (DAC_spinBox_04, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox04_changed(int)));
+  QObject::connect (DAC_spinBox_05, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox05_changed(int)));
+  QObject::connect (DAC_spinBox_06, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox06_changed(int)));
+  QObject::connect (DAC_spinBox_07, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox07_changed(int)));
+  QObject::connect (DAC_spinBox_08, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox08_changed(int)));
+  QObject::connect (DAC_spinBox_09, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox09_changed(int)));
+  QObject::connect (DAC_spinBox_10, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox10_changed(int)));
+  QObject::connect (DAC_spinBox_11, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox11_changed(int)));
+  QObject::connect (DAC_spinBox_12, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox12_changed(int)));
+  QObject::connect (DAC_spinBox_13, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox13_changed(int)));
+  QObject::connect (DAC_spinBox_14, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox14_changed(int)));
+  QObject::connect (DAC_spinBox_15, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox15_changed(int)));
 
 
   // here optional components for febex:
@@ -405,7 +405,7 @@ void FebexGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "FebexGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.51 of 16-February-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.52 of 17-February-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -480,18 +480,333 @@ void FebexGui::Slave_changed (int)
   
 }
 
- void FebexGui::Any_spinBox_changed(int val) 
+ void FebexGui::Any_spinBox00_changed(int val)
 {
   //std::cout << "FebexGui::Value_changed" << std::endl; 
   if(checkBox_AA->isChecked()) 
-  {
-    ApplyBtn_clicked(); 
-    ShowBtn_clicked();
-  //std::cout<< "Did apply" << std::endl;  
+  { 
+     QString text;
+     QString pre;     
+    fNumberBase == 16 ? pre = "0x" : pre = "";
+   EvaluateSlave();
+   
+   int percent =DAC_spinBox_00->value ();
+    int Adc=autoApply(0,percent);
+   
+    ADC_Value_00->setText (pre+text.setNum (Adc, fNumberBase));
+      //std::cout<< "Did apply" << std::endl;  
   }
     
-} 
+}
+
+void FebexGui::Any_spinBox01_changed(int val)
+{
+  //std::cout << "FebexGui::Value_changed" << std::endl; 
+  if(checkBox_AA->isChecked()) 
+  { 
+     QString text;
+     QString pre;     
+    fNumberBase == 16 ? pre = "0x" : pre = "";
+   EvaluateSlave();
+   
+   int percent =DAC_spinBox_01->value ();
+    int Adc=autoApply(1,percent);
+   
+    ADC_Value_01->setText (pre+text.setNum (Adc, fNumberBase));
+      //std::cout<< "Did apply" << std::endl;  
+  }
+    
+}
+
+void FebexGui::Any_spinBox02_changed(int val)
+{
+  //std::cout << "FebexGui::Value_changed" << std::endl; 
+  if(checkBox_AA->isChecked()) 
+  { 
+     QString text;
+     QString pre;     
+    fNumberBase == 16 ? pre = "0x" : pre = "";
+   EvaluateSlave();
+   
+   int percent =DAC_spinBox_02->value ();
+    int Adc=autoApply(2,percent);
+   
+    ADC_Value_02->setText (pre+text.setNum (Adc, fNumberBase));
+      //std::cout<< "Did apply" << std::endl;  
+  }
+    
+}
+
+void FebexGui::Any_spinBox03_changed(int val)
+{
+  //std::cout << "FebexGui::Value_changed" << std::endl; 
+  if(checkBox_AA->isChecked()) 
+  { 
+     QString text;
+     QString pre;     
+    fNumberBase == 16 ? pre = "0x" : pre = "";
+   EvaluateSlave();
+   
+   int percent =DAC_spinBox_03->value ();
+    int Adc=autoApply(3,percent);
+   
+    ADC_Value_03->setText (pre+text.setNum (Adc, fNumberBase));
+      //std::cout<< "Did apply" << std::endl;  
+  }
+    
+}
+
+void FebexGui::Any_spinBox04_changed(int val)
+{
+  //std::cout << "FebexGui::Value_changed" << std::endl; 
+  if(checkBox_AA->isChecked()) 
+  { 
+     QString text;
+     QString pre;     
+    fNumberBase == 16 ? pre = "0x" : pre = "";
+   EvaluateSlave();
+   
+   int percent =DAC_spinBox_04->value ();
+    int Adc=autoApply(4,percent);
+   
+    ADC_Value_04->setText (pre+text.setNum (Adc, fNumberBase));
+      //std::cout<< "Did apply" << std::endl;  
+  }
+    
+}
+
+void FebexGui::Any_spinBox05_changed(int val)
+{
+  //std::cout << "FebexGui::Value_changed" << std::endl; 
+  if(checkBox_AA->isChecked()) 
+  { 
+     QString text;
+     QString pre;     
+    fNumberBase == 16 ? pre = "0x" : pre = "";
+   EvaluateSlave();
+   
+   int percent =DAC_spinBox_05->value ();
+    int Adc=autoApply(5,percent);
+   
+    ADC_Value_05->setText (pre+text.setNum (Adc, fNumberBase));
+      //std::cout<< "Did apply" << std::endl;  
+  }
+    
+}
+
+void FebexGui::Any_spinBox06_changed(int val)
+{
+  //std::cout << "FebexGui::Value_changed" << std::endl; 
+  if(checkBox_AA->isChecked()) 
+  { 
+     QString text;
+     QString pre;     
+    fNumberBase == 16 ? pre = "0x" : pre = "";
+   EvaluateSlave();
+   
+   int percent =DAC_spinBox_06->value ();
+    int Adc=autoApply(6,percent);
+   
+    ADC_Value_06->setText (pre+text.setNum (Adc, fNumberBase));
+      //std::cout<< "Did apply" << std::endl;  
+  }
+    
+}
+
+void FebexGui::Any_spinBox07_changed(int val)
+{
+  //std::cout << "FebexGui::Value_changed" << std::endl; 
+  if(checkBox_AA->isChecked()) 
+  { 
+     QString text;
+     QString pre;     
+    fNumberBase == 16 ? pre = "0x" : pre = "";
+   EvaluateSlave();
+   
+   int percent =DAC_spinBox_07->value ();
+    int Adc=autoApply(7,percent);
+   
+    ADC_Value_07->setText (pre+text.setNum (Adc, fNumberBase));
+      //std::cout<< "Did apply" << std::endl;  
+  }
+    
+}
+
+void FebexGui::Any_spinBox08_changed(int val)
+{
+  //std::cout << "FebexGui::Value_changed" << std::endl; 
+  if(checkBox_AA->isChecked()) 
+  { 
+     QString text;
+     QString pre;     
+    fNumberBase == 16 ? pre = "0x" : pre = "";
+   EvaluateSlave();
+   
+   int percent =DAC_spinBox_08->value ();
+    int Adc=autoApply(8,percent);
+   
+    ADC_Value_08->setText (pre+text.setNum (Adc, fNumberBase));
+      //std::cout<< "Did apply" << std::endl;  
+  }
+    
+}
+
+void FebexGui::Any_spinBox09_changed(int val)
+{
+  //std::cout << "FebexGui::Value_changed" << std::endl; 
+  if(checkBox_AA->isChecked()) 
+  { 
+     QString text;
+     QString pre;     
+    fNumberBase == 16 ? pre = "0x" : pre = "";
+   EvaluateSlave();
+   
+   int percent =DAC_spinBox_09->value ();
+    int Adc=autoApply(9,percent);
+   
+    ADC_Value_09->setText (pre+text.setNum (Adc, fNumberBase));
+      //std::cout<< "Did apply" << std::endl;  
+  }
+    
+}
+
+void FebexGui::Any_spinBox10_changed(int val)
+{
+  //std::cout << "FebexGui::Value_changed" << std::endl; 
+  if(checkBox_AA->isChecked()) 
+  { 
+     QString text;
+     QString pre;     
+    fNumberBase == 16 ? pre = "0x" : pre = "";
+   EvaluateSlave();
+   
+   int percent =DAC_spinBox_10->value ();
+    int Adc=autoApply(10,percent);
+   
+    ADC_Value_10->setText (pre+text.setNum (Adc, fNumberBase));
+      //std::cout<< "Did apply" << std::endl;  
+  }
+    
+}
+
+void FebexGui::Any_spinBox11_changed(int val)
+{
+  //std::cout << "FebexGui::Value_changed" << std::endl; 
+  if(checkBox_AA->isChecked()) 
+  { 
+     QString text;
+     QString pre;     
+    fNumberBase == 16 ? pre = "0x" : pre = "";
+   EvaluateSlave();
+   
+   int percent =DAC_spinBox_11->value ();
+    int Adc=autoApply(11,percent);
+   
+    ADC_Value_11->setText (pre+text.setNum (Adc, fNumberBase));
+      //std::cout<< "Did apply" << std::endl;  
+  }
+    
+}
+
+void FebexGui::Any_spinBox12_changed(int val)
+{
+  //std::cout << "FebexGui::Value_changed" << std::endl; 
+  if(checkBox_AA->isChecked()) 
+  { 
+     QString text;
+     QString pre;     
+    fNumberBase == 16 ? pre = "0x" : pre = "";
+   EvaluateSlave();
+   
+   int percent =DAC_spinBox_12->value ();
+    int Adc=autoApply(12,percent);
+   
+    ADC_Value_12->setText (pre+text.setNum (Adc, fNumberBase));
+      //std::cout<< "Did apply" << std::endl;  
+  }
+    
+}
+
+void FebexGui::Any_spinBox13_changed(int val)
+{
+  //std::cout << "FebexGui::Value_changed" << std::endl; 
+  if(checkBox_AA->isChecked()) 
+  { 
+     QString text;
+     QString pre;     
+    fNumberBase == 16 ? pre = "0x" : pre = "";
+   EvaluateSlave();
+   
+   int percent =DAC_spinBox_13->value ();
+    int Adc=autoApply(13,percent);
+   
+    ADC_Value_13->setText (pre+text.setNum (Adc, fNumberBase));
+      //std::cout<< "Did apply" << std::endl;  
+  }
+    
+}
+
+void FebexGui::Any_spinBox14_changed(int val)
+{
+  //std::cout << "FebexGui::Value_changed" << std::endl; 
+  if(checkBox_AA->isChecked()) 
+  { 
+     QString text;
+     QString pre;     
+    fNumberBase == 16 ? pre = "0x" : pre = "";
+   EvaluateSlave();
+   
+   int percent =DAC_spinBox_14->value ();
+    int Adc=autoApply(14,percent);
+   
+    ADC_Value_14->setText (pre+text.setNum (Adc, fNumberBase));
+      //std::cout<< "Did apply" << std::endl;  
+  }
+    
+}
+
+void FebexGui::Any_spinBox15_changed(int val)
+{
+  //std::cout << "FebexGui::Value_changed" << std::endl; 
+  if(checkBox_AA->isChecked()) 
+  { 
+     QString text;
+     QString pre;     
+    fNumberBase == 16 ? pre = "0x" : pre = "";
+   EvaluateSlave();
+   
+   int percent =DAC_spinBox_15->value ();
+    int Adc=autoApply(15,percent);
+   
+    ADC_Value_15->setText (pre+text.setNum (Adc, fNumberBase));
+      //std::cout<< "Did apply" << std::endl;  
+  }
+    
+}
+
+int FebexGui::autoApply(int channel, int dac)
+
+{ 
+  int dacchip,dacchannel, adcchip, adcchannel;
+  int value=255.0-(dac*255.0/1000.0) ;
  
+  dacchip= channel/4 ;
+  dacchannel= channel-dacchip*4; 
+  
+   fSetup.SetDACValue(dacchip,dacchannel, value);
+   
+   EnableI2C ();  
+   WriteDAC_FebexI2c (dacchip, dacchannel, fSetup.GetDACValue(dacchip, dacchannel));
+   DisableI2C ();
+  
+   adcchip= channel/8;
+   adcchannel= channel-adcchip*8 ;
+   
+   int Adc=ReadADC_Febex(adcchip,adcchannel);
+  return Adc;
+  
+}
+
 void FebexGui::RefreshView ()
 {
 // display setup structure to gui:
