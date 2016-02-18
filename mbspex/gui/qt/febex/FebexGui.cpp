@@ -405,7 +405,7 @@ void FebexGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "FebexGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.52 of 17-February-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.53 of 18-February-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -455,6 +455,15 @@ void FebexGui::Slave_changed (int)
   EvaluateSlave ();
   bool triggerchangeable = AssertNoBroadcast (false);
   RefreshButton->setEnabled (triggerchangeable);
+  
+  if(checkBox_AA->isChecked())
+    
+  {
+    ShowBtn_clicked() ;
+  }
+  
+  
+  
 
 }
 
@@ -783,6 +792,8 @@ void FebexGui::Any_spinBox15_changed(int val)
   }
     
 }
+
+
 
 int FebexGui::autoApply(int channel, int dac)
 
