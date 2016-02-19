@@ -405,7 +405,7 @@ void FebexGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "FebexGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.53 of 18-February-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.54 of 19-February-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
 
 }
 
