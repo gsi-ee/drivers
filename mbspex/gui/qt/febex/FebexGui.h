@@ -45,9 +45,11 @@ extern "C"
 /** number of dac chips on febex */
 #define FEBEX_MCP433_NUMCHIPS 4
 
-/** number of dac/adc channels per chip*/
+/** number of dac  channels per chip*/
 #define FEBEX_MCP433_NUMCHAN 4
 
+/** maximum value to set for DAC*/
+#define FEBEX_MCP433_MAXVAL 0xFF
 
 /** adress to read actual adc value. adc id and channel must be
  * written to this address first*/
@@ -67,8 +69,8 @@ class FebexSetup
 {
 public:
 
-  int fDAC; // remember currently set dac chip (for beginners gui)
-  int fChannel; // remember currently set dac channel (for beginners gui)
+//  int fDAC; // remember currently set dac chip (for beginners gui)
+//  int fChannel; // remember currently set dac channel (for beginners gui)
 
   /** the (relative) baseline values set on the dacs*/
   uint8_t fDACValueSet[FEBEX_MCP433_NUMCHIPS][FEBEX_MCP433_NUMCHAN];
@@ -77,7 +79,7 @@ public:
 
 
   /* all initialization here:*/
-  FebexSetup (): fDAC(0),fChannel(0)
+  FebexSetup ()
   {
     for (int m = 0; m < FEBEX_MCP433_NUMCHIPS; ++m)
     {
@@ -239,6 +241,10 @@ protected:
   int autoApply(int channel, int dac);
 
 
+  /** Automatic adjustment of adc baseline to adctarget value for global febex channel.
+   * will return final dac setup value or -1 in case of error*/
+  int AdjustBaseline(int channel, int adctarget);
+
 
   void DebugTextWindow (const char*txt)
   {
@@ -263,6 +269,7 @@ public slots:
   virtual void ClearOutputBtn_clicked ();
   virtual void ConfigBtn_clicked ();
   virtual void SaveConfigBtn_clicked ();
+  virtual void AutoAdjustBtn_clicked ();
   virtual void DebugBox_changed (int on);
   virtual void HexBox_changed(int on);
   virtual void Slave_changed(int val);

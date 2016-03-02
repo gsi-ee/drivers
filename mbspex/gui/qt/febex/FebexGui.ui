@@ -386,7 +386,7 @@ p, li { white-space: pre-wrap; }
                     <bool>false</bool>
                    </property>
                    <property name="toolTip">
-                    <string>DAC_Value_All (permile)</string>
+                    <string>DAC_Value_All (per mille)</string>
                    </property>
                    <property name="maximum">
                     <number>1000</number>
@@ -400,12 +400,12 @@ p, li { white-space: pre-wrap; }
                   </widget>
                  </item>
                  <item>
-                  <widget class="QLineEdit" name="lineEdit">
+                  <widget class="QLineEdit" name="ADCAdjustValue">
                    <property name="enabled">
-                    <bool>false</bool>
+                    <bool>true</bool>
                    </property>
                    <property name="toolTip">
-                    <string>ADC_Value_All </string>
+                    <string>ADC Value for auto adjustment </string>
                    </property>
                    <property name="readOnly">
                     <bool>false</bool>
@@ -415,7 +415,7 @@ p, li { white-space: pre-wrap; }
                  <item>
                   <widget class="QPushButton" name="AutoAdjustButton">
                    <property name="enabled">
-                    <bool>false</bool>
+                    <bool>true</bool>
                    </property>
                    <property name="text">
                     <string>AutoAdjust </string>
@@ -482,7 +482,7 @@ p, li { white-space: pre-wrap; }
                  <item>
                   <widget class="QSpinBox" name="DAC_spinBox_00">
                    <property name="toolTip">
-                    <string>DAC_Value_00 (permile)DAC_Value_00 (permile)</string>
+                    <string>DAC_Value_00 (per mille)</string>
                    </property>
                    <property name="maximum">
                     <number>1000</number>
@@ -538,7 +538,7 @@ p, li { white-space: pre-wrap; }
                  <item>
                   <widget class="QSpinBox" name="DAC_spinBox_01">
                    <property name="toolTip">
-                    <string>DAC_Value_01 (permile)</string>
+                    <string>DAC_Value_01 (per mille)</string>
                    </property>
                    <property name="maximum">
                     <number>1000</number>
@@ -594,7 +594,7 @@ p, li { white-space: pre-wrap; }
                  <item>
                   <widget class="QSpinBox" name="DAC_spinBox_02">
                    <property name="toolTip">
-                    <string>DAC_Value_02 (permile)</string>
+                    <string>DAC_Value_02 (per mille)</string>
                    </property>
                    <property name="maximum">
                     <number>1000</number>
@@ -650,7 +650,7 @@ p, li { white-space: pre-wrap; }
                  <item>
                   <widget class="QSpinBox" name="DAC_spinBox_03">
                    <property name="toolTip">
-                    <string>DAC_Value_03 (permile)</string>
+                    <string>DAC_Value_03 (per mille)</string>
                    </property>
                    <property name="maximum">
                     <number>1000</number>
@@ -706,7 +706,7 @@ p, li { white-space: pre-wrap; }
                  <item>
                   <widget class="QSpinBox" name="DAC_spinBox_04">
                    <property name="toolTip">
-                    <string>DAC_Value_04 (permile)</string>
+                    <string>DAC_Value_04 (per mille)</string>
                    </property>
                    <property name="maximum">
                     <number>1000</number>
@@ -762,7 +762,7 @@ p, li { white-space: pre-wrap; }
                  <item>
                   <widget class="QSpinBox" name="DAC_spinBox_05">
                    <property name="toolTip">
-                    <string>DAC_Value_05 (permile)</string>
+                    <string>DAC_Value_05 (per mille)</string>
                    </property>
                    <property name="maximum">
                     <number>1000</number>
@@ -818,7 +818,7 @@ p, li { white-space: pre-wrap; }
                  <item>
                   <widget class="QSpinBox" name="DAC_spinBox_06">
                    <property name="toolTip">
-                    <string>DAC_Value_06 (permile)</string>
+                    <string>DAC_Value_06 (per mille)</string>
                    </property>
                    <property name="maximum">
                     <number>1000</number>
@@ -874,7 +874,7 @@ p, li { white-space: pre-wrap; }
                  <item>
                   <widget class="QSpinBox" name="DAC_spinBox_07">
                    <property name="toolTip">
-                    <string>DAC_Value_07 (permile)</string>
+                    <string>DAC_Value_07 (per mille)</string>
                    </property>
                    <property name="maximum">
                     <number>1000</number>
@@ -934,7 +934,7 @@ p, li { white-space: pre-wrap; }
                  <item>
                   <widget class="QSpinBox" name="DAC_spinBox_08">
                    <property name="toolTip">
-                    <string>DAC_Value_08 (permile)</string>
+                    <string>DAC_Value_08 (per mille)</string>
                    </property>
                    <property name="maximum">
                     <number>1000</number>
@@ -990,7 +990,7 @@ p, li { white-space: pre-wrap; }
                  <item>
                   <widget class="QSpinBox" name="DAC_spinBox_09">
                    <property name="toolTip">
-                    <string>DAC_Value_09 (permile)</string>
+                    <string>DAC_Value_09 (per mille)</string>
                    </property>
                    <property name="maximum">
                     <number>1000</number>
@@ -1046,7 +1046,7 @@ p, li { white-space: pre-wrap; }
                  <item>
                   <widget class="QSpinBox" name="DAC_spinBox_10">
                    <property name="toolTip">
-                    <string>DAC_Value_10 (permile)</string>
+                    <string>DAC_Value_10 (per mille)</string>
                    </property>
                    <property name="maximum">
                     <number>1000</number>
@@ -1102,7 +1102,7 @@ p, li { white-space: pre-wrap; }
                  <item>
                   <widget class="QSpinBox" name="DAC_spinBox_11">
                    <property name="toolTip">
-                    <string>DAC_Value_11 (permile)</string>
+                    <string>DAC_Value_11 (per mille)</string>
                    </property>
                    <property name="maximum">
                     <number>1000</number>
@@ -1158,7 +1158,7 @@ p, li { white-space: pre-wrap; }
                  <item>
                   <widget class="QSpinBox" name="DAC_spinBox_12">
                    <property name="toolTip">
-                    <string>DAC_Value_12 (permile)</string>
+                    <string>DAC_Value_12 (per mille)</string>
                    </property>
                    <property name="maximum">
                     <number>1000</number>
@@ -1214,7 +1214,7 @@ p, li { white-space: pre-wrap; }
                  <item>
                   <widget class="QSpinBox" name="DAC_spinBox_13">
                    <property name="toolTip">
-                    <string>DAC_Value_13 (permile)</string>
+                    <string>DAC_Value_13 (per mille)</string>
                    </property>
                    <property name="maximum">
                     <number>1000</number>
@@ -1270,7 +1270,7 @@ p, li { white-space: pre-wrap; }
                  <item>
                   <widget class="QSpinBox" name="DAC_spinBox_14">
                    <property name="toolTip">
-                    <string>DAC_Value_14 (permile)</string>
+                    <string>DAC_Value_14 (per mille)</string>
                    </property>
                    <property name="maximum">
                     <number>1000</number>
@@ -1326,7 +1326,7 @@ p, li { white-space: pre-wrap; }
                  <item>
                   <widget class="QSpinBox" name="DAC_spinBox_15">
                    <property name="toolTip">
-                    <string>DAC_Value_15 (permile)</string>
+                    <string>DAC_Value_15 (per mille)</string>
                    </property>
                    <property name="maximum">
                     <number>1000</number>

@@ -16,7 +16,7 @@
 #include <sstream>
 #include <string.h>
 #include <errno.h>
-
+#include <math.h>
 
 // *********************************************************
 
@@ -26,6 +26,8 @@ FebexGui* FebexGui::fInstance = 0;
 
 
 #include <stdarg.h>
+
+
 
 void printm (char *fmt, ...)
 {
@@ -85,6 +87,9 @@ FebexGui::FebexGui (QWidget* parent) :
   QObject::connect (ConfigButton, SIGNAL (clicked ()), this, SLOT (ConfigBtn_clicked ()));
   QObject::connect (SaveConfigButton, SIGNAL (clicked ()), this, SLOT (SaveConfigBtn_clicked ()));
   QObject::connect (ClearOutputButton, SIGNAL (clicked ()), this, SLOT (ClearOutputBtn_clicked ()));
+
+  QObject::connect (AutoAdjustButton, SIGNAL (clicked ()), this, SLOT (AutoAdjustBtn_clicked ()));
+
 
   QObject::connect (DebugBox, SIGNAL(stateChanged(int)), this, SLOT(DebugBox_changed(int)));
   QObject::connect (HexBox, SIGNAL(stateChanged(int)), this, SLOT(HexBox_changed(int)));
@@ -347,6 +352,79 @@ void FebexGui::DisableI2C ()
 }
 
 
+
+void FebexGui::AutoAdjustBtn_clicked ()
+{
+  //std::cout <<"AutoAdjustBtn_clicked "<< std::endl;
+  EvaluateSlave ();
+  if (!AssertNoBroadcast ())
+    return;    //  auto adjustment is only possible for a single febex, no broadcast
+
+  QApplication::setOverrideCursor (Qt::WaitCursor);
+  QString targetstring=ADCAdjustValue->text ();
+  unsigned targetvalue =targetstring.toUInt (0, fNumberBase);
+  //std::cout <<"string="<<targetstring.toLatin1 ().constData ()<< ", targetvalue="<< targetvalue<< std::endl;
+  printm("--- Auto adjusting baselines of sfp:%d device:%d to value:%d ...",fChannel, fSlave,targetvalue);
+
+  for(int channel=0; channel<16;++channel)
+    AdjustBaseline(channel,targetvalue);
+  RefreshView();
+  printm("          Auto adjustment done.");
+  QApplication::restoreOverrideCursor ();
+}
+
+
+int FebexGui::AdjustBaseline(int channel, int adctarget)
+{
+  int dac=500; // dac setup in per mille here, start in the middle
+  int dacstep=250;
+  int validdac=-1;
+  int adc=0;
+  int escapecounter=20;
+  bool upwards=true; // scan direction up or down
+  bool changed=false; // do we have changed scan direction?
+  bool initial=true; // supress evaluation of scan direction at first cycle
+  //std::cout << "FebexGui::AdjustBaseline of channel "<<channel<<" to "<<adctarget<< std::endl;
+
+  double resolution= 1.0/FEBEX_MCP433_MAXVAL * 0xFFF /3 ; // for 12 bit
+    // test if FEBEX is for 14 bit values
+  if(autoApply(channel, 1000)>0xFFF)
+        resolution*=4;
+  do{
+     adc=autoApply(channel, dac);
+     if(adc<0) break; // avoid broadcast
+
+     // TODO: to improve accuracy, we may sample adc several times here and take mean value?
+     validdac=dac;
+     //std::cout << "FebexGui::AdjustBaseline after autoApply of dac:"<<dac<<" gets adc:"<<adc<<", resolution:"<<resolution<< std::endl;
+     if(adc<adctarget){
+       dac+=dacstep;
+       changed=(!upwards ? true : false);
+       upwards=true;
+       if(dac>1000) dac = 1000;
+     }
+     else if (adc>adctarget){
+       dac-=dacstep;
+       changed=(upwards ? true : false);
+       upwards=false;
+       if(dac<0) dac=0;
+     }
+     else break;
+     if(changed && !initial && dacstep > 1) dacstep = dacstep >> 1;
+     if(dacstep <1) break;
+     if(!changed) escapecounter--; // get us out of loop if user wants to reach value outside adc range
+     initial=false;
+  } while (fabs(adc-adctarget) >= resolution && escapecounter);
+  //std::cout << "   FebexGui::AdjustBaseline after loop dac:"<<validdac<<" adc:"<<adc<<", resolution:"<<resolution<< std::endl;
+  return validdac;
+}
+
+
+
+
+
+
+
 void FebexGui::BroadcastBtn_clicked (bool checked)
 {
 //std::cout << "FebexGui::BroadcastBtn_clicked with checked="<<checked<< std::endl;
@@ -405,7 +483,7 @@ void FebexGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "FebexGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.54 of 19-February-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.55 of 1-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -421,18 +499,23 @@ void FebexGui::ConfigBtn_clicked ()
   QStringList flst = fd.selectedFiles ();
   if (flst.isEmpty ())
     return;
-  QString fileName = flst[0];
   char buffer[1024];
+  // JAM: need to increase default bus wait time to 900us first for febex i2c!
+  snprintf (buffer, 1024, "./setGosipwait.sh 900"); // output redirection inside QProcess does not work, use helper script
+  QString tcom (buffer);
+  QString tresult=ExecuteGosipCmd (tcom, 10000);
+  AppendTextWindow (tresult);
+  QString fileName = flst[0];
   {
     if (!fileName.endsWith (".gos"))
       fileName.append (".gos");
     snprintf (buffer, 1024, "gosipcmd -x -c %s ", fileName.toLatin1 ().constData ());
-
   }
   QString com (buffer);
   QString result = ExecuteGosipCmd (com, 10000);    // this will just execute the command in shell, gosip or not
   AppendTextWindow (result);
 
+  ShowBtn_clicked() ;
 }
 
 void FebexGui::DebugBox_changed (int on)
@@ -453,10 +536,9 @@ void FebexGui::Slave_changed (int)
 {
 //std::cout << "FebexGui::Slave_changed" << std::endl;
   EvaluateSlave ();
-  bool triggerchangeable = AssertNoBroadcast (false);
-  RefreshButton->setEnabled (triggerchangeable);
-  
-  if(checkBox_AA->isChecked())
+  bool refreshable = AssertNoBroadcast (false);
+  RefreshButton->setEnabled (refreshable);
+    if(checkBox_AA->isChecked() && refreshable)
     
   {
     ShowBtn_clicked() ;
@@ -492,7 +574,7 @@ void FebexGui::Slave_changed (int)
  void FebexGui::Any_spinBox00_changed(int val)
 {
   //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked()) 
+  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
   { 
      QString text;
      QString pre;     
@@ -511,7 +593,7 @@ void FebexGui::Slave_changed (int)
 void FebexGui::Any_spinBox01_changed(int val)
 {
   //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked()) 
+  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
   { 
      QString text;
      QString pre;     
@@ -530,7 +612,7 @@ void FebexGui::Any_spinBox01_changed(int val)
 void FebexGui::Any_spinBox02_changed(int val)
 {
   //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked()) 
+  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
   { 
      QString text;
      QString pre;     
@@ -549,7 +631,7 @@ void FebexGui::Any_spinBox02_changed(int val)
 void FebexGui::Any_spinBox03_changed(int val)
 {
   //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked()) 
+  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
   { 
      QString text;
      QString pre;     
@@ -568,7 +650,7 @@ void FebexGui::Any_spinBox03_changed(int val)
 void FebexGui::Any_spinBox04_changed(int val)
 {
   //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked()) 
+  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
   { 
      QString text;
      QString pre;     
@@ -587,7 +669,7 @@ void FebexGui::Any_spinBox04_changed(int val)
 void FebexGui::Any_spinBox05_changed(int val)
 {
   //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked()) 
+  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
   { 
      QString text;
      QString pre;     
@@ -606,7 +688,7 @@ void FebexGui::Any_spinBox05_changed(int val)
 void FebexGui::Any_spinBox06_changed(int val)
 {
   //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked()) 
+  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
   { 
      QString text;
      QString pre;     
@@ -625,7 +707,7 @@ void FebexGui::Any_spinBox06_changed(int val)
 void FebexGui::Any_spinBox07_changed(int val)
 {
   //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked()) 
+  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
   { 
      QString text;
      QString pre;     
@@ -644,7 +726,7 @@ void FebexGui::Any_spinBox07_changed(int val)
 void FebexGui::Any_spinBox08_changed(int val)
 {
   //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked()) 
+  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
   { 
      QString text;
      QString pre;     
@@ -652,7 +734,8 @@ void FebexGui::Any_spinBox08_changed(int val)
    EvaluateSlave();
    
    int percent =DAC_spinBox_08->value ();
-    int Adc=autoApply(8,percent);
+   int Adc=autoApply(8,percent);
+
    
     ADC_Value_08->setText (pre+text.setNum (Adc, fNumberBase));
       //std::cout<< "Did apply" << std::endl;  
@@ -663,7 +746,7 @@ void FebexGui::Any_spinBox08_changed(int val)
 void FebexGui::Any_spinBox09_changed(int val)
 {
   //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked()) 
+  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
   { 
      QString text;
      QString pre;     
@@ -682,7 +765,7 @@ void FebexGui::Any_spinBox09_changed(int val)
 void FebexGui::Any_spinBox10_changed(int val)
 {
   //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked()) 
+  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
   { 
      QString text;
      QString pre;     
@@ -701,7 +784,7 @@ void FebexGui::Any_spinBox10_changed(int val)
 void FebexGui::Any_spinBox11_changed(int val)
 {
   //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked()) 
+  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
   { 
      QString text;
      QString pre;     
@@ -720,7 +803,7 @@ void FebexGui::Any_spinBox11_changed(int val)
 void FebexGui::Any_spinBox12_changed(int val)
 {
   //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked()) 
+  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
   { 
      QString text;
      QString pre;     
@@ -739,7 +822,7 @@ void FebexGui::Any_spinBox12_changed(int val)
 void FebexGui::Any_spinBox13_changed(int val)
 {
   //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked()) 
+  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
   { 
      QString text;
      QString pre;     
@@ -758,7 +841,7 @@ void FebexGui::Any_spinBox13_changed(int val)
 void FebexGui::Any_spinBox14_changed(int val)
 {
   //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked()) 
+  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
   { 
      QString text;
      QString pre;     
@@ -777,7 +860,7 @@ void FebexGui::Any_spinBox14_changed(int val)
 void FebexGui::Any_spinBox15_changed(int val)
 {
   //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked()) 
+  if(checkBox_AA->isChecked() && AssertNoBroadcast (false))
   { 
      QString text;
      QString pre;     
@@ -812,7 +895,8 @@ int FebexGui::autoApply(int channel, int dac)
   
    adcchip= channel/8;
    adcchannel= channel-adcchip*8 ;
-   
+   if (!AssertNoBroadcast ())
+      return -1;
    int Adc=ReadADC_Febex(adcchip,adcchannel);
   return Adc;
   
@@ -1112,10 +1196,7 @@ void FebexGui::GetRegisters ()
 	 
        }
     }
-  // beginners gui will only read the currently set index:
  
-  // JAM2016 TODO loop over complete structure to get alltogether
-
 
   DisableI2C ();
   
