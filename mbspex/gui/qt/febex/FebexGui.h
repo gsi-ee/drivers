@@ -139,6 +139,13 @@ protected:
 
   FebexSetup fSetup;
 
+
+  /** auxiliary references to checkboxes for baseline adjustments*/
+  QCheckBox* fBaselineBoxes[16];
+
+  /** auxiliary references to spinbox for baseline adjustment view*/
+  QSpinBox* fDACSpinBoxes[16];
+
   /** text debug mode*/
   bool fDebug;
 

@@ -114,7 +114,41 @@ FebexGui::FebexGui (QWidget* parent) :
   QObject::connect (DAC_spinBox_15, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox15_changed(int)));
 
 
-  // here optional components for febex:
+
+  /** JAM put references to designer checkboxes into array to be handled later easily: */
+  fBaselineBoxes[0]=Baseline_Box_00;
+  fBaselineBoxes[1]=Baseline_Box_01;
+  fBaselineBoxes[2]=Baseline_Box_02;
+  fBaselineBoxes[3]=Baseline_Box_03;
+  fBaselineBoxes[4]=Baseline_Box_04;
+  fBaselineBoxes[5]=Baseline_Box_05;
+  fBaselineBoxes[6]=Baseline_Box_06;
+  fBaselineBoxes[7]=Baseline_Box_07;
+  fBaselineBoxes[8]=Baseline_Box_08;
+  fBaselineBoxes[9]=Baseline_Box_09;
+  fBaselineBoxes[10]=Baseline_Box_10;
+  fBaselineBoxes[11]=Baseline_Box_11;
+  fBaselineBoxes[12]=Baseline_Box_12;
+  fBaselineBoxes[13]=Baseline_Box_13;
+  fBaselineBoxes[14]=Baseline_Box_14;
+  fBaselineBoxes[15]=Baseline_Box_15;
+
+  fDACSpinBoxes[0] = DAC_spinBox_00;
+  fDACSpinBoxes[1] = DAC_spinBox_01;
+  fDACSpinBoxes[2] = DAC_spinBox_02;
+  fDACSpinBoxes[3] = DAC_spinBox_03;
+  fDACSpinBoxes[4] = DAC_spinBox_04;
+  fDACSpinBoxes[5] = DAC_spinBox_05;
+  fDACSpinBoxes[6] = DAC_spinBox_06;
+  fDACSpinBoxes[7] = DAC_spinBox_07;
+  fDACSpinBoxes[8] = DAC_spinBox_08;
+  fDACSpinBoxes[9] = DAC_spinBox_09;
+  fDACSpinBoxes[10] = DAC_spinBox_10;
+  fDACSpinBoxes[11] = DAC_spinBox_11;
+  fDACSpinBoxes[12] = DAC_spinBox_12;
+  fDACSpinBoxes[13] = DAC_spinBox_13;
+  fDACSpinBoxes[14] = DAC_spinBox_14;
+  fDACSpinBoxes[15] = DAC_spinBox_15;
 
 
 #ifdef USE_MBSPEX_LIB
@@ -364,12 +398,17 @@ void FebexGui::AutoAdjustBtn_clicked ()
   QString targetstring=ADCAdjustValue->text ();
   unsigned targetvalue =targetstring.toUInt (0, fNumberBase);
   //std::cout <<"string="<<targetstring.toLatin1 ().constData ()<< ", targetvalue="<< targetvalue<< std::endl;
-  printm("--- Auto adjusting baselines of sfp:%d device:%d to value:%d ...",fChannel, fSlave,targetvalue);
-
   for(int channel=0; channel<16;++channel)
-    AdjustBaseline(channel,targetvalue);
-  RefreshView();
-  printm("          Auto adjustment done.");
+    {
+      if(fBaselineBoxes[channel]->isChecked())
+      {
+          int dac=AdjustBaseline(channel,targetvalue);
+          fDACSpinBoxes[channel]->setValue (dac);
+          printm("--- Auto adjusted baselines of sfp:%d FEBEX:%d channel:%d to value:%d =>%d permille DAC",fChannel, fSlave,channel, targetvalue, dac);
+      }
+   }
+    //RefreshView();
+  //printm("          Auto adjustment done.");
   QApplication::restoreOverrideCursor ();
 }
 
@@ -483,7 +522,7 @@ void FebexGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "FebexGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.55 of 1-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.60 of 2-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -882,7 +921,7 @@ int FebexGui::autoApply(int channel, int dac)
 
 { 
   int dacchip,dacchannel, adcchip, adcchannel;
-  int value=255.0-(dac*255.0/1000.0) ;
+  int value=255-round((dac*255.0/1000.0)) ;
  
   dacchip= channel/4 ;
   dacchannel= channel-dacchip*4; 
@@ -897,6 +936,9 @@ int FebexGui::autoApply(int channel, int dac)
    adcchannel= channel-adcchip*8 ;
    if (!AssertNoBroadcast ())
       return -1;
+
+//   for(int t=0; t<5;++t)
+//     I2c_sleep(); // do we need this?
    int Adc=ReadADC_Febex(adcchip,adcchannel);
   return Adc;
   
@@ -919,7 +961,7 @@ int Adc;
   //std::cout<< "RefreshView with dac:"<<theDAC<<", chan:"<<theChannel<<"val="<<val << std::endl;
  //DACvalue_lineEdit->setText (pre+text.setNum (val, fNumberBase));
    val=fSetup.GetDACValue(0,0);
-   percent=1000.0-(val*1000.0/255.0) ;
+   percent=1000 - round((val*1000.0/255.0)) ;
 // std::cout<<"RefreshView: percent="<<percent<<", value="<<val <<std::endl;
 // printm("RefreshView: percent=%d, value=%d",percent,val);
   DAC_spinBox_00->setValue (percent);
@@ -928,91 +970,91 @@ int Adc;
 ADC_Value_00->setText (pre+text.setNum (Adc, fNumberBase));
   // status header text with refresh time etc.:
  val=fSetup.GetDACValue(0,1);
-   percent=1000.0-(val*1000.0/255.0) ;
+   percent=1000 - round((val*1000.0/255.0)) ;
    DAC_spinBox_01->setValue (percent);
   Adc=ReadADC_Febex(0,1);
 ADC_Value_01->setText (pre+text.setNum (Adc, fNumberBase));
 
  val=fSetup.GetDACValue(0,2);
-   percent=1000.0-(val*1000.0/255.0) ;
+   percent=1000 - round((val*1000.0/255.0)) ;
    DAC_spinBox_02->setValue (percent);
   Adc=ReadADC_Febex(0,2);
 ADC_Value_02->setText (pre+text.setNum (Adc, fNumberBase));
 
  val=fSetup.GetDACValue(0,3);
-   percent=1000.0-(val*1000.0/255.0) ;
+   percent=1000 - round((val*1000.0/255.0)) ;
    DAC_spinBox_03->setValue (percent);
   Adc=ReadADC_Febex(0,3);
 ADC_Value_03->setText (pre+text.setNum (Adc, fNumberBase));
  
 val=fSetup.GetDACValue(1,0);
-   percent=1000.0-(val*1000.0/255.0) ;
+   percent=1000 - round((val*1000.0/255.0)) ;
    DAC_spinBox_04->setValue (percent);
   Adc=ReadADC_Febex(0,4);
 ADC_Value_04->setText (pre+text.setNum (Adc, fNumberBase));
 
  val=fSetup.GetDACValue(1,1);
-   percent=1000.0-(val*1000.0/255.0) ;
+   percent=1000 - round((val*1000.0/255.0)) ;
    DAC_spinBox_05->setValue (percent);
   Adc=ReadADC_Febex(0,5);
 ADC_Value_05->setText (pre+text.setNum (Adc, fNumberBase));
 
  val=fSetup.GetDACValue(1,2);
-   percent=1000.0-(val*1000.0/255.0) ;
+   percent=1000 - round((val*1000.0/255.0)) ;
    DAC_spinBox_06->setValue (percent);
   Adc=ReadADC_Febex(0,6);
 ADC_Value_06->setText (pre+text.setNum (Adc, fNumberBase));
 
  val=fSetup.GetDACValue(1,3);
-   percent=1000.0-(val*1000.0/255.0) ;
+   percent=1000 - round((val*1000.0/255.0)) ;
    DAC_spinBox_07->setValue (percent);
   Adc=ReadADC_Febex(0,7);
 ADC_Value_07->setText (pre+text.setNum (Adc, fNumberBase));
 
  val=fSetup.GetDACValue(2,0);
-   percent=1000.0-(val*1000.0/255.0) ;
+   percent=1000 - round((val*1000.0/255.0)) ;
    DAC_spinBox_08->setValue (percent);
   Adc=ReadADC_Febex(1,0);
 ADC_Value_08->setText (pre+text.setNum (Adc, fNumberBase));
 
  val=fSetup.GetDACValue(2,1);
-   percent=1000.0-(val*1000.0/255.0) ;
+   percent=1000 - round((val*1000.0/255.0)) ;
    DAC_spinBox_09->setValue (percent);
   Adc=ReadADC_Febex(1,1);
 ADC_Value_09->setText (pre+text.setNum (Adc, fNumberBase));
 
  val=fSetup.GetDACValue(2,2);
-   percent=1000.0-(val*1000.0/255.0) ;
+   percent=1000 - round((val*1000.0/255.0)) ;
    DAC_spinBox_10->setValue (percent);
   Adc=ReadADC_Febex(1,2);
 ADC_Value_10->setText (pre+text.setNum (Adc, fNumberBase));
 
  val=fSetup.GetDACValue(2,3);
-   percent=1000.0-(val*1000.0/255.0) ;
+   percent=1000 - round((val*1000.0/255.0)) ;
    DAC_spinBox_11->setValue (percent);
   Adc=ReadADC_Febex(1,3);
 ADC_Value_11->setText (pre+text.setNum (Adc, fNumberBase));
 
  val=fSetup.GetDACValue(3,0);
-   percent=1000.0-(val*1000.0/255.0) ;
+   percent=1000 - round((val*1000.0/255.0)) ;
    DAC_spinBox_12->setValue (percent);
   Adc=ReadADC_Febex(1,4);
 ADC_Value_12->setText (pre+text.setNum (Adc, fNumberBase));
 
  val=fSetup.GetDACValue(3,1);
-   percent=1000.0-(val*1000.0/255.0) ;
+   percent=1000 - round((val*1000.0/255.0)) ;
    DAC_spinBox_13->setValue (percent);
   Adc=ReadADC_Febex(1,5);
 ADC_Value_13->setText (pre+text.setNum (Adc, fNumberBase));
 
  val=fSetup.GetDACValue(3,2);
-   percent=1000.0-(val*1000.0/255.0) ;
+   percent=1000 - round((val*1000.0/255.0)) ;
    DAC_spinBox_14->setValue (percent);
   Adc=ReadADC_Febex(1,6);
 ADC_Value_14->setText (pre+text.setNum (Adc, fNumberBase));
 
  val=fSetup.GetDACValue(3,3);
-   percent=1000.0-(val*1000.0/255.0) ;
+   percent=1000 - round((val*1000.0/255.0)) ;
    DAC_spinBox_15->setValue (percent);
   Adc=ReadADC_Febex(1,7);
 ADC_Value_15->setText (pre+text.setNum (Adc, fNumberBase));
@@ -1038,7 +1080,7 @@ void FebexGui::EvaluateView ()
 //   int theChannel= chanBox->value ();
 int percent =DAC_spinBox_00->value ();
 
-int value=255.0-(percent*255.0/1000.0) ;
+int value=255 - round((percent*255.0/1000.0)) ;
 /*std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
 printm("EvaluateView: percent=%d, value=%d",percent,value);*/
   fSetup.SetDACValue(0,0, value);
@@ -1046,91 +1088,91 @@ printm("EvaluateView: percent=%d, value=%d",percent,value);*/
 //   fSetup.fChannel=theChannel; // remember the last visible indices to apply them.
 
 percent =DAC_spinBox_01->value ();
-value=255.0-(percent*255.0/1000.0) ;
+value=255 - round((percent*255.0/1000.0)) ;
 // std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
 // printm("EvaluateView: percent=%d, value=%d",percent,value); 
 fSetup.SetDACValue(0,1, value);
 
 percent =DAC_spinBox_02->value ();
-value=255.0-(percent*255.0/1000.0) ;
+value=255 - round((percent*255.0/1000.0)) ;
 // std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
 // printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(0,2, value);
 
 percent =DAC_spinBox_03->value ();
-value=255.0-(percent*255.0/1000.0) ;
+value=255 - round((percent*255.0/1000.0)) ;
 // std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
 // printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(0,3, value);
 
 percent =DAC_spinBox_04->value ();
-value=255.0-(percent*255.0/1000.0) ;
+value=255 - round((percent*255.0/1000.0)) ;
 // std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
 // printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(1,0, value);
 
 percent =DAC_spinBox_05->value ();
-value=255.0-(percent*255.0/1000.0) ;
+value=255 - round((percent*255.0/1000.0)) ;
 // std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
 // printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(1,1, value);
 
 percent =DAC_spinBox_06->value ();
-value=255.0-(percent*255.0/1000.0) ;
+value=255 - round((percent*255.0/1000.0)) ;
 // std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
 // printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(1,2, value);
 
 percent =DAC_spinBox_07->value ();
-value=255.0-(percent*255.0/1000.0) ;
+value=255 - round((percent*255.0/1000.0)) ;
 // std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
 // printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(1,3, value);
 
 percent =DAC_spinBox_08->value ();
-value=255.0-(percent*255.0/1000.0) ;
+value=255 - round((percent*255.0/1000.0)) ;
 // std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
 // printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(2,0, value);
 
 percent =DAC_spinBox_09->value ();
-value=255.0-(percent*255.0/1000.0) ;
+value=255 - round((percent*255.0/1000.0)) ;
 // std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
 // printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(2,1, value);
 
 percent =DAC_spinBox_10->value ();
-value=255.0-(percent*255.0/1000.0) ;
+value=255 - round((percent*255.0/1000.0)) ;
 // std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
 // printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(2,2, value);
 
 percent =DAC_spinBox_11->value ();
-value=255.0-(percent*255.0/1000.0) ;
+value=255 - round((percent*255.0/1000.0)) ;
 // std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
 // printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(2,3, value);
 
 percent =DAC_spinBox_12->value ();
-value=255.0-(percent*255.0/1000.0) ;
+value=255 - round((percent*255.0/1000.0)) ;
 // std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
 // printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(3,0, value);
 
 percent =DAC_spinBox_13->value ();
-value=255.0-(percent*255.0/1000.0) ;
+value=255 - round((percent*255.0/1000.0)) ;
 // std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
 // printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(3,1, value);
 
 percent =DAC_spinBox_14->value ();
-value=255.0-(percent*255.0/1000.0) ;
+value=255 - round((percent*255.0/1000.0)) ;
 // std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
 // printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(3,2, value);
 
 percent =DAC_spinBox_15->value ();
-value=255.0-(percent*255.0/1000.0) ;
+value=255 - round((percent*255.0/1000.0)) ;
 // std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
 // printm("EvaluateView: percent=%d, value=%d",percent,value);
 fSetup.SetDACValue(3,3, value);
