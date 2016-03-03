@@ -31,7 +31,7 @@
         <x>0</x>
         <y>0</y>
         <width>767</width>
-        <height>484</height>
+        <height>463</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
@@ -142,10 +142,10 @@
           <item>
            <widget class="QPushButton" name="ResetSlaveButton">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reset logic on chosen FEBEX device&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Initialize chosen FEBEX device&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>Reset</string>
+             <string>Init FEBEX</string>
             </property>
            </widget>
           </item>
@@ -1449,7 +1449,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>751</width>
+        <width>767</width>
         <height>115</height>
        </rect>
       </property>

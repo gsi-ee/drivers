@@ -71,6 +71,8 @@ FebexGui::FebexGui (QWidget* parent) :
 
   fNumberBase = 10;
 
+  memset( &fSFPChains, 0, sizeof(struct pex_sfp_links));
+
   SFPspinBox->setValue (fChannel);
   SlavespinBox->setValue (fSlave);
   DAC_spinBox_all->setValue (500);
@@ -380,16 +382,15 @@ void FebexGui::ResetSlaveBtn_clicked ()
 {
   char buffer[1024];
   EvaluateSlave ();
-  snprintf (buffer, 1024, "Really reset logic on FEBEX device at SFP %d, Slave %d ?", fChannel, fSlave);
+  snprintf (buffer, 1024, "Really initialize FEBEX device at SFP %d, Slave %d ?", fChannel, fSlave);
   if (QMessageBox::question (this, "Febex GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
       != QMessageBox::Yes)
   {
     //std::cout <<"QMessageBox does not return yes! "<< std::endl;
     return;
   }
-
-  AppendTextWindow ("--- Resetting logic on FEBEX not yet implemented!... ");
-  //EnableI2C ();
+  InitFebex();
+  printm("Did Initialize FEBEX for SFP %d Slave %d",fChannel,fSlave);
 }
 void FebexGui::EnableI2C ()
 {
@@ -401,6 +402,149 @@ void FebexGui::DisableI2C ()
 {
   WriteGosip (fChannel, fSlave, GOS_I2C_DWR, 0x1000000);
 }
+
+
+void FebexGui::InitFebex()
+{
+  WriteGosip (fChannel, fSlave, DATA_FILT_CONTROL_REG, 0x00);
+  usleep (4000);
+
+//        // disable test data length
+  WriteGosip (fChannel, fSlave, REG_DATA_LEN, 0x10000000);
+
+//        // specify trace length in slices
+  WriteGosip (fChannel, fSlave, REG_FEB_TRACE_LEN, FEB_TRACE_LEN);
+  // note: we skip verify read here to let this work in broadcast mode!
+
+
+
+
+//        // specify trigger delay in slices
+  WriteGosip (fChannel, fSlave,  REG_FEB_TRIG_DELAY, FEB_TRIG_DELAY);
+  // note: we skip verify read here to let this work in broadcast mode!
+
+
+  //        // disable trigger acceptance in febex
+  WriteGosip (fChannel, fSlave,   REG_FEB_CTRL, 0);
+
+
+  //        // enable trigger acceptance in febex
+  WriteGosip (fChannel, fSlave,   REG_FEB_CTRL, 1);
+
+
+//        // set channels used for self trigger signal
+
+  // JAM: the following is reduced version of mbs sample code. instead of arrays for each slave, we just
+  // take settings for first device at sfp 0. Should be sufficient for baseline setup until mbs configures all?
+  long l_sfp0_feb_ctrl0= 0x01000000;
+  long l_sfp0_feb_ctrl1 = 0x0;
+  long l_sfp0_feb_ctrl2= 0xffff;
+  long l_ev_od_or = (l_sfp0_feb_ctrl0 >> 20) & 0x1;
+  long l_pol = (l_sfp0_feb_ctrl0 >> 28) & 0x1;
+  long l_trig_mod = (l_sfp0_feb_ctrl0 >> 24) & 0xf;
+  long l_dis_cha  =  l_sfp0_feb_ctrl0       & 0x1ffff;
+  long l_dat_redu =  l_sfp0_feb_ctrl1       & 0x1ffff;
+  long l_ena_trig =  l_sfp0_feb_ctrl2       & 0xffff;
+
+
+  int trigenabchan= ((l_ev_od_or<<21)|(l_pol<<20)|(l_trig_mod<<16)|l_ena_trig);
+  WriteGosip (fChannel, fSlave,  REG_FEB_SELF_TRIG, trigenabchan);
+
+
+
+//        // set the step size for self trigger and data reduction
+  long l_thresh=0x1ff;
+  for (int l_k=0; l_k < FEBEX_CH ; l_k++){
+    WriteGosip (fChannel, fSlave, REG_FEB_STEP_SIZE, ( l_k<<24 ) | l_thresh );
+  }
+
+
+
+
+  //
+//        // reset the time stamp and set the clock source for time stamp counter
+  if(fChannel==0 && fSlave==0) // assume clock source at first slave on first chain here
+  {
+    WriteGosip (fChannel, fSlave,   REG_FEB_TIME,0x0 );
+    WriteGosip (fChannel, fSlave,   REG_FEB_TIME,0x7 );
+  }
+  else
+  {
+    WriteGosip (fChannel, fSlave,   REG_FEB_TIME,0x0 );
+    WriteGosip (fChannel, fSlave,   REG_FEB_TIME,0x5 );
+  }
+
+
+
+
+  //
+//        // enable/disable no hit in trace data suppression of channel
+  WriteGosip (fChannel, fSlave,  REG_DATA_REDUCTION, l_dat_redu);
+
+//        // set channels used for self trigger signal
+  WriteGosip (fChannel, fSlave,  REG_MEM_DISABLE, l_dis_cha );
+
+//        // write SFP id for channel header
+  if(AssertNoBroadcast(false))
+  {
+    WriteGosip (fChannel, fSlave,  REG_HEADER, fChannel);
+  }
+  else
+    {
+#ifdef USE_MBSPEX_LIB
+
+    // broadcast mode: find out number of slaves and loop over all registered slaves
+    GetSFPChainSetup();
+    if (fChannel < 0)
+    {
+      for (int sfp = 0; sfp < 4; ++sfp)
+      {
+        int numslaves = fSFPChains.numslaves[sfp];
+        for (int feb = 0; feb < numslaves; ++feb)
+          WriteGosip (sfp, feb, REG_HEADER, sfp);
+      }
+    }
+    else if (fSlave < 0)
+    {
+      int numslaves = fSFPChains.numslaves[fChannel];
+      for (int feb = 0; feb < numslaves; ++feb)
+               WriteGosip (fChannel, feb, REG_HEADER, fChannel);
+    }
+
+
+#else
+      AppendTextWindow("Could not set sfp id in broadcast mode with gosipcmd interface!");
+      return;
+#endif
+
+
+    }
+//        // set trapez parameters for trigger/hit finding
+  WriteGosip (fChannel, fSlave,  TRIG_SUM_A_REG, TRIG_SUM_A);
+  WriteGosip (fChannel, fSlave,   TRIG_GAP_REG, TRIG_SUM_A + TRIG_GAP);
+  WriteGosip (fChannel, fSlave,   TRIG_SUM_B_REG, TRIG_SUM_A  + TRIG_GAP + TRIG_SUM_B );
+
+
+#ifdef ENABLE_ENERGY_FILTER
+#ifdef TRAPEZ
+//
+//        // set trapez parameters for energy estimation
+  WriteGosip (fChannel, fSlave,  ENERGY_SUM_A_REG, ENERGY_SUM_A);
+  WriteGosip (fChannel, fSlave,  ENERGY_GAP_REG, ENERGY_SUM_A + ENERGY_GAP);
+  WriteGosip (fChannel, fSlave,  ENERGY_SUM_B_REG, ENERGY_SUM_A  + ENERGY_GAP + ENERGY_SUM_B );
+
+
+#endif // TRAPEZ
+#endif // ENABLE_ENERGY_FILTER
+  usleep(50);
+// enabling after "ini" of all registers (Ivan - 16.01.2013):
+  WriteGosip (fChannel, fSlave,   DATA_FILT_CONTROL_REG, DATA_FILT_CONTROL_DAT);
+  sleep (1);
+}
+
+
+
+
 
 
 
@@ -538,7 +682,7 @@ void FebexGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "FebexGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.70 of 3-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.75 of 3-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -871,7 +1015,14 @@ void FebexGui::GetRegisters ()
   QApplication::restoreOverrideCursor ();
 }
 
+void FebexGui::GetSFPChainSetup()
+{
+#ifdef USE_MBSPEX_LIB
+    // broadcast mode: find out number of slaves and loop over all registered slaves
+    mbspex_get_configured_slaves(fPexFD, &fSFPChains);
+#endif
   
+}
 
     
 int FebexGui::ReadDAC_FebexI2c (uint8_t mcpchip, uint8_t chan)

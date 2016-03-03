@@ -62,8 +62,97 @@ extern "C"
 #define FEBEX_ADC_NUMCHAN 8
 
 
+/** total number of channels on febex*/
+#define FEBEX_CH 16
+
+
 /* number of samples to evaluate average adc baseline value*/
 #define FEBEX_ADC_BASELINESAMPLES 3
+
+
+//////////////////////////////////////////////////////////////////////7
+
+/* The following is taken from mbs code for initialization of febex after startup:*/
+
+
+#define FEB_TRACE_LEN   300  // in nr of samples
+#define FEB_TRIG_DELAY   30  // in nr.of samples
+
+
+
+#define REG_BUF0_DATA_LEN     0xFFFD00  // buffer 0 submemory data length
+#define REG_BUF1_DATA_LEN     0xFFFE00  // buffer 1 submemory data length
+
+
+#define REG_DATA_REDUCTION  0xFFFFB0  // Nth bit = 1 enable data reduction of  Nth channel from block transfer readout. (bit0:time, bit1-8:adc)
+#define REG_MEM_DISABLE     0xFFFFB4  // Nth bit =1  disable Nth channel from block transfer readout.(bit0:time, bit1-8:adc)
+#define REG_MEM_FLAG_0      0xFFFFB8  // read only:
+#define REG_MEM_FLAG_1      0xFFFFBc  // read only:
+
+
+#define REG_BUF0     0xFFFFD0 // base address for buffer 0 : 0x0000
+#define REG_BUF1     0xFFFFD4  // base address for buffer 1 : 0x20000
+#define REG_SUBMEM_NUM   0xFFFFD8 //num of channels 8
+#define REG_SUBMEM_OFF   0xFFFFDC // offset of channels 0x4000
+
+#define REG_MODID     0xFFFFE0
+#define REG_HEADER    0xFFFFE4
+#define REG_FOOTER    0xFFFFE8
+#define REG_DATA_LEN  0xFFFFEC
+
+#define REG_RST 0xFFFFF4
+#define REG_LED 0xFFFFF8
+#define REG_VERSION 0xFFFFFC
+
+#define REG_FEB_CTRL       0x200000
+#define REG_FEB_TRIG_DELAY 0x200004
+#define REG_FEB_TRACE_LEN  0x200008
+#define REG_FEB_SELF_TRIG  0x20000C
+#define REG_FEB_STEP_SIZE  0x200010
+#define REG_FEB_SPI        0x200014
+#define REG_FEB_TIME       0x200018
+#define REG_FEB_XXX        0x20001C
+
+
+
+#define DATA_FILT_CONTROL_REG 0x2080C0
+#define DATA_FILT_CONTROL_DAT 0x80         // (0x80 E,t summary always +  data trace                 always
+                                           // (0x82 E,t summery always + (data trace + filter trace) always
+                                           // (0x84 E,t summery always +  data trace                 if > 1 hit
+                                           // (0x86 E,t summery always + (data trace + filter trace) if > 1 hit
+// Trigger/Hit finder filter
+
+#define TRIG_SUM_A_REG    0x2080D0
+#define TRIG_GAP_REG      0x2080E0
+#define TRIG_SUM_B_REG    0x2080F0
+
+#define TRIG_SUM_A     8  // for 12 bit: 8, 4 ,9 (8+1); for 14 bit: 14, 4, 15 (14 + 1).
+#define TRIG_GAP       4
+#define TRIG_SUM_B     9 // 8 + 1: one has to be added.
+
+// Energy Filters and Modes
+
+#define ENABLE_ENERGY_FILTER 1
+
+#define TRAPEZ               1  // if TRAPEZ is off, MWD will be activated
+
+#ifdef ENABLE_ENERGY_FILTER
+ #ifdef TRAPEZ
+  #define ENERGY_SUM_A_REG  0x208090
+  #define ENERGY_GAP_REG    0x2080A0
+  #define ENERGY_SUM_B_REG  0x2080B0
+
+  #define ENERGY_SUM_A  64
+  #define ENERGY_GAP    32
+  #define ENERGY_SUM_B  65  // 64 + 1: one has to be added.
+ #endif
+
+#endif
+
+
+
+
+
 
 /** this is a class (structure) to remember the previous setup read, and the
  * next setup to apply on the currently selected febex device:*/
@@ -169,6 +258,9 @@ protected:
   FebexSetup fSetup;
 
 
+  /** contains currently configured slaves at the chains.*/
+  struct pex_sfp_links fSFPChains;
+
   /** auxiliary references to checkboxes for baseline adjustments*/
   QCheckBox* fBaselineBoxes[16];
 
@@ -237,6 +329,9 @@ protected:
   void GetRegisters ();
 
 
+  /** retrieve slave configuration from driver*/
+  void GetSFPChainSetup();
+
 
   /** Read from address from sfp and slave, returns value*/
   int ReadGosip (int sfp, int slave, int address);
@@ -269,6 +364,9 @@ protected:
      *  by avering over several readouts of ADC. Baseline value is returned.*/
     int AcquireBaselineSample(uint8_t febexchan);
 
+
+   /* Initialize febex after power up*/
+   void InitFebex();
 
 
   /** helper function that either does enable i2c on board, or writes such commands to .gos file*/
