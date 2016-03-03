@@ -12,6 +12,7 @@
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QDateTime>
+#include <QTimer>
 
 #include <sstream>
 #include <string.h>
@@ -150,6 +151,22 @@ FebexGui::FebexGui (QWidget* parent) :
   fDACSpinBoxes[14] = DAC_spinBox_14;
   fDACSpinBoxes[15] = DAC_spinBox_15;
 
+  fADCLineEdit[0] = ADC_Value_00;
+  fADCLineEdit[1] = ADC_Value_01;
+  fADCLineEdit[2] = ADC_Value_02;
+  fADCLineEdit[3] = ADC_Value_03;
+  fADCLineEdit[4] = ADC_Value_04;
+  fADCLineEdit[5] = ADC_Value_05;
+  fADCLineEdit[6] = ADC_Value_06;
+  fADCLineEdit[7] = ADC_Value_07;
+  fADCLineEdit[8] = ADC_Value_08;
+  fADCLineEdit[9] = ADC_Value_09;
+  fADCLineEdit[10] = ADC_Value_10;
+  fADCLineEdit[11] = ADC_Value_11;
+  fADCLineEdit[12] = ADC_Value_12;
+  fADCLineEdit[13] = ADC_Value_13;
+  fADCLineEdit[14] = ADC_Value_14;
+  fADCLineEdit[15] = ADC_Value_15;
 
 #ifdef USE_MBSPEX_LIB
 // open handle to driver file:
@@ -337,7 +354,7 @@ void FebexGui::InitChainBtn_clicked ()
 void FebexGui::ResetBoardBtn_clicked ()
 {
 //std::cout << "FebexGui::ResetBoardBtn_clicked"<< std::endl;
-  if (QMessageBox::question (this, "Poland GUI", "Really Reset gosip on pex board?", QMessageBox::Yes | QMessageBox::No,
+  if (QMessageBox::question (this, "FEBEX GUI", "Really Reset gosip on pex board?", QMessageBox::Yes | QMessageBox::No,
       QMessageBox::Yes) != QMessageBox::Yes)
   {
     //std::cout <<"QMessageBox does not return yes! "<< std::endl;
@@ -371,8 +388,8 @@ void FebexGui::ResetSlaveBtn_clicked ()
     return;
   }
 
-  AppendTextWindow ("--- Resetting logic on NYXOR... ");
-  EnableI2C ();
+  AppendTextWindow ("--- Resetting logic on FEBEX not yet implemented!... ");
+  //EnableI2C ();
 }
 void FebexGui::EnableI2C ()
 {
@@ -409,6 +426,7 @@ void FebexGui::AutoAdjustBtn_clicked ()
    }
     //RefreshView();
   //printm("          Auto adjustment done.");
+  RefreshStatus();
   QApplication::restoreOverrideCursor ();
 }
 
@@ -419,21 +437,19 @@ int FebexGui::AdjustBaseline(int channel, int adctarget)
   int dacstep=250;
   int validdac=-1;
   int adc=0;
-  int escapecounter=20;
+  int escapecounter=10;
   bool upwards=true; // scan direction up or down
   bool changed=false; // do we have changed scan direction?
   bool initial=true; // supress evaluation of scan direction at first cycle
   //std::cout << "FebexGui::AdjustBaseline of channel "<<channel<<" to "<<adctarget<< std::endl;
 
-  double resolution= 1.0/FEBEX_MCP433_MAXVAL * 0xFFF /3 ; // for 12 bit
-    // test if FEBEX is for 14 bit values
+  double resolution= 1.0/FEBEX_MCP433_MAXVAL * 0xFFF /2; // for 12 bit
+    // test if FEBEX is for 14 bit values:
   if(autoApply(channel, 1000)>0xFFF)
         resolution*=4;
   do{
-     adc=autoApply(channel, dac);
+     adc=autoApply(channel, dac); // this gives already mean value of 3 adc samples
      if(adc<0) break; // avoid broadcast
-
-     // TODO: to improve accuracy, we may sample adc several times here and take mean value?
      validdac=dac;
      //std::cout << "FebexGui::AdjustBaseline after autoApply of dac:"<<dac<<" gets adc:"<<adc<<", resolution:"<<resolution<< std::endl;
      if(adc<adctarget){
@@ -451,7 +467,7 @@ int FebexGui::AdjustBaseline(int channel, int adctarget)
      else break;
      if(changed && !initial && dacstep > 1) dacstep = dacstep >> 1;
      if(dacstep <1) break;
-     if(!changed) escapecounter--; // get us out of loop if user wants to reach value outside adc range
+     if(!changed || dacstep==1) escapecounter--; // get us out of loop if user wants to reach value outside adc range, or if we oscillate around target value
      initial=false;
   } while (fabs(adc-adctarget) >= resolution && escapecounter);
   //std::cout << "   FebexGui::AdjustBaseline after loop dac:"<<validdac<<" adc:"<<adc<<", resolution:"<<resolution<< std::endl;
@@ -522,7 +538,7 @@ void FebexGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "FebexGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.60 of 2-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.70 of 3-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -565,354 +581,145 @@ void FebexGui::DebugBox_changed (int on)
 
 void FebexGui::HexBox_changed (int on)
 {
+
+  unsigned adjustvalue =ADCAdjustValue->text ().toUInt (0, fNumberBase); // save value in auto adjust field
   fNumberBase = (on ? 16 : 10);
 //std::cout << "HexBox_changed set base to "<< fNumberBase << std::endl;
+
+  QString text;
+  QString pre;
+  fNumberBase == 16 ? pre = "0x" : pre = "";
+  ADCAdjustValue->setText (pre+text.setNum (adjustvalue, fNumberBase)); // recover with new base
+
   RefreshView ();
 
 }
 
 void FebexGui::Slave_changed (int)
 {
-//std::cout << "FebexGui::Slave_changed" << std::endl;
+  //std::cout << "FebexGui::Slave_changed" << std::endl;
   EvaluateSlave ();
   bool refreshable = AssertNoBroadcast (false);
   RefreshButton->setEnabled (refreshable);
-    if(checkBox_AA->isChecked() && refreshable)
+  if(checkBox_AA->isChecked() && refreshable)
     
   {
-    ShowBtn_clicked() ;
+    // JAM note that we had a problem of prelling spinbox here (arrow buttons only, keyboard arrows are ok)
+    // probably caused by too long response time of this slot?
+    // workaround is to refresh the view delayed per single shot timer:
+    //std::cout << "Timer started" << std::endl;
+    QTimer::singleShot(10, this, SLOT(ShowBtn_clicked()));
+    //std::cout << "Timer end" << std::endl;
+    //ShowBtn_clicked() ;
   }
-  
-  
-  
-
 }
 
  void FebexGui::DAC_spinBox_all_changed(int val)
 {
   //std::cout << "FebexGui::DAC_spinBox_all_changed, val="<<val << std::endl;
-  DAC_spinBox_00->setValue (val); 
-  DAC_spinBox_01->setValue (val);
-  DAC_spinBox_02->setValue (val);
-  DAC_spinBox_03->setValue (val);
-  DAC_spinBox_04->setValue (val);
-  DAC_spinBox_05->setValue (val);
-  DAC_spinBox_06->setValue (val);
-  DAC_spinBox_07->setValue (val);
-  DAC_spinBox_08->setValue (val);
-  DAC_spinBox_09->setValue (val);
-  DAC_spinBox_10->setValue (val);
-  DAC_spinBox_11->setValue (val);
-  DAC_spinBox_12->setValue (val);
-  DAC_spinBox_13->setValue (val);
-  DAC_spinBox_14->setValue (val);
-  DAC_spinBox_15->setValue (val);
+   for(int chan=0;chan<16;++chan)
+     fDACSpinBoxes[chan]->setValue (val);
   
 }
 
+
+ void FebexGui::DAC_spinBox_changed (int channel, int val)
+{
+  if (checkBox_AA->isChecked () && AssertNoBroadcast (false))
+  {
+    QString text;
+    QString pre;
+    fNumberBase == 16 ? pre = "0x" : pre = "";
+    EvaluateSlave ();
+    //int permille = fDACSpinBoxes[channel]->value ();
+    int permille =val;
+    int Adc = autoApply (channel, permille);
+
+    fADCLineEdit[channel]->setText (pre + text.setNum (Adc, fNumberBase));
+    RefreshStatus ();
+  }
+
+}
+
+
  void FebexGui::Any_spinBox00_changed(int val)
 {
-  //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
-  { 
-     QString text;
-     QString pre;     
-    fNumberBase == 16 ? pre = "0x" : pre = "";
-   EvaluateSlave();
-   
-   int percent =DAC_spinBox_00->value ();
-    int Adc=autoApply(0,percent);
-   
-    ADC_Value_00->setText (pre+text.setNum (Adc, fNumberBase));
-      //std::cout<< "Did apply" << std::endl;  
-  }
-    
-}
+   DAC_spinBox_changed (0,val);
+ }
 
 void FebexGui::Any_spinBox01_changed(int val)
 {
-  //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
-  { 
-     QString text;
-     QString pre;     
-    fNumberBase == 16 ? pre = "0x" : pre = "";
-   EvaluateSlave();
-   
-   int percent =DAC_spinBox_01->value ();
-    int Adc=autoApply(1,percent);
-   
-    ADC_Value_01->setText (pre+text.setNum (Adc, fNumberBase));
-      //std::cout<< "Did apply" << std::endl;  
-  }
-    
+  DAC_spinBox_changed (1,val);
 }
 
 void FebexGui::Any_spinBox02_changed(int val)
 {
-  //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
-  { 
-     QString text;
-     QString pre;     
-    fNumberBase == 16 ? pre = "0x" : pre = "";
-   EvaluateSlave();
-   
-   int percent =DAC_spinBox_02->value ();
-    int Adc=autoApply(2,percent);
-   
-    ADC_Value_02->setText (pre+text.setNum (Adc, fNumberBase));
-      //std::cout<< "Did apply" << std::endl;  
-  }
-    
+  DAC_spinBox_changed (2,val);
 }
 
 void FebexGui::Any_spinBox03_changed(int val)
 {
-  //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
-  { 
-     QString text;
-     QString pre;     
-    fNumberBase == 16 ? pre = "0x" : pre = "";
-   EvaluateSlave();
-   
-   int percent =DAC_spinBox_03->value ();
-    int Adc=autoApply(3,percent);
-   
-    ADC_Value_03->setText (pre+text.setNum (Adc, fNumberBase));
-      //std::cout<< "Did apply" << std::endl;  
-  }
-    
+  DAC_spinBox_changed (3,val);
 }
 
 void FebexGui::Any_spinBox04_changed(int val)
 {
-  //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
-  { 
-     QString text;
-     QString pre;     
-    fNumberBase == 16 ? pre = "0x" : pre = "";
-   EvaluateSlave();
-   
-   int percent =DAC_spinBox_04->value ();
-    int Adc=autoApply(4,percent);
-   
-    ADC_Value_04->setText (pre+text.setNum (Adc, fNumberBase));
-      //std::cout<< "Did apply" << std::endl;  
-  }
-    
+  DAC_spinBox_changed (4,val);
 }
 
 void FebexGui::Any_spinBox05_changed(int val)
 {
-  //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
-  { 
-     QString text;
-     QString pre;     
-    fNumberBase == 16 ? pre = "0x" : pre = "";
-   EvaluateSlave();
-   
-   int percent =DAC_spinBox_05->value ();
-    int Adc=autoApply(5,percent);
-   
-    ADC_Value_05->setText (pre+text.setNum (Adc, fNumberBase));
-      //std::cout<< "Did apply" << std::endl;  
-  }
-    
+  DAC_spinBox_changed (5,val);
 }
 
 void FebexGui::Any_spinBox06_changed(int val)
 {
-  //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
-  { 
-     QString text;
-     QString pre;     
-    fNumberBase == 16 ? pre = "0x" : pre = "";
-   EvaluateSlave();
-   
-   int percent =DAC_spinBox_06->value ();
-    int Adc=autoApply(6,percent);
-   
-    ADC_Value_06->setText (pre+text.setNum (Adc, fNumberBase));
-      //std::cout<< "Did apply" << std::endl;  
-  }
-    
+  DAC_spinBox_changed (6,val);
 }
 
 void FebexGui::Any_spinBox07_changed(int val)
 {
-  //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
-  { 
-     QString text;
-     QString pre;     
-    fNumberBase == 16 ? pre = "0x" : pre = "";
-   EvaluateSlave();
-   
-   int percent =DAC_spinBox_07->value ();
-    int Adc=autoApply(7,percent);
-   
-    ADC_Value_07->setText (pre+text.setNum (Adc, fNumberBase));
-      //std::cout<< "Did apply" << std::endl;  
-  }
-    
+  DAC_spinBox_changed (7,val);
 }
 
 void FebexGui::Any_spinBox08_changed(int val)
 {
-  //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
-  { 
-     QString text;
-     QString pre;     
-    fNumberBase == 16 ? pre = "0x" : pre = "";
-   EvaluateSlave();
-   
-   int percent =DAC_spinBox_08->value ();
-   int Adc=autoApply(8,percent);
-
-   
-    ADC_Value_08->setText (pre+text.setNum (Adc, fNumberBase));
-      //std::cout<< "Did apply" << std::endl;  
-  }
-    
+  DAC_spinBox_changed (8,val);
 }
 
 void FebexGui::Any_spinBox09_changed(int val)
 {
-  //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
-  { 
-     QString text;
-     QString pre;     
-    fNumberBase == 16 ? pre = "0x" : pre = "";
-   EvaluateSlave();
-   
-   int percent =DAC_spinBox_09->value ();
-    int Adc=autoApply(9,percent);
-   
-    ADC_Value_09->setText (pre+text.setNum (Adc, fNumberBase));
-      //std::cout<< "Did apply" << std::endl;  
-  }
-    
+  DAC_spinBox_changed (9,val);
 }
 
 void FebexGui::Any_spinBox10_changed(int val)
 {
-  //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
-  { 
-     QString text;
-     QString pre;     
-    fNumberBase == 16 ? pre = "0x" : pre = "";
-   EvaluateSlave();
-   
-   int percent =DAC_spinBox_10->value ();
-    int Adc=autoApply(10,percent);
-   
-    ADC_Value_10->setText (pre+text.setNum (Adc, fNumberBase));
-      //std::cout<< "Did apply" << std::endl;  
-  }
-    
+  DAC_spinBox_changed (10,val);
 }
 
 void FebexGui::Any_spinBox11_changed(int val)
 {
-  //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
-  { 
-     QString text;
-     QString pre;     
-    fNumberBase == 16 ? pre = "0x" : pre = "";
-   EvaluateSlave();
-   
-   int percent =DAC_spinBox_11->value ();
-    int Adc=autoApply(11,percent);
-   
-    ADC_Value_11->setText (pre+text.setNum (Adc, fNumberBase));
-      //std::cout<< "Did apply" << std::endl;  
-  }
-    
+  DAC_spinBox_changed (11,val);
 }
 
 void FebexGui::Any_spinBox12_changed(int val)
 {
-  //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
-  { 
-     QString text;
-     QString pre;     
-    fNumberBase == 16 ? pre = "0x" : pre = "";
-   EvaluateSlave();
-   
-   int percent =DAC_spinBox_12->value ();
-    int Adc=autoApply(12,percent);
-   
-    ADC_Value_12->setText (pre+text.setNum (Adc, fNumberBase));
-      //std::cout<< "Did apply" << std::endl;  
-  }
-    
+  DAC_spinBox_changed (12,val);
 }
 
 void FebexGui::Any_spinBox13_changed(int val)
 {
-  //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
-  { 
-     QString text;
-     QString pre;     
-    fNumberBase == 16 ? pre = "0x" : pre = "";
-   EvaluateSlave();
-   
-   int percent =DAC_spinBox_13->value ();
-    int Adc=autoApply(13,percent);
-   
-    ADC_Value_13->setText (pre+text.setNum (Adc, fNumberBase));
-      //std::cout<< "Did apply" << std::endl;  
-  }
-    
+  DAC_spinBox_changed (13,val);
 }
 
 void FebexGui::Any_spinBox14_changed(int val)
 {
-  //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked() && AssertNoBroadcast(false))
-  { 
-     QString text;
-     QString pre;     
-    fNumberBase == 16 ? pre = "0x" : pre = "";
-   EvaluateSlave();
-   
-   int percent =DAC_spinBox_14->value ();
-    int Adc=autoApply(14,percent);
-   
-    ADC_Value_14->setText (pre+text.setNum (Adc, fNumberBase));
-      //std::cout<< "Did apply" << std::endl;  
-  }
-    
+  DAC_spinBox_changed (14,val);
 }
 
 void FebexGui::Any_spinBox15_changed(int val)
 {
-  //std::cout << "FebexGui::Value_changed" << std::endl; 
-  if(checkBox_AA->isChecked() && AssertNoBroadcast (false))
-  { 
-     QString text;
-     QString pre;     
-    fNumberBase == 16 ? pre = "0x" : pre = "";
-   EvaluateSlave();
-   
-   int percent =DAC_spinBox_15->value ();
-    int Adc=autoApply(15,percent);
-   
-    ADC_Value_15->setText (pre+text.setNum (Adc, fNumberBase));
-      //std::cout<< "Did apply" << std::endl;  
-  }
-    
+  DAC_spinBox_changed (15,val);
 }
 
 
@@ -922,27 +729,40 @@ int FebexGui::autoApply(int channel, int dac)
 { 
   int dacchip,dacchannel, adcchip, adcchannel;
   int value=255-round((dac*255.0/1000.0)) ;
- 
-  dacchip= channel/4 ;
-  dacchannel= channel-dacchip*4; 
-  
-   fSetup.SetDACValue(dacchip,dacchannel, value);
+  dacchip= channel/FEBEX_MCP433_NUMCHAN ;
+  dacchannel= channel-dacchip*FEBEX_MCP433_NUMCHAN;
+  fSetup.SetDACValue(dacchip,dacchannel, value);
    
    EnableI2C ();  
    WriteDAC_FebexI2c (dacchip, dacchannel, fSetup.GetDACValue(dacchip, dacchannel));
    DisableI2C ();
-  
-   adcchip= channel/8;
-   adcchannel= channel-adcchip*8 ;
    if (!AssertNoBroadcast ())
       return -1;
-
-//   for(int t=0; t<5;++t)
-//     I2c_sleep(); // do we need this?
-   int Adc=ReadADC_Febex(adcchip,adcchannel);
-  return Adc;
+   int Adc=AcquireBaselineSample(channel);
+   return Adc;
   
 }
+
+
+int FebexGui::AcquireBaselineSample(uint8_t febexchan)
+{
+  if(febexchan >= FEBEX_ADC_NUMADC*FEBEX_ADC_NUMCHAN) return -1;
+  int adcchip= febexchan/FEBEX_ADC_NUMCHAN;
+  int adcchannel= febexchan-adcchip * FEBEX_ADC_NUMCHAN ;
+  int Adc=0;
+  for(int t=0; t<FEBEX_ADC_BASELINESAMPLES;++t)
+    {
+      Adc+=ReadADC_Febex(adcchip,adcchannel);
+    }
+  Adc=Adc/FEBEX_ADC_BASELINESAMPLES;
+  return Adc;
+}
+
+
+
+
+
+
 
 void FebexGui::RefreshView ()
 {
@@ -950,232 +770,51 @@ void FebexGui::RefreshView ()
   QString text;
   QString pre;
   fNumberBase == 16 ? pre = "0x" : pre = "";
-int val,percent;
-int Adc;
-// here refresh of number displays:
 
-  // the beginning gui can only display the channel that is currently set:
- /* int theDAC= dacBox->value ();
-  int theChannel= chanBox->value ();*/
-//   int val=fSetup.GetDACValue(theDAC,theChannel);
-  //std::cout<< "RefreshView with dac:"<<theDAC<<", chan:"<<theChannel<<"val="<<val << std::endl;
- //DACvalue_lineEdit->setText (pre+text.setNum (val, fNumberBase));
-   val=fSetup.GetDACValue(0,0);
-   percent=1000 - round((val*1000.0/255.0)) ;
-// std::cout<<"RefreshView: percent="<<percent<<", value="<<val <<std::endl;
-// printm("RefreshView: percent=%d, value=%d",percent,val);
-  DAC_spinBox_00->setValue (percent);
-  Adc=ReadADC_Febex(0,0);
-// JAM 2016 TODO: add more elements to show all channels simultaneously!
-ADC_Value_00->setText (pre+text.setNum (Adc, fNumberBase));
-  // status header text with refresh time etc.:
- val=fSetup.GetDACValue(0,1);
-   percent=1000 - round((val*1000.0/255.0)) ;
-   DAC_spinBox_01->setValue (percent);
-  Adc=ReadADC_Febex(0,1);
-ADC_Value_01->setText (pre+text.setNum (Adc, fNumberBase));
+  // JAM improved this by looping over spinbox references
+  for(int channel=0; channel<16;++channel)
+     {
+          int val=fSetup.GetDACValue(channel);
+          int permille=1000 - round((val*1000.0/255.0)) ;
+          fDACSpinBoxes[channel]->setValue(permille);
+          int adc=AcquireBaselineSample(channel);
+          fADCLineEdit[channel]->setText (pre+text.setNum (adc, fNumberBase));
+     }
 
- val=fSetup.GetDACValue(0,2);
-   percent=1000 - round((val*1000.0/255.0)) ;
-   DAC_spinBox_02->setValue (percent);
-  Adc=ReadADC_Febex(0,2);
-ADC_Value_02->setText (pre+text.setNum (Adc, fNumberBase));
-
- val=fSetup.GetDACValue(0,3);
-   percent=1000 - round((val*1000.0/255.0)) ;
-   DAC_spinBox_03->setValue (percent);
-  Adc=ReadADC_Febex(0,3);
-ADC_Value_03->setText (pre+text.setNum (Adc, fNumberBase));
- 
-val=fSetup.GetDACValue(1,0);
-   percent=1000 - round((val*1000.0/255.0)) ;
-   DAC_spinBox_04->setValue (percent);
-  Adc=ReadADC_Febex(0,4);
-ADC_Value_04->setText (pre+text.setNum (Adc, fNumberBase));
-
- val=fSetup.GetDACValue(1,1);
-   percent=1000 - round((val*1000.0/255.0)) ;
-   DAC_spinBox_05->setValue (percent);
-  Adc=ReadADC_Febex(0,5);
-ADC_Value_05->setText (pre+text.setNum (Adc, fNumberBase));
-
- val=fSetup.GetDACValue(1,2);
-   percent=1000 - round((val*1000.0/255.0)) ;
-   DAC_spinBox_06->setValue (percent);
-  Adc=ReadADC_Febex(0,6);
-ADC_Value_06->setText (pre+text.setNum (Adc, fNumberBase));
-
- val=fSetup.GetDACValue(1,3);
-   percent=1000 - round((val*1000.0/255.0)) ;
-   DAC_spinBox_07->setValue (percent);
-  Adc=ReadADC_Febex(0,7);
-ADC_Value_07->setText (pre+text.setNum (Adc, fNumberBase));
-
- val=fSetup.GetDACValue(2,0);
-   percent=1000 - round((val*1000.0/255.0)) ;
-   DAC_spinBox_08->setValue (percent);
-  Adc=ReadADC_Febex(1,0);
-ADC_Value_08->setText (pre+text.setNum (Adc, fNumberBase));
-
- val=fSetup.GetDACValue(2,1);
-   percent=1000 - round((val*1000.0/255.0)) ;
-   DAC_spinBox_09->setValue (percent);
-  Adc=ReadADC_Febex(1,1);
-ADC_Value_09->setText (pre+text.setNum (Adc, fNumberBase));
-
- val=fSetup.GetDACValue(2,2);
-   percent=1000 - round((val*1000.0/255.0)) ;
-   DAC_spinBox_10->setValue (percent);
-  Adc=ReadADC_Febex(1,2);
-ADC_Value_10->setText (pre+text.setNum (Adc, fNumberBase));
-
- val=fSetup.GetDACValue(2,3);
-   percent=1000 - round((val*1000.0/255.0)) ;
-   DAC_spinBox_11->setValue (percent);
-  Adc=ReadADC_Febex(1,3);
-ADC_Value_11->setText (pre+text.setNum (Adc, fNumberBase));
-
- val=fSetup.GetDACValue(3,0);
-   percent=1000 - round((val*1000.0/255.0)) ;
-   DAC_spinBox_12->setValue (percent);
-  Adc=ReadADC_Febex(1,4);
-ADC_Value_12->setText (pre+text.setNum (Adc, fNumberBase));
-
- val=fSetup.GetDACValue(3,1);
-   percent=1000 - round((val*1000.0/255.0)) ;
-   DAC_spinBox_13->setValue (percent);
-  Adc=ReadADC_Febex(1,5);
-ADC_Value_13->setText (pre+text.setNum (Adc, fNumberBase));
-
- val=fSetup.GetDACValue(3,2);
-   percent=1000 - round((val*1000.0/255.0)) ;
-   DAC_spinBox_14->setValue (percent);
-  Adc=ReadADC_Febex(1,6);
-ADC_Value_14->setText (pre+text.setNum (Adc, fNumberBase));
-
- val=fSetup.GetDACValue(3,3);
-   percent=1000 - round((val*1000.0/255.0)) ;
-   DAC_spinBox_15->setValue (percent);
-  Adc=ReadADC_Febex(1,7);
-ADC_Value_15->setText (pre+text.setNum (Adc, fNumberBase));
-
-
-  QString statustext;
-  statustext.append ("SFP ");
-  statustext.append (text.setNum (fChannel));
-  statustext.append (" DEV ");
-  statustext.append (text.setNum (fSlave));
-  statustext.append (" - Last refresh:");
-  statustext.append (QDateTime::currentDateTime ().toString (Qt::TextDate));
-  StatusLabel->setText (statustext);
+  RefreshStatus();
 
 }
+
+
+void FebexGui::RefreshStatus ()
+{
+  QString text;
+  QString statustext;
+   statustext.append ("SFP ");
+   statustext.append (text.setNum (fChannel));
+   statustext.append (" DEV ");
+   statustext.append (text.setNum (fSlave));
+   statustext.append (" - Last refresh:");
+   statustext.append (QDateTime::currentDateTime ().toString (Qt::TextDate));
+   StatusLabel->setText (statustext);
+}
+
+
+
+
 
 void FebexGui::EvaluateView ()
 {
   // here the current gui display is just copied to setup structure in local memory
 
-  //int value=DACvalue_lineEdit->text ().toUInt (0, fNumberBase);
-//   int theDAC= dacBox->value ();
-//   int theChannel= chanBox->value ();
-int percent =DAC_spinBox_00->value ();
 
-int value=255 - round((percent*255.0/1000.0)) ;
-/*std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-printm("EvaluateView: percent=%d, value=%d",percent,value);*/
-  fSetup.SetDACValue(0,0, value);
-//   fSetup.fDAC=theDAC;
-//   fSetup.fChannel=theChannel; // remember the last visible indices to apply them.
-
-percent =DAC_spinBox_01->value ();
-value=255 - round((percent*255.0/1000.0)) ;
-// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-// printm("EvaluateView: percent=%d, value=%d",percent,value); 
-fSetup.SetDACValue(0,1, value);
-
-percent =DAC_spinBox_02->value ();
-value=255 - round((percent*255.0/1000.0)) ;
-// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-// printm("EvaluateView: percent=%d, value=%d",percent,value);
-fSetup.SetDACValue(0,2, value);
-
-percent =DAC_spinBox_03->value ();
-value=255 - round((percent*255.0/1000.0)) ;
-// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-// printm("EvaluateView: percent=%d, value=%d",percent,value);
-fSetup.SetDACValue(0,3, value);
-
-percent =DAC_spinBox_04->value ();
-value=255 - round((percent*255.0/1000.0)) ;
-// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-// printm("EvaluateView: percent=%d, value=%d",percent,value);
-fSetup.SetDACValue(1,0, value);
-
-percent =DAC_spinBox_05->value ();
-value=255 - round((percent*255.0/1000.0)) ;
-// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-// printm("EvaluateView: percent=%d, value=%d",percent,value);
-fSetup.SetDACValue(1,1, value);
-
-percent =DAC_spinBox_06->value ();
-value=255 - round((percent*255.0/1000.0)) ;
-// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-// printm("EvaluateView: percent=%d, value=%d",percent,value);
-fSetup.SetDACValue(1,2, value);
-
-percent =DAC_spinBox_07->value ();
-value=255 - round((percent*255.0/1000.0)) ;
-// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-// printm("EvaluateView: percent=%d, value=%d",percent,value);
-fSetup.SetDACValue(1,3, value);
-
-percent =DAC_spinBox_08->value ();
-value=255 - round((percent*255.0/1000.0)) ;
-// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-// printm("EvaluateView: percent=%d, value=%d",percent,value);
-fSetup.SetDACValue(2,0, value);
-
-percent =DAC_spinBox_09->value ();
-value=255 - round((percent*255.0/1000.0)) ;
-// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-// printm("EvaluateView: percent=%d, value=%d",percent,value);
-fSetup.SetDACValue(2,1, value);
-
-percent =DAC_spinBox_10->value ();
-value=255 - round((percent*255.0/1000.0)) ;
-// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-// printm("EvaluateView: percent=%d, value=%d",percent,value);
-fSetup.SetDACValue(2,2, value);
-
-percent =DAC_spinBox_11->value ();
-value=255 - round((percent*255.0/1000.0)) ;
-// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-// printm("EvaluateView: percent=%d, value=%d",percent,value);
-fSetup.SetDACValue(2,3, value);
-
-percent =DAC_spinBox_12->value ();
-value=255 - round((percent*255.0/1000.0)) ;
-// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-// printm("EvaluateView: percent=%d, value=%d",percent,value);
-fSetup.SetDACValue(3,0, value);
-
-percent =DAC_spinBox_13->value ();
-value=255 - round((percent*255.0/1000.0)) ;
-// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-// printm("EvaluateView: percent=%d, value=%d",percent,value);
-fSetup.SetDACValue(3,1, value);
-
-percent =DAC_spinBox_14->value ();
-value=255 - round((percent*255.0/1000.0)) ;
-// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-// printm("EvaluateView: percent=%d, value=%d",percent,value);
-fSetup.SetDACValue(3,2, value);
-
-percent =DAC_spinBox_15->value ();
-value=255 - round((percent*255.0/1000.0)) ;
-// std::cout<<"EvaluateView: percent="<<percent<<", value="<<value <<std::endl;
-// printm("EvaluateView: percent=%d, value=%d",percent,value);
-fSetup.SetDACValue(3,3, value);
+// JAM improved this by looping over spinbox references
+  for(int channel=0; channel<16;++channel)
+     {
+          int permille=fDACSpinBoxes[channel]->value();
+          int value=255 - round((permille*255.0/1000.0)) ;
+          fSetup.SetDACValue(channel, value);
+     }
 
 }
 
@@ -1184,34 +823,24 @@ void FebexGui::EvaluateSlave ()
   fChannel = SFPspinBox->value ();
   fSlave = SlavespinBox->value ();
 
-//   fSetup.fDAC=dacBox->value ();
-//   fSetup.fChannel=chanBox->value (); // remember the last visible indices to show them.
 }
 
 void FebexGui::SetRegisters ()
 {
+  QApplication::setOverrideCursor (Qt::WaitCursor);
   EnableI2C ();    // must be done since mbs setup program may shut i2c off at the end
-// write register values from strucure with gosipcmd
 
-  // beginners gui will only write the currently set index:
- // WriteDAC_FebexI2c (fSetup.fDAC, fSetup.fChannel, fSetup.GetDACValue(fSetup.fDAC, fSetup.fChannel));
-  
-  
-    for (int m = 0; m < FEBEX_MCP433_NUMCHIPS; ++m)
+      for (int m = 0; m < FEBEX_MCP433_NUMCHIPS; ++m)
     {
       for (int c = 0; c < FEBEX_MCP433_NUMCHAN; ++c)
        {
           WriteDAC_FebexI2c (m, c, fSetup.GetDACValue(m, c));
        }
     }
-  
-
-// JAM2016 TODO loop over complete structure to set alltogether
-
-
-
 
   DisableI2C ();
+  QApplication::restoreOverrideCursor ();
+
 }
 
 void FebexGui::GetRegisters ()
@@ -1220,8 +849,8 @@ void FebexGui::GetRegisters ()
 
   if (!AssertNoBroadcast ())
     return;
-  EnableI2C ();
-  
+  QApplication::setOverrideCursor (Qt::WaitCursor);
+ EnableI2C ();
  for (int m = 0; m < FEBEX_MCP433_NUMCHIPS; ++m)
     {
       for (int c = 0; c < FEBEX_MCP433_NUMCHAN; ++c)
@@ -1238,11 +867,8 @@ void FebexGui::GetRegisters ()
 	 
        }
     }
- 
-
   DisableI2C ();
-  
- 
+  QApplication::restoreOverrideCursor ();
 }
 
   
@@ -1302,7 +928,7 @@ int FebexGui::ReadGosip (int sfp, int slave, int address)
 #ifdef USE_MBSPEX_LIB
   int rev = 0;
   long int dat = 0;
-  QApplication::setOverrideCursor (Qt::WaitCursor);
+  //QApplication::setOverrideCursor (Qt::WaitCursor);
   rev = mbspex_slave_rd (fPexFD, sfp, slave, address, &dat);
   I2c_sleep ();
   value = dat;
@@ -1321,7 +947,7 @@ int FebexGui::ReadGosip (int sfp, int slave, int address)
     AppendTextWindow (msg);
 
   }
-  QApplication::restoreOverrideCursor ();
+  //QApplication::restoreOverrideCursor ();
 #else
   char buffer[1024];
 //snprintf(buffer,1024,"/daq/usr/adamczew/workspace/drivers/mbspex/bin/gosipcmd -r -- %d %d 0x%x",sfp, slave, address);
@@ -1410,7 +1036,7 @@ int FebexGui::WriteGosip (int sfp, int slave, int address, int value)
     return SaveGosip (sfp, slave, address, value);
 
 #ifdef USE_MBSPEX_LIB
-  QApplication::setOverrideCursor (Qt::WaitCursor);
+  //QApplication::setOverrideCursor (Qt::WaitCursor);
   rev = mbspex_slave_wr (fPexFD, sfp, slave, address, value);
   I2c_sleep ();
   if (fDebug)
@@ -1420,7 +1046,7 @@ int FebexGui::WriteGosip (int sfp, int slave, int address, int value)
     QString msg (buffer);
     AppendTextWindow (msg);
   }
-  QApplication::restoreOverrideCursor ();
+  //QApplication::restoreOverrideCursor ();
 #else
   char buffer[1024];
   snprintf (buffer, 1024, "gosipcmd -w -- %d %d 0x%x 0x%x", sfp, slave, address, value);

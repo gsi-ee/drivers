@@ -62,6 +62,8 @@ extern "C"
 #define FEBEX_ADC_NUMCHAN 8
 
 
+/* number of samples to evaluate average adc baseline value*/
+#define FEBEX_ADC_BASELINESAMPLES 3
 
 /** this is a class (structure) to remember the previous setup read, and the
  * next setup to apply on the currently selected febex device:*/
@@ -103,7 +105,34 @@ public:
       if(chip<0 || chip>=FEBEX_MCP433_NUMCHIPS || chan <0 || chan >=FEBEX_MCP433_NUMCHAN) return -1; // error handling
       fDACValueSet[chip][chan]=value;
       //std::cout << "SetDACValue ("<<chip<<","<<chan<<")="<< (int)(fDACValueSet[chip][chan])<<", val="<<(int) value<< std::endl;
+      return 0;
     }
+
+  /** convert febex channel to DAC indices*/
+   void EvaluateDACIndices(int febexchannel, int& chip, int& chan)
+     {
+           chip= febexchannel/FEBEX_MCP433_NUMCHAN ;
+           chan= febexchannel-chip*FEBEX_MCP433_NUMCHAN;
+     }
+
+  /** helper function to access DAC value via global febex channel number*/
+  int GetDACValue(int febexchannel)
+    {
+      int chip=0, chan=0;
+      EvaluateDACIndices(febexchannel, chip, chan);
+      return GetDACValue(chip, chan);
+    }
+
+  /** helper function to set DAC value via global febex channel number*/
+  int SetDACValue(int febexchannel,  uint8_t value)
+     {
+          int chip=0, chan=0;
+          EvaluateDACIndices(febexchannel, chip, chan);
+          return SetDACValue(chip, chan, value);
+     }
+
+
+
 
 };
 
@@ -146,6 +175,10 @@ protected:
   /** auxiliary references to spinbox for baseline adjustment view*/
   QSpinBox* fDACSpinBoxes[16];
 
+  /** auxiliary references to adc baseline display for refresh view*/
+  QLineEdit* fADCLineEdit[16];
+
+
   /** text debug mode*/
   bool fDebug;
 
@@ -183,6 +216,11 @@ protected:
 
   /** update register display*/
   void RefreshView ();
+
+//  /** update febex device index display*/
+  void RefreshStatus ();
+
+
 
   /** copy values from gui to internal status object*/
   void EvaluateView ();
@@ -227,6 +265,10 @@ protected:
     /** Read value from adc channel of currently selected slave. adc unit id and local channel id are specified*/
     int ReadADC_Febex (uint8_t adc, uint8_t chan);
 
+    /** sample adc baseline of global channel febexchan
+     *  by avering over several readouts of ADC. Baseline value is returned.*/
+    int AcquireBaselineSample(uint8_t febexchan);
+
 
 
   /** helper function that either does enable i2c on board, or writes such commands to .gos file*/
@@ -246,6 +288,10 @@ protected:
 
   /** Set relativ DAC value dac to FEBEXchannel, returns ADC value*/
   int autoApply(int channel, int dac);
+
+
+ /** evaluate change of spinbox for febex channel channel*/
+  void DAC_spinBox_changed(int channel, int val);
 
 
   /** Automatic adjustment of adc baseline to adctarget value for global febex channel.
