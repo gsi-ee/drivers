@@ -194,6 +194,8 @@ void FebexGui::ShowBtn_clicked ()
 {
   //std::cout << "FebexGui::ShowBtn_clicked()"<< std::endl;
   EvaluateSlave ();
+  GetSFPChainSetup();
+  if(!AssertChainConfigured()) return;
   GetRegisters ();
   RefreshView ();
 }
@@ -202,16 +204,21 @@ void FebexGui::ApplyBtn_clicked ()
 {
 //std::cout << "FebexGui::ApplyBtn_clicked()"<< std::endl;
 
-  char buffer[1024];
+
   EvaluateSlave ();
 
 // JAM maybe disable confirm window ?
+//  char buffer[1024];
 //  snprintf (buffer, 1024, "Really apply FEBEX settings  to SFP %d Device %d?", fChannel, fSlave);
 //  if (QMessageBox::question (this, "FEBEX GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
 //      != QMessageBox::Yes)
 //  {
 //    return;
 //  }
+
+
+  GetSFPChainSetup();
+  if(AssertNoBroadcast(false) && !AssertChainConfigured()) return;
 
   EvaluateView (); // from gui to memory
 
@@ -351,6 +358,9 @@ void FebexGui::InitChainBtn_clicked ()
   QString result = ExecuteGosipCmd (com);
   AppendTextWindow (result);
 #endif
+
+  GetSFPChainSetup();
+  RefreshChains();
 }
 
 void FebexGui::ResetBoardBtn_clicked ()
@@ -376,6 +386,8 @@ void FebexGui::ResetBoardBtn_clicked ()
 
 #endif
 
+  GetSFPChainSetup();
+  RefreshChains();
 }
 
 void FebexGui::ResetSlaveBtn_clicked ()
@@ -568,9 +580,10 @@ void FebexGui::AutoAdjustBtn_clicked ()
           printm("--- Auto adjusted baselines of sfp:%d FEBEX:%d channel:%d to value:%d =>%d permille DAC",fChannel, fSlave,channel, targetvalue, dac);
       }
    }
-    //RefreshView();
-  //printm("          Auto adjustment done.");
-  RefreshStatus();
+  if (!checkBox_AA->isChecked ())
+    RefreshView(); // in auto apply mode the baselines are automatically displayed, without this we have to get it again
+  else
+    RefreshStatus();
   QApplication::restoreOverrideCursor ();
 }
 
@@ -636,6 +649,7 @@ void FebexGui::BroadcastBtn_clicked (bool checked)
   }
   else
   {
+    RefreshChains();
     SFPspinBox->setValue (fChannelSave);
     SlavespinBox->setValue (fSlaveSave);
 
@@ -682,7 +696,7 @@ void FebexGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "FebexGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.75 of 3-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.8 of 4-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -745,6 +759,8 @@ void FebexGui::Slave_changed (int)
   EvaluateSlave ();
   bool refreshable = AssertNoBroadcast (false);
   RefreshButton->setEnabled (refreshable);
+
+  RefreshChains();
   if(checkBox_AA->isChecked() && refreshable)
     
   {
@@ -925,6 +941,7 @@ void FebexGui::RefreshView ()
           fADCLineEdit[channel]->setText (pre+text.setNum (adc, fNumberBase));
      }
 
+  RefreshChains();
   RefreshStatus();
 
 }
@@ -944,7 +961,33 @@ void FebexGui::RefreshStatus ()
 }
 
 
+void FebexGui::RefreshChains ()
+{
 
+#ifdef USE_MBSPEX_LIB
+  // show status of configured chains:
+  Chain0_Box->setValue (fSFPChains.numslaves[0]);
+  Chain1_Box->setValue (fSFPChains.numslaves[1]);
+  Chain2_Box->setValue (fSFPChains.numslaves[2]);
+  Chain3_Box->setValue (fSFPChains.numslaves[3]);
+
+  // set maximum value of device spinbox according to init chains:
+
+  if (fChannel >= 0) // only for non broadcast mode of slaves
+  {
+    if (fSFPChains.numslaves[fChannel] > 0) // configured chains
+    {
+      SlavespinBox->setMaximum (fSFPChains.numslaves[fChannel] - 1);
+      SlavespinBox->setEnabled (true);
+    }
+    else // non configured chains
+    {
+      SlavespinBox->setEnabled (false);
+    }
+  }
+#endif
+
+}
 
 
 void FebexGui::EvaluateView ()
@@ -1017,6 +1060,7 @@ void FebexGui::GetRegisters ()
 
 void FebexGui::GetSFPChainSetup()
 {
+//  std::cout<<"GetSFPChainSetup... "<< std::endl;
 #ifdef USE_MBSPEX_LIB
     // broadcast mode: find out number of slaves and loop over all registered slaves
     mbspex_get_configured_slaves(fPexFD, &fSFPChains);
@@ -1260,4 +1304,13 @@ bool FebexGui::AssertNoBroadcast (bool verbose)
   return true;
 }
 
-
+bool FebexGui::AssertChainConfigured (bool verbose)
+{
+  if (fSlave >= fSFPChains.numslaves[fChannel])
+  {
+    if (verbose)
+      printm("#Error: device index %d not in initialized chain of length %d at SFP %d",fSlave,fSFPChains.numslaves[fChannel],fChannel);
+    return false;
+  }
+  return true;
+}

@@ -312,6 +312,8 @@ protected:
 //  /** update febex device index display*/
   void RefreshStatus ();
 
+  /** update initilized chain display and slave limit*/
+  void RefreshChains();
 
 
   /** copy values from gui to internal status object*/
@@ -408,6 +410,11 @@ protected:
   }
   /** Check if broadast mode is not set. If set, returns false and prints error message if verbose is true*/
   bool AssertNoBroadcast (bool verbose=true);
+
+
+  /** Check if chain for given sfp and slave index is configured correctly*/
+  bool AssertChainConfigured (bool verbose=true);
+
 
 public slots:
   virtual void ShowBtn_clicked();
