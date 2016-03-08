@@ -29,6 +29,54 @@ FebexGui* FebexGui::fInstance = 0;
 #include <stdarg.h>
 
 
+/** JAM The following nice define handles all explicit broadcast actions depending on the currently set slave*/
+#define FEBEX_BROADCAST_ACTION(X) \
+fBroadcasting=true;  \
+int oldslave = fSlave; \
+int oldchan = fChannel; \
+if (AssertNoBroadcast (false)) \
+ { \
+   X(); \
+ } \
+ else if (fChannel < 0) \
+ { \
+   for (int sfp = 0; sfp < 4; ++sfp) \
+   {\
+     if (fSFPChains.numslaves[sfp] == 0) \
+       continue; \
+     fChannel = sfp; \
+     if (fSlave < 0) \
+     { \
+       for (int feb = 0; feb < fSFPChains.numslaves[sfp]; ++feb) \
+       { \
+         fSlave = feb; \
+         X(); \
+       } \
+     } \
+     else \
+     { \
+       X();\
+     }\
+   }\
+ } \
+ else if (fSlave< 0) \
+ { \
+   for (int feb = 0; feb < fSFPChains.numslaves[fChannel]; ++feb) \
+       { \
+         fSlave = feb; \
+         X(); \
+       } \
+ } \
+ else \
+ { \
+   AppendTextWindow ("--- NEVER COME HERE: undefined broadcast mode ---:"); \
+ } \
+fSlave= oldslave;\
+fChannel= oldchan; \
+fBroadcasting=false;
+
+
+
 
 void printm (char *fmt, ...)
 {
@@ -61,7 +109,7 @@ void FebexGui::I2c_sleep ()
  *  name 'name'.'
  */
 FebexGui::FebexGui (QWidget* parent) :
-    QWidget (parent), fSetup(), fDebug (false), fSaveConfig (false), fChannel (0), fSlave (0), fChannelSave (0), fSlaveSave (0),
+    QWidget (parent), fSetup(), fDebug (false), fSaveConfig (false), fBroadcasting(false), fChannel (0), fSlave (0), fChannelSave (0), fSlaveSave (0),
         fConfigFile (0)
 {
   setupUi (this);
@@ -401,8 +449,9 @@ void FebexGui::ResetSlaveBtn_clicked ()
     //std::cout <<"QMessageBox does not return yes! "<< std::endl;
     return;
   }
-  InitFebex();
-  printm("Did Initialize FEBEX for SFP %d Slave %d",fChannel,fSlave);
+  FEBEX_BROADCAST_ACTION(InitFebex);
+
+
 }
 void FebexGui::EnableI2C ()
 {
@@ -497,40 +546,44 @@ void FebexGui::InitFebex()
   WriteGosip (fChannel, fSlave,  REG_MEM_DISABLE, l_dis_cha );
 
 //        // write SFP id for channel header
-  if(AssertNoBroadcast(false))
-  {
-    WriteGosip (fChannel, fSlave,  REG_HEADER, fChannel);
-  }
-  else
-    {
-#ifdef USE_MBSPEX_LIB
 
-    // broadcast mode: find out number of slaves and loop over all registered slaves
-    GetSFPChainSetup();
-    if (fChannel < 0)
-    {
-      for (int sfp = 0; sfp < 4; ++sfp)
-      {
-        int numslaves = fSFPChains.numslaves[sfp];
-        for (int feb = 0; feb < numslaves; ++feb)
-          WriteGosip (sfp, feb, REG_HEADER, sfp);
-      }
-    }
-    else if (fSlave < 0)
-    {
-      int numslaves = fSFPChains.numslaves[fChannel];
-      for (int feb = 0; feb < numslaves; ++feb)
-               WriteGosip (fChannel, feb, REG_HEADER, fChannel);
-    }
+  WriteGosip (fChannel, fSlave,  REG_HEADER, fChannel);
 
+// JAM the following is redundant due to new macro FEBEX_BROADCAST_ACTION
+//  if(AssertNoBroadcast(false))
+//  {
+//    WriteGosip (fChannel, fSlave,  REG_HEADER, fChannel);
+//  }
+//  else
+//    {
+//#ifdef USE_MBSPEX_LIB
+//
+//    // broadcast mode: find out number of slaves and loop over all registered slaves
+//    GetSFPChainSetup();
+//    if (fChannel < 0)
+//    {
+//      for (int sfp = 0; sfp < 4; ++sfp)
+//      {
+//        int numslaves = fSFPChains.numslaves[sfp];
+//        for (int feb = 0; feb < numslaves; ++feb)
+//          WriteGosip (sfp, feb, REG_HEADER, sfp);
+//      }
+//    }
+//    else if (fSlave < 0)
+//    {
+//      int numslaves = fSFPChains.numslaves[fChannel];
+//      for (int feb = 0; feb < numslaves; ++feb)
+//               WriteGosip (fChannel, feb, REG_HEADER, fChannel);
+//    }
+//
+//
+//#else
+//      AppendTextWindow("Could not set sfp id in broadcast mode with gosipcmd interface!");
+//      return;
+//#endif
+//    }
+//////////////////////////////////////////////////// end old code
 
-#else
-      AppendTextWindow("Could not set sfp id in broadcast mode with gosipcmd interface!");
-      return;
-#endif
-
-
-    }
 //        // set trapez parameters for trigger/hit finding
   WriteGosip (fChannel, fSlave,  TRIG_SUM_A_REG, TRIG_SUM_A);
   WriteGosip (fChannel, fSlave,   TRIG_GAP_REG, TRIG_SUM_A + TRIG_GAP);
@@ -552,11 +605,8 @@ void FebexGui::InitFebex()
 // enabling after "ini" of all registers (Ivan - 16.01.2013):
   WriteGosip (fChannel, fSlave,   DATA_FILT_CONTROL_REG, DATA_FILT_CONTROL_DAT);
   sleep (1);
+  printm("Did Initialize FEBEX for SFP %d Slave %d",fChannel,fSlave);
 }
-
-
-
-
 
 
 
@@ -564,28 +614,33 @@ void FebexGui::AutoAdjustBtn_clicked ()
 {
   //std::cout <<"AutoAdjustBtn_clicked "<< std::endl;
   EvaluateSlave ();
-  if (!AssertNoBroadcast ())
-    return;    //  auto adjustment is only possible for a single febex, no broadcast
-
   QApplication::setOverrideCursor (Qt::WaitCursor);
-  QString targetstring=ADCAdjustValue->text ();
-  unsigned targetvalue =targetstring.toUInt (0, fNumberBase);
-  //std::cout <<"string="<<targetstring.toLatin1 ().constData ()<< ", targetvalue="<< targetvalue<< std::endl;
-  for(int channel=0; channel<16;++channel)
-    {
-      if(fBaselineBoxes[channel]->isChecked())
-      {
-          int dac=AdjustBaseline(channel,targetvalue);
-          fDACSpinBoxes[channel]->setValue (dac);
-          printm("--- Auto adjusted baselines of sfp:%d FEBEX:%d channel:%d to value:%d =>%d permille DAC",fChannel, fSlave,channel, targetvalue, dac);
-      }
-   }
-  if (!checkBox_AA->isChecked ())
-    RefreshView(); // in auto apply mode the baselines are automatically displayed, without this we have to get it again
-  else
-    RefreshStatus();
+  FEBEX_BROADCAST_ACTION(AutoAdjust);
   QApplication::restoreOverrideCursor ();
 }
+
+
+void FebexGui::AutoAdjust()
+{
+  if(!AssertChainConfigured()) return;
+   QString targetstring=ADCAdjustValue->text ();
+   unsigned targetvalue =targetstring.toUInt (0, fNumberBase);
+   //std::cout <<"string="<<targetstring.toLatin1 ().constData ()<< ", targetvalue="<< targetvalue<< std::endl;
+   for(int channel=0; channel<16;++channel)
+     {
+       if(fBaselineBoxes[channel]->isChecked())
+       {
+           int dac=AdjustBaseline(channel,targetvalue);
+           fDACSpinBoxes[channel]->setValue (dac);
+           printm("--- Auto adjusted baselines of sfp:%d FEBEX:%d channel:%d to value:%d =>%d permille DAC",fChannel, fSlave,channel, targetvalue, dac);
+       }
+    }
+   if (!checkBox_AA->isChecked ())
+     RefreshView(); // in auto apply mode the baselines are automatically displayed, without this we have to get it again
+   else
+     RefreshStatus();
+}
+
 
 
 int FebexGui::AdjustBaseline(int channel, int adctarget)
@@ -656,39 +711,87 @@ void FebexGui::BroadcastBtn_clicked (bool checked)
   }
 }
 
+void FebexGui::DumpADCs()
+{
+  // JAM 2016 first demonstration how to get the actual adc values:
+  if(!AssertChainConfigured()) return;
+
+    printm("SFP %d DEV:%d :)",fChannel, fSlave);
+    for(int adc=0; adc<FEBEX_ADC_NUMADC; ++adc){
+      for (int chan=0; chan<FEBEX_ADC_NUMCHAN; ++chan){
+        int val=ReadADC_Febex(adc,chan);
+        if(val<0)
+          printm("Read error for adc:%d chan:%d",adc,chan);
+        else
+          {
+            if(fNumberBase==16)
+              printm("Val (adc:0x%x chan:0x%x)=0x%x",adc,chan,val);
+            else
+              printm("Val (adc:%d chan:%d)=%d",adc,chan,val);
+        }
+      }
+
+    }
+
+}
+
+
+
 void FebexGui::DumpBtn_clicked ()
 {
 //std::cout << "FebexGui::DumpBtn_clicked"<< std::endl;
 // dump register contents from gosipcmd into TextOutput (QPlainText)
   EvaluateSlave ();
+//  int oldslave = fSlave;
+//  int oldchan = fChannel;
 
-  if (!AssertNoBroadcast ())
-    return;    // for febex we can not dump all connected frontends at once, NxI2c works on current slave only
-
-  char buffer[1024];
   AppendTextWindow ("--- ADC Dump ---:");
 
-  // JAM 2016 first demonstration how to get the actual adc values:
-  printm("SFP %d DEV:%d :)",fChannel, fSlave);
-  for(int adc=0; adc<FEBEX_ADC_NUMADC; ++adc){
-    for (int chan=0; chan<FEBEX_ADC_NUMCHAN; ++chan){
-      int val=ReadADC_Febex(adc,chan);
-      if(val<0)
-        printm("Read error for adc:%d chan:%d",adc,chan);
-      else
-        {
-          if(fNumberBase==16)
-            printm("Val (adc:0x%x chan:0x%x)=0x%x",adc,chan,val);
-          else
-            printm("Val (adc:%d chan:%d)=%d",adc,chan,val);
-      }
-    }
-
-  }
+  FEBEX_BROADCAST_ACTION(DumpADCs);
 
 
-
-
+//  if (AssertNoBroadcast ())
+//  {
+//    DumpADCs ();    // just dump actually set FEBEX
+//  }
+//  else if (fChannel < 0)
+//  {
+//    for (int sfp = 0; sfp < 4; ++sfp)
+//    {
+//      if (fSFPChains.numslaves[sfp] == 0)
+//        continue;
+//      fChannel = sfp;
+//
+//      if (fSlave < 0)
+//      {
+//        for (int feb = 0; feb < fSFPChains.numslaves[sfp]; ++feb)
+//        {
+//          fSlave = feb;
+//          DumpADCs ();
+//        }
+//      }
+//      else
+//      {
+//        DumpADCs ();
+//      }
+//
+//    }    // for sfp
+//  }
+//  else if (fSlave< 0)
+//  {
+//    for (int feb = 0; feb < fSFPChains.numslaves[fChannel]; ++feb)
+//        {
+//          fSlave = feb;
+//          DumpADCs ();
+//        }
+//  }
+//  else
+//  {
+//    AppendTextWindow ("--- NEVER COME HERE: ADC dump with unexpected broadcast ---:");
+//  }
+//
+//  fSlave= oldslave;
+//  fChannel= oldchan;
 
 }
 
@@ -696,7 +799,7 @@ void FebexGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "FebexGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.8 of 4-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.81 of 8-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -1007,6 +1110,7 @@ void FebexGui::EvaluateView ()
 
 void FebexGui::EvaluateSlave ()
 {
+  if(fBroadcasting) return;
   fChannel = SFPspinBox->value ();
   fSlave = SlavespinBox->value ();
 

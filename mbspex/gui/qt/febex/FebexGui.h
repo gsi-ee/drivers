@@ -277,6 +277,9 @@ protected:
   /** save configuration file instead of setting device values*/
   bool fSaveConfig;
 
+  /** this flag protects some slots during broadcast write mode*/
+  bool fBroadcasting;
+
   /** base for number display (10 or 16)*/
   int fNumberBase;
 
@@ -377,6 +380,9 @@ protected:
   /** helper function that either does disable i2c on board, or writes such commands to .gos file*/
   void DisableI2C ();
 
+  /** dump current ADC values of currently set FEBEX*/
+  void DumpADCs();
+
   /** open configuration file for writing*/
   int OpenConfigFile(const QString& fname);
 
@@ -398,6 +404,8 @@ protected:
    * will return final dac setup value or -1 in case of error*/
   int AdjustBaseline(int channel, int adctarget);
 
+  /** Adjust baselines of the currently selected febex device.*/
+  void AutoAdjust();
 
   void DebugTextWindow (const char*txt)
   {
