@@ -255,7 +255,9 @@ protected:
 #endif
 
 
-  FebexSetup fSetup;
+  /** for saving of configuration, we now have setup structures for all slaves.
+   * array index is sfp, vector index is febex in chain*/
+  std::vector<FebexSetup> fSetup[4];
 
 
   /** contains currently configured slaves at the chains.*/
@@ -284,12 +286,12 @@ protected:
   int fNumberBase;
 
   /** index of sfp channel,   -1 for broadcast */
-  int fChannel;
+  int fSFP;
   /** index of slave device , -1 for broadcast*/
   int fSlave;
 
   /** remember sfp channel to recover after broadcast*/
-  int fChannelSave;
+  int fSFPSave;
 
   /** remember slave channel to recover after broadcast*/
   int fSlaveSave;
@@ -332,6 +334,9 @@ protected:
 
   /** get register contents to status structure*/
   void GetRegisters ();
+
+  /** get registers and write them to config file*/
+  void SaveRegisters();
 
 
   /** retrieve slave configuration from driver*/

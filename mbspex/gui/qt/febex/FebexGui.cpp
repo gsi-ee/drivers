@@ -33,18 +33,18 @@ FebexGui* FebexGui::fInstance = 0;
 #define FEBEX_BROADCAST_ACTION(X) \
 fBroadcasting=true;  \
 int oldslave = fSlave; \
-int oldchan = fChannel; \
+int oldchan = fSFP; \
 if (AssertNoBroadcast (false)) \
  { \
    X(); \
  } \
- else if (fChannel < 0) \
+ else if (fSFP < 0) \
  { \
    for (int sfp = 0; sfp < 4; ++sfp) \
    {\
      if (fSFPChains.numslaves[sfp] == 0) \
        continue; \
-     fChannel = sfp; \
+     fSFP = sfp; \
      if (fSlave < 0) \
      { \
        for (int feb = 0; feb < fSFPChains.numslaves[sfp]; ++feb) \
@@ -61,7 +61,7 @@ if (AssertNoBroadcast (false)) \
  } \
  else if (fSlave< 0) \
  { \
-   for (int feb = 0; feb < fSFPChains.numslaves[fChannel]; ++feb) \
+   for (int feb = 0; feb < fSFPChains.numslaves[fSFP]; ++feb) \
        { \
          fSlave = feb; \
          X(); \
@@ -72,7 +72,7 @@ if (AssertNoBroadcast (false)) \
    AppendTextWindow ("--- NEVER COME HERE: undefined broadcast mode ---:"); \
  } \
 fSlave= oldslave;\
-fChannel= oldchan; \
+fSFP= oldchan; \
 fBroadcasting=false;
 
 
@@ -109,7 +109,7 @@ void FebexGui::I2c_sleep ()
  *  name 'name'.'
  */
 FebexGui::FebexGui (QWidget* parent) :
-    QWidget (parent), fSetup(), fDebug (false), fSaveConfig (false), fBroadcasting(false), fChannel (0), fSlave (0), fChannelSave (0), fSlaveSave (0),
+    QWidget (parent), fDebug (false), fSaveConfig (false), fBroadcasting(false), fSFP (0), fSlave (0), fSFPSave (0), fSlaveSave (0),
         fConfigFile (0)
 {
   setupUi (this);
@@ -121,7 +121,11 @@ FebexGui::FebexGui (QWidget* parent) :
 
   memset( &fSFPChains, 0, sizeof(struct pex_sfp_links));
 
-  SFPspinBox->setValue (fChannel);
+  for(int sfp=0; sfp<4;++sfp)
+    fSetup[sfp].clear();
+
+
+  SFPspinBox->setValue (fSFP);
   SlavespinBox->setValue (fSlave);
   DAC_spinBox_all->setValue (500);
   TextOutput->setCenterOnScroll (false);
@@ -257,7 +261,7 @@ void FebexGui::ApplyBtn_clicked ()
 
 // JAM maybe disable confirm window ?
 //  char buffer[1024];
-//  snprintf (buffer, 1024, "Really apply FEBEX settings  to SFP %d Device %d?", fChannel, fSlave);
+//  snprintf (buffer, 1024, "Really apply FEBEX settings  to SFP %d Device %d?", fSFP, fSlave);
 //  if (QMessageBox::question (this, "FEBEX GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
 //      != QMessageBox::Yes)
 //  {
@@ -317,9 +321,7 @@ void FebexGui::SaveConfigBtn_clicked ()
     WriteConfigFile (QString ("#usage: gosipcmd -x -c file.gos \n"));
     WriteConfigFile (QString ("#                                         \n"));
     WriteConfigFile (QString ("#sfp slave address value\n"));
-    fSaveConfig = true;    // switch to file output mode
-    SetRegisters ();    // register settings are written to file
-    fSaveConfig = false;
+    FEBEX_BROADCAST_ACTION(SaveRegisters); // refresh actual setup from hardware and write it to open file
   }
 
 
@@ -382,7 +384,7 @@ void FebexGui::InitChainBtn_clicked ()
   EvaluateSlave ();
 //std::cout << "InitChainBtn_clicked()"<< std::endl;
   bool ok;
-  snprintf (buffer, 1024, "Please specify NUMBER OF DEVICES to initialize at SFP %d ?", fChannel);
+  snprintf (buffer, 1024, "Please specify NUMBER OF DEVICES to initialize at SFP %d ?", fSFP);
 #if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
   int numslaves = QInputDialog::getInt (this, tr ("Number of Slaves?"), tr (buffer), 1, 1, 1024, 1, &ok);
 #else
@@ -392,16 +394,16 @@ void FebexGui::InitChainBtn_clicked ()
 #endif
   if (!ok)
     return;
-  if (fChannel < 0)
+  if (fSFP < 0)
   {
     AppendTextWindow ("--- Error: Broadcast not allowed for init chain!");
     return;
   }
 #ifdef USE_MBSPEX_LIB
-  int rev = mbspex_slave_init (fPexFD, fChannel, numslaves);
+  int rev = mbspex_slave_init (fPexFD, fSFP, numslaves);
 
 #else
-  snprintf (buffer, 1024, "gosipcmd -i  %d %d", fChannel, numslaves);
+  snprintf (buffer, 1024, "gosipcmd -i  %d %d", fSFP, numslaves);
   QString com (buffer);
   QString result = ExecuteGosipCmd (com);
   AppendTextWindow (result);
@@ -442,7 +444,7 @@ void FebexGui::ResetSlaveBtn_clicked ()
 {
   char buffer[1024];
   EvaluateSlave ();
-  snprintf (buffer, 1024, "Really initialize FEBEX device at SFP %d, Slave %d ?", fChannel, fSlave);
+  snprintf (buffer, 1024, "Really initialize FEBEX device at SFP %d, Slave %d ?", fSFP, fSlave);
   if (QMessageBox::question (this, "Febex GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
       != QMessageBox::Yes)
   {
@@ -455,42 +457,42 @@ void FebexGui::ResetSlaveBtn_clicked ()
 }
 void FebexGui::EnableI2C ()
 {
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, 0x1000080);
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, 0x2000020);
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x1000080);
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x2000020);
 }
 
 void FebexGui::DisableI2C ()
 {
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, 0x1000000);
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x1000000);
 }
 
 
 void FebexGui::InitFebex()
 {
-  WriteGosip (fChannel, fSlave, DATA_FILT_CONTROL_REG, 0x00);
+  WriteGosip (fSFP, fSlave, DATA_FILT_CONTROL_REG, 0x00);
   usleep (4000);
 
 //        // disable test data length
-  WriteGosip (fChannel, fSlave, REG_DATA_LEN, 0x10000000);
+  WriteGosip (fSFP, fSlave, REG_DATA_LEN, 0x10000000);
 
 //        // specify trace length in slices
-  WriteGosip (fChannel, fSlave, REG_FEB_TRACE_LEN, FEB_TRACE_LEN);
+  WriteGosip (fSFP, fSlave, REG_FEB_TRACE_LEN, FEB_TRACE_LEN);
   // note: we skip verify read here to let this work in broadcast mode!
 
 
 
 
 //        // specify trigger delay in slices
-  WriteGosip (fChannel, fSlave,  REG_FEB_TRIG_DELAY, FEB_TRIG_DELAY);
+  WriteGosip (fSFP, fSlave,  REG_FEB_TRIG_DELAY, FEB_TRIG_DELAY);
   // note: we skip verify read here to let this work in broadcast mode!
 
 
   //        // disable trigger acceptance in febex
-  WriteGosip (fChannel, fSlave,   REG_FEB_CTRL, 0);
+  WriteGosip (fSFP, fSlave,   REG_FEB_CTRL, 0);
 
 
   //        // enable trigger acceptance in febex
-  WriteGosip (fChannel, fSlave,   REG_FEB_CTRL, 1);
+  WriteGosip (fSFP, fSlave,   REG_FEB_CTRL, 1);
 
 
 //        // set channels used for self trigger signal
@@ -509,14 +511,14 @@ void FebexGui::InitFebex()
 
 
   int trigenabchan= ((l_ev_od_or<<21)|(l_pol<<20)|(l_trig_mod<<16)|l_ena_trig);
-  WriteGosip (fChannel, fSlave,  REG_FEB_SELF_TRIG, trigenabchan);
+  WriteGosip (fSFP, fSlave,  REG_FEB_SELF_TRIG, trigenabchan);
 
 
 
 //        // set the step size for self trigger and data reduction
   long l_thresh=0x1ff;
   for (int l_k=0; l_k < FEBEX_CH ; l_k++){
-    WriteGosip (fChannel, fSlave, REG_FEB_STEP_SIZE, ( l_k<<24 ) | l_thresh );
+    WriteGosip (fSFP, fSlave, REG_FEB_STEP_SIZE, ( l_k<<24 ) | l_thresh );
   }
 
 
@@ -524,15 +526,15 @@ void FebexGui::InitFebex()
 
   //
 //        // reset the time stamp and set the clock source for time stamp counter
-  if(fChannel==0 && fSlave==0) // assume clock source at first slave on first chain here
+  if(fSFP==0 && fSlave==0) // assume clock source at first slave on first chain here
   {
-    WriteGosip (fChannel, fSlave,   REG_FEB_TIME,0x0 );
-    WriteGosip (fChannel, fSlave,   REG_FEB_TIME,0x7 );
+    WriteGosip (fSFP, fSlave,   REG_FEB_TIME,0x0 );
+    WriteGosip (fSFP, fSlave,   REG_FEB_TIME,0x7 );
   }
   else
   {
-    WriteGosip (fChannel, fSlave,   REG_FEB_TIME,0x0 );
-    WriteGosip (fChannel, fSlave,   REG_FEB_TIME,0x5 );
+    WriteGosip (fSFP, fSlave,   REG_FEB_TIME,0x0 );
+    WriteGosip (fSFP, fSlave,   REG_FEB_TIME,0x5 );
   }
 
 
@@ -540,19 +542,19 @@ void FebexGui::InitFebex()
 
   //
 //        // enable/disable no hit in trace data suppression of channel
-  WriteGosip (fChannel, fSlave,  REG_DATA_REDUCTION, l_dat_redu);
+  WriteGosip (fSFP, fSlave,  REG_DATA_REDUCTION, l_dat_redu);
 
 //        // set channels used for self trigger signal
-  WriteGosip (fChannel, fSlave,  REG_MEM_DISABLE, l_dis_cha );
+  WriteGosip (fSFP, fSlave,  REG_MEM_DISABLE, l_dis_cha );
 
 //        // write SFP id for channel header
 
-  WriteGosip (fChannel, fSlave,  REG_HEADER, fChannel);
+  WriteGosip (fSFP, fSlave,  REG_HEADER, fSFP);
 
 // JAM the following is redundant due to new macro FEBEX_BROADCAST_ACTION
 //  if(AssertNoBroadcast(false))
 //  {
-//    WriteGosip (fChannel, fSlave,  REG_HEADER, fChannel);
+//    WriteGosip (fSFP, fSlave,  REG_HEADER, fSFP);
 //  }
 //  else
 //    {
@@ -560,7 +562,7 @@ void FebexGui::InitFebex()
 //
 //    // broadcast mode: find out number of slaves and loop over all registered slaves
 //    GetSFPChainSetup();
-//    if (fChannel < 0)
+//    if (fSFP < 0)
 //    {
 //      for (int sfp = 0; sfp < 4; ++sfp)
 //      {
@@ -571,9 +573,9 @@ void FebexGui::InitFebex()
 //    }
 //    else if (fSlave < 0)
 //    {
-//      int numslaves = fSFPChains.numslaves[fChannel];
+//      int numslaves = fSFPChains.numslaves[fSFP];
 //      for (int feb = 0; feb < numslaves; ++feb)
-//               WriteGosip (fChannel, feb, REG_HEADER, fChannel);
+//               WriteGosip (fSFP, feb, REG_HEADER, fSFP);
 //    }
 //
 //
@@ -585,27 +587,27 @@ void FebexGui::InitFebex()
 //////////////////////////////////////////////////// end old code
 
 //        // set trapez parameters for trigger/hit finding
-  WriteGosip (fChannel, fSlave,  TRIG_SUM_A_REG, TRIG_SUM_A);
-  WriteGosip (fChannel, fSlave,   TRIG_GAP_REG, TRIG_SUM_A + TRIG_GAP);
-  WriteGosip (fChannel, fSlave,   TRIG_SUM_B_REG, TRIG_SUM_A  + TRIG_GAP + TRIG_SUM_B );
+  WriteGosip (fSFP, fSlave,  TRIG_SUM_A_REG, TRIG_SUM_A);
+  WriteGosip (fSFP, fSlave,   TRIG_GAP_REG, TRIG_SUM_A + TRIG_GAP);
+  WriteGosip (fSFP, fSlave,   TRIG_SUM_B_REG, TRIG_SUM_A  + TRIG_GAP + TRIG_SUM_B );
 
 
 #ifdef ENABLE_ENERGY_FILTER
 #ifdef TRAPEZ
 //
 //        // set trapez parameters for energy estimation
-  WriteGosip (fChannel, fSlave,  ENERGY_SUM_A_REG, ENERGY_SUM_A);
-  WriteGosip (fChannel, fSlave,  ENERGY_GAP_REG, ENERGY_SUM_A + ENERGY_GAP);
-  WriteGosip (fChannel, fSlave,  ENERGY_SUM_B_REG, ENERGY_SUM_A  + ENERGY_GAP + ENERGY_SUM_B );
+  WriteGosip (fSFP, fSlave,  ENERGY_SUM_A_REG, ENERGY_SUM_A);
+  WriteGosip (fSFP, fSlave,  ENERGY_GAP_REG, ENERGY_SUM_A + ENERGY_GAP);
+  WriteGosip (fSFP, fSlave,  ENERGY_SUM_B_REG, ENERGY_SUM_A  + ENERGY_GAP + ENERGY_SUM_B );
 
 
 #endif // TRAPEZ
 #endif // ENABLE_ENERGY_FILTER
   usleep(50);
 // enabling after "ini" of all registers (Ivan - 16.01.2013):
-  WriteGosip (fChannel, fSlave,   DATA_FILT_CONTROL_REG, DATA_FILT_CONTROL_DAT);
+  WriteGosip (fSFP, fSlave,   DATA_FILT_CONTROL_REG, DATA_FILT_CONTROL_DAT);
   sleep (1);
-  printm("Did Initialize FEBEX for SFP %d Slave %d",fChannel,fSlave);
+  printm("Did Initialize FEBEX for SFP %d Slave %d",fSFP,fSlave);
 }
 
 
@@ -632,7 +634,7 @@ void FebexGui::AutoAdjust()
        {
            int dac=AdjustBaseline(channel,targetvalue);
            fDACSpinBoxes[channel]->setValue (dac);
-           printm("--- Auto adjusted baselines of sfp:%d FEBEX:%d channel:%d to value:%d =>%d permille DAC",fChannel, fSlave,channel, targetvalue, dac);
+           printm("--- Auto adjusted baselines of sfp:%d FEBEX:%d channel:%d to value:%d =>%d permille DAC",fSFP, fSlave,channel, targetvalue, dac);
        }
     }
    if (!checkBox_AA->isChecked ())
@@ -697,7 +699,7 @@ void FebexGui::BroadcastBtn_clicked (bool checked)
 //std::cout << "FebexGui::BroadcastBtn_clicked with checked="<<checked<< std::endl;
   if (checked)
   {
-    fChannelSave = SFPspinBox->value ();
+    fSFPSave = SFPspinBox->value ();
     fSlaveSave = SlavespinBox->value ();
     SFPspinBox->setValue (-1);
     SlavespinBox->setValue (-1);
@@ -705,7 +707,7 @@ void FebexGui::BroadcastBtn_clicked (bool checked)
   else
   {
     RefreshChains();
-    SFPspinBox->setValue (fChannelSave);
+    SFPspinBox->setValue (fSFPSave);
     SlavespinBox->setValue (fSlaveSave);
 
   }
@@ -716,7 +718,7 @@ void FebexGui::DumpADCs()
   // JAM 2016 first demonstration how to get the actual adc values:
   if(!AssertChainConfigured()) return;
 
-    printm("SFP %d DEV:%d :)",fChannel, fSlave);
+    printm("SFP %d DEV:%d :)",fSFP, fSlave);
     for(int adc=0; adc<FEBEX_ADC_NUMADC; ++adc){
       for (int chan=0; chan<FEBEX_ADC_NUMCHAN; ++chan){
         int val=ReadADC_Febex(adc,chan);
@@ -743,7 +745,7 @@ void FebexGui::DumpBtn_clicked ()
 // dump register contents from gosipcmd into TextOutput (QPlainText)
   EvaluateSlave ();
 //  int oldslave = fSlave;
-//  int oldchan = fChannel;
+//  int oldchan = fSFP;
 
   AppendTextWindow ("--- ADC Dump ---:");
 
@@ -754,13 +756,13 @@ void FebexGui::DumpBtn_clicked ()
 //  {
 //    DumpADCs ();    // just dump actually set FEBEX
 //  }
-//  else if (fChannel < 0)
+//  else if (fSFP < 0)
 //  {
 //    for (int sfp = 0; sfp < 4; ++sfp)
 //    {
 //      if (fSFPChains.numslaves[sfp] == 0)
 //        continue;
-//      fChannel = sfp;
+//      fSFP = sfp;
 //
 //      if (fSlave < 0)
 //      {
@@ -779,7 +781,7 @@ void FebexGui::DumpBtn_clicked ()
 //  }
 //  else if (fSlave< 0)
 //  {
-//    for (int feb = 0; feb < fSFPChains.numslaves[fChannel]; ++feb)
+//    for (int feb = 0; feb < fSFPChains.numslaves[fSFP]; ++feb)
 //        {
 //          fSlave = feb;
 //          DumpADCs ();
@@ -791,7 +793,7 @@ void FebexGui::DumpBtn_clicked ()
 //  }
 //
 //  fSlave= oldslave;
-//  fChannel= oldchan;
+//  fSFP= oldchan;
 
 }
 
@@ -799,7 +801,7 @@ void FebexGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "FebexGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.81 of 8-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.83 of 8-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -994,10 +996,10 @@ int FebexGui::autoApply(int channel, int dac)
   int value=255-round((dac*255.0/1000.0)) ;
   dacchip= channel/FEBEX_MCP433_NUMCHAN ;
   dacchannel= channel-dacchip*FEBEX_MCP433_NUMCHAN;
-  fSetup.SetDACValue(dacchip,dacchannel, value);
+  fSetup[fSFP].at(fSlave).SetDACValue(dacchip,dacchannel, value);
    
    EnableI2C ();  
-   WriteDAC_FebexI2c (dacchip, dacchannel, fSetup.GetDACValue(dacchip, dacchannel));
+   WriteDAC_FebexI2c (dacchip, dacchannel, fSetup[fSFP].at(fSlave).GetDACValue(dacchip, dacchannel));
    DisableI2C ();
    if (!AssertNoBroadcast ())
       return -1;
@@ -1037,7 +1039,7 @@ void FebexGui::RefreshView ()
   // JAM improved this by looping over spinbox references
   for(int channel=0; channel<16;++channel)
      {
-          int val=fSetup.GetDACValue(channel);
+          int val=fSetup[fSFP].at(fSlave).GetDACValue(channel);
           int permille=1000 - round((val*1000.0/255.0)) ;
           fDACSpinBoxes[channel]->setValue(permille);
           int adc=AcquireBaselineSample(channel);
@@ -1055,7 +1057,7 @@ void FebexGui::RefreshStatus ()
   QString text;
   QString statustext;
    statustext.append ("SFP ");
-   statustext.append (text.setNum (fChannel));
+   statustext.append (text.setNum (fSFP));
    statustext.append (" DEV ");
    statustext.append (text.setNum (fSlave));
    statustext.append (" - Last refresh:");
@@ -1076,11 +1078,11 @@ void FebexGui::RefreshChains ()
 
   // set maximum value of device spinbox according to init chains:
 
-  if (fChannel >= 0) // only for non broadcast mode of slaves
+  if (fSFP >= 0) // only for non broadcast mode of slaves
   {
-    if (fSFPChains.numslaves[fChannel] > 0) // configured chains
+    if (fSFPChains.numslaves[fSFP] > 0) // configured chains
     {
-      SlavespinBox->setMaximum (fSFPChains.numslaves[fChannel] - 1);
+      SlavespinBox->setMaximum (fSFPChains.numslaves[fSFP] - 1);
       SlavespinBox->setEnabled (true);
     }
     else // non configured chains
@@ -1103,7 +1105,7 @@ void FebexGui::EvaluateView ()
      {
           int permille=fDACSpinBoxes[channel]->value();
           int value=255 - round((permille*255.0/1000.0)) ;
-          fSetup.SetDACValue(channel, value);
+          fSetup[fSFP].at(fSlave).SetDACValue(channel, value);
      }
 
 }
@@ -1111,7 +1113,7 @@ void FebexGui::EvaluateView ()
 void FebexGui::EvaluateSlave ()
 {
   if(fBroadcasting) return;
-  fChannel = SFPspinBox->value ();
+  fSFP = SFPspinBox->value ();
   fSlave = SlavespinBox->value ();
 
 }
@@ -1125,7 +1127,7 @@ void FebexGui::SetRegisters ()
     {
       for (int c = 0; c < FEBEX_MCP433_NUMCHAN; ++c)
        {
-          WriteDAC_FebexI2c (m, c, fSetup.GetDACValue(m, c));
+          WriteDAC_FebexI2c (m, c, fSetup[fSFP].at(fSlave).GetDACValue(m, c));
        }
     }
 
@@ -1154,12 +1156,22 @@ void FebexGui::GetRegisters ()
 	  AppendTextWindow("GetRegisters has error!");
 	  return; // TODO error message 
 	  }
-	  fSetup.SetDACValue(m, c,val);
+	  fSetup[fSFP].at(fSlave).SetDACValue(m, c,val);
 	 
        }
     }
   DisableI2C ();
   QApplication::restoreOverrideCursor ();
+}
+
+
+void FebexGui::SaveRegisters()
+
+{
+   GetRegisters(); // refresh actual setup from hardware
+   fSaveConfig = true;    // switch to file output mode
+   SetRegisters();    // register settings are written to file
+   fSaveConfig = false;
 }
 
 void FebexGui::GetSFPChainSetup()
@@ -1168,6 +1180,16 @@ void FebexGui::GetSFPChainSetup()
 #ifdef USE_MBSPEX_LIB
     // broadcast mode: find out number of slaves and loop over all registered slaves
     mbspex_get_configured_slaves(fPexFD, &fSFPChains);
+
+    // dynamically increase array of setup structures:
+    for(int sfp=0; sfp<4; ++sfp)
+    {
+      while(fSetup[sfp].size()<fSFPChains.numslaves[sfp])
+      {
+        fSetup[sfp].push_back(FebexSetup());
+        //std::cout<<"GetSFPChainSetup increased setup at sfp "<<sfp<<" to "<<fSetup[sfp].size()<<" slaves." << std::endl;
+      }
+    }
 #endif
   
 }
@@ -1184,10 +1206,10 @@ int FebexGui::ReadDAC_FebexI2c (uint8_t mcpchip, uint8_t chan)
   if(channeloffset<0) return -2;
 
   int dat=FEBEX_MCP433_BASE_READ + mcpchip* FEBEX_MCP433_OFFSET + channeloffset;
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat); // first send read request address
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, FEBEX_MCP433_REQUEST_READ); // read request command
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat); // first send read request address
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, FEBEX_MCP433_REQUEST_READ); // read request command
 
-  val = ReadGosip (fChannel, fSlave, GOS_I2C_DRR1); // read out the value
+  val = ReadGosip (fSFP, fSlave, GOS_I2C_DRR1); // read out the value
   if(val < 0) return val; // error case, propagate it upwards
   return (val & 0xFF); // mask to use only l.s. byte
 }
@@ -1201,9 +1223,9 @@ int  FebexGui::ReadADC_Febex (uint8_t adc, uint8_t chan)
   int val=0;
   int dat=(adc << 3) + chan; //l_wr_d  = (l_k*4) + l_l;
 
-  WriteGosip (fChannel, fSlave, FEBEX_ADC_PORT, dat); // first specify channel number
+  WriteGosip (fSFP, fSlave, FEBEX_ADC_PORT, dat); // first specify channel number
 
-  val = ReadGosip (fChannel, fSlave, FEBEX_ADC_PORT); // read back the value
+  val = ReadGosip (fSFP, fSlave, FEBEX_ADC_PORT); // read back the value
 
   // check if channel id matches the requested ones:
   if ( ((val >> 24) & 0xf) != dat)
@@ -1314,7 +1336,7 @@ int FebexGui::WriteDAC_FebexI2c (uint8_t mcpchip, uint8_t chan, uint8_t value)
   int dat=FEBEX_MCP433_BASE_WRITE + mcpchip* FEBEX_MCP433_OFFSET + channeloffset;
   dat+=(value & 0xFF);
 
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
   return 0;
 }
 
@@ -1398,7 +1420,7 @@ void FebexGui::AppendTextWindow (const QString& text)
 
 bool FebexGui::AssertNoBroadcast (bool verbose)
 {
-  if (fChannel < 0 || fSlave < 0)
+  if (fSFP < 0 || fSlave < 0)
   {
     //std::cerr << "# FebexGui Error: broadcast not supported here!" << std::endl;
     if (verbose)
@@ -1410,10 +1432,10 @@ bool FebexGui::AssertNoBroadcast (bool verbose)
 
 bool FebexGui::AssertChainConfigured (bool verbose)
 {
-  if (fSlave >= fSFPChains.numslaves[fChannel])
+  if (fSlave >= fSFPChains.numslaves[fSFP])
   {
     if (verbose)
-      printm("#Error: device index %d not in initialized chain of length %d at SFP %d",fSlave,fSFPChains.numslaves[fChannel],fChannel);
+      printm("#Error: device index %d not in initialized chain of length %d at SFP %d",fSlave,fSFPChains.numslaves[fSFP],fSFP);
     return false;
   }
   return true;
