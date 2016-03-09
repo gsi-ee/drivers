@@ -36,7 +36,7 @@ int oldslave = fSlave; \
 int oldchan = fSFP; \
 if (AssertNoBroadcast (false)) \
  { \
-   X(); \
+   X; \
  } \
  else if (fSFP < 0) \
  { \
@@ -50,12 +50,12 @@ if (AssertNoBroadcast (false)) \
        for (int feb = 0; feb < fSFPChains.numslaves[sfp]; ++feb) \
        { \
          fSlave = feb; \
-         X(); \
+         X; \
        } \
      } \
      else \
      { \
-       X();\
+       X;\
      }\
    }\
  } \
@@ -64,7 +64,7 @@ if (AssertNoBroadcast (false)) \
    for (int feb = 0; feb < fSFPChains.numslaves[fSFP]; ++feb) \
        { \
          fSlave = feb; \
-         X(); \
+         X; \
        } \
  } \
  else \
@@ -86,7 +86,7 @@ void printm (char *fmt, ...)
   vsprintf (c_str, fmt, args);
 //printf ("%s", c_str);
   FebexGui::fInstance->AppendTextWindow (c_str);
-
+  FebexGui::fInstance->FlushTextWindow();
   va_end(args);
 }
 
@@ -248,6 +248,7 @@ void FebexGui::ShowBtn_clicked ()
   EvaluateSlave ();
   GetSFPChainSetup();
   if(!AssertChainConfigured()) return;
+  if(!AssertNoBroadcast(false)) return;
   GetRegisters ();
   RefreshView ();
 }
@@ -272,10 +273,17 @@ void FebexGui::ApplyBtn_clicked ()
   GetSFPChainSetup();
   if(AssertNoBroadcast(false) && !AssertChainConfigured()) return;
 
-  EvaluateView (); // from gui to memory
+  // JAM: since we keep all slave set ups in vector/array, we must handle broadcast mode explicitely
+  // no implicit driver broadcast via -1 indices anymore!
+  FEBEX_BROADCAST_ACTION(ApplyGUISettings());
 
-  SetRegisters (); // from memory to device
 
+}
+
+void FebexGui::ApplyGUISettings()
+{
+  EvaluateView(); // from gui to memory
+  SetRegisters(); // from memory to device
 }
 
 void FebexGui::SaveConfigBtn_clicked ()
@@ -321,7 +329,7 @@ void FebexGui::SaveConfigBtn_clicked ()
     WriteConfigFile (QString ("#usage: gosipcmd -x -c file.gos \n"));
     WriteConfigFile (QString ("#                                         \n"));
     WriteConfigFile (QString ("#sfp slave address value\n"));
-    FEBEX_BROADCAST_ACTION(SaveRegisters); // refresh actual setup from hardware and write it to open file
+    FEBEX_BROADCAST_ACTION(SaveRegisters()); // refresh actual setup from hardware and write it to open file
   }
 
 
@@ -451,7 +459,7 @@ void FebexGui::ResetSlaveBtn_clicked ()
     //std::cout <<"QMessageBox does not return yes! "<< std::endl;
     return;
   }
-  FEBEX_BROADCAST_ACTION(InitFebex);
+  FEBEX_BROADCAST_ACTION(InitFebex());
 
 
 }
@@ -617,7 +625,7 @@ void FebexGui::AutoAdjustBtn_clicked ()
   //std::cout <<"AutoAdjustBtn_clicked "<< std::endl;
   EvaluateSlave ();
   QApplication::setOverrideCursor (Qt::WaitCursor);
-  FEBEX_BROADCAST_ACTION(AutoAdjust);
+  FEBEX_BROADCAST_ACTION(AutoAdjust());
   QApplication::restoreOverrideCursor ();
 }
 
@@ -634,13 +642,10 @@ void FebexGui::AutoAdjust()
        {
            int dac=AdjustBaseline(channel,targetvalue);
            fDACSpinBoxes[channel]->setValue (dac);
+           AutoApplyRefresh(channel, dac); // once again apply dac settings to immediately see the baseline on gui
            printm("--- Auto adjusted baselines of sfp:%d FEBEX:%d channel:%d to value:%d =>%d permille DAC",fSFP, fSlave,channel, targetvalue, dac);
        }
     }
-   if (!checkBox_AA->isChecked ())
-     RefreshView(); // in auto apply mode the baselines are automatically displayed, without this we have to get it again
-   else
-     RefreshStatus();
 }
 
 
@@ -744,56 +749,8 @@ void FebexGui::DumpBtn_clicked ()
 //std::cout << "FebexGui::DumpBtn_clicked"<< std::endl;
 // dump register contents from gosipcmd into TextOutput (QPlainText)
   EvaluateSlave ();
-//  int oldslave = fSlave;
-//  int oldchan = fSFP;
-
   AppendTextWindow ("--- ADC Dump ---:");
-
-  FEBEX_BROADCAST_ACTION(DumpADCs);
-
-
-//  if (AssertNoBroadcast ())
-//  {
-//    DumpADCs ();    // just dump actually set FEBEX
-//  }
-//  else if (fSFP < 0)
-//  {
-//    for (int sfp = 0; sfp < 4; ++sfp)
-//    {
-//      if (fSFPChains.numslaves[sfp] == 0)
-//        continue;
-//      fSFP = sfp;
-//
-//      if (fSlave < 0)
-//      {
-//        for (int feb = 0; feb < fSFPChains.numslaves[sfp]; ++feb)
-//        {
-//          fSlave = feb;
-//          DumpADCs ();
-//        }
-//      }
-//      else
-//      {
-//        DumpADCs ();
-//      }
-//
-//    }    // for sfp
-//  }
-//  else if (fSlave< 0)
-//  {
-//    for (int feb = 0; feb < fSFPChains.numslaves[fSFP]; ++feb)
-//        {
-//          fSlave = feb;
-//          DumpADCs ();
-//        }
-//  }
-//  else
-//  {
-//    AppendTextWindow ("--- NEVER COME HERE: ADC dump with unexpected broadcast ---:");
-//  }
-//
-//  fSlave= oldslave;
-//  fSFP= oldchan;
+  FEBEX_BROADCAST_ACTION(DumpADCs());
 
 }
 
@@ -801,7 +758,7 @@ void FebexGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "FebexGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.83 of 8-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.85 of 9-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -819,7 +776,7 @@ void FebexGui::ConfigBtn_clicked ()
     return;
   char buffer[1024];
   // JAM: need to increase default bus wait time to 900us first for febex i2c!
-  snprintf (buffer, 1024, "./setGosipwait.sh 900"); // output redirection inside QProcess does not work, use helper script
+  snprintf (buffer, 1024, "setGosipwait.sh 900"); // output redirection inside QProcess does not work, use helper script
   QString tcom (buffer);
   QString tresult=ExecuteGosipCmd (tcom, 10000);
   AppendTextWindow (tresult);
@@ -833,6 +790,11 @@ void FebexGui::ConfigBtn_clicked ()
   QString result = ExecuteGosipCmd (com, 10000);    // this will just execute the command in shell, gosip or not
   AppendTextWindow (result);
 
+  snprintf (buffer, 1024, "setGosipwait.sh 0"); // set back to zero bus wait since we have explicit i2c_sleep elsewhere!
+  QString zcom (buffer);
+  QString zresult=ExecuteGosipCmd (zcom, 10000);
+  AppendTextWindow (zresult);
+
   ShowBtn_clicked() ;
 }
 
@@ -845,16 +807,29 @@ void FebexGui::DebugBox_changed (int on)
 void FebexGui::HexBox_changed (int on)
 {
 
-  unsigned adjustvalue =ADCAdjustValue->text ().toUInt (0, fNumberBase); // save value in auto adjust field
+  unsigned adjustvalue = ADCAdjustValue->text ().toUInt (0, fNumberBase);    // save value in auto adjust field
   fNumberBase = (on ? 16 : 10);
 //std::cout << "HexBox_changed set base to "<< fNumberBase << std::endl;
 
   QString text;
   QString pre;
   fNumberBase == 16 ? pre = "0x" : pre = "";
-  ADCAdjustValue->setText (pre+text.setNum (adjustvalue, fNumberBase)); // recover with new base
+  ADCAdjustValue->setText (pre + text.setNum (adjustvalue, fNumberBase));    // recover with new base
 
-  RefreshView ();
+  int oldsfp = fSFP;
+  int oldslave = fSlave;
+
+  if (!AssertNoBroadcast (false))
+  {
+    fSFP = fSFPSave;
+    fSlave = fSlaveSave;
+  }
+  RefreshView (); // need to workaround the case that any broadcast was set. however, we do not need full FEBEX_BROADCAST_ACTION
+  if (!AssertNoBroadcast (false))
+  {
+    fSFP = oldsfp;
+    fSlave = oldslave;
+  }
 
 }
 
@@ -866,8 +841,8 @@ void FebexGui::Slave_changed (int)
   RefreshButton->setEnabled (refreshable);
 
   RefreshChains();
-  if(checkBox_AA->isChecked() && refreshable)
-    
+  //if(checkBox_AA->isChecked() && refreshable)
+  if(refreshable)
   {
     // JAM note that we had a problem of prelling spinbox here (arrow buttons only, keyboard arrows are ok)
     // probably caused by too long response time of this slot?
@@ -890,18 +865,11 @@ void FebexGui::Slave_changed (int)
 
  void FebexGui::DAC_spinBox_changed (int channel, int val)
 {
-  if (checkBox_AA->isChecked () && AssertNoBroadcast (false))
+  //if (checkBox_AA->isChecked () && AssertNoBroadcast (false))
+  if (checkBox_AA->isChecked () && !fBroadcasting)
   {
-    QString text;
-    QString pre;
-    fNumberBase == 16 ? pre = "0x" : pre = "";
     EvaluateSlave ();
-    //int permille = fDACSpinBoxes[channel]->value ();
-    int permille =val;
-    int Adc = autoApply (channel, permille);
-
-    fADCLineEdit[channel]->setText (pre + text.setNum (Adc, fNumberBase));
-    RefreshStatus ();
+    FEBEX_BROADCAST_ACTION(AutoApplyRefresh(channel, val));
   }
 
 }
@@ -988,6 +956,16 @@ void FebexGui::Any_spinBox15_changed(int val)
 }
 
 
+void FebexGui::AutoApplyRefresh(int channel, int dac)
+{
+     QString text;
+     QString pre;
+     fNumberBase == 16 ? pre = "0x" : pre = "";
+     int Adc = autoApply (channel, dac);
+     fADCLineEdit[channel]->setText (pre + text.setNum (Adc, fNumberBase));
+     RefreshStatus ();
+}
+
 
 int FebexGui::autoApply(int channel, int dac)
 
@@ -1035,8 +1013,6 @@ void FebexGui::RefreshView ()
   QString text;
   QString pre;
   fNumberBase == 16 ? pre = "0x" : pre = "";
-
-  // JAM improved this by looping over spinbox references
   for(int channel=0; channel<16;++channel)
      {
           int val=fSetup[fSFP].at(fSlave).GetDACValue(channel);
@@ -1045,10 +1021,8 @@ void FebexGui::RefreshView ()
           int adc=AcquireBaselineSample(channel);
           fADCLineEdit[channel]->setText (pre+text.setNum (adc, fNumberBase));
      }
-
   RefreshChains();
   RefreshStatus();
-
 }
 
 
@@ -1416,6 +1390,11 @@ void FebexGui::AppendTextWindow (const QString& text)
 {
   TextOutput->appendPlainText (text);
   TextOutput->update ();
+}
+
+void FebexGui::FlushTextWindow ()
+{
+  TextOutput->repaint ();
 }
 
 bool FebexGui::AssertNoBroadcast (bool verbose)

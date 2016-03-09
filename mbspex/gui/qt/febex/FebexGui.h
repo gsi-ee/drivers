@@ -243,7 +243,7 @@ public:
            AppendTextWindow (buf);
          }
 
-
+  void FlushTextWindow();
 
    /** singleton pointer to forward mbspex lib output, also useful without mbspex lib:*/
   static FebexGui* fInstance;
@@ -320,6 +320,8 @@ protected:
   /** update initilized chain display and slave limit*/
   void RefreshChains();
 
+ /** helper function for broadcast: get shown set up and put it immediately to hardware.*/
+  void ApplyGUISettings();
 
   /** copy values from gui to internal status object*/
   void EvaluateView ();
@@ -399,6 +401,11 @@ protected:
 
   /** Set relativ DAC value dac to FEBEXchannel, returns ADC value*/
   int autoApply(int channel, int dac);
+
+
+  /** apply relative DAC value dac and refresh gui from ADC sample.
+   * This function is capable of usage in FEBEX_BROADCAST_ACTION macro*/
+  void AutoApplyRefresh(int channel, int dac);
 
 
  /** evaluate change of spinbox for febex channel channel*/
