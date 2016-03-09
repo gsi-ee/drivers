@@ -170,7 +170,9 @@ Bool_t TFeb3BasicProc::BuildEvent(TGo4EventElement* target)
   //while((psubevt = fInput->NextSubEvent()) != 0) // loop over subevents
   //{
 
-  psubevt = fInput->NextSubEvent(); // only one subevent    
+  psubevt = fInput->NextSubEvent(); // only one subevent
+  if(psubevt==0) return kTRUE; //JAM data error handling without crashing go4
+
   
   //printf ("         psubevt: 0x%x \n", (UInt_t)psubevt); fflush (stdout);
   //printf ("-------------------------------next event-----------\n");
