@@ -51,6 +51,9 @@ extern const char* xmlTriggeredRead;    //< switch triggered or polling mode rea
 extern const char* xmlDmaMode;          //<  switch between direct dma to host,  or token data buffering in pexor RAM
 extern const char* xmlWaitTimeout;    //<  specify kernel waitqueue timeout for trigger and autoread buffers
 
+extern const char* xmlWaitForDataReady; //<  token request returns only when frontend has data ready
+
+
 extern const char* xmlTrixorConvTime;    //< conversion time of TRIXOR module
 extern const char* xmlTrixorFastClearTime;    //< fast clear time of TRIXOR module
 extern const char* xmlModuleName;    //< Name of readout module instance
@@ -333,6 +336,9 @@ protected:
 
   /** id number of current exploder double buffer to request (0,1)*/
   int fDoubleBufID[PEXORPLUGIN_NUMSFP];
+
+  /** if this flag is true, token request will wait until front end provides data ready state*/
+  bool fWaitForDataReady;
 
   /** index of currently read sfp. Used for the simple round robin readout into one transport*/
   unsigned char fCurrentSFP;

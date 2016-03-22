@@ -1817,12 +1817,16 @@ int pexor_start_dma (struct pexor_privdata *priv, dma_addr_t source, dma_addr_t 
   if (channelmask > 1)
     enable = channelmask; /* set sfp token transfer to initiate the DMA later*/
 
-  rev = pexor_poll_dma_complete (priv);
-  if (rev)
-  {
-    pexor_msg(KERN_NOTICE "**pexor_start_dma: dma was not finished, do not start new one!\n");
-    return rev;
-  }
+  if (enable < 1) // JAM test for nyxor problem: only check previous dma if not in direct dma preparation mode
+   {
+     rev = pexor_poll_dma_complete (priv);
+     if (rev)
+     {
+       pexor_msg(KERN_NOTICE "**pexor_start_dma: dma was not finished, do not start new one!\n");
+       return rev;
+     }
+   }
+
   /* calculate maximum burstsize here:*/
   while (dmasize % burstsize)
   {

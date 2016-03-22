@@ -62,6 +62,10 @@ const char* pexorplugin::xmlTriggeredRead = "PexorUseTrigger";    //<  switch tr
 const char* pexorplugin::xmlDmaMode = "PexorDirectDMA";    //<  switch between direct dma to host,  or token data buffering in pexor RAM
 const char* pexorplugin::xmlWaitTimeout = "PexorTriggerTimeout";    //<  specify kernel waitqueue timeout for trigger and autoread buffers
 
+
+const char* pexorplugin::xmlWaitForDataReady = "PexorTokenWaitForDataReady";    //<  token request returns only when frontend has data ready
+
+
 const char* pexorplugin::xmlTrixorConvTime = "TrixorConversionTime";    //<  conversion time of TRIXOR module
 const char* pexorplugin::xmlTrixorFastClearTime = "TrixorFastClearTime";    //<  fast clear time of TRIXOR module
 
@@ -93,7 +97,7 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
     dabc::Device (name), fBoard (0), fMbsFormat (true), fSingleSubevent (false), fSubeventSubcrate (0),
         fSubeventProcid (0), fSubeventControl (0), fWaitTimeout(1), fAqcuisitionRunning (false), fSynchronousRead (true),
         fTriggeredRead (false), fDirectDMA (true), fMultichannelRequest (false), fAutoTriggerRead (false),
-        fMemoryTest (false), fSkipRequest (false), fCurrentSFP (0), fReadLength (0), fTrixConvTime (0x20),
+        fMemoryTest (false), fSkipRequest (false), fWaitForDataReady(true) ,fCurrentSFP (0), fReadLength (0), fTrixConvTime (0x20),
         fTrixFClearTime (0x10), fInitDone (false), fNumEvents (0)
 
 {
@@ -176,6 +180,8 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
   fTrixConvTime = Cfg (pexorplugin::xmlTrixorConvTime, cmd).AsInt (0x200);
   fTrixFClearTime = Cfg (pexorplugin::xmlTrixorFastClearTime, cmd).AsInt (0x100);
 
+  fWaitForDataReady= Cfg (pexorplugin::xmlWaitForDataReady, cmd).AsBool (true);
+  DOUT1("---------- Readout mode : wait for data ready is %d\n",fWaitForDataReady);
 
   CreateCmdDef (pexorplugin::commandStartAcq);
   CreateCmdDef (pexorplugin::commandStopAcq);
@@ -455,7 +461,9 @@ int pexorplugin::Device::RequestToken (dabc::Buffer& buf, bool synchronous)
   }
 
   // now request token from board at current sfp:
-  pexor::DMA_Buffer* tokbuf = fBoard->RequestToken (fCurrentSFP, fDoubleBufID[fCurrentSFP], synchronous, fDirectDMA,
+
+  int bufflag= (fWaitForDataReady ?  fDoubleBufID[fCurrentSFP] | 2 : fDoubleBufID[fCurrentSFP]);
+  pexor::DMA_Buffer* tokbuf = fBoard->RequestToken (fCurrentSFP, bufflag, synchronous, fDirectDMA,
       bptr, headeroffset);    // synchronous dma mode here
   if ((long int) tokbuf == -1)    // TODO: handle error situations by exceptions later!
   {
@@ -482,7 +490,8 @@ int pexorplugin::Device::RequestMultiToken (dabc::Buffer& buf, bool synchronous,
     if (fEnabledSFP[ix])
       channelmask |= (1 << ix);
   }DOUT2 ("pexorplugin::Device::RequestMultiToken with channelmask:0x%x", channelmask);
-  tokbuf = fBoard->RequestMultiToken (channelmask, fDoubleBufID[0], synchronous, fDirectDMA);
+  int bufflag= (fWaitForDataReady ?  fDoubleBufID[0] | 2 : fDoubleBufID[0]);
+  tokbuf = fBoard->RequestMultiToken (channelmask, bufflag, synchronous, fDirectDMA);
   DOUT3 ("pexorplugin::Device::RequestAllTokens gets dma buffer 0x%x", tokbuf);
 
   if ((long int) tokbuf == -1)    // TODO: handle error situations by exceptions later!
@@ -535,7 +544,8 @@ int pexorplugin::Device::RequestAllTokens (dabc::Buffer& buf, bool synchronous, 
       tokbuf[fCurrentSFP] = 0;
       if (!fEnabledSFP[fCurrentSFP])
         continue;
-      tokbuf[fCurrentSFP] = fBoard->RequestToken (fCurrentSFP, fDoubleBufID[fCurrentSFP], synchronous, fDirectDMA);
+      int bufflag= (fWaitForDataReady ?  fDoubleBufID[fCurrentSFP] | 2 : fDoubleBufID[fCurrentSFP]);
+      tokbuf[fCurrentSFP] = fBoard->RequestToken (fCurrentSFP, bufflag, synchronous, fDirectDMA);
       DOUT3 ("pexorplugin::Device::RequestAllTokens gets dma buffer 0x%x for sfp:%d ", tokbuf[fCurrentSFP],
           fCurrentSFP);
 

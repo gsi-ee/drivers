@@ -541,8 +541,8 @@ int pexor_ioctl_wait_token (struct pexor_privdata* priv, unsigned long arg)
       if ((chanpattern & (1 << ci)) == 0)
         continue;
       pexor_dbg(KERN_NOTICE "** pexor_ioctl_wait_token waits for reply of ci=0x%x\n",ci);
-      if ((retval = pexor_sfp_get_reply (priv, ci, &rstat, &radd, &rdat, 0)) != 0)    // debug: do not check reply status
-      //if((retval=pexor_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEXOR_SFP_PT_TK_R_REP))!=0)
+      //if ((retval = pexor_sfp_get_reply (priv, ci, &rstat, &radd, &rdat, 0)) != 0)    // debug: do not check reply status
+      if((retval=pexor_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEXOR_SFP_PT_TK_R_REP))!=0) // JAM2016
       {
         pexor_msg(KERN_ERR "** pexor_ioctl_wait_token: error %d at sfp_%d reply \n",retval,ci);
         pexor_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
@@ -558,8 +558,8 @@ int pexor_ioctl_wait_token (struct pexor_privdata* priv, unsigned long arg)
     pexor_dbg(KERN_NOTICE "** pexor_ioctl_wait_token with channel0x%x \n",chan);
     pexor_sfp_assert_channel(chan);
 
-    if ((retval = pexor_sfp_get_reply (priv, chan, &rstat, &radd, &rdat, 0)) != 0)    // debug: do not check reply status
-    //if((retval=pexor_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEXOR_SFP_PT_TK_R_REP))!=0)
+    //if ((retval = pexor_sfp_get_reply (priv, chan, &rstat, &radd, &rdat, 0)) != 0)    // debug: do not check reply status
+    if((retval=pexor_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEXOR_SFP_PT_TK_R_REP))!=0) // JAM2016
     {
       pexor_msg(KERN_ERR "** pexor_ioctl_wait_token: error %d at sfp_%d reply \n",retval,chan);
       pexor_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
@@ -812,7 +812,7 @@ int pexor_sfp_get_reply (struct pexor_privdata* privdata, int ch, u32* comm, u32
   pexor_dbg(KERN_NOTICE "pexor_sfp_get_reply from SFP: %x got status:%x address:%x data: %x \n", ch,*comm, *addr, *data);
   if (checkvalue == 0)
     return 0;    // no check of reply structure
-  if ((*comm & 0xfff) == checkvalue)
+  if ((*comm & checkvalue) == checkvalue) // JAM2016 bugfix
   {
     if ((*comm & 0x4000) != 0)
     {
@@ -878,8 +878,8 @@ int pexor_sfp_init_request (struct pexor_privdata* privdata, int ch, int numslav
   comm = PEXOR_SFP_INI_REQ | (0x1 << (16 + sfp));
   pexor_dbg(KERN_NOTICE "**pexor_sfp_init_request for channel %d with maxslave index=%d ***\n",ch, maxslave);
   pexor_sfp_request (privdata, comm, 0, maxslave);
-  if ((retval = pexor_sfp_get_reply (privdata, sfp, &rstat, &radd, &rdat, 0)) != 0)
-  //if((retval=pexor_sfp_get_reply(privdata, sfp, &rstat, &radd, &rdat, PEXOR_SFP_PT_INI_REP))!=0)
+  //if ((retval = pexor_sfp_get_reply (privdata, sfp, &rstat, &radd, &rdat, 0)) != 0)
+  if((retval=pexor_sfp_get_reply(privdata, sfp, &rstat, &radd, &rdat, PEXOR_SFP_PT_INI_REP))!=0) // JAM2016
   {
     pexor_msg(KERN_ERR "** pexor_sfp_init_request: error %d at sfp_reply \n",retval);
     pexor_msg(KERN_ERR "   pexor_sfp_init_request: incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat);

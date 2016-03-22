@@ -128,7 +128,7 @@ int pexorplugin::ReadoutModule::ExecuteCommand(dabc::Command cmd)
   if (cmd.IsName(mbs::comStartFile)) {
 
     std::string fname = cmd.GetStr(dabc::xmlFileName); //"filename")
-    int maxsize = cmd.GetInt(dabc::xml_maxsize, 30);
+    int maxsize = cmd.GetInt(dabc::xmlFileSizeLimit, 30);
     std::string url = dabc::format("%s://%s?%s=%d", mbs::protocolLmd, fname.c_str(), dabc::xml_maxsize, maxsize);
     EnsurePorts(0, 2);
     bool res = dabc::mgr.CreateTransport(OutputName(1, true), url);
