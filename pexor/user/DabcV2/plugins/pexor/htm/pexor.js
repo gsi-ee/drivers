@@ -212,23 +212,7 @@ PexorDisplay.prototype.BuildView = function(){
       //pthis.SetFileLogMode(4, 0, 0);   // init log window, but keep history and interval from server
    });
 	
-//	this.fGaugeEv = new DABC.GaugeDrawElement();
-//	this.fTrendEv=new DABC.RateHistoryDrawElement();
-//	
-//	this.fGaugeDa = new DABC.GaugeDrawElement();
-//	this.fTrendDa=new DABC.RateHistoryDrawElement();
-//	
-//	this.fLogDevice= new DABC.LogDrawElement();
-//	this.fLogDevice.itemname = "/PEXOR/PexDevice/PexDevInfo";
-//	this.fLogDevice.EnableHistory(100);
-//	this.fLogDevice.CreateFrames($("#DeviceInfo"));
-//	
-//	this.fLogReadout= new DABC.LogDrawElement();
-//	this.fLogReadout.itemname = "/PEXOR/PexReadout/PexorInfo";
-//	this.fLogReadout.EnableHistory(100);
-//	this.fLogReadout.CreateFrames($("#ReadoutInfo"));
-//	
-//	this.SetRateGauges();
+
 	
 }
 
@@ -238,30 +222,14 @@ PexorDisplay.prototype.SetRateGauges = function(){
    this.hpainter.display("PexReadout/PexorEvents", "gauge");
    this.hpainter.display("PexReadout/PexorData", "gauge");
   
-//	this.fTrendEv.Clear();
-//	this.fTrendDa.Clear();
-//	this.fGaugeEv.itemname = "/PEXOR/PexReadout/PexorEvents";
-//	this.fGaugeEv.CreateFrames($("#EvRateDisplay"));
-//	this.fGaugeDa.itemname = "/PEXOR/PexReadout/PexorData";
-//	this.fGaugeDa.CreateFrames($("#DatRateDisplay"));
+
 }
 
 PexorDisplay.prototype.SetRateTrending = function(history){
 	
 	this.fTrendingHistory=history;
-	
    this.hpainter.display("PexReadout/PexorEvents", "line");
    this.hpainter.display("PexReadout/PexorData", "line");
-	
-	
-//	this.fGaugeEv.Clear();
-//	this.fGaugeDa.Clear();
-//	this.fTrendEv.itemname="/PEXOR/PexReadout/PexorEvents";
-//	this.fTrendEv.EnableHistory(this.fTrendingHistory); 
-//	this.fTrendEv.CreateFrames($("#EvRateDisplay"));
-//	this.fTrendDa.itemname="/PEXOR/PexReadout/PexorData";
-//	this.fTrendDa.EnableHistory(this.fTrendingHistory);
-//	this.fTrendDa.CreateFrames($("#DatRateDisplay"));	
 }
 
 
@@ -273,29 +241,7 @@ PexorDisplay.prototype.RefreshMonitor = function() {
    this.hpainter.updateAll();
 	
 	
-//	if (this.fTrending) {
-//		this.fTrendEv.force = true;
-//		
-//		this.fTrendEv.RegularCheck();
-//		this.fTrendEv.CheckResize(true);			
-//		this.fTrendDa.force = true;		
-//		this.fTrendDa.RegularCheck();
-//		this.fTrendDa.CheckResize(true);	
-//		
-//	} else {
-//		this.fGaugeEv.force = true;
-//		this.fGaugeEv.RegularCheck();
-//		this.fGaugeEv.CheckResize(true);	
-//		this.fGaugeDa.force = true;
-//		this.fGaugeDa.RegularCheck();
-//		this.fGaugeDa.CheckResize(true);
-//
-//	}
 
-//	this.fLogDevice.force = true;
-//	this.fLogDevice.RegularCheck();
-//	this.fLogReadout.force = true;
-//	this.fLogReadout.RegularCheck();
 	
 	// optionally adjust scrollbars at info logs:
 	$("#daq_log").scrollTop($("#daq_log")[0].scrollHeight - $("#daq_log").height());
@@ -428,32 +374,7 @@ PexorDisplay.prototype.RefreshView = function(){
 			$("#dabc_container").addClass("styleRed").removeClass("styleGreen").removeClass("styleYellow").removeClass("styleBlue");
 		}
 	 
-	// try here to redefine some icons:
-//	  $(".ui-icon-stop")
-//	  .css("display", "block")
-//	  //.css("-moz-background-size:", "contain")
-//	  .css('background-size:', 'contain !important')
-//	  .css("background-image", "url(img/Stop.png)")
-//	  .css("background-position", "0 0")
-//	  .css("width", "30px")
-//	  .css("height", "30px")
-//	  .css("margin-top", "-15px")
-//	  .css("margin-left", "-15px");
-//	  
-//	  $(".ui-icon-calculator")
-//	  .css("display", "inline-block")
-//	  .css("background-image", "url(img/PolandLogo.png)")
-//	  .css("background-position", "0 0")	   
-//	   .css("width", "30px")
-//		  .css("height", "30px")
-//		  .css("margin-top", "-15px")
-//		  .css("margin-left", "-15px")
-//		  .css("background-size:", "contain");
-	   
-//	  .css("width", "249px")
-//	  .css("height", "244px")
-//	  .css("margin-top", "-125px")
-//	  .css("margin-left", "-122px");
+
 	
 };
 
@@ -673,43 +594,7 @@ $(function() {
 	
 	$("#buttonExecuteGosip").button({text: false, icons: { primary: "ui-icon-gear MyButtonStyle"}});
 	
-	// note: old method using click and request confirm
-	// was replaced by form with submit event caught (see below)
-	//.click(
-			
-//			function() {
-//				var sfp=0;
-//				var dev=0;
-//				var log=false;
-//				var cmdpar=document.getElementById("commandGosip").value;
-//				var requestmsg = "Really Execute  gosipcmd "+ cmdpar;
-//				var response = confirm(requestmsg);
-//				if (!response)
-//					return;
-//				
-//				Pexor.GosipCommand(cmdpar, function(ok,
-//						logout, result) {
-//					// todo: display output of result like in poland debug mode
-//					
-//					
-//					MyDisplay.SetStatusMessage(ok ? "gosip command send."
-//							: "gosip command FAILED.");
-//					if(ok)
-//						{
-//							document.getElementById("GosipLog").innerHTML += logout;
-//							//console.log(logout);
-//						}
-//					// NOTE: GosipLog is inner text div, but scrollbars are put to container gosip_log!
-//					$("#gosip_log").scrollTop($("#gosip_log")[0].scrollHeight - $("#gosip_log").height());
-//				  	//console.log("scrollheight="+ $("#gosip_log")[0].scrollHeight + ", height=" + $("#gosip_log").height() + ", scrolltop=" + $("#gosip_log").scrollTop());				
-//					MyDisplay.RefreshMonitor();
-//				});
-//			}
-//);
-	
-	
-	
-	   $( "#gosipcmd_form" ).submit(
+	$( "#gosipcmd_form" ).submit(
 				function(event) {
 					var sfp=0;
 					var dev=0;
