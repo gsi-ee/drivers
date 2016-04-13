@@ -2,11 +2,16 @@
 // N.Kurz, EE, GSI, 27-May-2013: adopted for Linux
 // N.Kurz, EE, GSI, 02-Jul-2015: adopted mbspex lib
 // J.Adamczewski-Musch, EE, GSI 27-Jul-2015: added filename as argument, included to nyxor gui distribution
+// N.Kurz, EE, GSI, 03-Feb-2016: adopted for nxyter version 2 (external dac setting)
+// J.Adamczewski-Musch, EE, GSI 11-Apr-2016: merged back to nyxor gui version with file name
 
 
 
 #define USE_MBSPEX_LIB       1 // this define will switch on usage of mbspex lib with locked ioctls
                                // instead of direct register mapping usage
+
+#define NXYTER_V2         //       nXYTer version 2
+                          // else  nXYTer version 1 (comment above line)
 
 #include "stdio.h"
 #include "s_veshe.h"
@@ -92,10 +97,16 @@
 #define NYX  "NYX"
 #define nXY  "nXY"
 
+#ifdef  NXYTER_V2
+ #define CHECKBITS   0x3ffff
+#else
 #define CHECKBITS   0x1ffff
+#endif
 #define CHECKBITS2  0x1   
+#define CHECKBITS3  0x1   
 
 #define GLOBAL_PARAM  "GLOBAL_PARAM"
+#define NXY_CTRL      "NXY_CTRL"
 #define I2C_ADDR      "I2C_ADDR"
 #define RESET         "RESET"     
 #define MASK          "MASK"
@@ -115,6 +126,9 @@
 #define TE_TRG_DEL    "TE_TRG_DEL"
 #define TRG_WIND      "TRG_WIND"
 #define ADC_DCO_PHASE "ADC_DCO_PHASE"
+#ifdef NXYTER_V2
+ #define EXT_DACS     "EXT_DACS"
+#endif
 
 #define CLOCK_TIME   31.25 
 
@@ -137,6 +151,11 @@
 
 #define RON  "\x1B[7m"
 #define RES  "\x1B[0m"
+#define RED  "\x1B[31m\x1B[1m"
+#define BLK  "\x1B[0m"
+#define BLU  "\x1b[34m\x1B[1m"
+#define MAG  "\x1b[35m\x1B[1m"
+#define BLD  "\x1B[1m"
 
 static int  l_i, l_j, l_k, l_l;
 //static s_pexor        sPEXOR;
@@ -164,7 +183,7 @@ int usage(const char* progname)
 {
    printf ("***************************************************************************\n");
    printf (" %s - set up tool for NYXOR frontends\n", progname);
-   printf (" \tv0.7 27-Jul-2015 by N.Kurz, EE GSI\n");
+   printf (" \tv0.8 12-Apr-2016 by N.Kurz, EE GSI\n");
    printf ("***************************************************************************\n");
    printf (
        "  usage: %s [FILENAME] (default:%s)\n", progname,SETUP_FILE);
@@ -185,16 +204,19 @@ int main (int argc, char **argv)
   FILE *l_fd;
   char c_pars[32];
   char c_global[16];
+  char c_nxy_ctrl[16];
   char c_sfpx[16];
   char c_sfp[4];
-  char c_exp[4];
+  char c_nyx[4];
   char c_nxy[4];
   char c_par[80];
 
   long l_sfp;
-  long l_exp;
+  long l_nyx;
   long l_nxy; 
   long l_par[MAX_PAR];
+
+  long l_nxy_ctrl     [MAX_SFP][MAX_NYX]; 
 
   long l_i2c_addr     [MAX_SFP][MAX_NYX][MAX_nXY];
   long l_reset        [MAX_SFP][MAX_NYX][MAX_nXY];
@@ -206,6 +228,11 @@ int main (int argc, char **argv)
   long l_thr_te       [MAX_SFP][MAX_NYX][MAX_nXY];
   long l_thr          [MAX_SFP][MAX_NYX][MAX_nXY][128];
   long l_adc_dco_phase[MAX_SFP][MAX_NYX][MAX_nXY];
+  long l_nxy_v2=0;
+#ifdef NXYTER_V2
+  long l_ext_dac      [MAX_SFP][MAX_NYX][MAX_nXY][4];
+#endif
+
   long l_pre_trg_wind=0;
   long l_pos_trg_wind=0;
   long l_test_pul_del=0;
@@ -213,6 +240,7 @@ int main (int argc, char **argv)
 
   long l_check  [MAX_SFP][MAX_NYX][MAX_nXY]; 
   long l_check2=0; 
+  long l_check3 [MAX_SFP][MAX_NYX];  
   long l_check_err=0;
 
   long unsigned  l_sfp0_in_use[MAX_NYX];
@@ -227,6 +255,14 @@ int main (int argc, char **argv)
   int            flags;
 
   char c_filename[1024];
+
+  #ifdef NXYTER_V2
+  printf (BLU"ATTENTION>> program version is for nXYTer version 2 (NYXOR) "RES"\n");  
+  #else
+  printf (BLU"ATTENTION>> program version is for nXYTer version 1 (GEMEX) "RES"\n");  
+  #endif
+
+
 
   if ((argc==2) && (!strcmp(argv[1],"?") || !strcmp(argv[1],"-h")  || !strcmp(argv[1],"-help") || !strcmp(argv[1],"--help"))) return usage(basename(argv[0]));
 
@@ -259,6 +295,9 @@ int main (int argc, char **argv)
       l_sfp1_in_use[l_j] = 0;
       l_sfp2_in_use[l_j] = 0;
       l_sfp3_in_use[l_j] = 0;
+
+      l_nxy_ctrl[l_i][l_j] = 0;
+      l_check3  [l_i][l_j] = 0;
        for (l_k=0; l_k<MAX_nXY; l_k++)
       {
         l_i2c_addr [l_i][l_j][l_k] = 0;
@@ -284,6 +323,12 @@ int main (int argc, char **argv)
           l_thr[l_i][l_j][l_k][l_l] = 0;
         }
         l_adc_dco_phase[l_i][l_j][l_k] = 0;
+        #ifdef NXYTER_V2
+        for (l_l=0; l_l<4; l_l++)
+        {
+          l_ext_dac[l_i][l_j][l_k][l_l] = 0;
+        }
+        #endif
         l_check  [l_i][l_j][l_k]    = 0;
       } 
     }
@@ -295,7 +340,7 @@ int main (int argc, char **argv)
     if (strlen(c_input)>1)        // if not nullstring
     {
       strcpy (c_sfp, "");
-      strcpy (c_exp, "");
+      strcpy (c_nyx, "");
       strcpy (c_nxy, "");
       strcpy (c_par, "");
       for (l_i=0; l_i<MAX_PAR; l_i++)
@@ -398,7 +443,7 @@ int main (int argc, char **argv)
 
           if ( (l_pre_trg_wind + l_pos_trg_wind) > MAX_TRG_WIND)
           {
-            printf ("ERROR>> sum of pre - and post trigger window too big (max: %d) \n", MAX_TRG_WIND);
+            printf (RED"ERROR>> sum of pre - and post trigger window too big (max: %d) "RES"\n", MAX_TRG_WIND);
             printf ("        pre: %d, post %d, sum: %d \n",
                     l_pre_trg_wind, l_pos_trg_wind, l_pre_trg_wind + l_pos_trg_wind);       
             printf ("exiting.. \n");
@@ -423,18 +468,26 @@ int main (int argc, char **argv)
         }           
       }
 
+      else if (strcmp (c_pars, NXY_CTRL) == 0)
+      {
+        debug (("input string: %s", c_input));
+        sscanf (c_input, "%s %s %d %s %d %x",  c_nxy_ctrl, c_sfp, &l_sfp, c_nyx, &l_nyx, &l_par[0]);
+        debug (("%s: %s: %x, %s: %x, 0x%x \n", c_nxy_ctrl, c_sfp,  l_sfp, c_nyx,  l_nyx,  l_par[0]));
+        l_nxy_ctrl[l_sfp][l_nyx] = l_par[0] & 0x3fff;
+        l_check3[l_sfp][l_nyx] += 1;  
+      }
       else if (strcmp (c_pars, SFP) == 0)
       {
         debug (("input string: %s", c_input));
         sscanf (c_input, "%s %d %s %d %s %d %s %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x",
-             c_sfp, &l_sfp, c_exp, &l_exp, c_nxy, &l_nxy, c_par,
+             c_sfp, &l_sfp, c_nyx, &l_nyx, c_nxy, &l_nxy, c_par,
              &l_par [0], &l_par [1], &l_par [2], &l_par [3],
              &l_par [4], &l_par [5], &l_par [6], &l_par [7],
              &l_par [8], &l_par [9], &l_par[10], &l_par[11],
              &l_par[12], &l_par[13], &l_par[14], &l_par[15]);
 
         debug (("%s: %d, %s: %d, %s: %d: %s: \n",
-              c_sfp, l_sfp, c_exp, l_exp, c_nxy, l_nxy, c_par));
+              c_sfp, l_sfp, c_nyx, l_nyx, c_nxy, l_nxy, c_par));
         debug (("0-7  (hex):  %4x %4x %4x %4x %4x %4x %4x %4x \n",
               l_par [0], l_par [1], l_par [2], l_par [3],
               l_par [4], l_par [5], l_par [6], l_par [7]));
@@ -445,269 +498,289 @@ int main (int argc, char **argv)
         // fill setup parameter values found in file into setup variables 
 
         if (    (strcmp (c_sfp, SFP) == 0)
-             && (strcmp (c_exp, NYX) == 0)
+             && (strcmp (c_nyx, NYX) == 0)
              && (strcmp (c_nxy, nXY) == 0)
              && ((l_sfp >=0) && (l_sfp < MAX_SFP)) 
-             && ((l_exp >=0) && (l_exp < MAX_NYX)) 
+             && ((l_nyx >=0) && (l_nyx < MAX_NYX)) 
              && ((l_nxy >=0) && (l_nxy < MAX_nXY)) )
         {
           if (strcmp (c_par, I2C_ADDR) == 0)
           {
-            l_i2c_addr[l_sfp][l_exp][l_nxy] = l_par[0] & 0xff;
+            l_i2c_addr[l_sfp][l_nyx][l_nxy] = l_par[0] & 0xff;
             debug2 (("SFP %d Exp %d nXY %d: I2C write address (hex):                         %x\n",
-                  l_sfp, l_exp, l_nxy, l_i2c_addr[l_sfp][l_exp][l_nxy]));
-            l_check[l_sfp][l_exp][l_nxy] += 1;  
+                  l_sfp, l_nyx, l_nxy, l_i2c_addr[l_sfp][l_nyx][l_nxy]));
+            l_check[l_sfp][l_nyx][l_nxy] += 1;  
             debug2 (("SFP %d Exp %d nXY %d, checkbits: 0x%x \n",
-                            l_sfp, l_exp, l_nxy, l_check[l_sfp][l_exp][l_nxy]));
+                            l_sfp, l_nyx, l_nxy, l_check[l_sfp][l_nyx][l_nxy]));
           }   
           else if (strcmp (c_par, RESET) == 0)
           {
-            l_reset[l_sfp][l_exp][l_nxy] = l_par[0] & 0xff;
+            l_reset[l_sfp][l_nyx][l_nxy] = l_par[0] & 0xff;
             debug2 (("SFP %d Exp %d nXY %d: I2C and nXYter reset parameter (hex):            %x\n",
-                  l_sfp, l_exp, l_nxy, l_reset[l_sfp][l_exp][l_nxy]));
-            l_check[l_sfp][l_exp][l_nxy] += 2;  
+                  l_sfp, l_nyx, l_nxy, l_reset[l_sfp][l_nyx][l_nxy]));
+            l_check[l_sfp][l_nyx][l_nxy] += 2;  
             debug2 (("SFP %d Exp %d nXY %d, checkbits: 0x%x \n",
-                            l_sfp, l_exp, l_nxy, l_check[l_sfp][l_exp][l_nxy]));
+                            l_sfp, l_nyx, l_nxy, l_check[l_sfp][l_nyx][l_nxy]));
           }   
           else if (strcmp (c_par, MASK) == 0)
           {
             for (l_i=0; l_i<MAX_PAR; l_i++)
             { 
-              l_mask[l_sfp][l_exp][l_nxy][l_i] = l_par[l_i] & 0xff;
+              l_mask[l_sfp][l_nyx][l_nxy][l_i] = l_par[l_i] & 0xff;
             } 
             debug2 (("SFP %d Exp %d nXY %d: 16 nXY mask register (hex):\n",
-                  l_sfp, l_exp, l_nxy)); 
+                  l_sfp, l_nyx, l_nxy)); 
             for (l_i=0; l_i<MAX_PAR; l_i++)
             {   
-              debug2 (("%4x", l_mask[l_sfp][l_exp][l_nxy][l_i]));
+              debug2 (("%4x", l_mask[l_sfp][l_nyx][l_nxy][l_i]));
             }
             debug2 (("\n")); 
-            l_check[l_sfp][l_exp][l_nxy] += 4;  
+            l_check[l_sfp][l_nyx][l_nxy] += 4;  
             debug2 (("SFP %d Exp %d nXY %d, checkbits: 0x%x \n",
-                            l_sfp, l_exp, l_nxy, l_check[l_sfp][l_exp][l_nxy]));
+                            l_sfp, l_nyx, l_nxy, l_check[l_sfp][l_nyx][l_nxy]));
           }   
           else if (strcmp (c_par, BIAS) == 0)
           {
             for (l_i=0; l_i<14; l_i++)
             { 
-              l_bias[l_sfp][l_exp][l_nxy][l_i] = l_par[l_i] & 0xff;
+              l_bias[l_sfp][l_nyx][l_nxy][l_i] = l_par[l_i] & 0xff;
             } 
             debug2 (("SFP %d Exp %d nXY %d: 14 nXY bias register (hex):\n",
-                  l_sfp, l_exp, l_nxy)); 
+                  l_sfp, l_nyx, l_nxy)); 
             for (l_i=0; l_i<14; l_i++)
             { 
-              debug2 (("%4x", l_bias[l_sfp][l_exp][l_nxy][l_i]));
+              debug2 (("%4x", l_bias[l_sfp][l_nyx][l_nxy][l_i]));
             }
             debug2 (("\n")); 
-            l_check[l_sfp][l_exp][l_nxy] += 8;  
+            l_check[l_sfp][l_nyx][l_nxy] += 8;  
             debug2 (("SFP %d Exp %d nXY %d, checkbits: 0x%x \n",
-                            l_sfp, l_exp, l_nxy, l_check[l_sfp][l_exp][l_nxy]));
+                            l_sfp, l_nyx, l_nxy, l_check[l_sfp][l_nyx][l_nxy]));
           }   
           else if (strcmp (c_par, CONFIG) == 0)
           {
             for (l_i=0; l_i<2; l_i++)
             { 
-              l_config[l_sfp][l_exp][l_nxy][l_i] = l_par[l_i] & 0xff;
+              l_config[l_sfp][l_nyx][l_nxy][l_i] = l_par[l_i] & 0xff;
             } 
             debug2 (("SFP %d Exp %d nXY %d: 2 nXY config register (hex):                   ",
-                  l_sfp, l_exp, l_nxy)); 
+                  l_sfp, l_nyx, l_nxy)); 
             for (l_i=0; l_i<2; l_i++)
             { 
-              debug2 (("%4x", l_config[l_sfp][l_exp][l_nxy][l_i]));
+              debug2 (("%4x", l_config[l_sfp][l_nyx][l_nxy][l_i]));
             }
             debug2 (("\n")); 
-            l_check[l_sfp][l_exp][l_nxy] += 0x10;  
+            l_check[l_sfp][l_nyx][l_nxy] += 0x10;  
             debug2 (("SFP %d Exp %d nXY %d, checkbits: 0x%x \n",
-                            l_sfp, l_exp, l_nxy, l_check[l_sfp][l_exp][l_nxy]));
+                            l_sfp, l_nyx, l_nxy, l_check[l_sfp][l_nyx][l_nxy]));
           }   
           else if (strcmp (c_par, TEST_DELAY) == 0)
           {
             for (l_i=0; l_i<2; l_i++)
             { 
-              l_te_del[l_sfp][l_exp][l_nxy][l_i] = l_par[l_i] & 0xff;
+              l_te_del[l_sfp][l_nyx][l_nxy][l_i] = l_par[l_i] & 0xff;
             } 
             debug2 (("SFP %d Exp %d nXY %d: 2 nXY test pulse/trigger delay register (hex): ",
-                  l_sfp, l_exp, l_nxy)); 
+                  l_sfp, l_nyx, l_nxy)); 
             for (l_i=0; l_i<2; l_i++)
             { 
-              debug2 (("%4x", l_te_del[l_sfp][l_exp][l_nxy][l_i]));
+              debug2 (("%4x", l_te_del[l_sfp][l_nyx][l_nxy][l_i]));
             }
             debug2 (("\n")); 
-            l_check[l_sfp][l_exp][l_nxy] += 0x20;  
+            l_check[l_sfp][l_nyx][l_nxy] += 0x20;  
             debug2 (("SFP %d Exp %d nXY %d, checkbits: 0x%x \n",
-                            l_sfp, l_exp, l_nxy, l_check[l_sfp][l_exp][l_nxy]));
+                            l_sfp, l_nyx, l_nxy, l_check[l_sfp][l_nyx][l_nxy]));
           }   
           else if (strcmp (c_par, CLOCK_DELAY) == 0)
           {
             for (l_i=0; l_i<3; l_i++)
             { 
-              l_clk_del[l_sfp][l_exp][l_nxy][l_i] = l_par[l_i] & 0xff;
+              l_clk_del[l_sfp][l_nyx][l_nxy][l_i] = l_par[l_i] & 0xff;
             } 
             debug2 (("SFP %d Exp %d nXY %d: 3 nXY clock delay register (hex):              ",
-                    l_sfp, l_exp, l_nxy)); 
+                    l_sfp, l_nyx, l_nxy)); 
             for (l_i=0; l_i<3; l_i++)
             { 
-              debug2 (("%4x", l_clk_del[l_sfp][l_exp][l_nxy][l_i]));
+              debug2 (("%4x", l_clk_del[l_sfp][l_nyx][l_nxy][l_i]));
             }
             debug2 (("\n")); 
-            l_check[l_sfp][l_exp][l_nxy] += 0x40;  
+            l_check[l_sfp][l_nyx][l_nxy] += 0x40;  
             debug2 (("SFP %d Exp %d nXY %d, checkbits: 0x%x \n",
-                            l_sfp, l_exp, l_nxy, l_check[l_sfp][l_exp][l_nxy]));
+                            l_sfp, l_nyx, l_nxy, l_check[l_sfp][l_nyx][l_nxy]));
           }   
           else if (strcmp (c_par, THR_TEST) == 0)
           {
-            l_thr_te[l_sfp][l_exp][l_nxy] = l_par[0] & 0xff;
+            l_thr_te[l_sfp][l_nyx][l_nxy] = l_par[0] & 0xff;
             debug2 (("SFP %d Exp %d nXY %d: Test threshold (hex):                            %x\n",
-                  l_sfp, l_exp, l_nxy, l_thr_te[l_sfp][l_exp][l_nxy])); 
-            l_check[l_sfp][l_exp][l_nxy] += 0x80;  
+                  l_sfp, l_nyx, l_nxy, l_thr_te[l_sfp][l_nyx][l_nxy])); 
+            l_check[l_sfp][l_nyx][l_nxy] += 0x80;  
             debug2 (("SFP %d Exp %d nXY %d, checkbits: 0x%x \n",
-                            l_sfp, l_exp, l_nxy, l_check[l_sfp][l_exp][l_nxy]));
+                            l_sfp, l_nyx, l_nxy, l_check[l_sfp][l_nyx][l_nxy]));
           }   
           else if (strcmp (c_par, THR_0_15) == 0)
           {
             for (l_i=0; l_i<MAX_PAR; l_i++)
             { 
-              l_thr[l_sfp][l_exp][l_nxy][l_i] = l_par[l_i] & 0xff;
+              l_thr[l_sfp][l_nyx][l_nxy][l_i] = l_par[l_i] & 0xff;
             } 
             debug2 (("SFP %d Exp %d nXY %d: 16 nXY thresholds for channel    0-15  (hex):\n",
-                  l_sfp, l_exp, l_nxy)); 
+                  l_sfp, l_nyx, l_nxy)); 
             for (l_i=0; l_i<16; l_i++)
             { 
-              debug2 (("%4x", l_thr[l_sfp][l_exp][l_nxy][l_i]));
+              debug2 (("%4x", l_thr[l_sfp][l_nyx][l_nxy][l_i]));
             }
             debug2 (("\n")); 
-            l_check[l_sfp][l_exp][l_nxy] += 0x100;  
+            l_check[l_sfp][l_nyx][l_nxy] += 0x100;  
             debug2 (("SFP %d Exp %d nXY %d, checkbits: 0x%x \n",
-                            l_sfp, l_exp, l_nxy, l_check[l_sfp][l_exp][l_nxy]));
+                            l_sfp, l_nyx, l_nxy, l_check[l_sfp][l_nyx][l_nxy]));
           }   
           else if (strcmp (c_par, THR_16_31) == 0)
           {
             for (l_i=0; l_i<MAX_PAR; l_i++)
             { 
-              l_thr[l_sfp][l_exp][l_nxy][l_i+MAX_PAR] = l_par[l_i] & 0xff;
+              l_thr[l_sfp][l_nyx][l_nxy][l_i+MAX_PAR] = l_par[l_i] & 0xff;
             } 
             debug2 (("SFP %d Exp %d nXY %d: 16 nXY thresholds for channel   16-31 (hex):\n",
-                  l_sfp, l_exp, l_nxy)); 
+                  l_sfp, l_nyx, l_nxy)); 
             for (l_i=(MAX_PAR); l_i<=31; l_i++)
             { 
-              debug2 (("%4x", l_thr[l_sfp][l_exp][l_nxy][l_i]));
+              debug2 (("%4x", l_thr[l_sfp][l_nyx][l_nxy][l_i]));
             }
             debug2 (("\n")); 
-            l_check[l_sfp][l_exp][l_nxy] += 0x200;  
+            l_check[l_sfp][l_nyx][l_nxy] += 0x200;  
             debug2 (("SFP %d Exp %d nXY %d, checkbits: 0x%x \n",
-                            l_sfp, l_exp, l_nxy, l_check[l_sfp][l_exp][l_nxy]));
+                            l_sfp, l_nyx, l_nxy, l_check[l_sfp][l_nyx][l_nxy]));
           }   
           else if (strcmp (c_par, THR_32_47) == 0)
           {
             for (l_i=0; l_i<MAX_PAR; l_i++)
             { 
-              l_thr[l_sfp][l_exp][l_nxy][l_i+2*MAX_PAR] = l_par[l_i] & 0xff;
+              l_thr[l_sfp][l_nyx][l_nxy][l_i+2*MAX_PAR] = l_par[l_i] & 0xff;
             } 
             debug2 (("SFP %d Exp %d nXY %d: 16 nXY thresholds for channel   32-47 (hex):\n",
-                  l_sfp, l_exp, l_nxy)); 
+                  l_sfp, l_nyx, l_nxy)); 
             for (l_i=(2*MAX_PAR); l_i<=47; l_i++)
             { 
-              debug2 (("%4x", l_thr[l_sfp][l_exp][l_nxy][l_i]));
+              debug2 (("%4x", l_thr[l_sfp][l_nyx][l_nxy][l_i]));
             }
             debug2 (("\n")); 
-            l_check[l_sfp][l_exp][l_nxy] += 0x400;  
+            l_check[l_sfp][l_nyx][l_nxy] += 0x400;  
             debug2 (("SFP %d Exp %d nXY %d, checkbits: 0x%x \n",
-                            l_sfp, l_exp, l_nxy, l_check[l_sfp][l_exp][l_nxy]));
+                            l_sfp, l_nyx, l_nxy, l_check[l_sfp][l_nyx][l_nxy]));
           }   
           else if (strcmp (c_par, THR_48_63) == 0)
           {
             for (l_i=0; l_i<MAX_PAR; l_i++)
             { 
-              l_thr[l_sfp][l_exp][l_nxy][l_i+3*MAX_PAR] = l_par[l_i] & 0xff ;
+              l_thr[l_sfp][l_nyx][l_nxy][l_i+3*MAX_PAR] = l_par[l_i] & 0xff ;
             } 
             debug2 (("SFP %d Exp %d nXY %d: 16 nXY thresholds for channel   48-63 (hex):\n",
-                    l_sfp, l_exp, l_nxy)); 
+                    l_sfp, l_nyx, l_nxy)); 
             for (l_i=(3*MAX_PAR); l_i<=63; l_i++)
             { 
-              debug2 (("%4x", l_thr[l_sfp][l_exp][l_nxy][l_i]));
+              debug2 (("%4x", l_thr[l_sfp][l_nyx][l_nxy][l_i]));
             }
             debug2 (("\n")); 
-            l_check[l_sfp][l_exp][l_nxy] += 0x800;  
+            l_check[l_sfp][l_nyx][l_nxy] += 0x800;  
             debug2 (("SFP %d Exp %d nXY %d, checkbits: 0x%x \n",
-                            l_sfp, l_exp, l_nxy, l_check[l_sfp][l_exp][l_nxy]));
+                            l_sfp, l_nyx, l_nxy, l_check[l_sfp][l_nyx][l_nxy]));
           }   
           else if (strcmp (c_par, THR_64_79) == 0)
           {
             for (l_i=0; l_i<MAX_PAR; l_i++)
             { 
-              l_thr[l_sfp][l_exp][l_nxy][l_i+4*MAX_PAR] = l_par[l_i] & 0xff;
+              l_thr[l_sfp][l_nyx][l_nxy][l_i+4*MAX_PAR] = l_par[l_i] & 0xff;
             } 
             debug2 (("SFP %d Exp %d nXY %d: 16 nXY thresholds for channel   64-79 (hex):\n",
-                  l_sfp, l_exp, l_nxy)); 
+                  l_sfp, l_nyx, l_nxy)); 
             for (l_i=(4*MAX_PAR); l_i<=79; l_i++)
             { 
-              debug2 (("%4x", l_thr[l_sfp][l_exp][l_nxy][l_i]));
+              debug2 (("%4x", l_thr[l_sfp][l_nyx][l_nxy][l_i]));
             }
             debug2 (("\n")); 
-            l_check[l_sfp][l_exp][l_nxy] += 0x1000;  
+            l_check[l_sfp][l_nyx][l_nxy] += 0x1000;  
             debug2 (("SFP %d Exp %d nXY %d, checkbits: 0x%x \n",
-                            l_sfp, l_exp, l_nxy, l_check[l_sfp][l_exp][l_nxy]));
+                            l_sfp, l_nyx, l_nxy, l_check[l_sfp][l_nyx][l_nxy]));
           }   
           else if (strcmp (c_par, THR_80_95) == 0)
           {
             for (l_i=0; l_i<MAX_PAR; l_i++)
             { 
-              l_thr[l_sfp][l_exp][l_nxy][l_i+5*MAX_PAR] = l_par[l_i] & 0xff;
+              l_thr[l_sfp][l_nyx][l_nxy][l_i+5*MAX_PAR] = l_par[l_i] & 0xff;
             } 
             debug2 (("SFP %d Exp %d nXY %d: 16 nXY thresholds for channel   80-95 (hex):\n",
-                  l_sfp, l_exp, l_nxy)); 
+                  l_sfp, l_nyx, l_nxy)); 
             for (l_i=(5*MAX_PAR); l_i<=95; l_i++)
             { 
-              debug2 (("%4x", l_thr[l_sfp][l_exp][l_nxy][l_i]));
+              debug2 (("%4x", l_thr[l_sfp][l_nyx][l_nxy][l_i]));
             }
             debug2 (("\n")); 
-            l_check[l_sfp][l_exp][l_nxy] += 0x2000;  
+            l_check[l_sfp][l_nyx][l_nxy] += 0x2000;  
             debug2 (("SFP %d Exp %d nXY %d, checkbits: 0x%x \n",
-                            l_sfp, l_exp, l_nxy, l_check[l_sfp][l_exp][l_nxy]));
+                            l_sfp, l_nyx, l_nxy, l_check[l_sfp][l_nyx][l_nxy]));
           }   
           else if (strcmp (c_par, THR_96_111) == 0)
           {
             for (l_i=0; l_i<MAX_PAR; l_i++)
             { 
-              l_thr[l_sfp][l_exp][l_nxy][l_i+6*MAX_PAR] = l_par[l_i] & 0xff;
+              l_thr[l_sfp][l_nyx][l_nxy][l_i+6*MAX_PAR] = l_par[l_i] & 0xff;
             } 
             debug2 (("SFP %d Exp %d nXY %d: 16 nXY thresholds for channel  96-111 (hex):\n",
-                  l_sfp, l_exp, l_nxy)); 
+                  l_sfp, l_nyx, l_nxy)); 
             for (l_i=(6*MAX_PAR); l_i<=111; l_i++)
             { 
-              debug2 (("%4x", l_thr[l_sfp][l_exp][l_nxy][l_i]));
+              debug2 (("%4x", l_thr[l_sfp][l_nyx][l_nxy][l_i]));
             }
             debug2 (("\n")); 
-            l_check[l_sfp][l_exp][l_nxy] += 0x4000;  
+            l_check[l_sfp][l_nyx][l_nxy] += 0x4000;  
             debug2 (("SFP %d Exp %d nXY %d, checkbits: 0x%x \n",
-                            l_sfp, l_exp, l_nxy, l_check[l_sfp][l_exp][l_nxy]));
+                            l_sfp, l_nyx, l_nxy, l_check[l_sfp][l_nyx][l_nxy]));
           }   
           else if (strcmp (c_par, THR_112_127) == 0)
           {
             for (l_i=0; l_i<MAX_PAR; l_i++)
             { 
-              l_thr[l_sfp][l_exp][l_nxy][l_i+7*MAX_PAR] = l_par[l_i] & 0xff;
+              l_thr[l_sfp][l_nyx][l_nxy][l_i+7*MAX_PAR] = l_par[l_i] & 0xff;
             } 
             debug2 (("SFP %d Exp %d nXY %d: 16 nXY thresholds for channel 112-127 (hex):\n",
-                  l_sfp, l_exp, l_nxy)); 
+                  l_sfp, l_nyx, l_nxy)); 
             for (l_i=(7*MAX_PAR); l_i<=127; l_i++)
             { 
-              debug2 (("%4x", l_thr[l_sfp][l_exp][l_nxy][l_i]));
+              debug2 (("%4x", l_thr[l_sfp][l_nyx][l_nxy][l_i]));
             }
             debug2 (("\n")); 
-            l_check[l_sfp][l_exp][l_nxy] += 0x8000;  
+            l_check[l_sfp][l_nyx][l_nxy] += 0x8000;  
             debug2 (("SFP %d Exp %d nXY %d, checkbits: 0x%x \n",
-                            l_sfp, l_exp, l_nxy, l_check[l_sfp][l_exp][l_nxy]));
+                            l_sfp, l_nyx, l_nxy, l_check[l_sfp][l_nyx][l_nxy]));
           }
           else if (strcmp (c_par, ADC_DCO_PHASE) == 0)
           {
-            l_adc_dco_phase[l_sfp][l_exp][l_nxy] = l_par[0] & 0xff;
+            l_adc_dco_phase[l_sfp][l_nyx][l_nxy] = l_par[0] & 0xff;
             debug2 (("SFP %d Exp %d nXY %d: ADC DCO PHASE (hex):                             %x\n",
-                  l_sfp, l_exp, l_nxy, l_adc_dco_phase[l_sfp][l_exp][l_nxy]));
-            l_check[l_sfp][l_exp][l_nxy] += 0x10000;  
+                  l_sfp, l_nyx, l_nxy, l_adc_dco_phase[l_sfp][l_nyx][l_nxy]));
+            l_check[l_sfp][l_nyx][l_nxy] += 0x10000;  
             debug2 (("SFP %d Exp %d nXY %d, checkbits: 0x%x \n",
-                            l_sfp, l_exp, l_nxy, l_check[l_sfp][l_exp][l_nxy]));
+                            l_sfp, l_nyx, l_nxy, l_check[l_sfp][l_nyx][l_nxy]));
           }   
+
+          #ifdef NXYTER_V2
+          else if (strcmp (c_par, EXT_DACS) == 0)
+          {
+            for (l_i=0; l_i<4; l_i++)
+            { 
+              l_ext_dac[l_sfp][l_nyx][l_nxy][l_i] = l_par[l_i] & 0x3ff;
+        }
+            debug2 (("SFP %d Exp %d nXY %d: 4 external dac registers (hex):",
+                    l_sfp, l_nyx, l_nxy)); 
+            for (l_i=0; l_i<4; l_i++)
+            { 
+              debug2 (("%4x", l_ext_dac[l_sfp][l_nyx][l_nxy][l_i]));
+      }
+            debug2 (("\n")); 
+            l_check[l_sfp][l_nyx][l_nxy] += 0x20000;  
+            debug2 (("SFP %d Exp %d nXY %d, checkbits: 0x%x \n",
+                            l_sfp, l_nyx, l_nxy, l_check[l_sfp][l_nyx][l_nxy]));
+          }   
+          #endif
         }
       }
       else if (   (strcmp (c_pars, "#") == 0)
@@ -716,11 +789,12 @@ int main (int argc, char **argv)
                  || (strcmp (c_pars, "#SFP2_NYX_IN_USE") == 0)
                  || (strcmp (c_pars, "#SFP3_NYX_IN_USE") == 0)
                  || (strcmp (c_pars, "#GLOBAL_PARAM") == 0)
+                 || (strcmp (c_pars, "#NXY_CTRL") == 0)
                  || (strcmp (c_pars, "#SFP") == 0) )
       {}
       else
       {
-        printf ("ERROR>> wrong line in input file %s \n", SETUP_FILE);
+        printf (RED"ERROR>> wrong line in input file %s "RES"\n", SETUP_FILE);
         printf ("input string: %s", c_input);
         printf ("\nexiting.. \n");
         exit (0);
@@ -740,7 +814,7 @@ int main (int argc, char **argv)
   if (l_check2 == 0)
   {
     printf ("\n");
-    printf ("ERROR>> global parameters not specified. exiting.. \n\n");
+    printf (RED"ERROR>> global parameters not specified. exiting.. "RES"\n\n");
     exit (0); 
   }
 
@@ -752,11 +826,24 @@ int main (int argc, char **argv)
     {
       for (l_j=0; l_j<MAX_NYX; l_j++)      // loop over GEMEX/NYXOR
       {
+        if (l_in_use[l_i][l_j] != 0) 
+        {
+          if (l_check3[l_i][l_j] != CHECKBITS3)
+          {
+            printf ("l_i %d, l_j %d \n", l_i, l_j);
+
+            l_check_err++;
+            printf (RED"ERROR>> for SFP: %d, NYX: %d "RES"", l_i, l_j);  
+            printf ("no entry for nXYTer control register found (NXY_CTRL)\n");
+            printf ("\n"); 
+          }
+        }
+
         //printf ("SFP: %d, NYX: %d, nXY: %d  \n", l_i, l_j, l_in_use[l_i][l_j]);
         if (l_in_use[l_i][l_j] == 0) {break;}  
         if (l_in_use[l_i][l_j] > MAX_nXY)
         {
-          printf ("ERROR>> for SFP: %d, NYX: %d too many nXYter specified \n", l_i, l_j);
+          printf (RED"ERROR>> for SFP: %d, NYX: %d too many nXYter specified "RES"\n", l_i, l_j);
           printf ("        allowed nXYter: %d, specified: %d \n", MAX_nXY, l_in_use[l_i][l_j]);
           printf ("exiting.. \n"); exit (0); 
         }
@@ -768,7 +855,7 @@ int main (int argc, char **argv)
           if (l_check[l_i][l_j][l_k] != CHECKBITS)
           {
             l_check_err++;
-            printf ("ERROR>> for SFP: %d, NYX: %d, nXY: %d ", l_i, l_j, l_k);  
+            printf (RED"ERROR>> for SFP: %d, NYX: %d, nXY: %d "RES"", l_i, l_j, l_k);  
             printf ("no complete setup parameter set found in input file \n");
             printf ("\n"); 
           }
@@ -779,14 +866,14 @@ int main (int argc, char **argv)
   if (l_check_err != 0)
   {
     printf ("please correct setup input file and try again, exiting.. \n");
-    exit (0);
+    exit (1);
   }
 
   #ifdef USE_MBSPEX_LIB
   
   if ((fd_pex = mbspex_open (0)) == -1)
   {
-    printf (RON"ERROR>>"RES" could not open mbspex device \n");
+    printf (RED"ERROR>>"RES" could not open mbspex device "RES"\n");
     exit (0);
   }
 
@@ -795,7 +882,7 @@ int main (int argc, char **argv)
   // open PEXOR device 
   if ((fd_pex = open (PEXDEV, O_RDWR)) == -1)
   {
-    printf ("ERROR>> could not open %s device \n", PEXDEV);
+    printf (RED"ERROR>> could not open %s device "RES"\n", PEXDEV);
     exit (0);
   }
   else
@@ -823,7 +910,7 @@ int main (int argc, char **argv)
   l_stat = ioctl (fd_pex, GET_BAR0_BASE, &l_bar0_base);
   if (l_stat == -1 )
   {
-    printf (RON"ERROR>>"RES" ioctl GET_BAR0_BASE failed \n");
+    printf (RED"ERROR>> ioctl GET_BAR0_BASE failed "RES"\n");
   }
   else
   {
@@ -843,7 +930,7 @@ int main (int argc, char **argv)
   l_stat = close (fd_pex);
   if (l_stat == -1 )
   {
-    printf ("ERROR>> could not close PEXOR device \n");
+    printf (RED"ERROR>> could not close PEXOR device "RES"\n");
   }
 
   PEXOR_GetPointer(0, pl_virt_bar0, &sPEXOR); 
@@ -863,7 +950,7 @@ int main (int argc, char **argv)
       l_stat = f_pex_slave_init (l_i, l_j);  
       if (l_stat == -1)
       {
-        printf ("ERROR>> slave address initialization failed \n");
+        printf (RED"ERROR>> slave address initialization failed "RES"\n");
         printf ("exiting...\n"); 
         exit (0); 
       }
@@ -889,7 +976,7 @@ int main (int argc, char **argv)
           l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, 0x7f000000);
           if (l_stat == -1)
           {
-            printf ("ERROR>> GEMEX/NYXOR and nXYter reset failed: \n"); 
+            printf (RED"ERROR>> GEMEX/NYXOR and nXYter reset failed: "RES"\n"); 
             printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n",
                                  l_i, l_j, GOS_I2C_DWR, 0x7f000000);
             printf ("exiting.. \n");
@@ -905,7 +992,7 @@ int main (int argc, char **argv)
           l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
           if (l_stat == -1)
           {
-            printf ("ERROR>> activating I2C core failed: \n"); 
+            printf (RED"ERROR>> activating I2C core failed: "RES"\n"); 
             printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n",
                                  l_i, l_j, GOS_I2C_DWR, l_wr_d);
             printf ("exiting.. \n");
@@ -929,7 +1016,7 @@ int main (int argc, char **argv)
             l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
             if (l_stat == -1)
             {
-              printf ("ERROR>> setting nXYter masks failed: \n"); 
+              printf (RED"ERROR>> setting nXYter masks failed: "RES"\n"); 
               printf ("        SFP: %d, NYX: %d, nXY: %d => %3d  A: 0x%x, D: 0x%x\n",
                                     l_i, l_j, l_k, l_l, GOS_I2C_DWR, l_wr_d); 
               printf ("exiting.. \n");
@@ -944,8 +1031,18 @@ int main (int argc, char **argv)
           debug3 (("\n"));
 
           // set nXYter bias registers
+          #ifdef NXYTER_V2
+          printf (BLU"ATTENTION>> bias voltage registers 17,20,21,22 will not be set for nXYTer version 2!"RES"\n");
+          printf (BLU"            these registers are replaced with external dacs  "RES"\n");
+          l_nxy_v2 = 1;  
+          #endif
+
           for (l_l=0; l_l<14; l_l++)
           {
+            if ( (l_nxy_v2 == 0) || ((l_nxy_v2 == 1) && (l_l != 1) && (l_l != 4) && (l_l != 5) && (l_l != 6))) 
+            {
+              //printf ("inside  l_l: %d \n", l_l);
+
             l_wr_d  = l_bias[l_i][l_j][l_k][l_l];
             l_wr_d += ((l_l+0x10)                 <<  8);
             l_wr_d += (l_i2c_addr[l_i][l_j][l_k]  << 16);
@@ -954,7 +1051,7 @@ int main (int argc, char **argv)
             l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
             if (l_stat == -1)
             {
-              printf ("ERROR>> setting nXYter bias failed: \n"); 
+                printf (RED"ERROR>> setting nXYter bias failed: "RES"\n"); 
               printf ("        SFP: %d, NYX: %d, nXY: %d => %3d  A: 0x%x, D: 0x%x\n",
                                     l_i, l_j, l_k, l_l, GOS_I2C_DWR, l_wr_d); 
               printf ("exiting.. \n");
@@ -966,6 +1063,7 @@ int main (int argc, char **argv)
                                     l_i, l_j, l_k, l_l, GOS_I2C_DWR, l_wr_d)); 
             }
           }   
+          }    
           debug3 (("\n"));
 
           // set nXYter configuration registers
@@ -979,7 +1077,7 @@ int main (int argc, char **argv)
             l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
             if (l_stat == -1)
             {
-              printf ("ERROR>> setting nXYter configuration failed: \n"); 
+              printf (RED"ERROR>> setting nXYter configuration failed: "RES"\n"); 
               printf ("        SFP: %d, NYX: %d, nXY: %d => %3d  A: 0x%x, D: 0x%x\n",
                                     l_i, l_j, l_k, l_l, GOS_I2C_DWR, l_wr_d); 
               printf ("exiting.. \n");
@@ -1004,7 +1102,7 @@ int main (int argc, char **argv)
             l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
             if (l_stat == -1)
             {
-              printf ("ERROR>> setting nXYter test pulse - and test trigger delay failed: \n"); 
+              printf (RED"ERROR>> setting nXYter test pulse - and test trigger delay failed: "RES"\n"); 
               printf ("        SFP: %d, NYX: %d, nXY: %d => %3d  A: 0x%x, D: 0x%x\n",
                                     l_i, l_j, l_k, l_l, GOS_I2C_DWR, l_wr_d); 
               printf ("exiting.. \n");
@@ -1027,7 +1125,7 @@ int main (int argc, char **argv)
           l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
           if (l_stat == -1)
           {
-            printf ("ERROR>> setting nXYter test channel treshhold failed: \n"); 
+            printf (RED"ERROR>> setting nXYter test channel treshhold failed: "RES"\n"); 
             printf ("        SFP: %d, NYX: %d, nXY: %d => %3d  A: 0x%x, D: 0x%x\n",
                                   l_i, l_j, l_k, l_l, GOS_I2C_DWR, l_wr_d); 
             printf ("exiting.. \n");
@@ -1051,7 +1149,7 @@ int main (int argc, char **argv)
             l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
             if (l_stat == -1)
             {
-              printf ("ERROR>> setting nXYter channel thresholds failed: \n"); 
+              printf (RED"ERROR>> setting nXYter channel thresholds failed: "RES"\n"); 
               printf ("        SFP: %d, NYX: %d, nXY: %d => %3d  A: 0x%x, D: 0x%x\n",
                                     l_i, l_j, l_k, l_l, GOS_I2C_DWR, l_wr_d); 
               printf ("exiting.. \n");
@@ -1076,7 +1174,7 @@ int main (int argc, char **argv)
             l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
             if (l_stat == -1)
             {
-              printf ("ERROR>> setting nXYter clock delays failed: \n"); 
+              printf (RED"ERROR>> setting nXYter clock delays failed: "RES"\n"); 
               printf ("        SFP: %d, NYX: %d, nXY: %d => %3d  A: 0x%x, D: 0x%x\n",
                                     l_i, l_j, l_k, l_l, GOS_I2C_DWR, l_wr_d); 
               printf ("exiting.. \n");
@@ -1099,7 +1197,7 @@ int main (int argc, char **argv)
           l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
           if (l_stat == -1)
           {
-            printf ("ERROR>> de-activating I2C core failed: \n"); 
+            printf (RED"ERROR>> de-activating I2C core failed: "RES"\n"); 
             printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n",
                                  l_i, l_j, GOS_I2C_DWR, l_wr_d);
             printf ("exiting.. \n");
@@ -1122,7 +1220,7 @@ int main (int argc, char **argv)
           l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
           if (l_stat == -1)
           {
-            printf ("ERROR>> activating SPI subcore failed: \n"); 
+            printf (RED"ERROR>> activating SPI subcore failed: "RES"\n"); 
             printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n",
                                  l_i, l_j, GOS_I2C_DWR, l_wr_d);
             printf ("exiting.. \n");
@@ -1139,7 +1237,7 @@ int main (int argc, char **argv)
           l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
           if (l_stat == -1)
           {
-            printf ("ERROR>> setting speed of SPI subcore failed: \n"); 
+            printf (RED"ERROR>> setting speed of SPI subcore failed: "RES"\n"); 
             printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n",
                                  l_i, l_j, GOS_I2C_DWR, l_wr_d);
             printf ("exiting.. \n");
@@ -1156,7 +1254,7 @@ int main (int argc, char **argv)
           l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
           if (l_stat == -1)
           {
-            printf ("ERROR>> setting ADC DCO phase failed: \n"); 
+            printf (RED"ERROR>> setting ADC DCO phase failed: "RES"\n"); 
             printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n",
                                  l_i, l_j, GOS_I2C_DWR, l_wr_d);
             printf ("exiting.. \n");
@@ -1173,7 +1271,7 @@ int main (int argc, char **argv)
           l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
           if (l_stat == -1)
           {
-            printf ("ERROR>> de-activating SPI subcore failed: \n"); 
+            printf (RED"ERROR>> de-activating SPI subcore failed: "RES"\n"); 
             printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n",
                                  l_i, l_j, GOS_I2C_DWR, l_wr_d);
             printf ("exiting.. \n");
@@ -1190,7 +1288,7 @@ int main (int argc, char **argv)
         l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
         if (l_stat == -1)
         {
-          printf ("ERROR>> GEMEX/NYXOR reset failed: \n"); 
+          printf (RED"ERROR>> GEMEX/NYXOR reset failed: "RES"\n"); 
           printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n",
                                  l_i, l_j, GOS_I2C_DWR, l_wr_d);
           printf ("exiting.. \n");
@@ -1208,7 +1306,7 @@ int main (int argc, char **argv)
         l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
         if (l_stat == -1)
         {
-          printf ("ERROR>> activating clock reset failed: \n"); 
+          printf (RED"ERROR>> activating clock reset failed: "RES"\n"); 
           printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n",
                                  l_i, l_j, GOS_I2C_DWR, l_wr_d);
           printf ("exiting.. \n");
@@ -1225,7 +1323,7 @@ int main (int argc, char **argv)
         l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
         if (l_stat == -1)
         {
-          printf ("ERROR>> setting pre trigger window failed: \n"); 
+          printf (RED"ERROR>> setting pre trigger window failed: "RES"\n"); 
           printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n",
                                  l_i, l_j, GOS_I2C_DWR, l_wr_d);
           printf ("exiting.. \n");
@@ -1241,7 +1339,7 @@ int main (int argc, char **argv)
         l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
         if (l_stat == -1)
         {
-          printf ("ERROR>> setting post trigger window failed: \n"); 
+          printf (RED"ERROR>> setting post trigger window failed: "RES"\n"); 
           printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n",
                                  l_i, l_j, GOS_I2C_DWR, l_wr_d);
           printf ("exiting.. \n");
@@ -1258,7 +1356,7 @@ int main (int argc, char **argv)
         l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
         if (l_stat == -1)
         {
-          printf ("ERROR>> setting test pulse delay failed: \n"); 
+          printf (RED"ERROR>> setting test pulse delay failed: "RES"\n"); 
           printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n",
                                  l_i, l_j, GOS_I2C_DWR, l_wr_d);
           printf ("exiting.. \n");
@@ -1275,7 +1373,7 @@ int main (int argc, char **argv)
         l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
         if (l_stat == -1)
         {
-          printf ("ERROR>> setting test trigger delay failed: \n"); 
+          printf (RED"ERROR>> setting test trigger delay failed: "RES"\n"); 
           printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n",
                                  l_i, l_j, GOS_I2C_DWR, l_wr_d);
           printf ("exiting.. \n");
@@ -1287,22 +1385,89 @@ int main (int argc, char **argv)
                                  l_i, l_j, GOS_I2C_DWR, l_wr_d)); 
         }
 
-        // activate nxyter receiver(s) (set nXyter Control Register [0x21]) Henning Heggen
-        if (l_in_use[l_i][l_j] == 1)
-        {  
-          //l_wr_d = 0x21000080;  // activate receiver for 1 nxy connected to 1 GEMEX/NYXOR
-          l_wr_d = 0x21000084;  // activate receiver for 1 nxy connected to 1 GEMEX/NYXOR ?? N.K 1-Jul-2015
+        #ifdef NXYTER_V2
+        // setup external dacs
+        debug3 (("\n")); 
+        printf ("begin setup external dacs \n"); 
+        for (l_k=0; l_k<l_in_use[l_i][l_j]; l_k++)  // loop over nXYter 
+        {
+          // activate i2c to set external dacs
+          l_wr_d = 0x1000080 + l_k;
+          l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
+          if (l_stat == -1)
+          {
+            printf (RED"ERROR>> activating i2c for external dac setting: "RES"\n"); 
+            printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n", l_i, l_j, GOS_I2C_DWR, l_wr_d);
+            printf ("exiting.. \n");
+            exit (0);  
+          }
+          else
+          {
+            debug3 (("set SFP: %d, NYX: %d         =>      A: 0x%x, D: 0x%x\n", l_i, l_j, GOS_I2C_DWR, l_wr_d)); 
+          }
+          for (l_l=0; l_l<4; l_l++)
+          { 
+            //write external dac values
+            l_wr_d = 0xb430000 + (0x100000 * l_k) + (0x1000 << l_l) + l_ext_dac[l_i][l_j][l_k][l_l];
+            l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
+            if (l_stat == -1)
+            {
+              printf (RED"ERROR>> setting external dac failed: "RES"\n"); 
+              printf ("        SFP: %d, NYX: %d, nXY: %d => %3d  A: 0x%x, D: 0x%x\n", l_i, l_j, l_k, l_l, GOS_I2C_DWR, l_wr_d); 
+              printf ("exiting.. \n");
+              exit (0);  
+            }
+            else
+            {
+              debug3 (("set SFP: %d, NYX: %d, nXY: %d => %3d  A: 0x%x, D: 0x%x\n", l_i, l_j, l_k, l_l, GOS_I2C_DWR, l_wr_d)); 
+            }
+          } 
         }
-        if (l_in_use[l_i][l_j] == 2)
-        {  
-          //l_wr_d = 0x21000088;  // activate receivers for 2 nxy connected to 1 GEMEX/NYXOR
-          l_wr_d = 0x2100008c;  // activate both receivers & enable test trigger generation (needs Acq Tr)
-        }
-
+        // de-activate both i2c used for external dac setting
+        l_wr_d = 0x1000000;
         l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
         if (l_stat == -1)
         {
-          printf ("ERROR>> activating nXYter receiver failed: \n"); 
+          printf (RED"ERROR>> de-activating i2c for external dac setting: "RES"\n"); 
+          printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n", l_i, l_j, GOS_I2C_DWR, l_wr_d);
+          printf ("exiting.. \n");
+          exit (0);  
+        }
+        else
+        {
+          debug3 (("set SFP: %d, NYX: %d         =>      A: 0x%x, D: 0x%x\n", l_i, l_j, GOS_I2C_DWR, l_wr_d)); 
+        }
+        printf ("end setup external dacs \n"); 
+        #endif // NXYTER_V2
+
+        // setup nxyter control register (once per nyxor)
+        debug3 (("\n")); 
+        // some checks
+        if ( (l_in_use[l_i][l_j] == 2) && (((l_nxy_ctrl[l_i][l_j]>>3) & 0x1) == 0))
+        {  
+          printf (BLU"ATTENTION>> contradiction with # nxyters in use and nXYTer ctrl register content "RES"\n");
+          printf ("SFP: %d, NYX: %d, # nXYTer in use:   %d \n", l_i, l_j, l_in_use[l_i][l_j]);
+          printf ("                  nXYTer ctrl:   0x%x \n", l_nxy_ctrl[l_i][l_j]);
+          printf ("change nXYTer ctrl from 0x%x to  0x%x ", l_nxy_ctrl[l_i][l_j], l_nxy_ctrl[l_i][l_j] | 0x8);
+          printf ("and activate both receivers \n");
+          l_nxy_ctrl[l_i][l_j] = l_nxy_ctrl[l_i][l_j] | 0x8;
+        }
+        if ( (l_in_use[l_i][l_j] == 1) && (((l_nxy_ctrl[l_i][l_j]>>3) & 0x1) == 1))
+        {  
+          printf (BLU"ATTENTION>> contradiction with # nxyters in use and nXYTer ctrl register content "RES"\n");
+          printf ("SFP: %d, NYX: %d, # nXYTer in use:   %d \n", l_i, l_j, l_in_use[l_i][l_j]);
+          printf ("                  nXYTer ctrl:   0x%x ", l_nxy_ctrl[l_i][l_j]);
+          printf ("and activate only one receiver \n");
+          printf ("change nXYTer ctrl from 0x%x to  0x%x \n",  l_nxy_ctrl[l_i][l_j], l_nxy_ctrl[l_i][l_j] & 0xf7);
+          l_nxy_ctrl[l_i][l_j] = l_nxy_ctrl[l_i][l_j] & 0xf7;
+        }
+
+        // activate nxyter receiver(s) (set nXYTer ctrl register)
+        l_wr_d = 0x21000000 + l_nxy_ctrl[l_i][l_j];
+        l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
+        if (l_stat == -1)
+        {
+          printf (RED"ERROR>> activating nXYter receiver failed: "RES"\n"); 
           printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n",
                                  l_i, l_j, GOS_I2C_DWR, l_wr_d);
           printf ("exiting.. \n");
@@ -1344,7 +1509,7 @@ int main (int argc, char **argv)
           l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
           if (l_stat == -1)
           {
-            printf ("ERROR>> activating I2C core failed: \n"); 
+            printf (RED"ERROR>> activating I2C core failed: "RES"\n"); 
             printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n",
                                  l_i, l_j, GOS_I2C_DWR, l_wr_d);
             printf ("exiting.. \n");
@@ -1357,6 +1522,7 @@ int main (int argc, char **argv)
             debug3 (("\n"));
           }
 
+          /*         
           // read back nXYter mask registers
           for (l_l=0; l_l<16; l_l++)
           {
@@ -1370,10 +1536,14 @@ int main (int argc, char **argv)
             l_stat = f_pex_slave_rd (l_i, l_j, GOS_I2C_DRR1, &l_data);           
             debug3 (("read                         => %3d  A: 0x%x, D: 0x%x\n",
                                                     l_l, GOS_I2C_DRR1, l_data)); 
-            l_check_d = CHECK_DAT + (l_l <<  8) + ((l_i2c_addr[l_i][l_j][l_k]+1) << 16);
+            l_check_d  = CHECK_DAT;
+            l_check_d += l_l << 8;
+            l_check_d += l_mask[l_i][l_j][l_k][l_l];
+            l_check_d += (l_i2c_addr[l_i][l_j][l_k]+1) << 16;
+
             if (l_check_d != l_data)
             {
-              printf ("ERROR>> data error during read back of nXYter mask registers: \n");
+              printf (RED"ERROR>> data error during read back of nXYter mask registers: "RES"\n");
               printf ("        SFP: %1d, NYX: %1d, nXY: %1d => %3d  expect: 0x%x, is: 0x%x \n",
                                        l_i, l_j, l_k, l_l, l_check_d, l_data);
               printf ("exiting.. \n");
@@ -1381,10 +1551,15 @@ int main (int argc, char **argv)
             }
            }
           debug3 (("\n"));
+          */
+          printf (BLU"ATTENTION>> mask register not read back for all nXYTer versions"RES"\n");  
 
           // read back nXYter bias registers
           for (l_l=0; l_l<14; l_l++)
           {
+            if ( (l_nxy_v2 == 0) || ((l_nxy_v2 == 1) && (l_l != 1) && (l_l != 4) && (l_l != 5) && (l_l != 6)))
+            {
+              //printf ("inside  l_l: %d \n", l_l);
             l_wr_d  = ((l_l+0x10)                      <<  8);
             l_wr_d += ((l_i2c_addr[l_i][l_j][l_k] + 1) << 16);
             l_wr_d += (I2C_COTR_A                      << 24);
@@ -1403,12 +1578,13 @@ int main (int argc, char **argv)
 
             if (l_check_d != l_data)
             {
-              printf ("ERROR>> data error during read back of nXYter bias registers: \n");
+                printf (RED"ERROR>> data error during read back of nXYter bias registers: "RES"\n");
               printf ("        SFP: %1d, NYX: %1d, nXY: %1d => %3d  expect: 0x%x, is: 0x%x \n",
                                        l_i, l_j, l_k, l_l, l_check_d, l_data);
               printf ("exiting.. \n");
               exit (0); 
             }
+          }   
           }   
           debug3 (("\n"));
 
@@ -1433,7 +1609,7 @@ int main (int argc, char **argv)
 
             if (l_check_d != l_data)
             {
-              printf ("ERROR>> data error during read back of nXYter configuration registers: \n");
+              printf (RED"ERROR>> data error during read back of nXYter configuration registers: "RES"\n");
               printf ("        SFP: %1d, NYX: %1d, nXY: %1d => %3d  expect: 0x%x, is: 0x%x \n",
                                        l_i, l_j, l_k, l_l, l_check_d, l_data);
               printf ("exiting.. \n");
@@ -1463,7 +1639,7 @@ int main (int argc, char **argv)
 
             if (l_check_d != l_data)
             {
-              printf ("ERROR>> data error during read back of nXYter test pulse /trigger regs: \n");
+              printf (RED"ERROR>> data error during read back of nXYter test pulse /trigger regs: "RES"\n");
               printf ("        SFP: %1d, NYX: %1d, nXY: %1d => %3d  expect: 0x%x, is: 0x%x \n",
                                        l_i, l_j, l_k, l_l, l_check_d, l_data);
               printf ("exiting.. \n");
@@ -1496,7 +1672,7 @@ int main (int argc, char **argv)
 
             if (l_check_d != l_data)
             {
-              printf ("ERROR>> data error during read back of nXYter clock delay regs: \n");
+              printf (RED"ERROR>> data error during read back of nXYter clock delay regs: "RES"\n");
               printf ("        SFP: %1d, NYX: %1d, nXY: %1d => %3d  expect: 0x%x, is: 0x%x \n",
                                        l_i, l_j, l_k, l_l, l_check_d, l_data);
               printf ("exiting.. \n");
@@ -1514,7 +1690,7 @@ int main (int argc, char **argv)
           l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
           if (l_stat == -1)
           {
-            printf ("ERROR>> de-activating I2C core failed: \n"); 
+            printf (RED"ERROR>> de-activating I2C core failed: "RES"\n"); 
             printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n",
                                  l_i, l_j, GOS_I2C_DWR, l_wr_d);
             printf ("exiting.. \n");
@@ -1536,20 +1712,10 @@ int main (int argc, char **argv)
         debug3 (("write SFP: %1d, NYX: %1d         =>      A: 0x%x, D: 0x%x\n", l_i, l_j, GOS_I2C_DWR, l_wr_d)); 
         l_stat = f_pex_slave_rd (l_i, l_j, GOS_I2C_DRR1, &l_data);           
         debug3 (("read                         =>      A: 0x%x, D: 0x%x\n", GOS_I2C_DRR1, l_data)); 
-        if (l_in_use[l_i][l_j] == 1)
-        {
-          //l_check_d  = 0x89a10080; // ?? N.K. 1-Jul-2015
-          l_check_d  = 0x89a10084;
-        }
-        if (l_in_use[l_i][l_j] == 2)
-        {
-          //l_check_d  = 0x89a10088; // ?? N.K. 1-Jul-2015
-          l_check_d  = 0x89a1008c;
-        }
-
+        l_check_d =  0x89a10000 + l_nxy_ctrl[l_i][l_j];
         if (l_check_d != l_data)
         {
-          printf ("ERROR>> data error during read back GEMEX/NYXOR control register \n");
+          printf (RED"ERROR>> data error during read back GEMEX/NYXOR control register "RES"\n");
           printf ("        SFP: %1d, NYX: %1d => expect: 0x%x, is: 0x%x \n", l_i, l_j, l_check_d, l_data);
           printf ("exiting.. \n");
           exit (0); 
@@ -1564,7 +1730,7 @@ int main (int argc, char **argv)
         l_check_d  = 0x89a20000 + l_pre_trg_wind;
         if (l_check_d != l_data)
         {
-          printf ("ERROR>> data error during read back GEMEX/NYXOR pre trigger window: \n");
+          printf (RED"ERROR>> data error during read back GEMEX/NYXOR pre trigger window: "RES"\n");
           printf ("        SFP: %1d, NYX: %1d => expect: 0x%x, is: 0x%x \n", l_i, l_j, l_check_d, l_data);
           printf ("exiting.. \n");
           exit (0); 
@@ -1578,7 +1744,7 @@ int main (int argc, char **argv)
         l_check_d  = 0x89a30000 + l_pos_trg_wind;
         if (l_check_d != l_data)
         {
-          printf ("ERROR>> data error during read back GEMEX/NYXOR post trigger window: \n");
+          printf (RED"ERROR>> data error during read back GEMEX/NYXOR post trigger window: "RES"\n");
           printf ("        SFP: %1d, NYX: %1d => expect: 0x%x, is: 0x%x \n", l_i, l_j, l_check_d, l_data);
           printf ("exiting.. \n");
           exit (0); 
@@ -1592,7 +1758,7 @@ int main (int argc, char **argv)
         l_check_d  = 0x89a40000 + l_test_pul_del;
         if (l_check_d != l_data)
         {
-          printf ("ERROR>> data error during read back GEMEX/NYXOR test pulse delay: \n");
+          printf (RED"ERROR>> data error during read back GEMEX/NYXOR test pulse delay: "RES"\n");
           printf ("        SFP: %1d, NYX: %1d => expect: 0x%x, is: 0x%x \n", l_i, l_j, l_check_d, l_data);
           printf ("exiting.. \n");
           exit (0); 
@@ -1607,17 +1773,85 @@ int main (int argc, char **argv)
         l_check_d  = 0x89a50000 + l_test_trg_del;
         if (l_check_d != l_data)
         {
-          printf ("ERROR>> data error during read back GEMEX/NYXOR test trigger delay: \n");
+          printf (RED"ERROR>> data error during read back GEMEX/NYXOR test trigger delay: "RES"\n");
           printf ("        SFP: %1d, NYX: %1d => expect: 0x%x, is: 0x%x \n", l_i, l_j, l_check_d, l_data);
           printf ("exiting.. \n");
           exit (0); 
         }
+
+        #ifdef NXYTER_V2
+        // read back external dacs
+        debug3 (("\n"));
+        printf ("begin read back external dacs \n");  
+        for (l_k=0; l_k<l_in_use[l_i][l_j]; l_k++)  // loop over nXYter 
+        {
+          // activate i2c to read external dacs
+          l_wr_d = 0x1000080 + l_k;
+          l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
+          if (l_stat == -1)
+          {
+            printf (RED"ERROR>> activating i2c for external dac reading: "RES"\n"); 
+            printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n", l_i, l_j, GOS_I2C_DWR, l_wr_d);
+            printf ("exiting.. \n");
+            exit (0);  
+          }
+          else
+          {
+            debug3 (("set SFP: %d, NYX: %d           =>      A: 0x%x, D: 0x%x\n", l_i, l_j, GOS_I2C_DWR, l_wr_d)); 
+          }
+          // read back external dacs
+          for (l_l=0; l_l<4; l_l++)
+          {
+            l_wr_d = 0xbc00000 + (0x100000 * l_k) + (0x1000 << l_l);
+            l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
+            debug3 (("write SFP: %1d, NYX: %1d, nXY: %1d => %3d  A: 0x%x, D: 0x%x\n",
+                                    l_i, l_j, l_k, l_l, GOS_I2C_DWR, l_wr_d));
+            l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, 0x84000000);
+            debug3 (("write SFP: %1d, NYX: %1d, nXY: %1d => %3d  A: 0x%x, D: 0x%x\n",
+                                    l_i, l_j, l_k, l_l, GOS_I2C_DWR, 0x84000000));
+            
+            l_stat = f_pex_slave_rd (l_i, l_j, GOS_I2C_DRR1, &l_data);           
+            debug3 (("read                         => %3d  A: 0x%x, D: 0x%x\n",
+                                                    l_l, GOS_I2C_DRR1, l_data)); 
+            l_data    = (l_data >> 6) & 0x3ff;
+            l_check_d = l_ext_dac[l_i][l_j][l_k][l_l];
+
+            if (l_check_d != l_data)
+            {
+              printf (RED"ERROR>> data error during read back of external dac registers: "RES"\n");
+              printf ("        SFP: %1d, NYX: %1d, nXY: %1d => %3d  expect: 0x%x, is: 0x%x \n",
+                                       l_i, l_j, l_k, l_l, l_check_d, l_data);
+              printf ("exiting.. \n");
+              exit (0); 
+            }
+          }
+        }
+        // de-activate both i2c used for external dac setting
+        l_wr_d = 0x1000000;
+        l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
+        if (l_stat == -1)
+        {
+          printf (RED"ERROR>> de-activating i2c for external dac reading: "RES"\n"); 
+          printf ("        SFP: %d, NYX: %d => A: 0x%x, D: 0x%x\n", l_i, l_j, GOS_I2C_DWR, l_wr_d);
+          printf ("exiting.. \n");
+          exit (0);  
+        }
+        else
+        {
+          debug3 (("set SFP: %d, NYX: %d           =>      A: 0x%x, D: 0x%x\n", l_i, l_j, GOS_I2C_DWR, l_wr_d)); 
+        }
+        printf ("end read back external dacs \n"); 
+        #endif // NXYTER_V2
       }
     }  
   }
   printf ("...read back done \n");
 
- return 0;
+  #ifdef NXYTER_V2
+  printf (BLU"ATTENTION>> program version was for nXYTer version 2 (NYXOR) "RES"\n");  
+  #else
+  printf (BLU"ATTENTION>> program version was for nXYTer version 1 (GEMEX) "RES"\n");  
+  #endif
 }
 
 /*****************************************************************************/
@@ -1655,7 +1889,7 @@ int f_pex_slave_init (long l_sfp, long l_n_slaves)
   if (l_stat == -1)
   {
     l_ret = -1;
-    printf ("ERROR>> initialization of SFP chain %d failed. ", l_sfp);
+    printf (RED"ERROR>> initialization of SFP chain %d failed. "RES"", l_sfp);
     printf ("no reply: 0x%x 0x%x 0x%x \n", l_dat1, l_dat2, l_dat3);
     printf ("exiting.. \n"); exit (0);
   }
@@ -1669,7 +1903,7 @@ int f_pex_slave_init (long l_sfp, long l_n_slaves)
     else
     {
       l_ret = -1;
-      printf ("ERROR>> initialization of SFP chain %d failed. ", l_sfp);
+      printf (RED"ERROR>> initialization of SFP chain %d failed."RES" ", l_sfp);
       printf ("no slaves found. \n"); 
       printf ("exiting.. \n"); exit (0);
     }
@@ -1704,7 +1938,7 @@ int f_pex_slave_wr (long l_sfp, long l_slave, long l_slave_off, long l_dat)
   {
     l_ret = -1;
     #ifdef DEBUG
-    printf ("ERROR>> writing to SFP: %d, slave id: %d, addr 0x%d \n",
+    printf (RED"ERROR>> writing to SFP: %d, slave id: %d, addr 0x%d "RES"\n",
                                                 l_sfp, l_slave, l_slave_off);
     printf ("  no reply: 0x%x 0x%x 0x%x \n", l_dat1, l_dat2, l_dat3);
     #endif // DEBUG
@@ -1720,7 +1954,7 @@ int f_pex_slave_wr (long l_sfp, long l_slave, long l_slave_off, long l_dat)
       {
         l_ret = -1;
         #ifdef DEBUG
-        printf ("ERROR>> packet structure: command reply 0x%x \n", l_dat1);
+        printf (RED"ERROR>> packet structure: command reply 0x%x "RES"\n", l_dat1);
         #endif // DEBUG
       }
     }
@@ -1728,7 +1962,7 @@ int f_pex_slave_wr (long l_sfp, long l_slave, long l_slave_off, long l_dat)
     {
       l_ret = -1;
       #ifdef DEBUG
-      printf ("ERROR>> writing to empty slave or wrong address: \n");
+      printf (RED"ERROR>> writing to empty slave or wrong address: "RES"\n");
       printf ("  SFP: %d, slave id: %d, 0x%x addr: 0x%x,  command reply:  0x%x \n",
            l_sfp, l_slave, (l_addr & 0xf00000) >> 24 , l_addr & 0xfffff, l_dat1);
       #endif // DEBUG
@@ -1766,7 +2000,7 @@ int f_pex_slave_rd (long l_sfp, long l_slave, long l_slave_off, long *l_dat)
   {
     l_ret = -1;
     #ifdef DEBUG
-    printf ("ERROR>> reading from SFP: %d, slave id: %d, addr 0x%d \n",
+    printf (RED"ERROR>> reading from SFP: %d, slave id: %d, addr 0x%d "RES"\n",
                                   l_sfp, l_slave, l_slave_off);
     printf ("  no reply: 0x%x 0x%x 0x%x \n", l_dat1, l_dat2, *l_dat);
     #endif // DEBUG
@@ -1782,7 +2016,7 @@ int f_pex_slave_rd (long l_sfp, long l_slave, long l_slave_off, long *l_dat)
       {
         l_ret = -1;
         #ifdef DEBUG
-        printf ("ERROR>> packet structure: command reply 0x%x \n", l_dat1);
+        printf (RED"ERROR>> packet structure: command reply 0x%x "RES"\n", l_dat1);
         #endif //DEBUG
       }
     }
@@ -1790,7 +2024,7 @@ int f_pex_slave_rd (long l_sfp, long l_slave, long l_slave_off, long *l_dat)
     {
       l_ret = -1;
       #ifdef DEBUG 
-      printf ("ERROR>> Reading from empty slave or wrong address: \n");
+      printf (RED"ERROR>> Reading from empty slave or wrong address: "RES"\n");
       printf ("  SFP: %d, slave id: %d, 0x%x addr: 0x%x,  command reply:  0x%x \n",
               l_sfp, l_slave, (l_addr & 0xf0000) >> 24 , l_addr & 0xfffff, l_dat1);
       #endif // DEBUG
@@ -1806,7 +2040,8 @@ int f_pex_slave_rd (long l_sfp, long l_slave, long l_slave_off, long *l_dat)
 
 void f_i2c_sleep ()
 {
-  #define N_LOOP 300000
+  //#define N_LOOP 300000
+  #define N_LOOP 500000
 
   int l_ii;
   int volatile l_depp=0; 

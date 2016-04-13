@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>GeneralNyxorWidget</class>
+ <widget class="QWidget" name="GeneralNyxorWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>500</width>
+    <height>415</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_5">
+   <item row="0" column="0" rowspan="3">
+    <widget class="QGroupBox" name="nXControlRegistergroupBox">
+     <property name="title">
+      <string>nX Control Register</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QLineEdit" name="nxControlEdit">
+        <property name="toolTip">
+         <string>nXyter Control Register value, below the bits are shown</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="nXTS_RSTBox">
+        <property name="toolTip">
+         <string> reset for nXyter time stamp counter</string>
+        </property>
+        <property name="text">
+         <string>Reset NX time stamp counter</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QCheckBox" name="RnXRecBox">
+        <property name="toolTip">
+         <string> Reset of data receiver (only for testing)</string>
+        </property>
+        <property name="text">
+         <string>Reset data receiver</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QCheckBox" name="EnAcqTasTTBox">
+        <property name="toolTip">
+         <string> Enabling of Acquisition Trigger as Test Trigger.</string>
+        </property>
+        <property name="text">
+         <string>Acquisition trigger as test trigger</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QCheckBox" name="EnSnXRecBox">
+        <property name="toolTip">
+         <string>Enabling of the second nXyter’s Receiver</string>
+        </property>
+        <property name="text">
+         <string>Second NX Receiver enabled</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
+       <widget class="QCheckBox" name="EnNAcqGBox">
+        <property name="toolTip">
+         <string> Not Acquisition Trigger generating.</string>
+        </property>
+        <property name="text">
+         <string>No acquisition Trigger generating</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0">
+       <widget class="QCheckBox" name="EnTPAcqGBox">
+        <property name="toolTip">
+         <string> Test Pulse and Acquisition Trigger generating</string>
+        </property>
+        <property name="text">
+         <string>Test pulse and acquisition trigger</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0">
+       <widget class="QCheckBox" name="EnRinTMBox">
+        <property name="toolTip">
+         <string> Enabling of nXyter’s receiver in test mode.</string>
+        </property>
+        <property name="text">
+         <string>NX Receiver test mode</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="0">
+       <widget class="QCheckBox" name="EnXRBox">
+        <property name="toolTip">
+         <string>Enable of nXyter’s receiver core.</string>
+        </property>
+        <property name="text">
+         <string>NX Receiver enabled</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="0">
+       <widget class="QCheckBox" name="GCtrlnx1Box">
+        <property name="toolTip">
+         <string> Gain control for nXyter 1</string>
+        </property>
+        <property name="text">
+         <string>NX0 Gain Control</string>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="0">
+       <widget class="QCheckBox" name="GCtrlnx2Box">
+        <property name="toolTip">
+         <string>Gain control for nXyter 2.</string>
+        </property>
+        <property name="text">
+         <string>NX1 Gain Control</string>
+        </property>
+       </widget>
+      </item>
+      <item row="11" column="0">
+       <widget class="QCheckBox" name="ESPulsenX1Box">
+        <property name="toolTip">
+         <string> Eabling of synch pulse for nXyter 1</string>
+        </property>
+        <property name="text">
+         <string>NX0 Synch pulse</string>
+        </property>
+       </widget>
+      </item>
+      <item row="12" column="0">
+       <widget class="QCheckBox" name="ESPulsenX2Box">
+        <property name="toolTip">
+         <string> Enabling of synch pulse for nXyter 2</string>
+        </property>
+        <property name="text">
+         <string>NX1 Synch pulse</string>
+        </property>
+       </widget>
+      </item>
+      <item row="13" column="0">
+       <widget class="QCheckBox" name="ETestCode2Box">
+        <property name="toolTip">
+         <string>. Enabling of test code for nXyter (no need from nXyter).
+</string>
+        </property>
+        <property name="text">
+         <string>TestCode NXyters</string>
+        </property>
+       </widget>
+      </item>
+      <item row="14" column="0">
+       <widget class="QCheckBox" name="ETestCode1Box">
+        <property name="toolTip">
+         <string>Enabling of test code for ADC (no need from nXyter).
+</string>
+        </property>
+        <property name="text">
+         <string>TestCode ADC</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QGroupBox" name="TriggerWindowgroupBox">
+     <property name="title">
+      <string>Trigger Window</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QLabel" name="TriggerPreLabel">
+          <property name="text">
+           <string>Pre</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="TriggerPostLabel">
+          <property name="text">
+           <string>Post</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="0" column="1">
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QLineEdit" name="TriggerPreLineEdit">
+          <property name="toolTip">
+           <string>Pre-Trigger Window register value</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="TriggerPostLineEdit">
+          <property name="toolTip">
+           <string>Post-Trigger Window register value</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="0" column="2">
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QDoubleSpinBox" name="TriggerPreDoubleSpinBox">
+          <property name="toolTip">
+           <string>Pre-Trigger time in nanoseconds</string>
+          </property>
+          <property name="suffix">
+           <string> ns</string>
+          </property>
+          <property name="maximum">
+           <double>128000.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>31.250000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QDoubleSpinBox" name="TriggerPostDoubleSpinBox">
+          <property name="toolTip">
+           <string>Post-Trigger time in nanoseconds</string>
+          </property>
+          <property name="suffix">
+           <string> ns</string>
+          </property>
+          <property name="maximum">
+           <double>128000.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>31.250000000000000</double>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QGroupBox" name="DelaygroupBox">
+     <property name="title">
+      <string>Delays</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="0">
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <item>
+         <widget class="QLabel" name="SecondTestPulseDelayLabel">
+          <property name="text">
+           <string>STPD</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="TestAcquisitionTriggerDelayLabel">
+          <property name="text">
+           <string>TATD</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="0" column="1">
+       <layout class="QVBoxLayout" name="verticalLayout_5">
+        <item>
+         <widget class="QLineEdit" name="SecondTestPulseDelayLineEdit">
+          <property name="toolTip">
+           <string>nXyter Delay Register 1 (Second Test Pulse Delay)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="TestAcquisitionTriggerDelayLineEdit">
+          <property name="toolTip">
+           <string> nXyter Delay Register 2 (Test Acquisition Trigger Delay).
+</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="0" column="2">
+       <layout class="QVBoxLayout" name="verticalLayout_6">
+        <item>
+         <widget class="QDoubleSpinBox" name="SecondTestPulseDelayDoubleSpinBox">
+          <property name="toolTip">
+           <string>Second Test Pulse Delay in nanoseconds</string>
+          </property>
+          <property name="suffix">
+           <string> ns</string>
+          </property>
+          <property name="maximum">
+           <double>128000.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>31.250000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QDoubleSpinBox" name="TestAcquisitionTriggerDelayDoubleSpinBox">
+          <property name="toolTip">
+           <string>Test Acquisition Trigger Delay in nanoseconds</string>
+          </property>
+          <property name="suffix">
+           <string> ns</string>
+          </property>
+          <property name="maximum">
+           <double>128000.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>31.250000000000000</double>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QGroupBox" name="TestCodegroupBox">
+     <property name="title">
+      <string>Test Codes</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="0">
+       <layout class="QVBoxLayout" name="verticalLayout_8">
+        <item>
+         <widget class="QLabel" name="ADCTestCodeLabel">
+          <property name="text">
+           <string>ADC</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="TestCodeNX1Label">
+          <property name="text">
+           <string>NX code 1</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="TestCodeNX2Label">
+          <property name="text">
+           <string>NX code 2</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="0" column="1">
+       <layout class="QVBoxLayout" name="verticalLayout_7">
+        <item>
+         <widget class="QLineEdit" name="ADCTestCodeLineEdit">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;nXyter ADC’s Test Code (NYXOR Self-Test Mode).&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Note&lt;/span&gt;: When ESelfTest = ‘1’ (nXyter Control Register - TestCodeADC), then the code written in this register is provided as “ADC Data” (only in Self-Test Mode for NYXOR).&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="TestCodeNX1LineEdit">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;nXyter’s Test Code 1 (NYXOR Self-Test Mode).&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Note: &lt;/span&gt;When ESelfTest = ‘1’ (nXyter Control Register- TestCodeNXyters), then the code written in this register is used to emulate the data coming from nXyter (&lt;span style=&quot; font-weight:600;&quot;&gt;only in Self-Test Mode for NYXOR&lt;/span&gt;).&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="TestCodeNX2LineEdit">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;nXyter’s Test Code 2 (NYXOR Self-Test Mode).&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Note: &lt;/span&gt;When ESelfTest = ‘1’ (nXyter Control Register- TestCodeNXyters), then the code written in this register is used to emulate the data coming from nXyter (&lt;span style=&quot; font-weight:600;&quot;&gt;only in Self-Test Mode for NYXOR&lt;/span&gt;).&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

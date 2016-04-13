@@ -2,7 +2,6 @@
 #define NYXORGUI_H
 
 #include "ui_NyxorGui.h"
-//#include <QGo4Widget.h>
 #include <stdio.h>
 #include <stdint.h>
 
@@ -23,6 +22,7 @@ extern "C"
 
 
 class NxyterWidget;
+class GeneralNyxorWidget;
 
 /** number of nxyters on nyxor board. may not change so soon...*/
 #define NYXOR_NUMNX 2
@@ -41,6 +41,27 @@ class NxyterWidget;
 // write address modifiers for different nxyters on nyxor
 #define I2C_ADDR_NX0 0x12
 #define I2C_ADDR_NX1 0x22
+
+
+// nxyter receiver sub core registers:
+
+#define NXREC_CTRL_W 0x21 // nxyter control register write
+#define NXREC_CTRL_R 0xA1 // nxyter control register read
+#define NXREC_PRETRIG_W 0x22 //nxyter pre trigger window write
+#define NXREC_PRETRIG_R 0xA2 //nxyter pre trigger window read
+#define NXREC_POSTTRIG_W 0x23 //nxyter post trigger window write
+#define NXREC_POSTTRIG_R 0xA3 //nxyter post trigger window read
+#define NXREC_DELAY1_W 0x24 //nxyter Delay Register 1 (Second Test Pulse Delay) write
+#define NXREC_DELAY1_R 0xA4 //nxyter Delay Register 1 (Second Test Pulse Delay) read
+#define NXREC_DELAY2_W 0x25 //nxyter  Delay Register 2 (Test Acquisition Trigger Delay) write
+#define NXREC_DELAY2_R 0xA5 //nxyter  Delay Register 2 (Test Acquisition Trigger Delay) read
+
+#define NXREC_TESTCODE_ADC_W 0x31 //nxyter   ADCs Test Code (NYXOR Self-Test Mode) write
+#define NXREC_TESTCODE_ADC_R 0xB1 //nxyter   ADCs Test Code (NYXOR Self-Test Mode) read
+#define NXREC_TESTCODE_1_W 0x32 //nxyter    Test Code 1 (NYXOR Self-Test Mode) write
+#define NXREC_TESTCODE_1_R 0xB2 //nxyter    Test Code 1 (NYXOR Self-Test Mode) read
+#define NXREC_TESTCODE_2_W 0x32 //nxyter    Test Code 1 (NYXOR Self-Test Mode) write
+#define NXREC_TESTCODE_2_R 0xB2 //nxyter    Test Code 1 (NYXOR Self-Test Mode) read
 
 
 class NyxorGui: public QWidget, public Ui::NyxorGui
@@ -84,6 +105,7 @@ protected:
 
   NxyterWidget* fNxTab[NYXOR_NUMNX];
 
+  GeneralNyxorWidget* fGeneralTab;
 
 
   /** text debug mode*/
@@ -153,8 +175,17 @@ protected:
   QString ExecuteGosipCmd (QString& command,  int timeout=5000);
 
 
-  /** helper function that either does enable i2c on board, or writes such commands to .gos file*/
-  void EnableI2C();
+
+  /** Perform board reset*/
+  void FullNyxorReset();
+
+  /** enable i2c for given nxyter id, or writes such commands to .gos file*/
+  void EnableI2C(int nxid);
+
+  /** send disable i2c core */
+  void DisableI2C();
+
+
 
   /** open configuration file for writing*/
   int OpenConfigFile(const QString& fname);
@@ -182,6 +213,13 @@ protected:
   }
   /** Check if broadast mode is not set. If set, returns false and prints error message if verbose is true*/
   bool AssertNoBroadcast (bool verbose=true);
+
+
+
+public:
+
+  int GetNumberBase(){return fNumberBase;}
+
 
 public slots:
   virtual void ShowBtn_clicked();

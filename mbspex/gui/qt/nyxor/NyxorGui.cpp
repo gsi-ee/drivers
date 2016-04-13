@@ -19,6 +19,7 @@
 #include <errno.h>
 
 #include "nxyterwidget.h"
+#include "generalwidget.h"
 
 // *********************************************************
 
@@ -63,6 +64,11 @@ NyxorGui::NyxorGui (QWidget* parent) :
   QObject::connect(SlavespinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
 
 // here components for nxyter tabs:
+
+  // first put general widget for receiver:
+
+  fGeneralTab = new GeneralNyxorWidget (Nxyter_tabWidget, this);
+  Nxyter_tabWidget->addTab (fGeneralTab, QString ("Nyxor"));
 
   for (int nx = 0; nx < NYXOR_NUMNX; nx++)
   {
@@ -116,7 +122,8 @@ void NyxorGui::ApplyBtn_clicked ()
 //  {
 //    return;
 //  }
-//EvaluateView ();
+
+  EvaluateView ();
 
 // here we call subguis for nxyters to do setup:
   SetRegisters ();
@@ -456,22 +463,43 @@ void NyxorGui::ResetSlaveBtn_clicked ()
   }
 
   AppendTextWindow ("--- Resetting logic on NYXOR... ");
-  EnableI2C ();
+  FullNyxorReset();
+  //  EnableI2C ();
 }
-void NyxorGui::EnableI2C ()
+
+
+void NyxorGui::FullNyxorReset()
 {
   WriteGosip (fChannel, fSlave, GOS_I2C_DWR, 0x7f000000);
+}
 
+
+void NyxorGui::DisableI2C()
+{
   int dat = 0;
-  dat = 0x8c;
-  dat += 0x0 << 8;
-  dat += 0x0 << 16;
+//  dat += 0x0 << 8;
+//  dat += 0x0 << 16;
+  dat += I2C_CTRL_A << 24;
+
+   WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+}
+
+void NyxorGui::EnableI2C (int nxid)
+{
+  //WriteGosip (fChannel, fSlave, GOS_I2C_DWR, 0x7f000000);
+  //FullNyxorReset(); // do we need this always?
+  int dat = 0;
+  //dat = 0x8c; // 84 (nx0)oder 85 (nx1)
+  if(nxid==0)
+    dat=0x84;
+  else if (nxid==1)
+    dat=0x85;
+
+//  dat += 0x0 << 8;
+//  dat += 0x0 << 16;
   dat += I2C_CTRL_A << 24;
 
   WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
-
-//  // has to be changed a bit if more than one nxy are connected to
-//          // one GEMEX/NYXOR
 
 }
 
@@ -520,7 +548,7 @@ void NyxorGui::ClearOutputBtn_clicked ()
 //std::cout << "NyxorGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
   TextOutput->setPlainText (
-      "Welcome to NYXOR GUI!\n\t v0.80 of 03-November-2015 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI");
+      "Welcome to NYXOR GUI!\n\t v0.90 of 13-April-2016 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI");
 
 }
 
@@ -586,10 +614,14 @@ void NyxorGui::RefreshView ()
 {
 // display setup structure to gui:
   QString text;
-  QString pre;
-  fNumberBase == 16 ? pre = "0x" : pre = "";
+//  QString pre;
+//  fNumberBase == 16 ? pre = "0x" : pre = "";
 
 // note that nxyter tabs refresh themselves when updating context
+
+
+  fGeneralTab->RefreshView();
+
 
   QString statustext;
   statustext.append ("SFP ");
@@ -604,7 +636,7 @@ void NyxorGui::RefreshView ()
 
 void NyxorGui::EvaluateView ()
 {
-
+  fGeneralTab->EvaluateView();
 }
 
 void NyxorGui::EvaluateSlave ()
@@ -615,13 +647,15 @@ void NyxorGui::EvaluateSlave ()
 
 void NyxorGui::SetRegisters ()
 {
-  EnableI2C ();    // must be done since mbs setup program may shut i2c off at the end
+  FullNyxorReset();
 // write register values from strucure with gosipcmd
   for (int nx = 0; nx < NYXOR_NUMNX; nx++)
   {
+    EnableI2C (nx);
     fNxTab[nx]->setSubConfig ();
   }
 
+  fGeneralTab->SetRegisters();
 }
 
 void NyxorGui::GetRegisters ()
@@ -630,11 +664,13 @@ void NyxorGui::GetRegisters ()
 
   if (!AssertNoBroadcast ())
     return;
-  EnableI2C ();
+  FullNyxorReset();
   for (int nx = 0; nx < NYXOR_NUMNX; nx++)
   {
+    EnableI2C (nx);
     fNxTab[nx]->getSubConfig ();
   }
+  fGeneralTab->GetRegisters();
 
 }
 
@@ -644,9 +680,9 @@ uint8_t NyxorGui::ReadNyxorI2c (int nxid, uint8_t address)
 
   int dat;
   int nxad = 0;
-  if (nxid == 0)
+  if (nxid == 1)
     nxad = I2C_ADDR_NX0 + 1;
-  else if (nxid == 1)
+  else if (nxid == 0)
     nxad = I2C_ADDR_NX1 + 1;
 
   dat = 0;
@@ -717,9 +753,9 @@ int NyxorGui::WriteNyxorI2c (int nxid, uint8_t address, uint8_t value, bool veri
 {
   int dat = 0;    // data word to send
   int nxad = 0;
-  if (nxid == 0)
+  if (nxid == 1)
     nxad = I2C_ADDR_NX0;
-  else if (nxid == 1)
+  else if (nxid == 0)
     nxad = I2C_ADDR_NX1;
 
   dat = value;
