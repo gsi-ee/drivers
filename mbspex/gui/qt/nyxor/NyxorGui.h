@@ -60,8 +60,8 @@ class GeneralNyxorWidget;
 #define NXREC_TESTCODE_ADC_R 0xB1 //nxyter   ADCs Test Code (NYXOR Self-Test Mode) read
 #define NXREC_TESTCODE_1_W 0x32 //nxyter    Test Code 1 (NYXOR Self-Test Mode) write
 #define NXREC_TESTCODE_1_R 0xB2 //nxyter    Test Code 1 (NYXOR Self-Test Mode) read
-#define NXREC_TESTCODE_2_W 0x32 //nxyter    Test Code 1 (NYXOR Self-Test Mode) write
-#define NXREC_TESTCODE_2_R 0xB2 //nxyter    Test Code 1 (NYXOR Self-Test Mode) read
+#define NXREC_TESTCODE_2_W 0x33 //nxyter    Test Code 1 (NYXOR Self-Test Mode) write
+#define NXREC_TESTCODE_2_R 0xB3 //nxyter    Test Code 1 (NYXOR Self-Test Mode) read
 
 
 class NyxorGui: public QWidget, public Ui::NyxorGui
@@ -73,11 +73,42 @@ public:
   virtual ~NyxorGui ();
 
 
-  /** Write value to i2c bus address of currently selected slave. NXYTER is specified by nxid*/
+
+  /** Perform board reset*/
+  void FullNyxorReset();
+
+  /** reset of nyxor receiver core*/
+  void ReceiverReset();
+
+  /** reset of nxyter time stamp counters*/
+  void NXTimestampReset();
+
+
+  /** enable i2c write for given nxyter id, or writes such commands to .gos file*/
+  void EnableI2CWrite(int nxid);
+
+  /** enable i2c read for given nxyter id, or writes such commands to .gos file*/
+   void EnableI2CRead(int nxid);
+
+  /** send disable i2c core */
+  void DisableI2C();
+
+
+  int GetNumberBase(){return fNumberBase;}
+
+   /** Write value to i2c bus address of currently selected slave. NXYTER is specified by nxid*/
    int WriteNyxorI2c (int nxid, uint8_t address, uint8_t value, bool veri=false);
 
    /** Read value from i2c bus address of currently selected slave. NXYTER is specified by nxid*/
    uint8_t ReadNyxorI2c (int nxid, uint8_t address);
+
+
+   /** Write value to register address on nyxor board. Note that only least 24 bits of value are transferred.*/
+   int WriteNyxorAddress (uint8_t address, uint32_t value);
+
+
+   /** Read value from register address on nyxor board. Note that return value has only 24 bits.*/
+   uint32_t ReadNyxorAddress (uint8_t address);
 
 
    void AppendTextWindow (const QString& text);
@@ -176,14 +207,6 @@ protected:
 
 
 
-  /** Perform board reset*/
-  void FullNyxorReset();
-
-  /** enable i2c for given nxyter id, or writes such commands to .gos file*/
-  void EnableI2C(int nxid);
-
-  /** send disable i2c core */
-  void DisableI2C();
 
 
 
@@ -216,9 +239,6 @@ protected:
 
 
 
-public:
-
-  int GetNumberBase(){return fNumberBase;}
 
 
 public slots:

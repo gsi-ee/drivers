@@ -9,6 +9,7 @@
 #include <QLineEdit>
 
 #include <stdint.h>
+#include <stdio.h>
 
 #include "ui_generalwidget.h"
 
@@ -35,6 +36,19 @@ class NyxorReceiverCoreRegisters
   NyxorReceiverCoreRegisters(): fNXControl(0), fTriggerPre(0),fTriggerPost(0),fDelayTestPulse(0), fDelayTrigger(0),fTestCodeADC(0),
       fTestCode1(0),fTestCode2(0) {}
 
+  void Dump(){
+    printf ("-----Nyxor Receiver core register dump:");
+      printf ("NxControl:  \t0x%x,\n", fNXControl);
+      printf ("TriggerPre: \t0x%x,\n", fTriggerPre);
+      printf ("TriggerPost: \t0x%x,\n", fTriggerPost);
+      printf ("DelayTestPulse: \t0x%x,\n", fDelayTestPulse);
+      printf ("DelayTrigger: \t0x%x,\n", fDelayTrigger);
+      printf ("TestCodeADC: \t0x%x,\n", fTestCodeADC);
+      printf ("TestCode1: \t0x%x,\n", fTestCode1);
+      printf ("TestCode2: \t0x%x,\n", fTestCode2);
+
+  }
+
 };
 
 
@@ -46,7 +60,7 @@ class GeneralNyxorWidget : public QWidget , public Ui::GeneralNyxorWidget {
 
    NyxorGui* fxOwner;
 
-   NyxorReceiverCoreRegisters fSetup;
+
 
 
    /** auxiliary references to checkboxes for control register bits*/
@@ -54,6 +68,9 @@ class GeneralNyxorWidget : public QWidget , public Ui::GeneralNyxorWidget {
 
 
    public:
+
+    NyxorReceiverCoreRegisters fSetup;
+
      GeneralNyxorWidget(QWidget* parent, NyxorGui* owner);
 
      void GetRegisters();
@@ -62,6 +79,9 @@ class GeneralNyxorWidget : public QWidget , public Ui::GeneralNyxorWidget {
 
      /** update register display, regard decimal or hex number base*/
      void RefreshView ();
+
+     /** refresh bits of control register*/
+     void RefreshControlBits();
 
      /** copy values from gui to internal status object*/
      void EvaluateView ();

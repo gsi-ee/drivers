@@ -50,11 +50,41 @@ GeneralNyxorWidget::GeneralNyxorWidget(QWidget* parent, NyxorGui* owner):
 
 void GeneralNyxorWidget::GetRegisters()
 {
+  //printf("GeneralNyxorWidget::GetRegisters()...\n");
+  fxOwner->DisableI2C();
 
+  fSetup.fNXControl=fxOwner->ReadNyxorAddress(NXREC_CTRL_R);
+  fSetup.fTriggerPre=fxOwner->ReadNyxorAddress(NXREC_PRETRIG_R);
+  fSetup.fTriggerPost=fxOwner->ReadNyxorAddress(NXREC_POSTTRIG_R);
+  fSetup.fDelayTestPulse=fxOwner->ReadNyxorAddress(NXREC_DELAY1_R);
+  fSetup.fDelayTrigger=fxOwner->ReadNyxorAddress(NXREC_DELAY2_R);
+  fSetup.fTestCodeADC=fxOwner->ReadNyxorAddress(NXREC_TESTCODE_ADC_R);
+  fSetup.fTestCode1=fxOwner->ReadNyxorAddress(NXREC_TESTCODE_1_R);
+  fSetup.fTestCode2=fxOwner->ReadNyxorAddress(NXREC_TESTCODE_2_R);
+
+
+  //fSetup.Dump();
 }
 
 void GeneralNyxorWidget::SetRegisters()
 {
+  //printf("GeneralNyxorWidget::SetRegisters()...\n");
+  //fSetup.Dump();
+
+  fxOwner->DisableI2C();
+
+  fxOwner->ReceiverReset();
+  fxOwner->NXTimestampReset();
+  //Note: The first step (The resetting of nXyter chip) has to be always executed.
+
+  fxOwner->WriteNyxorAddress(NXREC_CTRL_W, fSetup.fNXControl);
+  fxOwner->WriteNyxorAddress(NXREC_PRETRIG_W, fSetup.fTriggerPre);
+  fxOwner->WriteNyxorAddress(NXREC_POSTTRIG_W,fSetup.fTriggerPost);
+  fxOwner->WriteNyxorAddress(NXREC_DELAY1_W, fSetup.fDelayTestPulse);
+  fxOwner->WriteNyxorAddress(NXREC_DELAY2_W, fSetup.fDelayTrigger);
+  fxOwner->WriteNyxorAddress(NXREC_TESTCODE_ADC_W, fSetup.fTestCodeADC);
+  fxOwner->WriteNyxorAddress(NXREC_TESTCODE_1_W, fSetup.fTestCode1);
+  fxOwner->WriteNyxorAddress(NXREC_TESTCODE_2_W, fSetup.fTestCode2);
 
 }
 
@@ -65,6 +95,9 @@ void GeneralNyxorWidget::RefreshView ()
   int numberbase=fxOwner->GetNumberBase();
   numberbase == 16 ? pre = "0x" : pre = "";
   nxControlEdit->setText(pre+text.setNum (fSetup.fNXControl, numberbase));
+  RefreshControlBits();
+
+
   TriggerPreLineEdit->setText(pre+text.setNum (fSetup.fTriggerPre, numberbase));
   TriggerPreDoubleSpinBox->setValue(NYXOR_TIME_UNIT_NS * fSetup.fTriggerPre);
   TriggerPostLineEdit->setText(pre+text.setNum (fSetup.fTriggerPost, numberbase));
@@ -191,19 +224,27 @@ void GeneralNyxorWidget::nxControlEdit_finished()
 {
   int numberbase=fxOwner->GetNumberBase();
   fSetup.fNXControl=nxControlEdit->text ().toUInt (0, numberbase);
-  int word=fSetup.fNXControl & 0x3FFF;
-  for (int b=0; b<14; ++b)
-    {
-      bool on= ((word >> b) & 0x1) == 0x1? true: false;
-      fControlBitBoxes[b]->setChecked(on);
-    }
+  RefreshControlBits();
+//  int word=fSetup.fNXControl & 0x3FFF;
+//  for (int b=0; b<14; ++b)
+//    {
+//      bool on= ((word >> b) & 0x1) == 0x1? true: false;
+//      fControlBitBoxes[b]->setChecked(on);
+//    }
 
 
 
 }
 
-
-
+void GeneralNyxorWidget::RefreshControlBits()
+{
+  int word=fSetup.fNXControl & 0x3FFF;
+    for (int b=0; b<14; ++b)
+      {
+        bool on= ((word >> b) & 0x1) == 0x1? true: false;
+        fControlBitBoxes[b]->setChecked(on);
+      }
+}
 
 
 void GeneralNyxorWidget::ControlBit_clicked(bool)

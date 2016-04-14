@@ -68,7 +68,7 @@ NyxorGui::NyxorGui (QWidget* parent) :
   // first put general widget for receiver:
 
   fGeneralTab = new GeneralNyxorWidget (Nxyter_tabWidget, this);
-  Nxyter_tabWidget->addTab (fGeneralTab, QString ("Nyxor"));
+  Nxyter_tabWidget->addTab (fGeneralTab, QString ("Receiver"));
 
   for (int nx = 0; nx < NYXOR_NUMNX; nx++)
   {
@@ -300,13 +300,24 @@ int NyxorGui::WriteNiksConfig ()
   WriteConfigFile (QString ("#\n"));
   WriteConfigFile (QString ("#\n"));
   WriteConfigFile (QString ("#                             pre trg win   post trg win  test pulse delay  test trg delay\n"));
-  WriteConfigFile (QString ("GLOBAL_PARAM                  0x080           0x100         0x0b              0x0a\n"));
-  // TODO: set these parameters from GUI?
+  QString pline;
+  uint16_t pretrig=fGeneralTab->fSetup.fTriggerPre;
+  uint16_t posttrig=fGeneralTab->fSetup.fTriggerPost;
+  uint16_t pulsdel=fGeneralTab->fSetup.fDelayTestPulse;
+  uint16_t trigdel=fGeneralTab->fSetup.fDelayTrigger;
 
+  pline=QString ("GLOBAL_PARAM \tt0x%1 \t0x%2 \t0x%3 \t0x%4\n").arg(pretrig,0,16).arg(posttrig,0,16).arg(pulsdel,0,16).arg(trigdel,0,16);
+  WriteConfigFile (pline);
+  //WriteConfigFile (QString ("GLOBAL_PARAM                  0x080           0x100         0x0b              0x0a\n"));
+  // TODO: set these parameters from GUI? yes!
+
+  uint16_t nxctrl=fGeneralTab->fSetup.fNXControl;
+  pline=QString ("NXY_CTRL SFP %1 NYX %2  \t\t0x%3\n").arg(fChannel).arg(fSlave).arg(nxctrl,0,16);
+  WriteConfigFile (pline);
 
   // loop over nxyters for current sfp and slave:
-  int iadd=0x12; // i2caddress for each nxyter on board
-  for (int nx = 0; nx < NYXOR_NUMNX; nx++, iadd+=0x10)
+  int iadd=0x22; // i2caddress for each nxyter on board
+  for (int nx = 0; nx < NYXOR_NUMNX; nx++, iadd-=0x10) // JAM2016 -note swapped iadd order for nx0 and nx1!
     {
       WriteConfigFile (QString ("#\n"));
       WriteConfigFile (QString ("#\n"));
@@ -388,6 +399,12 @@ int NyxorGui::WriteNiksConfig ()
       uint8_t adcp=0x01;
       line= QString("SFP %1 NYX %2 nXY %3 ADC_DCO_PHASE   \t0x%4 \n").arg(fChannel).arg(fSlave).arg(nx).arg(adcp,0,16);
       WriteConfigFile (line);
+
+      // TODO TODO: external dac settings to be implemented!
+      //SFP 0 NYX 0 nXY 0 EXT_DACS    0x100 0x101 0x102 0x103
+
+
+
     } // for nx
   WriteConfigFile (QString ("#\n"));
   return 0;
@@ -464,7 +481,8 @@ void NyxorGui::ResetSlaveBtn_clicked ()
 
   AppendTextWindow ("--- Resetting logic on NYXOR... ");
   FullNyxorReset();
-  //  EnableI2C ();
+  ReceiverReset();
+  NXTimestampReset();
 }
 
 
@@ -473,6 +491,15 @@ void NyxorGui::FullNyxorReset()
   WriteGosip (fChannel, fSlave, GOS_I2C_DWR, 0x7f000000);
 }
 
+void NyxorGui::ReceiverReset()
+{
+  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, 0x7e000000);
+}
+
+void NyxorGui::NXTimestampReset()
+{
+  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, 0x21000001);
+}
 
 void NyxorGui::DisableI2C()
 {
@@ -484,24 +511,36 @@ void NyxorGui::DisableI2C()
    WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
 }
 
-void NyxorGui::EnableI2C (int nxid)
+void NyxorGui::EnableI2CWrite (int nxid)
 {
-  //WriteGosip (fChannel, fSlave, GOS_I2C_DWR, 0x7f000000);
-  //FullNyxorReset(); // do we need this always?
-  int dat = 0;
+   int dat = 0;
   //dat = 0x8c; // 84 (nx0)oder 85 (nx1)
   if(nxid==0)
-    dat=0x84;
+    dat= 0x84;
   else if (nxid==1)
-    dat=0x85;
+    dat= 0x85;
 
-//  dat += 0x0 << 8;
-//  dat += 0x0 << 16;
   dat += I2C_CTRL_A << 24;
 
   WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
 
 }
+
+void NyxorGui::EnableI2CRead (int nxid)
+{
+  int dat = 0;
+  //dat = 0x8c; // 84 (nx0)oder 85 (nx1)
+  if(nxid==0)
+    dat= 0x80; //0x84;
+  else if (nxid==1)
+    dat= 0x81; //0x85;
+
+  dat += I2C_CTRL_A << 24;
+
+  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+
+}
+
 
 void NyxorGui::BroadcastBtn_clicked (bool checked)
 {
@@ -548,7 +587,7 @@ void NyxorGui::ClearOutputBtn_clicked ()
 //std::cout << "NyxorGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
   TextOutput->setPlainText (
-      "Welcome to NYXOR GUI!\n\t v0.90 of 13-April-2016 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI");
+      "Welcome to NYXOR GUI!\n\t v0.91 of 14-April-2016 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI");
 
 }
 
@@ -647,11 +686,10 @@ void NyxorGui::EvaluateSlave ()
 
 void NyxorGui::SetRegisters ()
 {
-  FullNyxorReset();
 // write register values from strucure with gosipcmd
   for (int nx = 0; nx < NYXOR_NUMNX; nx++)
   {
-    EnableI2C (nx);
+    EnableI2CWrite (nx);
     fNxTab[nx]->setSubConfig ();
   }
 
@@ -664,10 +702,9 @@ void NyxorGui::GetRegisters ()
 
   if (!AssertNoBroadcast ())
     return;
-  FullNyxorReset();
   for (int nx = 0; nx < NYXOR_NUMNX; nx++)
   {
-    EnableI2C (nx);
+    EnableI2CRead (nx);
     fNxTab[nx]->getSubConfig ();
   }
   fGeneralTab->GetRegisters();
@@ -694,8 +731,28 @@ uint8_t NyxorGui::ReadNyxorI2c (int nxid, uint8_t address)
   WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
 // todo need error checking here?
   val = ReadGosip (fChannel, fSlave, GOS_I2C_DRR1);
+
   return val;
 }
+
+
+
+
+
+
+uint32_t NyxorGui::ReadNyxorAddress (uint8_t address)
+{
+  int dat = (address << 24);
+  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+  uint32_t val = ReadGosip (fChannel, fSlave, GOS_I2C_DRR1);
+  // error handling?
+  //printf("ReadNyxorAddress(0x%x) returns 0x%x\n",address,val);
+  return val;
+
+}
+
+
+
 
 int NyxorGui::ReadGosip (int sfp, int slave, int address)
 {
@@ -764,6 +821,15 @@ int NyxorGui::WriteNyxorI2c (int nxid, uint8_t address, uint8_t value, bool veri
   dat += I2C_COTR_A << 24;
   WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
 }
+
+int NyxorGui::WriteNyxorAddress (uint8_t address, uint32_t value)
+{
+  //printf("WriteNyxorAddress(0x%x, 0x%x)\n",address,value);
+  int dat = (address << 24) | (value & 0xFFF);
+  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+}
+
+
 
 int NyxorGui::SaveGosip (int sfp, int slave, int address, int value)
 {
@@ -874,9 +940,10 @@ void printm (char *fmt, ...)
 /** this one from Nik to speed down direct mbspex io*/
 void NyxorGui::I2c_sleep ()
 {
-  usleep(300);
+  usleep(500);
 
 // JAM: test avoid arbirtrary loop
+//#define N_LOOP 500000
 //#define N_LOOP 300000
 //
 //  int l_ii;
