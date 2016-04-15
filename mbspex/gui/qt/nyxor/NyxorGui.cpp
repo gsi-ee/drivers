@@ -633,7 +633,7 @@ void NyxorGui::ClearOutputBtn_clicked ()
 //std::cout << "NyxorGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
   TextOutput->setPlainText (
-      "Welcome to NYXOR GUI!\n\t v0.96 of 15-April-2016 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI");
+      "Welcome to NYXOR GUI!\n\t v0.97 of 15-April-2016 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI");
 
 }
 
@@ -1066,7 +1066,7 @@ void printm (char *fmt, ...)
 void NyxorGui::I2c_sleep ()
 {
   //usleep(500);
-  usleep(500);
+  usleep(800);
 // JAM: test avoid arbirtrary loop
 //#define N_LOOP 500000
 //#define N_LOOP 300000

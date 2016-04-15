@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>715</width>
-    <height>683</height>
+    <width>791</width>
+    <height>776</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,8 +30,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>693</width>
-        <height>88</height>
+        <width>769</width>
+        <height>650</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout">
@@ -117,6 +117,111 @@
            </widget>
           </item>
           <item>
+           <widget class="QGroupBox" name="groupBox">
+            <property name="title">
+             <string>SFP chains</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+            <property name="flat">
+             <bool>false</bool>
+            </property>
+            <property name="checkable">
+             <bool>false</bool>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_5">
+             <property name="leftMargin">
+              <number>9</number>
+             </property>
+             <property name="topMargin">
+              <number>1</number>
+             </property>
+             <property name="bottomMargin">
+              <number>3</number>
+             </property>
+             <item row="0" column="0">
+              <widget class="QSplitter" name="splitter">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <widget class="QSpinBox" name="Chain0_Box">
+                <property name="toolTip">
+                 <string>Number of initialized devices at SFP 0 chain </string>
+                </property>
+                <property name="readOnly">
+                 <bool>true</bool>
+                </property>
+                <property name="buttonSymbols">
+                 <enum>QAbstractSpinBox::NoButtons</enum>
+                </property>
+                <property name="prefix">
+                 <string>0: </string>
+                </property>
+                <property name="maximum">
+                 <number>255</number>
+                </property>
+               </widget>
+               <widget class="QSpinBox" name="Chain1_Box">
+                <property name="toolTip">
+                 <string>Number of initialized devices at SFP 1 chain </string>
+                </property>
+                <property name="readOnly">
+                 <bool>true</bool>
+                </property>
+                <property name="buttonSymbols">
+                 <enum>QAbstractSpinBox::NoButtons</enum>
+                </property>
+                <property name="prefix">
+                 <string>1: </string>
+                </property>
+                <property name="maximum">
+                 <number>255</number>
+                </property>
+                <property name="value">
+                 <number>0</number>
+                </property>
+               </widget>
+               <widget class="QSpinBox" name="Chain2_Box">
+                <property name="toolTip">
+                 <string>Number of initialized devices at SFP 2 chain </string>
+                </property>
+                <property name="readOnly">
+                 <bool>true</bool>
+                </property>
+                <property name="buttonSymbols">
+                 <enum>QAbstractSpinBox::NoButtons</enum>
+                </property>
+                <property name="prefix">
+                 <string>2: </string>
+                </property>
+                <property name="maximum">
+                 <number>255</number>
+                </property>
+               </widget>
+               <widget class="QSpinBox" name="Chain3_Box">
+                <property name="toolTip">
+                 <string>Number of initialized devices at SFP 3 chain </string>
+                </property>
+                <property name="readOnly">
+                 <bool>true</bool>
+                </property>
+                <property name="buttonSymbols">
+                 <enum>QAbstractSpinBox::NoButtons</enum>
+                </property>
+                <property name="prefix">
+                 <string>3: </string>
+                </property>
+                <property name="maximum">
+                 <number>255</number>
+                </property>
+               </widget>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
            <spacer name="horizontalSpacer_2">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -162,14 +267,96 @@
          </layout>
          <zorder>SFPspinBox</zorder>
          <zorder>SlavespinBox</zorder>
-         <zorder>horizontalSpacer_2</zorder>
          <zorder>InitChainButton</zorder>
          <zorder>BroadcastButton</zorder>
          <zorder>ResetSlaveButton</zorder>
          <zorder>ResetBoardButton</zorder>
+         <zorder>groupBox</zorder>
+         <zorder>horizontalSpacer_2</zorder>
         </widget>
        </item>
        <item>
+        <widget class="QScrollArea" name="scrollArea">
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="scrollAreaWidgetContents">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>747</width>
+            <height>559</height>
+           </rect>
+          </property>
+          <layout class="QGridLayout" name="gridLayout">
+           <item row="0" column="0">
+            <widget class="QTabWidget" name="Nxyter_tabWidget">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="currentIndex">
+              <number>-1</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QPlainTextEdit" name="TextOutput">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>1</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>150</height>
+              </size>
+             </property>
+             <property name="font">
+              <font>
+               <family>Andale Mono</family>
+              </font>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QScrollArea" name="scrollArea_2">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents_2">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>753</width>
+        <height>115</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="0" column="0">
         <widget class="QLabel" name="StatusLabel">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -191,88 +378,52 @@
          </property>
         </widget>
        </item>
-      </layout>
-     </widget>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="QScrollArea" name="scrollArea">
-     <property name="widgetResizable">
-      <bool>true</bool>
-     </property>
-     <widget class="QWidget" name="scrollAreaWidgetContents">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>693</width>
-        <height>455</height>
-       </rect>
-      </property>
-      <layout class="QGridLayout" name="gridLayout">
-       <item row="0" column="0">
-        <widget class="QTabWidget" name="Nxyter_tabWidget">
+       <item row="0" column="1" rowspan="2">
+        <widget class="QGroupBox" name="ModesgroupBox">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <property name="currentIndex">
-          <number>-1</number>
+         <property name="title">
+          <string>Mode</string>
          </property>
+         <layout class="QVBoxLayout" name="verticalLayout_5">
+          <item>
+           <widget class="QCheckBox" name="checkBox_AA">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked ADC_Baselines will be applyed directly when DAC spinbox is changed &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>AutoApply</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="HexBox">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check for hexadecimal numbers mode&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Hexmode</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="DebugBox">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check for verbose debug mode of gosipcmd&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Verbose</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="QPlainTextEdit" name="TextOutput">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>150</height>
-          </size>
-         </property>
-         <property name="font">
-          <font>
-           <family>Andale Mono</family>
-          </font>
-         </property>
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <widget class="QScrollArea" name="scrollArea_2">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="widgetResizable">
-      <bool>true</bool>
-     </property>
-     <widget class="QWidget" name="scrollAreaWidgetContents_2">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>693</width>
-        <height>98</height>
-       </rect>
-      </property>
-      <layout class="QGridLayout" name="gridLayout_2">
-       <item row="0" column="0">
         <widget class="QFrame" name="controlframe">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -361,41 +512,6 @@ p, li { white-space: pre-wrap; }
             </property>
             <property name="text">
              <string>Clear</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QGroupBox" name="ModesgroupBox">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="title">
-          <string>Displaymode</string>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_5">
-          <item>
-           <widget class="QCheckBox" name="HexBox">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check for hexadecimal numbers mode&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string>Hexmode</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="DebugBox">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check for verbose debug mode of gosipcmd&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string>Verbose</string>
             </property>
            </widget>
           </item>

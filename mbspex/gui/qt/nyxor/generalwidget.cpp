@@ -72,8 +72,8 @@ void GeneralNyxorWidget::SetRegisters()
   //fSetup.Dump();
   if(!fSetup.fAnything_Changed) return;
 
-  fxOwner->ReceiverReset();
-  fxOwner->NXTimestampReset();
+  //fxOwner->ReceiverReset();
+  //fxOwner->NXTimestampReset();
   //Note: The first step (The resetting of nXyter chip) has to be always executed.
   if(fSetup.fNXControl_Changed)
     fxOwner->WriteNyxorAddress(NXREC_CTRL_W, fSetup.fNXControl);
@@ -198,9 +198,15 @@ void GeneralNyxorWidget::TriggerPreSpinBox_changed(double nanos)
   QString text;
   int numberbase=fxOwner->GetNumberBase();
   numberbase == 16 ? pre = "0x" : pre = "";
-  fSetup.fTriggerPre=nanos/NYXOR_TIME_UNIT_NS;
-  TriggerPreLineEdit->setText(pre+text.setNum (fSetup.fTriggerPre, numberbase));
 
+  int val=nanos/NYXOR_TIME_UNIT_NS;
+  if(val!=fSetup.fTriggerPre)
+  {
+    fSetup.fTriggerPre=val;
+    TriggerPreLineEdit->setText(pre+text.setNum (fSetup.fTriggerPre, numberbase));
+    fSetup.fAnything_Changed=true;
+    fSetup.fTriggerPre_Changed=true;
+  }
 }
 
 void GeneralNyxorWidget::TriggerPostSpinBox_changed(double nanos)
@@ -209,10 +215,15 @@ void GeneralNyxorWidget::TriggerPostSpinBox_changed(double nanos)
   QString text;
   int numberbase=fxOwner->GetNumberBase();
   numberbase == 16 ? pre = "0x" : pre = "";
-  fSetup.fTriggerPost=nanos/NYXOR_TIME_UNIT_NS;
-  TriggerPostLineEdit->setText(pre+text.setNum (fSetup.fTriggerPost, numberbase));
 
-
+  int val=nanos/NYXOR_TIME_UNIT_NS;
+  if(val!=fSetup.fTriggerPost)
+   {
+    fSetup.fTriggerPost=val;
+    TriggerPostLineEdit->setText(pre+text.setNum (fSetup.fTriggerPost, numberbase));
+    fSetup.fAnything_Changed=true;
+    fSetup.fTriggerPost_Changed=true;
+   }
 
 }
 
@@ -222,9 +233,15 @@ void GeneralNyxorWidget::SecondTestPulseDelaySpinBox_changed(double nanos)
   QString text;
   int numberbase=fxOwner->GetNumberBase();
   numberbase == 16 ? pre = "0x" : pre = "";
-  fSetup.fDelayTestPulse=nanos/NYXOR_TIME_UNIT_NS;
-  SecondTestPulseDelayLineEdit->setText(pre+text.setNum (fSetup.fDelayTestPulse, numberbase));
+  int val=nanos/NYXOR_TIME_UNIT_NS;
+  if(val!=fSetup.fDelayTestPulse)
+    {
+      fSetup.fDelayTestPulse=val;
+      SecondTestPulseDelayLineEdit->setText(pre+text.setNum (fSetup.fDelayTestPulse, numberbase));
+      fSetup.fAnything_Changed=true;
+      fSetup.fDelayTestPulse_Changed=true;
 
+    }
 
 }
 
@@ -235,17 +252,29 @@ void GeneralNyxorWidget::TestAcquisitionTriggerDelaySpinBox_changed(double nanos
   QString text;
   int numberbase=fxOwner->GetNumberBase();
   numberbase == 16 ? pre = "0x" : pre = "";
-  fSetup.fDelayTrigger=nanos/NYXOR_TIME_UNIT_NS;
-  TestAcquisitionTriggerDelayLineEdit->setText(pre+text.setNum (fSetup.fDelayTrigger, numberbase));
+  int val=nanos/NYXOR_TIME_UNIT_NS;
+  if(val!=fSetup.fDelayTrigger)
+  {
 
+    fSetup.fDelayTrigger=val;
+    TestAcquisitionTriggerDelayLineEdit->setText(pre+text.setNum (fSetup.fDelayTrigger, numberbase));
+    fSetup.fAnything_Changed=true;
+    fSetup.fDelayTrigger_Changed=true;
+  }
 }
 
 void GeneralNyxorWidget::TriggerPreLineEdit_finished()
 {
   int numberbase=fxOwner->GetNumberBase();
-  fSetup.fTriggerPre=TriggerPreLineEdit->text ().toUInt (0, numberbase);
-  double nanos=NYXOR_TIME_UNIT_NS * fSetup.fTriggerPre;
-  TriggerPreDoubleSpinBox->setValue(nanos);
+  int val=TriggerPreLineEdit->text ().toUInt (0, numberbase);
+  if(val!=fSetup.fTriggerPre)
+  {
+    fSetup.fTriggerPre=val;
+    fSetup.fAnything_Changed=true;
+    fSetup.fTriggerPre_Changed=true;
+    double nanos=NYXOR_TIME_UNIT_NS * fSetup.fTriggerPre;
+    TriggerPreDoubleSpinBox->setValue(nanos);
+  }
 }
 
 
@@ -253,37 +282,59 @@ void GeneralNyxorWidget::TriggerPostLineEdit_finished()
 {
 
   int numberbase=fxOwner->GetNumberBase();
-  fSetup.fTriggerPost=TriggerPostLineEdit->text ().toUInt (0, numberbase);
-  double nanos=NYXOR_TIME_UNIT_NS * fSetup.fTriggerPost;
-  TriggerPostDoubleSpinBox->setValue(nanos);
-
+  int val=TriggerPostLineEdit->text ().toUInt (0, numberbase);
+  if(val!=fSetup.fTriggerPost)
+  {
+    fSetup.fTriggerPost=val;
+    fSetup.fAnything_Changed=true;
+    fSetup.fTriggerPost_Changed=true;
+    double nanos=NYXOR_TIME_UNIT_NS * fSetup.fTriggerPost;
+    TriggerPostDoubleSpinBox->setValue(nanos);
+  }
 }
 
 
 void GeneralNyxorWidget::SecondTestPulseDelayLineEdit_finished()
 {
   int numberbase=fxOwner->GetNumberBase();
-  fSetup.fDelayTestPulse=SecondTestPulseDelayLineEdit->text ().toUInt (0, numberbase);
-  double nanos=NYXOR_TIME_UNIT_NS * fSetup.fDelayTestPulse;
-  SecondTestPulseDelayDoubleSpinBox->setValue(nanos);
+  int val=SecondTestPulseDelayLineEdit->text ().toUInt (0, numberbase);
+  if(val!=fSetup.fDelayTestPulse)
+    {
+      fSetup.fDelayTestPulse=val;
+      fSetup.fAnything_Changed=true;
+      fSetup.fDelayTestPulse_Changed=true;
+      double nanos=NYXOR_TIME_UNIT_NS * fSetup.fDelayTestPulse;
+      SecondTestPulseDelayDoubleSpinBox->setValue(nanos);
+    }
 }
 
 void GeneralNyxorWidget::TestAcquisitionTriggerDelayLineEdit_finished()
 {
 
   int numberbase=fxOwner->GetNumberBase();
-  fSetup.fDelayTrigger=TestAcquisitionTriggerDelayLineEdit->text ().toUInt (0, numberbase);
-    double nanos=NYXOR_TIME_UNIT_NS * fSetup.fDelayTrigger;
-    TestAcquisitionTriggerDelayDoubleSpinBox->setValue(nanos);
-
+  int val=TestAcquisitionTriggerDelayLineEdit->text ().toUInt (0, numberbase);
+  if(val!=fSetup.fDelayTrigger)
+     {
+      fSetup.fDelayTrigger=val;
+      fSetup.fAnything_Changed=true;
+      fSetup.fDelayTrigger_Changed=true;
+      double nanos=NYXOR_TIME_UNIT_NS * fSetup.fDelayTrigger;
+      TestAcquisitionTriggerDelayDoubleSpinBox->setValue(nanos);
+     }
 
 }
 
 void GeneralNyxorWidget::nxControlEdit_finished()
 {
   int numberbase=fxOwner->GetNumberBase();
-  fSetup.fNXControl=nxControlEdit->text ().toUInt (0, numberbase);
-  RefreshControlBits();
+  int val=nxControlEdit->text ().toUInt (0, numberbase);
+  if(val!=fSetup.fNXControl)
+  {
+    fSetup.fNXControl=val;
+    fSetup.fAnything_Changed=true;
+    fSetup.fNXControl_Changed=true;
+    RefreshControlBits();
+  }
 }
 
 void GeneralNyxorWidget::RefreshControlBits()
@@ -297,23 +348,27 @@ void GeneralNyxorWidget::RefreshControlBits()
 }
 
 
-void GeneralNyxorWidget::ControlBit_clicked(bool)
+void GeneralNyxorWidget::ControlBit_clicked (bool)
 {
-  // if user clicks any of the control bit boxes, we recalculate complete register value here:
+// if user clicks any of the control bit boxes, we recalculate complete register value here:
 
-  int word=0;
-  for (int b=0; b<14; ++b)
-      {
-        if(fControlBitBoxes[b]->isChecked()) word |= (0x1 << b);
-      }
-  fSetup.fNXControl=word;
-
+int word = 0;
+for (int b = 0; b < 14; ++b)
+{
+  if (fControlBitBoxes[b]->isChecked ())
+    word |= (0x1 << b);
+}
+if (word != fSetup.fNXControl)
+{
+  fSetup.fNXControl = word;
+  fSetup.fAnything_Changed = true;
+  fSetup.fNXControl_Changed = true;
   QString pre;
   QString text;
-  int numberbase=fxOwner->GetNumberBase();
+  int numberbase = fxOwner->GetNumberBase ();
   numberbase == 16 ? pre = "0x" : pre = "";
-
-  nxControlEdit->setText(pre+text.setNum (fSetup.fNXControl, numberbase));
+  nxControlEdit->setText (pre + text.setNum (fSetup.fNXControl, numberbase));
+}
 }
 
 
