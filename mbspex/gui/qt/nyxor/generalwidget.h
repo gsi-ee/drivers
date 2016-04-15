@@ -62,7 +62,6 @@ class GeneralNyxorWidget : public QWidget , public Ui::GeneralNyxorWidget {
 
 
 
-
    /** auxiliary references to checkboxes for control register bits*/
     QCheckBox* fControlBitBoxes[14];
 

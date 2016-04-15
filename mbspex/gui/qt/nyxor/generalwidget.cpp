@@ -51,7 +51,7 @@ GeneralNyxorWidget::GeneralNyxorWidget(QWidget* parent, NyxorGui* owner):
 void GeneralNyxorWidget::GetRegisters()
 {
   //printf("GeneralNyxorWidget::GetRegisters()...\n");
-  fxOwner->DisableI2C();
+  //fxOwner->DisableI2C();
 
   fSetup.fNXControl=fxOwner->ReadNyxorAddress(NXREC_CTRL_R);
   fSetup.fTriggerPre=fxOwner->ReadNyxorAddress(NXREC_PRETRIG_R);
@@ -71,7 +71,7 @@ void GeneralNyxorWidget::SetRegisters()
   //printf("GeneralNyxorWidget::SetRegisters()...\n");
   //fSetup.Dump();
 
-  fxOwner->DisableI2C();
+  //fxOwner->DisableI2C();
 
   fxOwner->ReceiverReset();
   fxOwner->NXTimestampReset();
@@ -225,15 +225,6 @@ void GeneralNyxorWidget::nxControlEdit_finished()
   int numberbase=fxOwner->GetNumberBase();
   fSetup.fNXControl=nxControlEdit->text ().toUInt (0, numberbase);
   RefreshControlBits();
-//  int word=fSetup.fNXControl & 0x3FFF;
-//  for (int b=0; b<14; ++b)
-//    {
-//      bool on= ((word >> b) & 0x1) == 0x1? true: false;
-//      fControlBitBoxes[b]->setChecked(on);
-//    }
-
-
-
 }
 
 void GeneralNyxorWidget::RefreshControlBits()

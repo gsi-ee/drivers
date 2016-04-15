@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>NyxorDACWidget</class>
+ <widget class="QWidget" name="NyxorDACWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>557</width>
+    <height>408</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_3">
+   <item row="0" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QGroupBox" name="NX0groupBox">
+       <property name="title">
+        <string>Nxyter 0</string>
+       </property>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0">
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <widget class="QLineEdit" name="NX0_DAC0_lineEdit">
+            <property name="toolTip">
+             <string>External DAC 0 value for nxyter 0</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="NX0_DAC1_lineEdit">
+            <property name="toolTip">
+             <string>External DAC 1 value for nxyter 0</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="NX0_DAC2_lineEdit">
+            <property name="toolTip">
+             <string>External DAC 2 value for nxyter 0</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="NX0_DAC3_lineEdit">
+            <property name="toolTip">
+             <string>External DAC 3 value for nxyter 0</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="0" column="1">
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <widget class="QSpinBox" name="NX0_DAC0_spinBox">
+            <property name="toolTip">
+             <string>External DAC 0 value for nxyter 0</string>
+            </property>
+            <property name="maximum">
+             <number>4095</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="NX0_DAC1_spinBox">
+            <property name="toolTip">
+             <string>External DAC 1 value for nxyter 0</string>
+            </property>
+            <property name="maximum">
+             <number>4095</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="NX0_DAC2_spinBox">
+            <property name="toolTip">
+             <string>External DAC 2 value for nxyter 0</string>
+            </property>
+            <property name="maximum">
+             <number>4095</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="NX0_DAC3_spinBox">
+            <property name="toolTip">
+             <string>External DAC 3 value for nxyter 0</string>
+            </property>
+            <property name="maximum">
+             <number>4095</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="NX1groupBox">
+       <property name="title">
+        <string>Nxyter 1</string>
+       </property>
+       <layout class="QGridLayout" name="gridLayout_2">
+        <item row="0" column="0">
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <item>
+           <widget class="QLineEdit" name="NX1_DAC0_lineEdit">
+            <property name="toolTip">
+             <string>External DAC 0 value for nxyter 1</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="NX1_DAC1_lineEdit">
+            <property name="toolTip">
+             <string>External DAC 1 value for nxyter 1</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="NX1_DAC2_lineEdit">
+            <property name="toolTip">
+             <string>External DAC 2 value for nxyter 1</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="NX1_DAC3_lineEdit">
+            <property name="toolTip">
+             <string>External DAC 3 value for nxyter 1</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="0" column="1">
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <widget class="QSpinBox" name="NX1_DAC0_spinBox">
+            <property name="toolTip">
+             <string>External DAC 0 value for nxyter 1</string>
+            </property>
+            <property name="maximum">
+             <number>4095</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="NX1_DAC1_spinBox">
+            <property name="toolTip">
+             <string>External DAC 1 value for nxyter 1</string>
+            </property>
+            <property name="maximum">
+             <number>4095</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="NX1_DAC2_spinBox">
+            <property name="toolTip">
+             <string>External DAC 2 value for nxyter 1</string>
+            </property>
+            <property name="maximum">
+             <number>4095</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="NX1_DAC3_spinBox">
+            <property name="toolTip">
+             <string>External DAC 3 value for nxyter 1</string>
+            </property>
+            <property name="maximum">
+             <number>4095</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="1" column="0">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>240</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

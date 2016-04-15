@@ -20,6 +20,8 @@
 
 #include "nxyterwidget.h"
 #include "generalwidget.h"
+#include "dacwidget.h"
+#include "adcwidget.h"
 
 // *********************************************************
 
@@ -63,12 +65,18 @@ NyxorGui::NyxorGui (QWidget* parent) :
   QObject::connect(SFPspinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
   QObject::connect(SlavespinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
 
-// here components for nxyter tabs:
+// here components for (nxyter and other blocks) tabs:
 
-  // first put general widget for receiver:
 
   fGeneralTab = new GeneralNyxorWidget (Nxyter_tabWidget, this);
   Nxyter_tabWidget->addTab (fGeneralTab, QString ("Receiver"));
+
+  fADCTab =  new NyxorADCWidget (Nxyter_tabWidget, this);
+  Nxyter_tabWidget->addTab (fADCTab, QString ("ADC"));
+
+  fDACTab =  new NyxorDACWidget (Nxyter_tabWidget, this);
+  Nxyter_tabWidget->addTab (fDACTab, QString ("DACs"));
+
 
   for (int nx = 0; nx < NYXOR_NUMNX; nx++)
   {
@@ -76,6 +84,8 @@ NyxorGui::NyxorGui (QWidget* parent) :
     Nxyter_tabWidget->addTab (nxw, QString ("NX%1").arg (nx));
     fNxTab[nx] = nxw;
   }
+
+
 
 #ifdef USE_MBSPEX_LIB
 // open handle to driver file:
@@ -299,25 +309,28 @@ int NyxorGui::WriteNiksConfig ()
 
   WriteConfigFile (QString ("#\n"));
   WriteConfigFile (QString ("#\n"));
-  WriteConfigFile (QString ("#                             pre trg win   post trg win  test pulse delay  test trg delay\n"));
+  WriteConfigFile (QString ("#               pre trg win   post trg win  test pulse delay  test trg delay\n"));
   QString pline;
   uint16_t pretrig=fGeneralTab->fSetup.fTriggerPre;
   uint16_t posttrig=fGeneralTab->fSetup.fTriggerPost;
   uint16_t pulsdel=fGeneralTab->fSetup.fDelayTestPulse;
   uint16_t trigdel=fGeneralTab->fSetup.fDelayTrigger;
 
-  pline=QString ("GLOBAL_PARAM \tt0x%1 \t0x%2 \t0x%3 \t0x%4\n").arg(pretrig,0,16).arg(posttrig,0,16).arg(pulsdel,0,16).arg(trigdel,0,16);
+  pline=           QString ("GLOBAL_PARAM    0x%1          0x%2          0x%3              0x%4\n").arg(pretrig,0,16).arg(posttrig,0,16).arg(pulsdel,0,16).arg(trigdel,0,16);
   WriteConfigFile (pline);
   //WriteConfigFile (QString ("GLOBAL_PARAM                  0x080           0x100         0x0b              0x0a\n"));
   // TODO: set these parameters from GUI? yes!
-
+  WriteConfigFile (QString ("#\n"));
+  WriteConfigFile (QString ("#\n"));
+  WriteConfigFile (QString ("#\n"));
   uint16_t nxctrl=fGeneralTab->fSetup.fNXControl;
   pline=QString ("NXY_CTRL SFP %1 NYX %2  \t\t0x%3\n").arg(fChannel).arg(fSlave).arg(nxctrl,0,16);
   WriteConfigFile (pline);
 
   // loop over nxyters for current sfp and slave:
   int iadd=0x22; // i2caddress for each nxyter on board
-  for (int nx = 0; nx < NYXOR_NUMNX; nx++, iadd-=0x10) // JAM2016 -note swapped iadd order for nx0 and nx1!
+  int reset=0x84; // reset address
+  for (int nx = 0; nx < NYXOR_NUMNX; nx++, iadd-=0x10, reset+=0x1) // JAM2016 -note swapped iadd order for nx0 and nx1!
     {
       WriteConfigFile (QString ("#\n"));
       WriteConfigFile (QString ("#\n"));
@@ -327,9 +340,10 @@ int NyxorGui::WriteNiksConfig ()
       const nxyter::NxContext* theContext = fNxTab[nx]->getContext ();
       line= QString("SFP %1 NYX %2 nXY %3 I2C_ADDR    \t\t0x%4 # wr\n").arg(fChannel).arg(fSlave).arg(nx).arg(iadd,0,16);
       WriteConfigFile(line);
-      line= QString("SFP %1 NYX %2 nXY %3 RESET    \t\t0x8c \n").arg(fChannel).arg(fSlave).arg(nx);
+
+      line= QString("SFP %1 NYX %2 nXY %3 RESET     \t\t0x%4 \n").arg(fChannel).arg(fSlave).arg(nx).arg(reset,0,16);
       WriteConfigFile(line);
-      line= QString("SFP %1 NYX %2 nXY %3 MASK   \t\t").arg(fChannel).arg(fSlave).arg(nx);
+      line= QString("SFP %1 NYX %2 nXY %3 MASK      \t\t").arg(fChannel).arg(fSlave).arg(nx);
       for(int m=0; m<16;++m)
       {
         uint8_t mval=theContext->getRegister(m); // mask registers are at the start of array
@@ -338,7 +352,7 @@ int NyxorGui::WriteNiksConfig ()
       line.append ("\n");
       WriteConfigFile(line);
 
-      line= QString("SFP %1 NYX %2 nXY %3 BIAS   \t\t").arg(fChannel).arg(fSlave).arg(nx);
+      line= QString("SFP %1 NYX %2 nXY %3 BIAS      \t\t").arg(fChannel).arg(fSlave).arg(nx);
       for(int b=0; b<14;++b)
           {
             uint8_t bval=theContext->getRegister(b+16);
@@ -347,7 +361,7 @@ int NyxorGui::WriteNiksConfig ()
       line.append ("\n");
       WriteConfigFile(line);
 
-      line= QString("SFP %1 NYX %2 nXY %3 CONFIG   \t\t").arg(fChannel).arg(fSlave).arg(nx);
+      line= QString("SFP %1 NYX %2 nXY %3 CONFIG    \t\t").arg(fChannel).arg(fSlave).arg(nx);
       for(int c=0; c<2;++c)
       {
         uint8_t cval=theContext->getRegister(c+32);
@@ -366,7 +380,7 @@ int NyxorGui::WriteNiksConfig ()
       WriteConfigFile(line);
 
       line= QString("SFP %1 NYX %2 nXY %3 CLOCK_DELAY   \t").arg(fChannel).arg(fSlave).arg(nx);
-      for(int cl=0; cl<2;++cl)
+      for(int cl=0; cl<3;++cl)
       {
         uint8_t clval=theContext->getRegister(cl+43);
         line.append(QString("0x%1 ").arg(clval,0,16));
@@ -374,7 +388,7 @@ int NyxorGui::WriteNiksConfig ()
       line.append ("\n");
       WriteConfigFile(line);
 
-      line= QString("SFP %1 NYX %2 nXY %3 THR_TEST         \t\t").arg(fChannel).arg(fSlave).arg(nx);
+      line= QString("SFP %1 NYX %2 nXY %3 THR_TEST         \t").arg(fChannel).arg(fSlave).arg(nx);
       uint8_t testval=theContext->getTrimRegister(128);
       line.append(QString("0x%1 ").arg(testval,0,16));
       line.append ("\n");
@@ -385,7 +399,7 @@ int NyxorGui::WriteNiksConfig ()
            {
               int tstart=row*16;
               int tend=(row+1)*16 -1;
-              line= QString("SFP %1 NYX %2 nXY %3 THR_%4_%5     \t").arg(fChannel).arg(fSlave).arg(nx).arg(tstart).arg(tend);
+              line= QString("SFP %1 NYX %2 nXY %3 THR_%4_%5      \t").arg(fChannel).arg(fSlave).arg(nx).arg(tstart).arg(tend);
               for(int t=tstart; t<tstart+16;++t)
                 {
                   uint8_t tval=theContext->getTrimRegister(t);
@@ -396,15 +410,20 @@ int NyxorGui::WriteNiksConfig ()
            }
 
 
-      uint8_t adcp=0x01;
+      //uint8_t adcp=0x01;
+      uint8_t adcp=fADCTab->fSetup.fDC0Phase;
       line= QString("SFP %1 NYX %2 nXY %3 ADC_DCO_PHASE   \t0x%4 \n").arg(fChannel).arg(fSlave).arg(nx).arg(adcp,0,16);
       WriteConfigFile (line);
 
-      // TODO TODO: external dac settings to be implemented!
       //SFP 0 NYX 0 nXY 0 EXT_DACS    0x100 0x101 0x102 0x103
-
-
-
+      uint16_t dac0=fDACTab->fSetup.fRegister[nx][0];
+      uint16_t dac1=fDACTab->fSetup.fRegister[nx][1];
+      uint16_t dac2=fDACTab->fSetup.fRegister[nx][2];
+      uint16_t dac3=fDACTab->fSetup.fRegister[nx][3];
+      line= QString("SFP %1 NYX %2 nXY %3 EXT_DACS   \t\t0x%4 0x%5 0x%6 0x%7 \n")
+          .arg(fChannel).arg(fSlave).arg(nx)
+          .arg(dac0,0,16).arg(dac1,0,16).arg(dac2,0,16).arg(dac3,0,16);
+      WriteConfigFile (line);
     } // for nx
   WriteConfigFile (QString ("#\n"));
   return 0;
@@ -526,6 +545,9 @@ void NyxorGui::EnableI2CWrite (int nxid)
 
 }
 
+
+
+
 void NyxorGui::EnableI2CRead (int nxid)
 {
   int dat = 0;
@@ -540,6 +562,30 @@ void NyxorGui::EnableI2CRead (int nxid)
   WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
 
 }
+
+
+void NyxorGui::EnableSPI()
+{
+  int dat=0x80;
+  dat += SPI_ENABLE_ADDR<< 24;
+  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);// enable sub core
+
+  dat=0x44;
+  dat += SPI_BAUD_ADDR << 24;
+  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat); // set baud rate
+
+}
+
+
+void NyxorGui::DisableSPI()
+{
+  int dat=0;
+  dat += SPI_ENABLE_ADDR<< 24;
+  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+
+}
+
+
 
 
 void NyxorGui::BroadcastBtn_clicked (bool checked)
@@ -587,7 +633,7 @@ void NyxorGui::ClearOutputBtn_clicked ()
 //std::cout << "NyxorGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
   TextOutput->setPlainText (
-      "Welcome to NYXOR GUI!\n\t v0.91 of 14-April-2016 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI");
+      "Welcome to NYXOR GUI!\n\t v0.95 of 15-April-2016 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI");
 
 }
 
@@ -660,7 +706,8 @@ void NyxorGui::RefreshView ()
 
 
   fGeneralTab->RefreshView();
-
+  fADCTab->RefreshView();
+  fDACTab->RefreshView();
 
   QString statustext;
   statustext.append ("SFP ");
@@ -676,6 +723,8 @@ void NyxorGui::RefreshView ()
 void NyxorGui::EvaluateView ()
 {
   fGeneralTab->EvaluateView();
+  fADCTab->EvaluateView();
+  fDACTab->EvaluateView();
 }
 
 void NyxorGui::EvaluateSlave ()
@@ -694,6 +743,8 @@ void NyxorGui::SetRegisters ()
   }
 
   fGeneralTab->SetRegisters();
+  fADCTab->SetRegisters();
+  fDACTab->SetRegisters();
 }
 
 void NyxorGui::GetRegisters ()
@@ -707,8 +758,10 @@ void NyxorGui::GetRegisters ()
     EnableI2CRead (nx);
     fNxTab[nx]->getSubConfig ();
   }
+  DisableI2C();
   fGeneralTab->GetRegisters();
-
+  fADCTab->GetRegisters();
+  fDACTab->GetRegisters();
 }
 
 uint8_t NyxorGui::ReadNyxorI2c (int nxid, uint8_t address)
@@ -736,7 +789,56 @@ uint8_t NyxorGui::ReadNyxorI2c (int nxid, uint8_t address)
 }
 
 
+uint8_t NyxorGui::ReadNyxorSPI (uint8_t address)
+{
+  uint8_t val=0;
+  int dat = 0;
+  dat += address << 8;
+  dat += SPI_READ << 16;
+  dat += SPI_TRANS_ADDR << 24;
+  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+  val = ReadGosip (fChannel, fSlave, GOS_I2C_DRR1);
+  return val;
+}
 
+
+uint16_t NyxorGui::ReadNyxorDAC(int nxid, uint8_t dacid)
+{
+  uint16_t val=0;
+
+
+  // read back external dacs
+//           for (l_l=0; l_l<4; l_l++)
+//           {
+//             l_wr_d = 0xbc00000 + (0x100000 * l_k) + (0x1000 << l_l);
+//             l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, l_wr_d);
+//             debug3 (("write SFP: %1d, NYX: %1d, nXY: %1d => %3d  A: 0x%x, D: 0x%x\n",
+//                                     l_i, l_j, l_k, l_l, GOS_I2C_DWR, l_wr_d));
+//             l_stat = f_pex_slave_wr (l_i, l_j, GOS_I2C_DWR, 0x84000000);
+//             debug3 (("write SFP: %1d, NYX: %1d, nXY: %1d => %3d  A: 0x%x, D: 0x%x\n",
+//                                     l_i, l_j, l_k, l_l, GOS_I2C_DWR, 0x84000000));
+//
+//             l_stat = f_pex_slave_rd (l_i, l_j, GOS_I2C_DRR1, &l_data);
+//             debug3 (("read                         => %3d  A: 0x%x, D: 0x%x\n",
+//                                                     l_l, GOS_I2C_DRR1, l_data));
+//             l_data    = (l_data >> 6) & 0x3ff;
+//             l_check_d = l_ext_dac[l_i][l_j][l_k][l_l];
+
+   int dat=I2C_DAC_BASE_R + (0x100000 * nxid) + (0x1000 << dacid); // ?? really shift by dacid 0..3?
+
+  // set i2c address to read from:
+    WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+
+  // enable i2c receiver?
+   dat =  I2C_RECEIVE << 24;
+   WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+
+
+    val = ReadGosip (fChannel, fSlave, GOS_I2C_DRR1);
+
+
+    return (val >> 6) & 0x3ff;
+}
 
 
 
@@ -819,14 +921,35 @@ int NyxorGui::WriteNyxorI2c (int nxid, uint8_t address, uint8_t value, bool veri
   dat += address << 8;
   dat += nxad << 16;
   dat += I2C_COTR_A << 24;
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+  return WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+}
+
+
+int NyxorGui::WriteNyxorSPI (uint8_t address, uint8_t value)
+{
+  int dat = 0;
+  dat = value;
+  dat += address << 8;
+  dat += SPI_WRITE << 16;
+  dat += SPI_TRANS_ADDR << 24;
+  return WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+}
+
+
+int NyxorGui::WriteNyxorDAC(int nxid, uint8_t dacid, uint16_t value)
+{
+
+      //write external dac values
+       //         l_wr_d = 0xb430000 + (0x100000 * l_k) + (0x1000 << l_l) + l_ext_dac[l_i][l_j][l_k][l_l];
+  int dat= I2C_DAC_BASE_W + (0x100000 * nxid) + (0x1000 << dacid) + (value & 0xFFF);
+  return WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
 }
 
 int NyxorGui::WriteNyxorAddress (uint8_t address, uint32_t value)
 {
   //printf("WriteNyxorAddress(0x%x, 0x%x)\n",address,value);
   int dat = (address << 24) | (value & 0xFFF);
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+  return WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
 }
 
 
@@ -940,8 +1063,8 @@ void printm (char *fmt, ...)
 /** this one from Nik to speed down direct mbspex io*/
 void NyxorGui::I2c_sleep ()
 {
-  usleep(500);
-
+  //usleep(500);
+  usleep(300);
 // JAM: test avoid arbirtrary loop
 //#define N_LOOP 500000
 //#define N_LOOP 300000

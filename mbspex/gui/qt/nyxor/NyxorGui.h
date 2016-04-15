@@ -23,6 +23,8 @@ extern "C"
 
 class NxyterWidget;
 class GeneralNyxorWidget;
+class NyxorDACWidget;
+class NyxorADCWidget;
 
 /** number of nxyters on nyxor board. may not change so soon...*/
 #define NYXOR_NUMNX 2
@@ -34,6 +36,8 @@ class GeneralNyxorWidget;
 
 #define I2C_CTRL_A   0x01
 #define I2C_COTR_A   0x03
+#define I2C_RECEIVE  0x84
+#define I2C_STATUS   0x85
 
 #define CHECK_DAT    0xa9000000
 
@@ -42,6 +46,20 @@ class GeneralNyxorWidget;
 #define I2C_ADDR_NX0 0x12
 #define I2C_ADDR_NX1 0x22
 
+// external DAC base address on i2c:
+#define I2C_DAC_BASE_R 0xBC00000
+#define I2C_DAC_BASE_W 0xB430000
+
+
+// spi related definitions:
+#define SPI_ENABLE_ADDR 0x11        // SPI enable register
+#define SPI_BAUD_ADDR   0x12        // SPI baud rate register
+#define SPI_TRANS_ADDR  0x15        // SPI transfer register
+#define SPI_WRITE       0x00        // SPI write mode slave
+#define SPI_READ        0x80        // SPI read mode slave
+
+#define SPI_ADC_DC0PHASE    0x16  // pointer to ADC DC0 phase register
+#define SPI_ADC_PATTERNBASE 0x19  // ADC transmit pattern registers base pointer (0x19-0x1C)
 
 // nxyter receiver sub core registers:
 
@@ -93,14 +111,35 @@ public:
   /** send disable i2c core */
   void DisableI2C();
 
+  /** enable spi core (access external adc)*/
+  void EnableSPI();
 
-  int GetNumberBase(){return fNumberBase;}
+
+  /** enable spi core (access external adc)*/
+   void DisableSPI();
+
+
+
 
    /** Write value to i2c bus address of currently selected slave. NXYTER is specified by nxid*/
    int WriteNyxorI2c (int nxid, uint8_t address, uint8_t value, bool veri=false);
 
    /** Read value from i2c bus address of currently selected slave. NXYTER is specified by nxid*/
    uint8_t ReadNyxorI2c (int nxid, uint8_t address);
+
+
+   /** Write data value via spi interface to address*/
+   int WriteNyxorSPI (uint8_t address, uint8_t value);
+
+   /** Read data value from spi interface address*/
+   uint8_t ReadNyxorSPI (uint8_t address);
+
+   /** read back value via i2c interface from external dac of nxid and dacid*/
+   uint16_t ReadNyxorDAC(int nxid, uint8_t dacid);
+
+   /** write value via i2c interface to external dac of nxid and dacid*/
+   int WriteNyxorDAC(int nxid, uint8_t dacid, uint16_t value);
+
 
 
    /** Write value to register address on nyxor board. Note that only least 24 bits of value are transferred.*/
@@ -119,7 +158,7 @@ public:
        AppendTextWindow (buf);
      }
 
-
+     int GetNumberBase(){return fNumberBase;}
 
 #ifdef USE_MBSPEX_LIB
 
@@ -137,7 +176,8 @@ protected:
   NxyterWidget* fNxTab[NYXOR_NUMNX];
 
   GeneralNyxorWidget* fGeneralTab;
-
+  NyxorDACWidget* fDACTab;
+  NyxorADCWidget* fADCTab;
 
   /** text debug mode*/
   bool fDebug;
