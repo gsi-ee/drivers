@@ -653,44 +653,11 @@ uint8_t nxyter::NxI2c::settingToDelay(uint8_t val)
 
 int nxyter::NxI2c::setRegister(uint8_t reg, uint8_t val, bool veri)
 {
-  // JAM TODO: here use gosipcmd script interface in the owner NyxorGUI class
+  // JAM here we use gosipcmd script interface in the owner NyxorGUI class
     //std::cout <<"NxI2c, id:"<< fNxId<<" setRegister("<<(int)reg<<","<< (int)val<<","<<veri<<")"<< std::endl;
 
 
     fOwner->WriteNyxorI2c(fNxId, reg,val,veri);
-
-
-
-//  bool isput[7];
-//  uint32_t addr[7];
-//  uint32_t data[7];
-//  int rc;
-//
-//  isput[0] = true;  addr[0] = ROC_NX_I2C_SWITCH;    data[0] = fPort;
-//  isput[1] = true;  addr[1] = ROC_NX_I2C_SLAVEADDR; data[1] = fSlaveAddr;
-//  isput[2] = true;  addr[2] = ROC_NX_I2C_REGISTER;  data[2] = reg;
-//  isput[3] = true;  addr[3] = ROC_NX_I2C_DATA;      data[3] = val;
-//  isput[4] = false; addr[4] = ROC_NX_I2C_ERROR;
-//  isput[5] = false; addr[5] = ROC_NX_I2C_DATA;
-//  isput[6] = false; addr[6] = ROC_NX_I2C_ERROR;
-//
-//  int nop = veri ? 7 : 5;
-//
-//  rc = board().operGen(isput, addr, data, nop);
-//
-//  if (rc == 0 && data[4] != 0) {            // check I2C bus error on put
-//    rc = Board::operErrBuild(Board::kOperBusErr, 0);
-//  }
-//  if (veri) {
-//    if (rc == 0 && data[6] != 0) {          // check I2C bus error on readback
-//      rc = Board::operErrBuild(Board::kOperBusErr, 1);
-//    }
-//    if (rc == 0 && val != (data[5]&0xff)) { // check readback value
-//      rc = Board::kOperVerifyErr;
-//    }
-//  }
-//
-//  return rc;
 
   return 0;
 }
@@ -717,26 +684,6 @@ int nxyter::NxI2c::getRegister(uint8_t reg, uint8_t& val)
   val=fOwner->ReadNyxorI2c(fNxId,reg);
 
  // std::cout <<"NxI2c, id:"<< (int)fNxId<<" getRegister("<< (int) reg<<")="<<(int) val << std::endl;
-
-
-//  bool isput[5];
-//  uint32_t addr[5];
-//  uint32_t data[5];
-//  int rc;
-//
-//  isput[0] = true;  addr[0] = ROC_NX_I2C_SWITCH;    data[0] = fPort;
-//  isput[1] = true;  addr[1] = ROC_NX_I2C_SLAVEADDR; data[1] = fSlaveAddr;
-//  isput[2] = true;  addr[2] = ROC_NX_I2C_REGISTER;  data[2] = reg;
-//  isput[3] = false; addr[3] = ROC_NX_I2C_DATA;
-//  isput[4] = false; addr[4] = ROC_NX_I2C_ERROR;
-//
-//  rc = board().operGen(isput, addr, data, 5);
-//
-//  val = uint8_t(data[3]);
-//
-//  if (rc == 0 && data[4] != 0) {            // check I2C bus error on get
-//    rc = Board::kOperBusErr;
-//  }
 
   return 0;
 }
@@ -943,6 +890,15 @@ int nxyter::NxI2c::getMailboxRegister(uint8_t reg, uint8_t *val, int nval)
 }
 
 
+void nxyter::NxI2c::enableI2C()
+{
+  fOwner->EnableI2CRead(fNxId); // this one without reset?
 
+
+}
+void nxyter::NxI2c::disableI2C()
+{
+  fOwner->DisableI2C();
+}
 
 

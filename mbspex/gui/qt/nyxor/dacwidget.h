@@ -28,7 +28,8 @@ class NyxorDACRegisters
   public:
 
   uint16_t   fRegister[NYXOR_NUMNX][NUM_NYXORDACS]; //< external DAC registers
-
+  bool       fChanged[NYXOR_NUMNX][NUM_NYXORDACS]; //< mark what has changed since last show
+  bool       fAnyChange; //< true if anything has changed at all
 
   NyxorDACRegisters()
   {
@@ -39,6 +40,7 @@ class NyxorDACRegisters
         fRegister[nx][i] = 0;
       }
     }
+    ResetChanged();
   }
 
   void Dump ()
@@ -51,6 +53,18 @@ class NyxorDACRegisters
         printf ("DAC_%d=0x%x\n", i, fRegister[nx][i]);
       }
     }
+  }
+
+  void ResetChanged()
+  {
+    fAnyChange=false;
+    for (int nx = 0; nx < NYXOR_NUMNX; ++nx)
+        {
+          for (int i = 0; i < NUM_NYXORDACS; ++i)
+          {
+            fChanged[nx][i] = false;
+          }
+        }
   }
 
 };

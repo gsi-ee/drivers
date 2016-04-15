@@ -33,8 +33,22 @@ class NyxorReceiverCoreRegisters
   uint16_t   fTestCode2; //< NX value2 test code
 
 
+  bool fAnything_Changed;  // true if anything was changed in setup by gui
+  bool fNXControl_Changed;    //< true if changed nxyter control register
+  bool fTriggerPre_Changed;    //< true if changedPre  trigger time
+  bool fTriggerPost_Changed;    //< true if changedPost trigger time
+  bool fDelayTestPulse_Changed;    //< true if changed Test pulse delay time
+  bool fDelayTrigger_Changed;    //< true if changed Trigger delay time
+  bool fTestCodeADC_Changed;    //< true if changed ADC test code
+  bool fTestCode1_Changed;    //< true if changed NX value1 test code
+  bool fTestCode2_Changed;    //< true if changed NX value2 test code
+
+
   NyxorReceiverCoreRegisters(): fNXControl(0), fTriggerPre(0),fTriggerPost(0),fDelayTestPulse(0), fDelayTrigger(0),fTestCodeADC(0),
-      fTestCode1(0),fTestCode2(0) {}
+      fTestCode1(0),fTestCode2(0)
+    {
+      ResetChanged();
+    }
 
   void Dump(){
     printf ("-----Nyxor Receiver core register dump:");
@@ -48,6 +62,20 @@ class NyxorReceiverCoreRegisters
       printf ("TestCode2: \t0x%x,\n", fTestCode2);
 
   }
+
+  void ResetChanged()
+  {
+    fAnything_Changed=false;
+    fNXControl_Changed=false;
+    fTriggerPre_Changed=false;
+    fTriggerPost_Changed=false;
+    fDelayTestPulse_Changed=false;
+    fDelayTrigger_Changed=false;
+    fTestCodeADC_Changed=false;
+    fTestCode1_Changed=false;
+    fTestCode2_Changed=false;
+  }
+
 
 };
 

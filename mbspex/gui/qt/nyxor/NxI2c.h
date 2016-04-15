@@ -114,6 +114,8 @@ namespace nxyter {
          // following methods taken from former base class i2cDevice.
          // we will implement this by plain gosipcmd calls of NyxorGui:
 
+
+
          int setRegister(uint8_t reg, uint8_t val, bool veri=false);
          int getRegister(uint8_t reg, uint8_t& val);
          int getRegister16(uint8_t reg, uint16_t& val);
@@ -127,6 +129,9 @@ namespace nxyter {
          int getMailboxRegister(uint8_t reg, uint8_t *val, int nval);
 
 
+         // JAM2016: these are forwards to activate i2c cores directly from widget slots:
+         void enableI2C();
+         void disableI2C();
 
 
       protected:

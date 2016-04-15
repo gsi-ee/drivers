@@ -633,7 +633,7 @@ void NyxorGui::ClearOutputBtn_clicked ()
 //std::cout << "NyxorGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
   TextOutput->setPlainText (
-      "Welcome to NYXOR GUI!\n\t v0.95 of 15-April-2016 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI");
+      "Welcome to NYXOR GUI!\n\t v0.96 of 15-April-2016 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI");
 
 }
 
@@ -665,7 +665,7 @@ void NyxorGui::ConfigBtn_clicked ()
   QString com (buffer);
   QString result = ExecuteGosipCmd (com, 10000);    // this will just execute the command in shell, gosip or not
   AppendTextWindow (result);
-
+  ShowBtn_clicked() ;
 }
 
 void NyxorGui::DebugBox_changed (int on)
@@ -738,8 +738,10 @@ void NyxorGui::SetRegisters ()
 // write register values from strucure with gosipcmd
   for (int nx = 0; nx < NYXOR_NUMNX; nx++)
   {
-    EnableI2CWrite (nx);
-    fNxTab[nx]->setSubConfig ();
+    if(!fNxTab[nx]->needSetSubConfig()) continue;
+      //EnableI2CWrite (nx);
+      EnableI2CRead (nx); // read means without reset
+      fNxTab[nx]->setSubConfig ();
   }
 
   fGeneralTab->SetRegisters();
@@ -1064,7 +1066,7 @@ void printm (char *fmt, ...)
 void NyxorGui::I2c_sleep ()
 {
   //usleep(500);
-  usleep(300);
+  usleep(500);
 // JAM: test avoid arbirtrary loop
 //#define N_LOOP 500000
 //#define N_LOOP 300000

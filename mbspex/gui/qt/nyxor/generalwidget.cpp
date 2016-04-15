@@ -70,22 +70,29 @@ void GeneralNyxorWidget::SetRegisters()
 {
   //printf("GeneralNyxorWidget::SetRegisters()...\n");
   //fSetup.Dump();
-
-  //fxOwner->DisableI2C();
+  if(!fSetup.fAnything_Changed) return;
 
   fxOwner->ReceiverReset();
   fxOwner->NXTimestampReset();
   //Note: The first step (The resetting of nXyter chip) has to be always executed.
+  if(fSetup.fNXControl_Changed)
+    fxOwner->WriteNyxorAddress(NXREC_CTRL_W, fSetup.fNXControl);
+  if(fSetup.fTriggerPre_Changed)
+    fxOwner->WriteNyxorAddress(NXREC_PRETRIG_W, fSetup.fTriggerPre);
+  if(fSetup.fTriggerPost_Changed)
+    fxOwner->WriteNyxorAddress(NXREC_POSTTRIG_W,fSetup.fTriggerPost);
+  if(fSetup.fDelayTestPulse_Changed)
+    fxOwner->WriteNyxorAddress(NXREC_DELAY1_W, fSetup.fDelayTestPulse);
+  if(fSetup.fDelayTrigger_Changed)
+    fxOwner->WriteNyxorAddress(NXREC_DELAY2_W, fSetup.fDelayTrigger);
+  if(fSetup.fTestCodeADC_Changed)
+    fxOwner->WriteNyxorAddress(NXREC_TESTCODE_ADC_W, fSetup.fTestCodeADC);
+  if(fSetup.fTestCode1_Changed)
+    fxOwner->WriteNyxorAddress(NXREC_TESTCODE_1_W, fSetup.fTestCode1);
+  if(fSetup.fTestCode2_Changed)
+    fxOwner->WriteNyxorAddress(NXREC_TESTCODE_2_W, fSetup.fTestCode2);
 
-  fxOwner->WriteNyxorAddress(NXREC_CTRL_W, fSetup.fNXControl);
-  fxOwner->WriteNyxorAddress(NXREC_PRETRIG_W, fSetup.fTriggerPre);
-  fxOwner->WriteNyxorAddress(NXREC_POSTTRIG_W,fSetup.fTriggerPost);
-  fxOwner->WriteNyxorAddress(NXREC_DELAY1_W, fSetup.fDelayTestPulse);
-  fxOwner->WriteNyxorAddress(NXREC_DELAY2_W, fSetup.fDelayTrigger);
-  fxOwner->WriteNyxorAddress(NXREC_TESTCODE_ADC_W, fSetup.fTestCodeADC);
-  fxOwner->WriteNyxorAddress(NXREC_TESTCODE_1_W, fSetup.fTestCode1);
-  fxOwner->WriteNyxorAddress(NXREC_TESTCODE_2_W, fSetup.fTestCode2);
-
+  fSetup.ResetChanged();
 }
 
 void GeneralNyxorWidget::RefreshView ()
@@ -113,7 +120,7 @@ void GeneralNyxorWidget::RefreshView ()
   TestCodeNX2LineEdit->setText(pre+text.setNum (fSetup.fTestCode2, numberbase));
 
 
-
+  fSetup.ResetChanged();
 
 
 }
@@ -121,14 +128,66 @@ void GeneralNyxorWidget::RefreshView ()
 void GeneralNyxorWidget::EvaluateView ()
 {
   int numberbase=fxOwner->GetNumberBase();
-  fSetup.fNXControl=nxControlEdit->text ().toUInt (0, numberbase);
-  fSetup.fTriggerPre=TriggerPreLineEdit->text ().toUInt (0, numberbase);
-  fSetup.fTriggerPost=TriggerPostLineEdit->text ().toUInt (0, numberbase);
-  fSetup.fDelayTestPulse=SecondTestPulseDelayLineEdit->text ().toUInt (0, numberbase);
-  fSetup.fDelayTrigger=TestAcquisitionTriggerDelayLineEdit->text ().toUInt (0, numberbase);
-  fSetup.fTestCodeADC=ADCTestCodeLineEdit->text ().toUInt (0, numberbase);
-  fSetup.fTestCode1=TestCodeNX1LineEdit->text ().toUInt (0, numberbase);
-  fSetup.fTestCode2=TestCodeNX2LineEdit->text ().toUInt (0, numberbase);
+  int val=0;
+
+  val=nxControlEdit->text ().toUInt (0, numberbase);
+  if(val!=fSetup.fNXControl)
+    {
+      fSetup.fAnything_Changed=true;
+      fSetup.fNXControl_Changed=true;
+      fSetup.fNXControl=val;
+    }
+  val=TriggerPreLineEdit->text ().toUInt (0, numberbase);
+  if(val!=fSetup.fTriggerPre)
+  {
+      fSetup.fAnything_Changed=true;
+      fSetup.fTriggerPre_Changed=true;
+      fSetup.fTriggerPre=val;
+  }
+  val=TriggerPostLineEdit->text ().toUInt (0, numberbase);
+  if(val!=fSetup.fTriggerPost)
+  {
+      fSetup.fAnything_Changed=true;
+      fSetup.fTriggerPost_Changed=true;
+      fSetup.fTriggerPost=val;
+
+  }
+  val=SecondTestPulseDelayLineEdit->text ().toUInt (0, numberbase);
+  if(val!=fSetup.fDelayTestPulse)
+  {
+      fSetup.fAnything_Changed=true;
+      fSetup.fDelayTestPulse_Changed=true;
+      fSetup.fDelayTestPulse=val;
+  }
+  val=TestAcquisitionTriggerDelayLineEdit->text ().toUInt (0, numberbase);
+  if(val!=fSetup.fDelayTrigger)
+  {
+    fSetup.fAnything_Changed=true;
+    fSetup.fDelayTestPulse_Changed=true;
+    fSetup.fDelayTrigger=val;
+  }
+  val=ADCTestCodeLineEdit->text ().toUInt (0, numberbase);
+  if(val!=fSetup.fTestCodeADC)
+  {
+    fSetup.fAnything_Changed=true;
+    fSetup.fTestCodeADC_Changed=true;
+    fSetup.fTestCodeADC=val;
+  }
+  val=TestCodeNX1LineEdit->text ().toUInt (0, numberbase);
+  if(val!=fSetup.fTestCode1)
+  {
+    fSetup.fAnything_Changed=true;
+    fSetup.fTestCode1_Changed=true;
+    fSetup.fTestCode1=val;
+  }
+  val=TestCodeNX2LineEdit->text ().toUInt (0, numberbase);
+  if(val!=fSetup.fTestCode2)
+  {
+      fSetup.fAnything_Changed=true;
+      fSetup.fTestCode2_Changed=true;
+    fSetup.fTestCode2=val;
+  }
+
 }
 
 

@@ -33,6 +33,9 @@ class NxyterWidget : public QWidget , public Ui::NxyterWidget {
 
       bool  fIgnore;
 
+      int fUpdateFlags; //< mask here which parts of nxyter have to be updated.
+                       // can be nxytger::kDoAll, kDoMask, kDoCore, kDoTrim;
+
    public:
       NxyterWidget(QWidget* parent, NyxorGui* owner, uint8_t id);
 
@@ -41,6 +44,8 @@ class NxyterWidget : public QWidget , public Ui::NxyterWidget {
 
       /** JAM new: printout of current configuration*/
       void dumpConfig(std::ostream& os);
+
+      bool needSetSubConfig(){return (fUpdateFlags!=0);}
 
       virtual bool getSubConfig();
       virtual bool setSubConfig();

@@ -8,6 +8,11 @@ NyxorADCWidget::NyxorADCWidget(QWidget* parent, NyxorGui* owner):
 
     setupUi(this);
 
+    // map to designer widget names:
+    fADCTransmitLineEdit[0]= Transmit1LineEdit;
+    fADCTransmitLineEdit[1]= Transmit2LineEdit;
+    fADCTransmitLineEdit[2]= Transmit3LineEdit;
+    fADCTransmitLineEdit[3]= Transmit4LineEdit;
 }
 
 
@@ -33,16 +38,19 @@ void NyxorADCWidget::SetRegisters()
   //printf("NyxorADCWidget::SetRegisters()...\n");
   //fSetup.Dump();
 
+  if(!fSetup.fAnyChange) return;
+
   //fxOwner->DisableI2C();
   fxOwner->EnableSPI();
-  fxOwner->WriteNyxorSPI(SPI_ADC_DC0PHASE, fSetup.fDC0Phase);
+  if(fSetup.fDC0Phase_Changed)
+    fxOwner->WriteNyxorSPI(SPI_ADC_DC0PHASE, fSetup.fDC0Phase);
   for(int i=0; i<NUM_ADC_TRANSMITREGS;++i)
     {
-      fxOwner->WriteNyxorSPI(SPI_ADC_PATTERNBASE + i, fSetup.fTransmit[i]);
+      if(fSetup.fTransmit_Changed[i])
+        fxOwner->WriteNyxorSPI(SPI_ADC_PATTERNBASE + i, fSetup.fTransmit[i]);
     }
-
-
    fxOwner->DisableSPI();
+   fSetup.ResetChanged();
 }
 
 void NyxorADCWidget::RefreshView ()
@@ -52,28 +60,38 @@ void NyxorADCWidget::RefreshView ()
   int numberbase=fxOwner->GetNumberBase();
   numberbase == 16 ? pre = "0x" : pre = "";
   DC0PhaselineEdit->setText(pre+text.setNum (fSetup.fDC0Phase, numberbase));
-  Transmit1LineEdit->setText(pre+text.setNum (fSetup.fTransmit[0], numberbase));
-  Transmit2LineEdit->setText(pre+text.setNum (fSetup.fTransmit[1], numberbase));
-  Transmit3LineEdit->setText(pre+text.setNum (fSetup.fTransmit[2], numberbase));
-  Transmit4LineEdit->setText(pre+text.setNum (fSetup.fTransmit[3], numberbase));
+  for(int i=0; i<NUM_ADC_TRANSMITREGS;++i)
+      {
+        fADCTransmitLineEdit[i]->setText(pre+text.setNum (fSetup.fTransmit[i], numberbase));
 
-
-
-
-
-
+      }
+  fSetup.ResetChanged();
 }
 
 void NyxorADCWidget::EvaluateView ()
 {
-  int numberbase=fxOwner->GetNumberBase();
+  int numberbase = fxOwner->GetNumberBase ();
 
-  fSetup.fDC0Phase=DC0PhaselineEdit->text ().toUInt (0, numberbase);
+  int val = 0;
+  val = DC0PhaselineEdit->text ().toUInt (0, numberbase);
+  if (val != fSetup.fDC0Phase)
+  {
+    fSetup.fAnyChange = true;
+    fSetup.fDC0Phase_Changed = true;
+    fSetup.fDC0Phase = val;
+  }
+  for (int i = 0; i < NUM_ADC_TRANSMITREGS; ++i)
+  {
 
-  fSetup.fTransmit[0]=Transmit1LineEdit->text ().toUInt (0, numberbase);
-  fSetup.fTransmit[1]=Transmit2LineEdit->text ().toUInt (0, numberbase);
-  fSetup.fTransmit[2]=Transmit3LineEdit->text ().toUInt (0, numberbase);
-  fSetup.fTransmit[3]=Transmit4LineEdit->text ().toUInt (0, numberbase);
+    val = fADCTransmitLineEdit[i]->text ().toUInt (0, numberbase);
+    if (val != fSetup.fTransmit[i])
+    {
+      fSetup.fAnyChange = true;
+      fSetup.fTransmit_Changed[i] = true;
+      fSetup.fTransmit[i] = val;
+    }
+  }
+
 }
 
 

@@ -68,17 +68,19 @@ void NyxorDACWidget::SetRegisters()
 {
   //printf("NyxorDACWidget::SetRegisters()...\n");
   //fSetup.Dump();
-
+  if(!fSetup.fAnyChange) return;
   for (int nx = 0; nx < NYXOR_NUMNX; ++nx)
      {
        fxOwner->EnableI2CRead(nx); // note: also for writing the dacs, the nx chip "read mode" is used!
        for (int i = 0; i < NUM_NYXORDACS; ++i)
        {
-         fxOwner->WriteNyxorDAC(nx, i, fSetup.fRegister[nx][i]);
+         if(fSetup.fChanged[nx][i])
+           fxOwner->WriteNyxorDAC(nx, i, fSetup.fRegister[nx][i]);
        }
      }
 
   fxOwner->DisableI2C();
+  fSetup.ResetChanged();
 }
 
 void NyxorDACWidget::RefreshView ()
@@ -99,6 +101,7 @@ void NyxorDACWidget::RefreshView ()
      }
    }
   fSupressSignals=false;
+  fSetup.ResetChanged();
 }
 
 void NyxorDACWidget::EvaluateView ()
@@ -109,7 +112,14 @@ void NyxorDACWidget::EvaluateView ()
    {
      for (int i = 0; i < NUM_NYXORDACS; ++i)
      {
-       fSetup.fRegister[nx][i] = fDACLineEdit[nx][i]->text ().toUInt (0, numberbase);
+       int val=fDACLineEdit[nx][i]->text ().toUInt (0, numberbase);
+       if(fSetup.fRegister[nx][i]!=val)
+         {
+           fSetup.fRegister[nx][i] = val;
+           fSetup.fChanged[nx][i] = true;
+           fSetup.fAnyChange=true;
+         }
+
      }
    }
 
@@ -118,7 +128,8 @@ void NyxorDACWidget::EvaluateView ()
 
 void NyxorDACWidget::DACSpinBox_changed (int val)
 {
-  if(fSupressSignals) return;
+  if (fSupressSignals)
+    return;
   //printf ("DACSpinBox_changed for val:%d\n",val);
   QString pre;
   QString text;
@@ -128,11 +139,16 @@ void NyxorDACWidget::DACSpinBox_changed (int val)
   {
     for (int i = 0; i < NUM_NYXORDACS; ++i)
     {
-
-      fSetup.fRegister[nx][i] = fDACSpinBox[nx][i]->value();
-      fSupressSignals=true; // unneccessary here, since edit finished will not be send when text is changed programmatically. anyhow...
-      fDACLineEdit[nx][i]->setText (pre + text.setNum (fSetup.fRegister[nx][i], numberbase));
-      fSupressSignals=false;
+      int val = fDACSpinBox[nx][i]->value ();
+      if (fSetup.fRegister[nx][i] != val)
+      {
+        fSetup.fRegister[nx][i] = val;
+        fSetup.fChanged[nx][i] = true;
+        fSetup.fAnyChange = true;
+        fSupressSignals = true;    // unneccessary here, since edit finished will not be send when text is changed programmatically. anyhow...
+        fDACLineEdit[nx][i]->setText (pre + text.setNum (fSetup.fRegister[nx][i], numberbase));
+        fSupressSignals = false;
+      }
     }
   }
 
@@ -140,17 +156,25 @@ void NyxorDACWidget::DACSpinBox_changed (int val)
 
 void NyxorDACWidget::DACLineEdit_finished ()
 {
-  if(fSupressSignals) return;
+  if (fSupressSignals)
+    return;
   //printf ("DACLineEdit_finished\n");
   int numberbase = fxOwner->GetNumberBase ();
   for (int nx = 0; nx < NYXOR_NUMNX; ++nx)
   {
     for (int i = 0; i < NUM_NYXORDACS; ++i)
     {
-      fSetup.fRegister[nx][i] = fDACLineEdit[nx][i]->text ().toUInt (0, numberbase);
-      fSupressSignals=true;
-      fDACSpinBox[nx][i]->setValue (fSetup.fRegister[nx][i]);
-      fSupressSignals=false;
+      int val = fDACLineEdit[nx][i]->text ().toUInt (0, numberbase);
+      if (fSetup.fRegister[nx][i] != val)
+      {
+        fSetup.fRegister[nx][i] = val;
+        fSetup.fChanged[nx][i] = true;
+        fSetup.fAnyChange = true;
+
+        fSupressSignals = true;
+        fDACSpinBox[nx][i]->setValue (fSetup.fRegister[nx][i]);
+        fSupressSignals = false;
+      }
     }
   }
 

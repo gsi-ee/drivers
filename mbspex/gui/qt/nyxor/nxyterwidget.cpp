@@ -10,7 +10,7 @@
 const int OtherRegsId[] = { 38, 39, 43, 44, 45 };
 
 NxyterWidget::NxyterWidget(QWidget* parent, NyxorGui* owner, uint8_t id):
-   QWidget(parent)
+   QWidget(parent),fUpdateFlags(0)
 {
     fI2C= new nxyter::NxI2c(owner, id);
 
@@ -238,7 +238,10 @@ bool NxyterWidget::getSubConfig()
 
 bool NxyterWidget::setSubConfig()
 {
-   return fI2C->setContext(fContext) == 0;
+  bool rev=true;
+  rev=(fI2C->setContext(fContext, fUpdateFlags) == 0);
+  fUpdateFlags=0;
+   return rev;
 }
 
 bool NxyterWidget::fillCmdFile(FILE* f)
@@ -288,6 +291,7 @@ void NxyterWidget::showContext()
    showMask();
 
    showThreshold();
+   fUpdateFlags=0;
 }
 
 
@@ -326,6 +330,8 @@ void NxyterWidget::showThreshold(int select)
 void NxyterWidget::biasRegChanged(int nreg)
 {
    if (fIgnore) return;
+   //printf("biasRegChanged - %d \n",nreg);
+   //fUpdateFlags |= nxyter::kDoCore; // NOTE: we do not need this here, since we change values directly
    fIgnore = true;
 
    int value = 0;
@@ -341,7 +347,10 @@ void NxyterWidget::biasRegChanged(int nreg)
 
    fContext.setRegister(BiasShift+nreg, value);
 
+   // JAM2016: need to activate i2c on nyxor first:
+   fI2C->enableI2C();
    fI2C->setRegister(BiasShift+nreg, value);
+   fI2C->disableI2C();
 
    fIgnore = false;
 }
@@ -349,7 +358,9 @@ void NxyterWidget::biasRegChanged(int nreg)
 void NxyterWidget::maskRowColumn(int pos)
 {
    if (fIgnore) return;
+   //printf("maskRowColumn - %d\n",pos);
 
+   fUpdateFlags |= nxyter::kDoMask;
    //setSubChangedOn();
 
    if (pos==999) {
@@ -384,7 +395,8 @@ void NxyterWidget::maskRowColumn(int pos)
 void NxyterWidget::thresholdRowColumn(int pos)
 {
    if (fIgnore) return;
-
+   //printf("thresholdRowColumn - %d\n",pos);
+   fUpdateFlags |= nxyter::kDoTrim; // JAM2016
    //setSubChangedOn();
 
    if (pos==999) {
@@ -460,7 +472,8 @@ void NxyterWidget::thresholdRowColumn(int pos)
 void NxyterWidget::configBitChanged(int nbit)
 {
    if (fIgnore) return;
-
+   //printf("configBitChanged - %d\n",nbit);
+   fUpdateFlags |= nxyter::kDoCore; // JAM2016
    bool on = fConfigChks[nbit]->checkState() == Qt::Checked;
 
    fContext.setConfigurationBit(nbit, on);
@@ -471,7 +484,8 @@ void NxyterWidget::configBitChanged(int nbit)
 void NxyterWidget::otherRegsChanged(int n)
 {
    if (fIgnore) return;
-
+   //printf("otherRegsChanged - %d\n",n);
+   fUpdateFlags |= nxyter::kDoCore;// JAM2016
    int nreg = OtherRegsId[n];
 
    int value = fOtherSpins[n]->value();
