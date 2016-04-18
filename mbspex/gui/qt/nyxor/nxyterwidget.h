@@ -21,6 +21,8 @@ class NxyterWidget : public QWidget , public Ui::NxyterWidget {
    enum { NumBias = 14, BiasShift = 16, MaskSize = 128, NumConfigBits=12, NumOtherRegs = 5 };
 
    protected:
+
+      NyxorGui* fxOwner;
       nxyter::NxI2c*    fI2C;
       nxyter::NxContext  fContext;
 

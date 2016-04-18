@@ -86,9 +86,9 @@ class NyxorADCWidget : public QWidget , public Ui::NyxorADCWidget {
      void EvaluateView ();
 
 
-//   public slots:
+   public slots:
 
-
+     void  AnyLineEdit_finished();
 
 };
 

@@ -131,6 +131,8 @@ class GeneralNyxorWidget : public QWidget , public Ui::GeneralNyxorWidget {
    void ControlBit_clicked(bool);
    void nxControlEdit_finished();
 
+   void Testcodes_Edit_finished();
+
 };
 
 #endif

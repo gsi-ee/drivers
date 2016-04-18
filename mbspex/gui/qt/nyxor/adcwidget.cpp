@@ -13,6 +13,15 @@ NyxorADCWidget::NyxorADCWidget(QWidget* parent, NyxorGui* owner):
     fADCTransmitLineEdit[1]= Transmit2LineEdit;
     fADCTransmitLineEdit[2]= Transmit3LineEdit;
     fADCTransmitLineEdit[3]= Transmit4LineEdit;
+
+
+    QObject::connect (DC0PhaselineEdit, SIGNAL(editingFinished()), this, SLOT (AnyLineEdit_finished()));
+    for (int i = 0; i < NUM_ADC_TRANSMITREGS; ++i)
+      {
+        QObject::connect (fADCTransmitLineEdit[i], SIGNAL(editingFinished()), this, SLOT (AnyLineEdit_finished()));
+      }
+
+
 }
 
 
@@ -95,6 +104,11 @@ void NyxorADCWidget::EvaluateView ()
 }
 
 
-
-
-
+void NyxorADCWidget::AnyLineEdit_finished ()
+{
+  if(fxOwner->IsAutoApply())
+  {
+      EvaluateView();
+      SetRegisters();
+  }
+}

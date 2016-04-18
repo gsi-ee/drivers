@@ -151,6 +151,7 @@ void NyxorDACWidget::DACSpinBox_changed (int val)
       }
     }
   }
+  if(fxOwner->IsAutoApply()) SetRegisters();
 
 }
 
@@ -177,6 +178,7 @@ void NyxorDACWidget::DACLineEdit_finished ()
       }
     }
   }
+  if(fxOwner->IsAutoApply()) SetRegisters();
 
 }
 

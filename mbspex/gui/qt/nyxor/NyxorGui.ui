@@ -31,7 +31,7 @@
         <x>0</x>
         <y>0</y>
         <width>769</width>
-        <height>650</height>
+        <height>629</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout">
@@ -286,7 +286,7 @@
             <x>0</x>
             <y>0</y>
             <width>747</width>
-            <height>559</height>
+            <height>538</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout">
@@ -351,7 +351,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>753</width>
+        <width>769</width>
         <height>115</height>
        </rect>
       </property>
@@ -393,7 +393,7 @@
           <item>
            <widget class="QCheckBox" name="checkBox_AA">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked ADC_Baselines will be applyed directly when DAC spinbox is changed &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked modified values will be applyed directly when they are changed on gui &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>AutoApply</string>

@@ -10,7 +10,7 @@
 const int OtherRegsId[] = { 38, 39, 43, 44, 45 };
 
 NxyterWidget::NxyterWidget(QWidget* parent, NyxorGui* owner, uint8_t id):
-   QWidget(parent),fUpdateFlags(0)
+   QWidget(parent),fxOwner(owner), fUpdateFlags(0)
 {
     fI2C= new nxyter::NxI2c(owner, id);
 
@@ -331,7 +331,6 @@ void NxyterWidget::biasRegChanged(int nreg)
 {
    if (fIgnore) return;
    //printf("biasRegChanged - %d \n",nreg);
-   //fUpdateFlags |= nxyter::kDoCore; // NOTE: we do not need this here, since we change values directly
    fIgnore = true;
 
    int value = 0;
@@ -347,10 +346,17 @@ void NxyterWidget::biasRegChanged(int nreg)
 
    fContext.setRegister(BiasShift+nreg, value);
 
-   // JAM2016: need to activate i2c on nyxor first:
-   fI2C->enableI2C();
-   fI2C->setRegister(BiasShift+nreg, value);
-   fI2C->disableI2C();
+   if(fxOwner->IsAutoApply()) // new: only change directly when auto apply box is checke JAM2016
+   {
+     // JAM2016: need to activate i2c on nyxor first:
+     fI2C->enableI2C();
+     fI2C->setRegister(BiasShift+nreg, value);
+     fI2C->disableI2C();
+   }
+   else
+   {
+     fUpdateFlags |= nxyter::kDoCore;
+   }
 
    fIgnore = false;
 }
@@ -361,7 +367,6 @@ void NxyterWidget::maskRowColumn(int pos)
    //printf("maskRowColumn - %d\n",pos);
 
    fUpdateFlags |= nxyter::kDoMask;
-   //setSubChangedOn();
 
    if (pos==999) {
       for (int n=0;n<MaskSize;n++) {
@@ -386,10 +391,20 @@ void NxyterWidget::maskRowColumn(int pos)
    if (pos<MaskSize) {
       bool off = fMaskChks[pos]->checkState() == Qt::Unchecked;
       fContext.setChannelMaskBit(pos, off);
-      return;
+      //return; // JAM2016do not return because of auto apply
    }
 
    showMask();
+
+   if(fxOwner->IsAutoApply())
+     {
+     //printf("maskRowColumn with auto apply and flags=0x%x\n",fUpdateFlags);
+       // JAM2016: need to activate i2c on nyxor first:
+       fI2C->enableI2C();
+       setSubConfig();  // note that we still set always complete group, not only changed entry
+       fI2C->disableI2C();
+     }
+
 }
 
 void NxyterWidget::thresholdRowColumn(int pos)
@@ -463,10 +478,20 @@ void NxyterWidget::thresholdRowColumn(int pos)
          fContext.setThresholdTrim(pos, value);
       }
 
-      return;
+      //return; // do not return because of auto apply // JAM2016
    }
 
    showThreshold();
+
+   if(fxOwner->IsAutoApply())
+     {
+     //printf("thresholdRowColumn with auto apply and flags=0x%x\n",fUpdateFlags);
+          // JAM2016: need to activate i2c on nyxor first:
+       fI2C->enableI2C();
+       setSubConfig();  // note that we still set always complete group, not only changed entry
+       fI2C->disableI2C();
+     }
+
 }
 
 void NxyterWidget::configBitChanged(int nbit)
@@ -478,7 +503,13 @@ void NxyterWidget::configBitChanged(int nbit)
 
    fContext.setConfigurationBit(nbit, on);
 
-   //setSubChangedOn();
+   if(fxOwner->IsAutoApply())
+        {
+             // JAM2016: need to activate i2c on nyxor first:
+          fI2C->enableI2C();
+          setSubConfig();  // note that we still set always complete group, not only changed entry
+          fI2C->disableI2C();
+        }
 }
 
 void NxyterWidget::otherRegsChanged(int n)
@@ -492,7 +523,14 @@ void NxyterWidget::otherRegsChanged(int n)
 
    fContext.setRegister(nreg, value);
 
-   //setSubChangedOn();
+   if(fxOwner->IsAutoApply())
+       {
+               // JAM2016: need to activate i2c on nyxor first:
+            fI2C->enableI2C();
+            setSubConfig();  // note that we still set always complete group, not only changed entry
+            fI2C->disableI2C();
+       }
+
 }
 
 

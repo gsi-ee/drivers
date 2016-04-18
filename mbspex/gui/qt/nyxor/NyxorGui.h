@@ -160,10 +160,17 @@ public:
 
      int GetNumberBase(){return fNumberBase;}
 
+
+     bool IsAutoApply(){return checkBox_AA->isChecked();}
+
 #ifdef USE_MBSPEX_LIB
 
    /** singleton pointer to forward mbspex output*/
      static NyxorGui* fInstance;
+
+     /** contains currently configured slaves at the chains.*/
+     struct pex_sfp_links fSFPChains;
+
 #endif
 
 protected:
@@ -171,6 +178,8 @@ protected:
 #if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
   QProcessEnvironment fEnv;
 #endif
+
+
 
 
   NxyterWidget* fNxTab[NYXOR_NUMNX];
@@ -189,12 +198,12 @@ protected:
   int fNumberBase;
 
   /** index of sfp channel,   -1 for broadcast */
-  int fChannel;
+  int fSFP;
   /** index of slave device , -1 for broadcast*/
   int fSlave;
 
   /** remember sfp channel to recover after broadcast*/
-  int fChannelSave;
+  int fSFPSave;
 
   /** remember slave channel to recover after broadcast*/
   int fSlaveSave;
@@ -223,7 +232,8 @@ protected:
   /** copy sfp and slave from gui to variables*/
   void EvaluateSlave ();
 
-
+  /** update initilized chain display and slave limit*/
+   void RefreshChains();
 
   /** set register from status structure*/
   void SetRegisters ();
@@ -231,7 +241,8 @@ protected:
   /** get register contents to status structure*/
   void GetRegisters ();
 
-
+  /** Evaluate from driver how many slaves are connected to sfps*/
+  void GetSFPChainSetup();
 
   /** Read from address from sfp and slave, returns value*/
   int ReadGosip (int sfp, int slave, int address);
@@ -278,6 +289,8 @@ protected:
   bool AssertNoBroadcast (bool verbose=true);
 
 
+  /** Check if chain for given sfp and slave index is configured correctly*/
+  bool AssertChainConfigured (bool verbose=true);
 
 
 

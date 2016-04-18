@@ -13,6 +13,7 @@
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QDateTime>
+#include <QTimer>
 
 #include <sstream>
 #include <string.h>
@@ -32,7 +33,7 @@ NyxorGui* NyxorGui::fInstance = 0;
  *  name 'name'.'
  */
 NyxorGui::NyxorGui (QWidget* parent) :
-    QWidget (parent), fDebug (false), fSaveConfig (false), fChannel (0), fSlave (0), fChannelSave (0), fSlaveSave (0),
+    QWidget (parent), fDebug (false), fSaveConfig (false), fSFP (0), fSlave (0), fSFPSave (0), fSlaveSave (0),
         fConfigFile (0)
 {
   setupUi (this);
@@ -42,7 +43,7 @@ NyxorGui::NyxorGui (QWidget* parent) :
 
   fNumberBase = 10;
 
-  SFPspinBox->setValue (fChannel);
+  SFPspinBox->setValue (fSFP);
   SlavespinBox->setValue (fSlave);
 
   TextOutput->setCenterOnScroll (false);
@@ -113,6 +114,9 @@ void NyxorGui::ShowBtn_clicked ()
 {
 //std::cout << "NyxorGui::ShowBtn_clicked()"<< std::endl;
   EvaluateSlave ();
+  GetSFPChainSetup();
+  if(!AssertNoBroadcast(false)) return;
+  if(!AssertChainConfigured()) return;
   GetRegisters ();
   RefreshView ();
 }
@@ -126,7 +130,7 @@ void NyxorGui::ApplyBtn_clicked ()
   //std::cout << "InitChainBtn_clicked()"<< std::endl;
 
 // JAM disabled confirm window as wished by Henning H.
-//  snprintf (buffer, 1024, "Really apply NYXOR settings  to SFP %d Device %d?", fChannel, fSlave);
+//  snprintf (buffer, 1024, "Really apply NYXOR settings  to SFP %d Device %d?", fSFP, fSlave);
 //  if (QMessageBox::question (this, "NYXOR GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
 //      != QMessageBox::Yes)
 //  {
@@ -208,7 +212,7 @@ void NyxorGui::SaveConfigBtn_clicked ()
 
     for (int nx = 0; nx < NYXOR_NUMNX; nx++)
     {
-      QString header = QString ("#sfp %1 slave %2 nxyter %3 \n").arg (fChannel).arg (fSlave).arg (nx);
+      QString header = QString ("#sfp %1 slave %2 nxyter %3 \n").arg (fSFP).arg (fSlave).arg (nx);
       WriteConfigFile (header);
       const nxyter::NxContext* theContext = fNxTab[nx]->getContext ();
       std::stringstream buf;
@@ -289,7 +293,7 @@ int NyxorGui::WriteNiksConfig ()
   for (int ch = 0; ch < 4; ++ch)
   {
     QString sfpline = QString ("SFP%1_NYX_IN_USE     ").arg (ch);
-    if (fChannel == ch || (fChannel < 0 && ch == 0))
+    if (fSFP == ch || (fSFP < 0 && ch == 0))
     {
       for (int i = 0; i < 16; ++i)
       {
@@ -324,7 +328,7 @@ int NyxorGui::WriteNiksConfig ()
   WriteConfigFile (QString ("#\n"));
   WriteConfigFile (QString ("#\n"));
   uint16_t nxctrl=fGeneralTab->fSetup.fNXControl;
-  pline=QString ("NXY_CTRL SFP %1 NYX %2  \t\t0x%3\n").arg(fChannel).arg(fSlave).arg(nxctrl,0,16);
+  pline=QString ("NXY_CTRL SFP %1 NYX %2  \t\t0x%3\n").arg(fSFP).arg(fSlave).arg(nxctrl,0,16);
   WriteConfigFile (pline);
 
   // loop over nxyters for current sfp and slave:
@@ -338,12 +342,12 @@ int NyxorGui::WriteNiksConfig ()
 
       QString line;
       const nxyter::NxContext* theContext = fNxTab[nx]->getContext ();
-      line= QString("SFP %1 NYX %2 nXY %3 I2C_ADDR    \t\t0x%4 # wr\n").arg(fChannel).arg(fSlave).arg(nx).arg(iadd,0,16);
+      line= QString("SFP %1 NYX %2 nXY %3 I2C_ADDR    \t\t0x%4 # wr\n").arg(fSFP).arg(fSlave).arg(nx).arg(iadd,0,16);
       WriteConfigFile(line);
 
-      line= QString("SFP %1 NYX %2 nXY %3 RESET     \t\t0x%4 \n").arg(fChannel).arg(fSlave).arg(nx).arg(reset,0,16);
+      line= QString("SFP %1 NYX %2 nXY %3 RESET     \t\t0x%4 \n").arg(fSFP).arg(fSlave).arg(nx).arg(reset,0,16);
       WriteConfigFile(line);
-      line= QString("SFP %1 NYX %2 nXY %3 MASK      \t\t").arg(fChannel).arg(fSlave).arg(nx);
+      line= QString("SFP %1 NYX %2 nXY %3 MASK      \t\t").arg(fSFP).arg(fSlave).arg(nx);
       for(int m=0; m<16;++m)
       {
         uint8_t mval=theContext->getRegister(m); // mask registers are at the start of array
@@ -352,7 +356,7 @@ int NyxorGui::WriteNiksConfig ()
       line.append ("\n");
       WriteConfigFile(line);
 
-      line= QString("SFP %1 NYX %2 nXY %3 BIAS      \t\t").arg(fChannel).arg(fSlave).arg(nx);
+      line= QString("SFP %1 NYX %2 nXY %3 BIAS      \t\t").arg(fSFP).arg(fSlave).arg(nx);
       for(int b=0; b<14;++b)
           {
             uint8_t bval=theContext->getRegister(b+16);
@@ -361,7 +365,7 @@ int NyxorGui::WriteNiksConfig ()
       line.append ("\n");
       WriteConfigFile(line);
 
-      line= QString("SFP %1 NYX %2 nXY %3 CONFIG    \t\t").arg(fChannel).arg(fSlave).arg(nx);
+      line= QString("SFP %1 NYX %2 nXY %3 CONFIG    \t\t").arg(fSFP).arg(fSlave).arg(nx);
       for(int c=0; c<2;++c)
       {
         uint8_t cval=theContext->getRegister(c+32);
@@ -370,7 +374,7 @@ int NyxorGui::WriteNiksConfig ()
       line.append ("\n");
       WriteConfigFile(line);
 
-      line= QString("SFP %1 NYX %2 nXY %3 TEST_DELAY   \t\t").arg(fChannel).arg(fSlave).arg(nx);
+      line= QString("SFP %1 NYX %2 nXY %3 TEST_DELAY   \t\t").arg(fSFP).arg(fSlave).arg(nx);
       for(int d=0; d<2;++d)
       {
         uint8_t dval=theContext->getRegister(d+38);
@@ -379,7 +383,7 @@ int NyxorGui::WriteNiksConfig ()
       line.append ("\n");
       WriteConfigFile(line);
 
-      line= QString("SFP %1 NYX %2 nXY %3 CLOCK_DELAY   \t").arg(fChannel).arg(fSlave).arg(nx);
+      line= QString("SFP %1 NYX %2 nXY %3 CLOCK_DELAY   \t").arg(fSFP).arg(fSlave).arg(nx);
       for(int cl=0; cl<3;++cl)
       {
         uint8_t clval=theContext->getRegister(cl+43);
@@ -388,7 +392,7 @@ int NyxorGui::WriteNiksConfig ()
       line.append ("\n");
       WriteConfigFile(line);
 
-      line= QString("SFP %1 NYX %2 nXY %3 THR_TEST         \t").arg(fChannel).arg(fSlave).arg(nx);
+      line= QString("SFP %1 NYX %2 nXY %3 THR_TEST         \t").arg(fSFP).arg(fSlave).arg(nx);
       uint8_t testval=theContext->getTrimRegister(128);
       line.append(QString("0x%1 ").arg(testval,0,16));
       line.append ("\n");
@@ -399,7 +403,7 @@ int NyxorGui::WriteNiksConfig ()
            {
               int tstart=row*16;
               int tend=(row+1)*16 -1;
-              line= QString("SFP %1 NYX %2 nXY %3 THR_%4_%5      \t").arg(fChannel).arg(fSlave).arg(nx).arg(tstart).arg(tend);
+              line= QString("SFP %1 NYX %2 nXY %3 THR_%4_%5      \t").arg(fSFP).arg(fSlave).arg(nx).arg(tstart).arg(tend);
               for(int t=tstart; t<tstart+16;++t)
                 {
                   uint8_t tval=theContext->getTrimRegister(t);
@@ -412,7 +416,7 @@ int NyxorGui::WriteNiksConfig ()
 
       //uint8_t adcp=0x01;
       uint8_t adcp=fADCTab->fSetup.fDC0Phase;
-      line= QString("SFP %1 NYX %2 nXY %3 ADC_DCO_PHASE   \t0x%4 \n").arg(fChannel).arg(fSlave).arg(nx).arg(adcp,0,16);
+      line= QString("SFP %1 NYX %2 nXY %3 ADC_DCO_PHASE   \t0x%4 \n").arg(fSFP).arg(fSlave).arg(nx).arg(adcp,0,16);
       WriteConfigFile (line);
 
       //SFP 0 NYX 0 nXY 0 EXT_DACS    0x100 0x101 0x102 0x103
@@ -421,7 +425,7 @@ int NyxorGui::WriteNiksConfig ()
       uint16_t dac2=fDACTab->fSetup.fRegister[nx][2];
       uint16_t dac3=fDACTab->fSetup.fRegister[nx][3];
       line= QString("SFP %1 NYX %2 nXY %3 EXT_DACS   \t\t0x%4 0x%5 0x%6 0x%7 \n")
-          .arg(fChannel).arg(fSlave).arg(nx)
+          .arg(fSFP).arg(fSlave).arg(nx)
           .arg(dac0,0,16).arg(dac1,0,16).arg(dac2,0,16).arg(dac3,0,16);
       WriteConfigFile (line);
     } // for nx
@@ -435,7 +439,7 @@ void NyxorGui::InitChainBtn_clicked ()
   EvaluateSlave ();
 //std::cout << "InitChainBtn_clicked()"<< std::endl;
   bool ok;
-  snprintf (buffer, 1024, "Please specify NUMBER OF DEVICES to initialize at SFP %d ?", fChannel);
+  snprintf (buffer, 1024, "Please specify NUMBER OF DEVICES to initialize at SFP %d ?", fSFP);
 #if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
   int numslaves = QInputDialog::getInt (this, tr ("Number of Slaves?"), tr (buffer), 1, 1, 1024, 1, &ok);
 #else
@@ -445,20 +449,24 @@ void NyxorGui::InitChainBtn_clicked ()
 #endif
   if (!ok)
     return;
-  if (fChannel < 0)
+  if (fSFP < 0)
   {
     AppendTextWindow ("--- Error: Broadcast not allowed for init chain!");
     return;
   }
 #ifdef USE_MBSPEX_LIB
-  int rev = mbspex_slave_init (fPexFD, fChannel, numslaves);
+  int rev = mbspex_slave_init (fPexFD, fSFP, numslaves);
 
 #else
-  snprintf (buffer, 1024, "gosipcmd -i  %d %d", fChannel, numslaves);
+  snprintf (buffer, 1024, "gosipcmd -i  %d %d", fSFP, numslaves);
   QString com (buffer);
   QString result = ExecuteGosipCmd (com);
   AppendTextWindow (result);
 #endif
+
+  GetSFPChainSetup();
+  RefreshChains();
+
 }
 
 void NyxorGui::ResetBoardBtn_clicked ()
@@ -483,14 +491,15 @@ void NyxorGui::ResetBoardBtn_clicked ()
   AppendTextWindow (result);
 
 #endif
-
+  GetSFPChainSetup();
+  RefreshChains();
 }
 
 void NyxorGui::ResetSlaveBtn_clicked ()
 {
   char buffer[1024];
   EvaluateSlave ();
-  snprintf (buffer, 1024, "Really reset logic on NYXOR/GEMEX device at SFP %d, Slave %d ?", fChannel, fSlave);
+  snprintf (buffer, 1024, "Really reset logic on NYXOR/GEMEX device at SFP %d, Slave %d ?", fSFP, fSlave);
   if (QMessageBox::question (this, "Nyxor GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
       != QMessageBox::Yes)
   {
@@ -507,17 +516,17 @@ void NyxorGui::ResetSlaveBtn_clicked ()
 
 void NyxorGui::FullNyxorReset()
 {
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, 0x7f000000);
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x7f000000);
 }
 
 void NyxorGui::ReceiverReset()
 {
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, 0x7e000000);
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x7e000000);
 }
 
 void NyxorGui::NXTimestampReset()
 {
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, 0x21000001);
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x21000001);
 }
 
 void NyxorGui::DisableI2C()
@@ -527,7 +536,7 @@ void NyxorGui::DisableI2C()
 //  dat += 0x0 << 16;
   dat += I2C_CTRL_A << 24;
 
-   WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 }
 
 void NyxorGui::EnableI2CWrite (int nxid)
@@ -541,7 +550,7 @@ void NyxorGui::EnableI2CWrite (int nxid)
 
   dat += I2C_CTRL_A << 24;
 
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 
 }
 
@@ -559,7 +568,7 @@ void NyxorGui::EnableI2CRead (int nxid)
 
   dat += I2C_CTRL_A << 24;
 
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 
 }
 
@@ -568,11 +577,11 @@ void NyxorGui::EnableSPI()
 {
   int dat=0x80;
   dat += SPI_ENABLE_ADDR<< 24;
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);// enable sub core
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);// enable sub core
 
   dat=0x44;
   dat += SPI_BAUD_ADDR << 24;
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat); // set baud rate
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat); // set baud rate
 
 }
 
@@ -581,7 +590,7 @@ void NyxorGui::DisableSPI()
 {
   int dat=0;
   dat += SPI_ENABLE_ADDR<< 24;
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 
 }
 
@@ -593,16 +602,16 @@ void NyxorGui::BroadcastBtn_clicked (bool checked)
 //std::cout << "NyxorGui::BroadcastBtn_clicked with checked="<<checked<< std::endl;
   if (checked)
   {
-    fChannelSave = SFPspinBox->value ();
+    fSFPSave = SFPspinBox->value ();
     fSlaveSave = SlavespinBox->value ();
     SFPspinBox->setValue (-1);
     SlavespinBox->setValue (-1);
   }
   else
   {
-    SFPspinBox->setValue (fChannelSave);
+    RefreshChains();
+    SFPspinBox->setValue (fSFPSave);
     SlavespinBox->setValue (fSlaveSave);
-
   }
 }
 
@@ -633,7 +642,7 @@ void NyxorGui::ClearOutputBtn_clicked ()
 //std::cout << "NyxorGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
   TextOutput->setPlainText (
-      "Welcome to NYXOR GUI!\n\t v0.97 of 15-April-2016 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI");
+      "Welcome to NYXOR GUI!\n\t v0.98 of 18-April-2016 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI");
 
 }
 
@@ -686,14 +695,96 @@ void NyxorGui::HexBox_changed (int on)
   }
 }
 
+//void NyxorGui::Slave_changed (int)
+//{
+////std::cout << "NyxorGui::Slave_changed" << std::endl;
+//  EvaluateSlave ();
+//  bool triggerchangeable = AssertNoBroadcast (false);
+//  RefreshButton->setEnabled (triggerchangeable);
+//
+//}
+
+
 void NyxorGui::Slave_changed (int)
 {
-//std::cout << "NyxorGui::Slave_changed" << std::endl;
+  //std::cout << "NyxorGui::Slave_changed" << std::endl;
   EvaluateSlave ();
-  bool triggerchangeable = AssertNoBroadcast (false);
-  RefreshButton->setEnabled (triggerchangeable);
+  bool refreshable = AssertNoBroadcast (false);
+  RefreshButton->setEnabled (refreshable);
+
+  RefreshChains();
+  //if(checkBox_AA->isChecked() && refreshable)
+  if(refreshable)
+  {
+    // JAM note that we had a problem of prelling spinbox here (arrow buttons only, keyboard arrows are ok)
+    // probably caused by too long response time of this slot?
+    // workaround is to refresh the view delayed per single shot timer:
+    //std::cout << "Timer started" << std::endl;
+    QTimer::singleShot(10, this, SLOT(ShowBtn_clicked()));
+    //std::cout << "Timer end" << std::endl;
+    //ShowBtn_clicked() ;
+  }
+}
+
+
+
+
+
+
+
+void NyxorGui::GetSFPChainSetup()
+{
+//  std::cout<<"GetSFPChainSetup... "<< std::endl;
+#ifdef USE_MBSPEX_LIB
+    // broadcast mode: find out number of slaves and loop over all registered slaves
+    mbspex_get_configured_slaves(fPexFD, &fSFPChains);
+
+// probably later we also keep all setups as local copies?
+// for the moment, this gives too much overhead due to separated subtab data....
+//    // dynamically increase array of setup structures:
+//    for(int sfp=0; sfp<4; ++sfp)
+//    {
+//      while(fSetup[sfp].size()<fSFPChains.numslaves[sfp])
+//      {
+//        fSetup[sfp].push_back(FebexSetup());
+//        //std::cout<<"GetSFPChainSetup increased setup at sfp "<<sfp<<" to "<<fSetup[sfp].size()<<" slaves." << std::endl;
+//      }
+//    }
+/// end example from febex gui JAM 2016
+#endif
 
 }
+
+
+
+void NyxorGui::RefreshChains ()
+{
+
+#ifdef USE_MBSPEX_LIB
+  // show status of configured chains:
+  Chain0_Box->setValue (fSFPChains.numslaves[0]);
+  Chain1_Box->setValue (fSFPChains.numslaves[1]);
+  Chain2_Box->setValue (fSFPChains.numslaves[2]);
+  Chain3_Box->setValue (fSFPChains.numslaves[3]);
+
+  // set maximum value of device spinbox according to init chains:
+
+  if (fSFP >= 0) // only for non broadcast mode of slaves
+  {
+    if (fSFPChains.numslaves[fSFP] > 0) // configured chains
+    {
+      SlavespinBox->setMaximum (fSFPChains.numslaves[fSFP] - 1);
+      SlavespinBox->setEnabled (true);
+    }
+    else // non configured chains
+    {
+      SlavespinBox->setEnabled (false);
+    }
+  }
+#endif
+
+}
+
 
 void NyxorGui::RefreshView ()
 {
@@ -709,9 +800,11 @@ void NyxorGui::RefreshView ()
   fADCTab->RefreshView();
   fDACTab->RefreshView();
 
+  RefreshChains();
+
   QString statustext;
   statustext.append ("SFP ");
-  statustext.append (text.setNum (fChannel));
+  statustext.append (text.setNum (fSFP));
   statustext.append (" DEV ");
   statustext.append (text.setNum (fSlave));
   statustext.append (" - Last refresh:");
@@ -729,7 +822,7 @@ void NyxorGui::EvaluateView ()
 
 void NyxorGui::EvaluateSlave ()
 {
-  fChannel = SFPspinBox->value ();
+  fSFP = SFPspinBox->value ();
   fSlave = SlavespinBox->value ();
 }
 
@@ -783,9 +876,9 @@ uint8_t NyxorGui::ReadNyxorI2c (int nxid, uint8_t address)
   dat += I2C_COTR_A << 24;
 
 // set i2c address to read from:
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 // todo need error checking here?
-  val = ReadGosip (fChannel, fSlave, GOS_I2C_DRR1);
+  val = ReadGosip (fSFP, fSlave, GOS_I2C_DRR1);
 
   return val;
 }
@@ -798,8 +891,8 @@ uint8_t NyxorGui::ReadNyxorSPI (uint8_t address)
   dat += address << 8;
   dat += SPI_READ << 16;
   dat += SPI_TRANS_ADDR << 24;
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
-  val = ReadGosip (fChannel, fSlave, GOS_I2C_DRR1);
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
+  val = ReadGosip (fSFP, fSlave, GOS_I2C_DRR1);
   return val;
 }
 
@@ -829,14 +922,14 @@ uint16_t NyxorGui::ReadNyxorDAC(int nxid, uint8_t dacid)
    int dat=I2C_DAC_BASE_R + (0x100000 * nxid) + (0x1000 << dacid); // ?? really shift by dacid 0..3?
 
   // set i2c address to read from:
-    WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 
   // enable i2c receiver?
    dat =  I2C_RECEIVE << 24;
-   WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 
 
-    val = ReadGosip (fChannel, fSlave, GOS_I2C_DRR1);
+    val = ReadGosip (fSFP, fSlave, GOS_I2C_DRR1);
 
 
     return (val >> 6) & 0x3ff;
@@ -847,8 +940,8 @@ uint16_t NyxorGui::ReadNyxorDAC(int nxid, uint8_t dacid)
 uint32_t NyxorGui::ReadNyxorAddress (uint8_t address)
 {
   int dat = (address << 24);
-  WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
-  uint32_t val = ReadGosip (fChannel, fSlave, GOS_I2C_DRR1);
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
+  uint32_t val = ReadGosip (fSFP, fSlave, GOS_I2C_DRR1);
   // error handling?
   //printf("ReadNyxorAddress(0x%x) returns 0x%x\n",address,val);
   return val;
@@ -923,7 +1016,7 @@ int NyxorGui::WriteNyxorI2c (int nxid, uint8_t address, uint8_t value, bool veri
   dat += address << 8;
   dat += nxad << 16;
   dat += I2C_COTR_A << 24;
-  return WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+  return WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 }
 
 
@@ -934,7 +1027,7 @@ int NyxorGui::WriteNyxorSPI (uint8_t address, uint8_t value)
   dat += address << 8;
   dat += SPI_WRITE << 16;
   dat += SPI_TRANS_ADDR << 24;
-  return WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+  return WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 }
 
 
@@ -944,14 +1037,14 @@ int NyxorGui::WriteNyxorDAC(int nxid, uint8_t dacid, uint16_t value)
       //write external dac values
        //         l_wr_d = 0xb430000 + (0x100000 * l_k) + (0x1000 << l_l) + l_ext_dac[l_i][l_j][l_k][l_l];
   int dat= I2C_DAC_BASE_W + (0x100000 * nxid) + (0x1000 << dacid) + (value & 0xFFF);
-  return WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+  return WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 }
 
 int NyxorGui::WriteNyxorAddress (uint8_t address, uint32_t value)
 {
   //printf("WriteNyxorAddress(0x%x, 0x%x)\n",address,value);
   int dat = (address << 24) | (value & 0xFFF);
-  return WriteGosip (fChannel, fSlave, GOS_I2C_DWR, dat);
+  return WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 }
 
 
@@ -1034,9 +1127,24 @@ void NyxorGui::AppendTextWindow (const QString& text)
   TextOutput->update ();
 }
 
+bool NyxorGui::AssertChainConfigured (bool verbose)
+{
+#ifdef USE_MBSPEX_LIB
+  if (fSlave >= fSFPChains.numslaves[fSFP])
+  {
+    if (verbose)
+      printm("#Error: device index %d not in initialized chain of length %d at SFP %d",fSlave,fSFPChains.numslaves[fSFP],fSFP);
+    return false;
+  }
+#endif
+  return true;
+}
+
+
+
 bool NyxorGui::AssertNoBroadcast (bool verbose)
 {
-  if (fChannel < 0 || fSlave < 0)
+  if (fSFP < 0 || fSlave < 0)
   {
     //std::cerr << "# NyxorGui Error: broadcast not supported here!" << std::endl;
     if (verbose)

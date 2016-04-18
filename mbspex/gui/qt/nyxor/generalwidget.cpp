@@ -43,7 +43,9 @@ GeneralNyxorWidget::GeneralNyxorWidget(QWidget* parent, NyxorGui* owner):
 
     QObject::connect (nxControlEdit, SIGNAL(editingFinished()), this, SLOT (nxControlEdit_finished()));
 
-
+    QObject::connect (ADCTestCodeLineEdit, SIGNAL(editingFinished()), this, SLOT (Testcodes_Edit_finished()));
+    QObject::connect (TestCodeNX1LineEdit, SIGNAL(editingFinished()), this, SLOT (Testcodes_Edit_finished()));
+    QObject::connect (TestCodeNX2LineEdit, SIGNAL(editingFinished()), this, SLOT (Testcodes_Edit_finished()));
 
 }
 
@@ -75,6 +77,7 @@ void GeneralNyxorWidget::SetRegisters()
   //fxOwner->ReceiverReset();
   //fxOwner->NXTimestampReset();
   //Note: The first step (The resetting of nXyter chip) has to be always executed.
+  // JAM 2016 - not true for intermediate changes! reset will zero some registers
   if(fSetup.fNXControl_Changed)
     fxOwner->WriteNyxorAddress(NXREC_CTRL_W, fSetup.fNXControl);
   if(fSetup.fTriggerPre_Changed)
@@ -206,7 +209,9 @@ void GeneralNyxorWidget::TriggerPreSpinBox_changed(double nanos)
     TriggerPreLineEdit->setText(pre+text.setNum (fSetup.fTriggerPre, numberbase));
     fSetup.fAnything_Changed=true;
     fSetup.fTriggerPre_Changed=true;
+    if(fxOwner->IsAutoApply()) SetRegisters();
   }
+
 }
 
 void GeneralNyxorWidget::TriggerPostSpinBox_changed(double nanos)
@@ -223,6 +228,7 @@ void GeneralNyxorWidget::TriggerPostSpinBox_changed(double nanos)
     TriggerPostLineEdit->setText(pre+text.setNum (fSetup.fTriggerPost, numberbase));
     fSetup.fAnything_Changed=true;
     fSetup.fTriggerPost_Changed=true;
+    if(fxOwner->IsAutoApply()) SetRegisters();
    }
 
 }
@@ -240,7 +246,7 @@ void GeneralNyxorWidget::SecondTestPulseDelaySpinBox_changed(double nanos)
       SecondTestPulseDelayLineEdit->setText(pre+text.setNum (fSetup.fDelayTestPulse, numberbase));
       fSetup.fAnything_Changed=true;
       fSetup.fDelayTestPulse_Changed=true;
-
+      if(fxOwner->IsAutoApply()) SetRegisters();
     }
 
 }
@@ -260,6 +266,7 @@ void GeneralNyxorWidget::TestAcquisitionTriggerDelaySpinBox_changed(double nanos
     TestAcquisitionTriggerDelayLineEdit->setText(pre+text.setNum (fSetup.fDelayTrigger, numberbase));
     fSetup.fAnything_Changed=true;
     fSetup.fDelayTrigger_Changed=true;
+    if(fxOwner->IsAutoApply()) SetRegisters();
   }
 }
 
@@ -274,6 +281,7 @@ void GeneralNyxorWidget::TriggerPreLineEdit_finished()
     fSetup.fTriggerPre_Changed=true;
     double nanos=NYXOR_TIME_UNIT_NS * fSetup.fTriggerPre;
     TriggerPreDoubleSpinBox->setValue(nanos);
+    if(fxOwner->IsAutoApply()) SetRegisters();
   }
 }
 
@@ -290,6 +298,7 @@ void GeneralNyxorWidget::TriggerPostLineEdit_finished()
     fSetup.fTriggerPost_Changed=true;
     double nanos=NYXOR_TIME_UNIT_NS * fSetup.fTriggerPost;
     TriggerPostDoubleSpinBox->setValue(nanos);
+    if(fxOwner->IsAutoApply()) SetRegisters();
   }
 }
 
@@ -305,6 +314,7 @@ void GeneralNyxorWidget::SecondTestPulseDelayLineEdit_finished()
       fSetup.fDelayTestPulse_Changed=true;
       double nanos=NYXOR_TIME_UNIT_NS * fSetup.fDelayTestPulse;
       SecondTestPulseDelayDoubleSpinBox->setValue(nanos);
+      if(fxOwner->IsAutoApply()) SetRegisters();
     }
 }
 
@@ -320,6 +330,7 @@ void GeneralNyxorWidget::TestAcquisitionTriggerDelayLineEdit_finished()
       fSetup.fDelayTrigger_Changed=true;
       double nanos=NYXOR_TIME_UNIT_NS * fSetup.fDelayTrigger;
       TestAcquisitionTriggerDelayDoubleSpinBox->setValue(nanos);
+      if(fxOwner->IsAutoApply()) SetRegisters();
      }
 
 }
@@ -334,6 +345,7 @@ void GeneralNyxorWidget::nxControlEdit_finished()
     fSetup.fAnything_Changed=true;
     fSetup.fNXControl_Changed=true;
     RefreshControlBits();
+    if(fxOwner->IsAutoApply()) SetRegisters();
   }
 }
 
@@ -368,7 +380,19 @@ if (word != fSetup.fNXControl)
   int numberbase = fxOwner->GetNumberBase ();
   numberbase == 16 ? pre = "0x" : pre = "";
   nxControlEdit->setText (pre + text.setNum (fSetup.fNXControl, numberbase));
+  if(fxOwner->IsAutoApply()) SetRegisters();
 }
 }
 
+
+
+void GeneralNyxorWidget::Testcodes_Edit_finished()
+{
+  if(fxOwner->IsAutoApply())
+  {
+    EvaluateView();
+    SetRegisters();
+  }
+
+}
 
