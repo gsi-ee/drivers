@@ -76,7 +76,7 @@ class NyxorADCWidget : public QWidget , public Ui::NyxorADCWidget {
 
      void GetRegisters();
 
-     void SetRegisters();
+     void SetRegisters(bool force=false);
 
      /** update register display, regard decimal or hex number base*/
      void RefreshView ();

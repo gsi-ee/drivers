@@ -236,9 +236,10 @@ bool NxyterWidget::getSubConfig()
    return res==0;
 }
 
-bool NxyterWidget::setSubConfig()
+bool NxyterWidget::setSubConfig(bool force)
 {
   bool rev=true;
+  if(force) fUpdateFlags=nxyter::kDoAll;
   rev=(fI2C->setContext(fContext, fUpdateFlags) == 0);
   fUpdateFlags=0;
    return rev;

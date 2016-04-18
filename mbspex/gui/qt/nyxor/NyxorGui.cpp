@@ -233,7 +233,7 @@ void NyxorGui::SaveConfigBtn_clicked ()
     WriteConfigFile (QString ("#                                         \n"));
     WriteConfigFile (QString ("#sfp slave address value\n"));
     fSaveConfig = true;    // switch to file output mode
-    SetRegisters ();    // register settings are written to file
+    SetRegisters (true);    // with option force: register settings are written to file
     fSaveConfig = false;
   }
 
@@ -899,20 +899,20 @@ void NyxorGui::EvaluateSlave ()
   fSlave = SlavespinBox->value ();
 }
 
-void NyxorGui::SetRegisters ()
+void NyxorGui::SetRegisters (bool force)
 {
 // write register values from strucure with gosipcmd
   for (int nx = 0; nx < NYXOR_NUMNX; nx++)
   {
-    if(!fNxTab[nx]->needSetSubConfig()) continue;
+    if(!force && !fNxTab[nx]->needSetSubConfig()) continue;
       //EnableI2CWrite (nx);
       EnableI2CRead (nx); // read means without reset
-      fNxTab[nx]->setSubConfig ();
+      fNxTab[nx]->setSubConfig (force);
   }
 
-  fGeneralTab->SetRegisters();
-  fADCTab->SetRegisters();
-  fDACTab->SetRegisters();
+  fGeneralTab->SetRegisters(force);
+  fADCTab->SetRegisters(force);
+  fDACTab->SetRegisters(force);
 }
 
 void NyxorGui::GetRegisters ()

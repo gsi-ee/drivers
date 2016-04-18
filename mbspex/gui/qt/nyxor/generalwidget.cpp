@@ -68,7 +68,7 @@ void GeneralNyxorWidget::GetRegisters()
   //fSetup.Dump();
 }
 
-void GeneralNyxorWidget::SetRegisters()
+void GeneralNyxorWidget::SetRegisters(bool force)
 {
   //printf("GeneralNyxorWidget::SetRegisters()...\n");
   //fSetup.Dump();
@@ -78,21 +78,21 @@ void GeneralNyxorWidget::SetRegisters()
   //fxOwner->NXTimestampReset();
   //Note: The first step (The resetting of nXyter chip) has to be always executed.
   // JAM 2016 - not true for intermediate changes! reset will zero some registers
-  if(fSetup.fNXControl_Changed)
+  if(force || fSetup.fNXControl_Changed)
     fxOwner->WriteNyxorAddress(NXREC_CTRL_W, fSetup.fNXControl);
-  if(fSetup.fTriggerPre_Changed)
+  if(force || fSetup.fTriggerPre_Changed)
     fxOwner->WriteNyxorAddress(NXREC_PRETRIG_W, fSetup.fTriggerPre);
-  if(fSetup.fTriggerPost_Changed)
+  if(force || fSetup.fTriggerPost_Changed)
     fxOwner->WriteNyxorAddress(NXREC_POSTTRIG_W,fSetup.fTriggerPost);
-  if(fSetup.fDelayTestPulse_Changed)
+  if(force || fSetup.fDelayTestPulse_Changed)
     fxOwner->WriteNyxorAddress(NXREC_DELAY1_W, fSetup.fDelayTestPulse);
-  if(fSetup.fDelayTrigger_Changed)
+  if(force || fSetup.fDelayTrigger_Changed)
     fxOwner->WriteNyxorAddress(NXREC_DELAY2_W, fSetup.fDelayTrigger);
-  if(fSetup.fTestCodeADC_Changed)
+  if(force || fSetup.fTestCodeADC_Changed)
     fxOwner->WriteNyxorAddress(NXREC_TESTCODE_ADC_W, fSetup.fTestCodeADC);
-  if(fSetup.fTestCode1_Changed)
+  if(force || fSetup.fTestCode1_Changed)
     fxOwner->WriteNyxorAddress(NXREC_TESTCODE_1_W, fSetup.fTestCode1);
-  if(fSetup.fTestCode2_Changed)
+  if(force || fSetup.fTestCode2_Changed)
     fxOwner->WriteNyxorAddress(NXREC_TESTCODE_2_W, fSetup.fTestCode2);
 
   fSetup.ResetChanged();

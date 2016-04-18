@@ -64,17 +64,17 @@ void NyxorDACWidget::GetRegisters()
   //fSetup.Dump();
 }
 
-void NyxorDACWidget::SetRegisters()
+void NyxorDACWidget::SetRegisters(bool force)
 {
   //printf("NyxorDACWidget::SetRegisters()...\n");
   //fSetup.Dump();
-  if(!fSetup.fAnyChange) return;
+  if(!fSetup.fAnyChange && !force) return;
   for (int nx = 0; nx < NYXOR_NUMNX; ++nx)
      {
        fxOwner->EnableI2CRead(nx); // note: also for writing the dacs, the nx chip "read mode" is used!
        for (int i = 0; i < NUM_NYXORDACS; ++i)
        {
-         if(fSetup.fChanged[nx][i])
+         if(force || fSetup.fChanged[nx][i])
            fxOwner->WriteNyxorDAC(nx, i, fSetup.fRegister[nx][i]);
        }
      }

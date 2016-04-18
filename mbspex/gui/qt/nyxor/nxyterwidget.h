@@ -50,7 +50,7 @@ class NxyterWidget : public QWidget , public Ui::NxyterWidget {
       bool needSetSubConfig(){return (fUpdateFlags!=0);}
 
       virtual bool getSubConfig();
-      virtual bool setSubConfig();
+      virtual bool setSubConfig(bool force=false);
       virtual bool setSubToDefault();
       virtual bool fillCmdFile(FILE* f);
 

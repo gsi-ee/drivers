@@ -42,20 +42,20 @@ void NyxorADCWidget::GetRegisters()
   //fSetup.Dump();
 }
 
-void NyxorADCWidget::SetRegisters()
+void NyxorADCWidget::SetRegisters(bool force)
 {
   //printf("NyxorADCWidget::SetRegisters()...\n");
   //fSetup.Dump();
 
-  if(!fSetup.fAnyChange) return;
+  if(!force && !fSetup.fAnyChange) return;
 
   //fxOwner->DisableI2C();
   fxOwner->EnableSPI();
-  if(fSetup.fDC0Phase_Changed)
+  if(force || fSetup.fDC0Phase_Changed)
     fxOwner->WriteNyxorSPI(SPI_ADC_DC0PHASE, fSetup.fDC0Phase);
   for(int i=0; i<NUM_ADC_TRANSMITREGS;++i)
     {
-      if(fSetup.fTransmit_Changed[i])
+      if(force || fSetup.fTransmit_Changed[i])
         fxOwner->WriteNyxorSPI(SPI_ADC_PATTERNBASE + i, fSetup.fTransmit[i]);
     }
    fxOwner->DisableSPI();

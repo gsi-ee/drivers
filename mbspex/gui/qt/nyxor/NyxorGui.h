@@ -235,8 +235,9 @@ protected:
   /** update initilized chain display and slave limit*/
    void RefreshChains();
 
-  /** set register from status structure*/
-  void SetRegisters ();
+  /** set register from status structure. If force is true, ignore
+   * what has changed and write complete setup (important for writing config files!)*/
+  void SetRegisters (bool force=false);
 
   /** get register contents to status structure*/
   void GetRegisters ();
