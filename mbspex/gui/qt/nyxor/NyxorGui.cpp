@@ -41,7 +41,9 @@ NyxorGui::NyxorGui (QWidget* parent) :
   fEnv = QProcessEnvironment::systemEnvironment ();    // get PATH to gosipcmd from parent process
 #endif
 
-  fNumberBase = 10;
+  fNumberBase = 16; // hexmode by default
+  HexBox->setChecked(true);
+
 
   SFPspinBox->setValue (fSFP);
   SlavespinBox->setValue (fSlave);
@@ -193,6 +195,37 @@ void NyxorGui::SaveConfigBtn_clicked ()
   if (OpenConfigFile (fileName) != 0)
     return;
 
+  // TODO: loop over all configured slaves if known!
+  bool writeheader=true;
+#ifdef USE_MBSPEX_LIB
+  int sfpinit=0, sfpmax=0;
+  int devinit=0, devmax=0;
+  int oldslave = fSlave;
+  int oldsfp = fSFP;
+  bool broadcast=false;
+  if(AssertNoBroadcast (false))
+    {
+        // if "all devs" button is not pressed, we just want to save currently selected slave:
+        sfpinit=fSFP; sfpmax=fSFP+1;
+        devinit=fSlave; devmax=fSlave+1;
+        broadcast=false;
+    }
+  else
+    {
+      sfpinit=0; sfpmax=PEX_SFP_NUMBER;
+      devinit=0;
+      broadcast=true;
+    }
+
+  for(fSFP=sfpinit; fSFP<sfpmax; ++fSFP)
+    {
+      if (fSFPChains.numslaves[fSFP] == 0) continue;
+      if(broadcast) devmax=fSFPChains.numslaves[fSFP];
+      for (fSlave = devinit; fSlave < devmax; ++fSlave)
+          {
+            if(broadcast) GetRegisters(); // refresh status structures from hardware before saving
+#endif
+
   if (fileName.endsWith (".gos"))
   {
     WriteConfigFile (QString ("#Format *.gos"));
@@ -207,6 +240,8 @@ void NyxorGui::SaveConfigBtn_clicked ()
   else if (fileName.endsWith (".dmp"))
   {
     // dump configuration
+
+    // TODO: this will currently only save nxyter chip setup, not the rest of nyxor TODO:
     WriteConfigFile (QString ("#Format *.dmp - nxyter context dump output\n"));
     WriteConfigFile (QString ("#                                         \n"));
 
@@ -224,12 +259,24 @@ void NyxorGui::SaveConfigBtn_clicked ()
   else if (fileName.endsWith (".txt"))
   {
     // here function to export context values into Niks format
-    WriteNiksConfig ();
+    WriteNiksConfig (broadcast, writeheader);
+    writeheader=false;
   }
   else
   {
     std::cout << "NyxorGui::SaveConfigBtn_clicked( -  unknown file type, NEVER COME HERE!!!!)" << std::endl;
   }
+
+// TODO: end loop over configured slaves if known
+#ifdef USE_MBSPEX_LIB
+          } //for (int fSlave
+    } // for (int fSFP
+
+  fSlave=oldslave;
+  fSFP=oldsfp;
+
+
+#endif
 
   // close file
   CloseConfigFile ();
@@ -278,52 +325,78 @@ int NyxorGui::WriteConfigFile (const QString& text)
   return 0;
 }
 
-int NyxorGui::WriteNiksConfig ()
+int NyxorGui::WriteNiksConfig (bool globalsetup, bool writeheader)
 {
-  WriteConfigFile (QString ("# -------------------------------------------------------------\n"));
-  WriteConfigFile (QString ("# specify nr of nXYters in use (as function of GEMEX/NYXOR id).\n"));
-  WriteConfigFile (QString ("# must be filled consecutively beginning with GEMEX/NYXOR index 0.\n"));
-  WriteConfigFile (
-      QString ("# if 0 specified for GEMEX/NYXOR index n, the last GEMEX/NYXOR used for a given SFP id is n-1.\n"));
-  WriteConfigFile (QString ("# if for GEMEX/NYXOR index 0 the number nXYters is 0, this SFP is not used.\n"));
-  WriteConfigFile (QString ("# max 2 nXYter per GEMEX/NYXOR !\n"));
-  WriteConfigFile (QString ("#\n"));
-  WriteConfigFile (QString ("#  GEMEX/NYXOR id:  0  1  2  3  4  5  6  7  8  9 10 10 12 13 14 15\n"));
-  WriteConfigFile (QString ("#                   |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |\n"));
-  for (int ch = 0; ch < 4; ++ch)
+  if (writeheader)
   {
-    QString sfpline = QString ("SFP%1_NYX_IN_USE     ").arg (ch);
-    if (fSFP == ch || (fSFP < 0 && ch == 0))
+    WriteConfigFile (QString ("# -------------------------------------------------------------\n"));
+    WriteConfigFile (QString ("# specify nr of nXYters in use (as function of GEMEX/NYXOR id).\n"));
+    WriteConfigFile (QString ("# must be filled consecutively beginning with GEMEX/NYXOR index 0.\n"));
+    WriteConfigFile (
+        QString ("# if 0 specified for GEMEX/NYXOR index n, the last GEMEX/NYXOR used for a given SFP id is n-1.\n"));
+    WriteConfigFile (QString ("# if for GEMEX/NYXOR index 0 the number nXYters is 0, this SFP is not used.\n"));
+    WriteConfigFile (QString ("# max 2 nXYter per GEMEX/NYXOR !\n"));
+    WriteConfigFile (QString ("#\n"));
+    WriteConfigFile (QString ("#  GEMEX/NYXOR id:  0  1  2  3  4  5  6  7  8  9 10 10 12 13 14 15\n"));
+    WriteConfigFile (QString ("#                   |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |\n"));
+    for (int ch = 0; ch < 4; ++ch)
     {
-      for (int i = 0; i < 16; ++i)
+      QString sfpline = QString ("SFP%1_NYX_IN_USE     ").arg (ch);
+#ifdef USE_MBSPEX_LIB
+      if (globalsetup)
       {
-        if (fSlave == i || (fSlave<0 && i==0)) // assign broadcast mode to channel 0 for the moment
-          sfpline.append ("2  ");
-        else
-          sfpline.append ("0  ");
+        for (int i = 0; i < 16; ++i)
+        {
+          if (i < fSFPChains.numslaves[ch])
+            sfpline.append ("2  ");
+          else
+            sfpline.append ("0  ");
+        }    // i
+
       }
-    }
-    else
-    {
-      sfpline.append ("0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0");
-    }
-    sfpline.append ("\n");
-    WriteConfigFile (sfpline);
-  }
+      else
+#endif
+      {
 
+        if (fSFP == ch || (fSFP < 0 && ch == 0))
+        {
+          for (int i = 0; i < 16; ++i)
+          {
+            if (fSlave == i || (fSlave < 0 && i == 0))    // old: assign broadcast mode to channel 0 for the moment
+              sfpline.append ("2  ");
+            else
+              sfpline.append ("0  ");
+          }
+        }
+        else
+        {
+          sfpline.append ("0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0");
+        }
+      }    // globalsetup
+      sfpline.append ("\n");
+      WriteConfigFile (sfpline);
+    }    // for ch
+
+
+
+
+  } // if writeheader
   WriteConfigFile (QString ("#\n"));
   WriteConfigFile (QString ("#\n"));
-  WriteConfigFile (QString ("#               pre trg win   post trg win  test pulse delay  test trg delay\n"));
   QString pline;
-  uint16_t pretrig=fGeneralTab->fSetup.fTriggerPre;
-  uint16_t posttrig=fGeneralTab->fSetup.fTriggerPost;
-  uint16_t pulsdel=fGeneralTab->fSetup.fDelayTestPulse;
-  uint16_t trigdel=fGeneralTab->fSetup.fDelayTrigger;
-
-  pline=           QString ("GLOBAL_PARAM    0x%1          0x%2          0x%3              0x%4\n").arg(pretrig,0,16).arg(posttrig,0,16).arg(pulsdel,0,16).arg(trigdel,0,16);
-  WriteConfigFile (pline);
-  //WriteConfigFile (QString ("GLOBAL_PARAM                  0x080           0x100         0x0b              0x0a\n"));
-  // TODO: set these parameters from GUI? yes!
+  if (writeheader)
+  {
+    // note that this is currently only written once for all nyxors?
+    WriteConfigFile (QString ("#               pre trg win   post trg win  test pulse delay  test trg delay\n"));
+    uint16_t pretrig = fGeneralTab->fSetup.fTriggerPre;
+    uint16_t posttrig = fGeneralTab->fSetup.fTriggerPost;
+    uint16_t pulsdel = fGeneralTab->fSetup.fDelayTestPulse;
+    uint16_t trigdel = fGeneralTab->fSetup.fDelayTrigger;
+    pline = QString ("GLOBAL_PARAM    0x%1          0x%2          0x%3              0x%4\n").arg (pretrig, 0, 16).arg (
+        posttrig, 0, 16).arg (pulsdel, 0, 16).arg (trigdel, 0, 16);
+    WriteConfigFile (pline);
+    //WriteConfigFile (QString ("GLOBAL_PARAM                  0x080           0x100         0x0b              0x0a\n"));
+  }
   WriteConfigFile (QString ("#\n"));
   WriteConfigFile (QString ("#\n"));
   WriteConfigFile (QString ("#\n"));
@@ -642,7 +715,7 @@ void NyxorGui::ClearOutputBtn_clicked ()
 //std::cout << "NyxorGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
   TextOutput->setPlainText (
-      "Welcome to NYXOR GUI!\n\t v0.98 of 18-April-2016 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI");
+      "Welcome to NYXOR GUI!\n\t v0.981 of 18-April-2016 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI");
 
 }
 

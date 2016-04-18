@@ -271,8 +271,10 @@ protected:
   int WriteConfigFile(const QString& text);
 
 
-  /** convert current context values into gemex/nyxor file format by N.Kurz*/
-  int WriteNiksConfig();
+  /** convert current context values into gemex/nyxor file format by N.Kurz
+   * flag globalsetup will evaluate complete sfp chains instead of locally selecte nyxor
+   * flag writeheader specifies if header shall be written (suppressed for broadcast setup)*/
+  int WriteNiksConfig(bool globalsetup=false, bool writeheader=true);
 
 
   void DebugTextWindow (const char*txt)
