@@ -46,7 +46,7 @@ nombspex: gui-nombspex
 
 gui:
 	@echo "Generating Makefile.qt"
-	$(QMAKE) FebexGui.pro -o Makefile.qt "QMAKE_LFLAGS += -Wl,-rpath,$(PEX_LIBPATH)" "INCLUDEPATH += $(PEX_INCPATH)" "LIBS+= -L $(PEX_LIBPATH) -lmbspex"
+	$(QMAKE) FebexGui.pro -o Makefile.qt "DEFINES+=USE_MBSPEX_LIB" "QMAKE_LFLAGS += -Wl,-rpath,$(PEX_LIBPATH)" "INCLUDEPATH += $(PEX_INCPATH)" "LIBS+= -L $(PEX_LIBPATH) -lmbspex"
 	+$(MAKE) -f Makefile.qt
 
 gui-nombspex: 

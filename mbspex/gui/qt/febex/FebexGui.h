@@ -9,14 +9,22 @@
 #include <QString>
 
 /** this define will switch between direct call of mbspex lib or external shell call of gosipcmd*
- * note that we need to call "make nombspex" if we disable this define here!  */
-#define USE_MBSPEX_LIB 1
+ * note: we need to call "make nombspex" if we disable this define here!
+ * note2: this define is enabled from top Makefile when building regular "make all"*/
+//#define USE_MBSPEX_LIB 1
 
 #ifdef USE_MBSPEX_LIB
 extern "C"
 {
 #include "mbspex/libmbspex.h"
 }
+#else
+// provide dummy structure although never filled by driver:
+#define PEX_SFP_NUMBER 4
+struct pex_sfp_links{
+    int numslaves[PEX_SFP_NUMBER]; /**< contains configured number of slaves at each sfp chain. */
+};
+
 #endif
 
 
@@ -262,6 +270,7 @@ protected:
 
   /** contains currently configured slaves at the chains.*/
   struct pex_sfp_links fSFPChains;
+
 
   /** auxiliary references to checkboxes for baseline adjustments*/
   QCheckBox* fBaselineBoxes[16];

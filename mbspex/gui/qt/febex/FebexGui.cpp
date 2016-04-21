@@ -247,8 +247,9 @@ void FebexGui::ShowBtn_clicked ()
   //std::cout << "FebexGui::ShowBtn_clicked()"<< std::endl;
   EvaluateSlave ();
   GetSFPChainSetup();
-  if(!AssertChainConfigured()) return;
+
   if(!AssertNoBroadcast(false)) return;
+  if(!AssertChainConfigured()) return;
   GetRegisters ();
   RefreshView ();
 }
@@ -758,7 +759,7 @@ void FebexGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "FebexGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.85 of 9-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.90 of 21-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -1064,6 +1065,12 @@ void FebexGui::RefreshChains ()
       SlavespinBox->setEnabled (false);
     }
   }
+#else
+    Chain0_Box->setEnabled (false);
+    Chain1_Box->setEnabled (false);
+    Chain2_Box->setEnabled (false);
+    Chain3_Box->setEnabled (false);
+
 #endif
 
 }
@@ -1154,6 +1161,14 @@ void FebexGui::GetSFPChainSetup()
 #ifdef USE_MBSPEX_LIB
     // broadcast mode: find out number of slaves and loop over all registered slaves
     mbspex_get_configured_slaves(fPexFD, &fSFPChains);
+#else
+    // without mbspex lib, we just assume 4 devices for each chain:
+    for(int sfp=0; sfp<4; ++sfp)
+    {
+      fSFPChains.numslaves[sfp]=4;
+    }
+#endif
+
 
     // dynamically increase array of setup structures:
     for(int sfp=0; sfp<4; ++sfp)
@@ -1164,7 +1179,6 @@ void FebexGui::GetSFPChainSetup()
         //std::cout<<"GetSFPChainSetup increased setup at sfp "<<sfp<<" to "<<fSetup[sfp].size()<<" slaves." << std::endl;
       }
     }
-#endif
   
 }
 
@@ -1411,11 +1425,14 @@ bool FebexGui::AssertNoBroadcast (bool verbose)
 
 bool FebexGui::AssertChainConfigured (bool verbose)
 {
+#ifdef USE_MBSPEX_LIB
+
   if (fSlave >= fSFPChains.numslaves[fSFP])
   {
     if (verbose)
       printm("#Error: device index %d not in initialized chain of length %d at SFP %d",fSlave,fSFPChains.numslaves[fSFP],fSFP);
     return false;
   }
-  return true;
+#endif
+return true;
 }
