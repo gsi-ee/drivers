@@ -138,11 +138,9 @@ int pexornet_ioctl_reset (struct pexornet_privdata* priv, unsigned long arg)
   pexornet_sfp_clear_all (priv);
 #endif
   pexornet_cleanup_buffers (priv);
-  pexornet_msg(KERN_ALERT "pexornet_ioctl_reset: Network device pointer is 0x%x, mtu:%d\n",priv->net_dev, priv->net_dev->mtu);
   pexornet_build_buffers(priv, priv->net_dev->mtu, PEXORNET_DEFAULTBUFFERNUM);
   atomic_set(&(priv->irq_count), 0);
 
-  //pexornet_ioctl_clearreceivebuffers (priv, arg);    // this will cleanup dma and irtype queues
 
   atomic_set(&(priv->state), PEXORNET_STATE_STOPPED);
 #ifdef PEXORNET_WITH_TRIXOR
@@ -948,7 +946,7 @@ irqreturn_t pexornet_isr (int irq, void *dev_id)
 
 void pexornet_irq_tasklet (unsigned long arg)
 {
-  int retval;
+  int retval, errcount =0;
   static int bufid = 0;
   u32 rstat = 0, radd = 0, rdat = 0;
   u32 dmasize = 0, woffset = 0, comm = 0, trigstat = 0;
@@ -1010,14 +1008,30 @@ void pexornet_irq_tasklet (unsigned long arg)
         continue;
       /* for each do token request with direct dma:*/
       channelmask = 1 << (sfp + 1);    // select SFP for PCI Express DMA
-      retval = pexornet_next_dma (privdata, 0, 0, woffset, 0, 0, channelmask);
-      if (retval)
-      {
-        /* error handling, e.g. no more dma buffer available*/
-        pexornet_msg(KERN_ERR "pexornet_irq_tasklet error %d from nextdma\n", retval);
-        atomic_set(&(privdata->state), PEXORNET_STATE_STOPPED);
-        goto unlockgosip;
-      }
+
+      // TODO: put here some retry if temporarily no buffers are available since user changes mtu:
+      do{
+        retval = pexornet_next_dma (privdata, 0, 0, woffset, 0, 0, channelmask);
+        if((retval !=0) && ((retval != -ENOMEM) || errcount >= PEXORNET_MAXBUFRETRIES)) // other errors will stop acquisition immediately
+        {
+          pexornet_msg(KERN_ERR "pexornet_irq_tasklet error %d from nextdma, after %d retries\n", retval, errcount);
+          atomic_set(&(privdata->state), PEXORNET_STATE_STOPPED);
+          goto unlockgosip;
+        }
+        errcount++;
+      } while(retval!=0);
+
+//////////////old
+//      retval = pexornet_next_dma (privdata, 0, 0, woffset, 0, 0, channelmask);
+//      if (retval)
+//      {
+//        /* error handling, e.g. no more dma buffer available*/
+//        pexornet_msg(KERN_ERR "pexornet_irq_tasklet error %d from nextdma\n", retval);
+//        atomic_set(&(privdata->state), PEXORNET_STATE_STOPPED);
+//        goto unlockgosip;
+//      }
+////////////////
+
       /** the actual token request: */
       comm = PEXORNET_SFP_PT_TK_R_REQ | (0x1 << (16 + sfp)); /* single sfp token mode*/
       pexornet_sfp_clear_channel (privdata, sfp);
@@ -1083,8 +1097,13 @@ void pexornet_irq_tasklet (unsigned long arg)
     {
           /* error handling, e.g. no more dma buffer available*/
           pexornet_msg(KERN_ERR "pexornet_irq_tasklet error %d from pexornet_wait_dma_buffer\n", retval);
-          atomic_set(&(privdata->state), PEXORNET_STATE_STOPPED);
-          goto freebuf;
+          if(retval!=-ENOMEM)
+          {
+            // only stop acquisition if we do not have missing buffers due to mtu changes
+            atomic_set(&(privdata->state), PEXORNET_STATE_STOPPED);
+            goto freebuf;
+          }
+          dmabuf.used_size=0; // just forward empty package in case of out of buffer error
     }
 
   /** Set decoded triggerstatus:*/
@@ -1537,8 +1556,8 @@ int pexornet_wait_dma_buffer (struct pexornet_privdata* priv, struct pexornet_dm
   {
     /* this may happen if user calls waitreceive without a DMA been activated, or at flow DMA suspended*/
     spin_unlock_bh( &(priv->buffers_lock));
-    pexornet_msg(KERN_NOTICE "** pexornet_wait_dma_buffer: NEVER COME HERE receive queue is empty after wait\n");
-    return -EFAULT;
+    pexornet_msg(KERN_NOTICE "** pexornet_wait_dma_buffer: receive queue is empty after wait! maybe someone changed MTU...\n");
+    return -ENOMEM;
   }
 
   dmabuf=list_first_entry(&(priv->received_buffers), struct pexornet_dmabuf, queue_list);
@@ -2010,31 +2029,16 @@ int pexornet_config(struct net_device *dev, struct ifmap *map)
 }
 
 
-int pexornet_change_mtu(struct net_device *dev, int new_mtu)
+int pexornet_change_mtu (struct net_device *dev, int new_mtu)
 {
-
-  unsigned long flags;
-  struct pexornet_privdata *priv= pexornet_get_privdata(dev);
-
-    //    spinlock_t *lock = &priv->lock;
-//    printk (KERN_NOTICE "snull_change_mtu...\n");
-    /* check ranges */
-    if ((new_mtu < 68) || (new_mtu > PEXORNET_MAXMTU))
-        return -EINVAL;
-
-//    spin_lock_irqsave(lock, flags);
-
-    //pexornet_gosip_lock(&(priv->gosip_lock), flags);
-
-    dev->mtu = new_mtu;
-    pexornet_cleanup_buffers(priv);
-    pexornet_build_buffers(priv, dev->mtu, PEXORNET_DEFAULTBUFFERNUM);
-
-//    spin_unlock_irqrestore(lock, flags);
-
-    //pexornet_gosip_unlock(&(priv->gosip_lock), flags);
+  struct pexornet_privdata *priv = pexornet_get_privdata (dev);
+  /* check ranges */
+  if ((new_mtu < 68) || (new_mtu > PEXORNET_MAXMTU))
+    return -EINVAL;
+  dev->mtu = new_mtu;
+  pexornet_cleanup_buffers (priv);
+  pexornet_build_buffers (priv, dev->mtu, PEXORNET_DEFAULTBUFFERNUM);
   pexornet_msg(KERN_NOTICE "pexornet_change_mtu to %d\n",new_mtu);
-
   return 0; /* success */
 }
 

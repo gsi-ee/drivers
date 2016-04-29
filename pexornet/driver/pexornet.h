@@ -155,11 +155,6 @@ struct pexornet_sfp;
 
 
 
-/** timeout for trigger wait queue */
-//#define PEXORNET_TRIG_TIMEOUT (10*HZ)
-
-/** maximum number of timeouts before wait loop terminates*/
-//#define PEXORNET_WAIT_MAXTIMEOUTS 5
 
 /** maximum number of polling cycles for dma complete bit*/
 #define PEXORNET_DMA_MAXPOLLS 10000
@@ -167,18 +162,10 @@ struct pexornet_sfp;
 /** polling delay for each cycle in ns for dma complete bit*/
 #define PEXORNET_DMA_POLLDELAY 20
 
-/** if set, we use a schedule() in the dma complete polling.
- * Note: according to linux kernel book, yield() will just prepare this
- * task to be scheduled in near future, but schedpriv->pexornet.irq_statusule() will initiate the
- * schedule directly
- * this must not be enabled if dma completion is polled in interrupt tasklet*/
-//#define PEXORNET_DMA_POLL_SCHEDULE 0
 
-/** maximum number of outstandin buffers in receive queue,
-   do we still need this?*/
-#define PEXORNET_MAXOUTSTANDING 50
-
-
+/** number of retries to get buffer from pool before setting up DMA
+ * this may be necessary when user changes mtu during read out*/
+#define PEXORNET_MAXBUFRETRIES 5
 
 /** size of interrupt status ringbuffer
  * actually we only need one buffer for mbs like
