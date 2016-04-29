@@ -4,25 +4,28 @@
 int pexornet_ioctl_init_bus (struct pexornet_privdata* priv, unsigned long arg)
 {
   int retval = 0;
+  unsigned long flags=0;
   u32 sfp = 0;/*,comm=0;*/
   int slave = 0;
   struct pexornet_bus_io descriptor;
   struct pexornet_sfp* sfpregisters = &(priv->registers.sfp);
   retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pexornet_bus_io));
-  if (retval)
-    return retval;
+  if (retval) goto out;
 
   sfp = (u32) descriptor.sfp;    // sfp connection to initialize chain
   slave = descriptor.slave;    // maximum # of connected slave boards
   // for pex standard sfp code, we use this ioctl to initalize chain of slaves:
+  pexornet_gosip_lock(&(priv->gosip_lock), flags);
   retval = pexornet_sfp_clear_channel (priv, sfp);
-  if (retval)
-    return retval;
+  if (retval) goto gosip_unlock;
   retval = pexornet_sfp_init_request (priv, sfp, slave);
-  if (retval)
-    return retval;
+  if (retval) goto gosip_unlock;
   sfpregisters->num_slaves[sfp] = slave; /* keep track of existing slaves for configuration broadcast*/
-  return retval;
+
+  gosip_unlock:
+    pexornet_gosip_unlock(&(priv->gosip_lock), flags);
+  out:
+    return retval;
 
 }
 
@@ -43,11 +46,14 @@ int pexornet_ioctl_get_sfp_links (struct pexornet_privdata* priv, unsigned long 
 int pexornet_ioctl_write_bus (struct pexornet_privdata* priv, unsigned long arg)
 {
   int retval = 0;
+  unsigned long flags=0;
   struct pexornet_bus_io descriptor;
   retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pexornet_bus_io));
   if (retval)
     return retval;
-  retval = pexornet_sfp_broadcast_write_bus (priv, &descriptor); /* everything is subfunctions now*/
+  pexornet_gosip_lock(&(priv->gosip_lock), flags);
+    retval = pexornet_sfp_broadcast_write_bus (priv, &descriptor); /* everything is subfunctions now*/
+  pexornet_gosip_unlock(&(priv->gosip_lock), flags);
   if(priv->sfp_buswait) udelay(priv->sfp_buswait); // delay after each user bus ioctl to adjust frontend speed
   if (retval)
     return retval;
@@ -58,21 +64,26 @@ int pexornet_ioctl_write_bus (struct pexornet_privdata* priv, unsigned long arg)
 int pexornet_ioctl_read_bus (struct pexornet_privdata* priv, unsigned long arg)
 {
   int retval = 0;
+  unsigned long flags=0;
   struct pexornet_bus_io descriptor;
   retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pexornet_bus_io));
   if (retval)
     return retval;
-  retval = pexornet_sfp_read_bus (priv, &descriptor); /* everything is subfunctions now*/
+  pexornet_gosip_lock(&(priv->gosip_lock), flags);
+    retval = pexornet_sfp_read_bus (priv, &descriptor); /* everything is subfunctions now*/
+  pexornet_gosip_unlock(&(priv->gosip_lock), flags);
   if(priv->sfp_buswait) udelay(priv->sfp_buswait); // delay after each user bus ioctl to adjust frontend speed
   if (retval)
     return retval;
   retval = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pexornet_bus_io));
+
   return retval;
 }
 
 int pexornet_ioctl_configure_bus (struct pexornet_privdata* priv, unsigned long arg)
 {
   int retval = 0, i = 0;
+  unsigned long flags=0;
   struct pexornet_bus_config descriptor;
   retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pexornet_bus_config));
   if (retval)
@@ -84,18 +95,21 @@ int pexornet_ioctl_configure_bus (struct pexornet_privdata* priv, unsigned long 
     descriptor.numpars = PEXORNET_MAXCONFIG_VALS;
   }
   pexornet_dbg(KERN_NOTICE "** pexornet_ioctl_configure_bus with %d parameters\n", descriptor.numpars);
-  for (i = 0; i < descriptor.numpars; ++i)
-  {
-    struct pexornet_bus_io data = descriptor.param[i];
-    retval = pexornet_sfp_broadcast_write_bus (priv, &data);
-    if(priv->sfp_buswait) udelay(priv->sfp_buswait); // delay after each user bus ioctl to adjust frontend speed
-    if (retval)
+  pexornet_gosip_lock(&(priv->gosip_lock), flags);
+    for (i = 0; i < descriptor.numpars; ++i)
     {
-      pexornet_msg(
-          KERN_ERR "** pexornet_ioctl_configure_bus: error %d at pexornet_sfp_broadcast_write_bus for value i=%d\n", retval, i);
-      return retval;
+      struct pexornet_bus_io data = descriptor.param[i];
+      retval = pexornet_sfp_broadcast_write_bus (priv, &data);
+      if(priv->sfp_buswait) udelay(priv->sfp_buswait); // delay after each user bus ioctl to adjust frontend speed
+      if (retval)
+      {
+        pexornet_msg(
+            KERN_ERR "** pexornet_ioctl_configure_bus: error %d at pexornet_sfp_broadcast_write_bus for value i=%d\n", retval, i);
+        pexornet_gosip_unlock(&(priv->gosip_lock), flags);
+        return retval;
+      }
     }
-  }
+  pexornet_gosip_unlock(&(priv->gosip_lock), flags);
   mb();
   udelay(1000);
   /* set waitstate after configure*/

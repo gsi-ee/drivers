@@ -109,12 +109,9 @@ struct pexornet_sfp;
 
 
 
-/** test: use spinlock to protect dma engine vs buffers. do we need this?
- * rather bad idea*/
-/*#define DMA_SPINLOCK 1 */
 
-
-
+/** this defines enables locking the gosip engine between readout (irq) and control ioctl*/
+#define GOSIP_SPINLOCK 1
 
 /* switch on message signalled interrupt mode. Supported by PEXORNET? maybe not*/
 //#define IRQ_ENABLE_MSI 1
@@ -131,20 +128,20 @@ struct pexornet_sfp;
 
 
 
-#ifdef DMA_SPINLOCK
-#define pexornet_dma_lock(lock) \
-  spin_lock( lock);
+#ifdef GOSIP_SPINLOCK
+#define pexornet_gosip_lock(lock, flags) \
+    spin_lock_irqsave(lock, flags)
 
 
-#define pexornet_dma_unlock(lock) \
-  spin_unlock( lock );
+#define pexornet_gosip_unlock(lock, flags) \
+  spin_unlock_irqrestore(lock, flags);
 
 
 #else
-#define pexornet_dma_lock(lock) \
+#define pexornet_gosip_lock(lock, flags) \
   ;
 
-#define pexornet_dma_unlock(lock) \
+#define pexornet_gosip_unlock(lock, flags) \
   ;
 #endif
 
@@ -280,7 +277,7 @@ struct pexornet_privdata
                                            use in client application */
 
   spinlock_t buffers_lock;      /**< protect any buffer lists operations */
-  spinlock_t dma_lock;      /**< protects DMA Buffer */
+  spinlock_t gosip_lock;        /**< protects gosip access between irq readout and user ioctls */
 
   atomic_t irq_count;           /**< counter for irqs */
   spinlock_t irq_lock;         /**< optional lock between top and bottom half? */

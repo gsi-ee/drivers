@@ -43,7 +43,6 @@ int pexornet_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
   int retval = 0;
   struct pexornet_privdata *privdata;
   unsigned long arg;
-
   /* here validity check for magic number etc.*/
   privdata= pexornet_get_privdata(dev);
   if(!privdata) return -EFAULT;
@@ -54,6 +53,7 @@ int pexornet_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
     pexornet_msg((KERN_INFO "down interruptible of ioctl sem is not zero, restartsys!\n"));
     return -ERESTARTSYS;
   }
+
 
    arg= (unsigned long) rq->ifr_data; // pass pointer to ifreq to special ioctls
   /* Select the appropiate command */
@@ -69,61 +69,7 @@ int pexornet_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
       retval = pexornet_ioctl_reset(privdata,arg);
       break;
 
-//    case PEXORNET_IOC_FREEBUFFER:
-//      pexornet_dbg(KERN_NOTICE "** pexornet_ioctl free buffer\n");
-//      retval = pexornet_ioctl_freebuffer(privdata, arg);
-//      break;
-//
-//    case PEXORNET_IOC_DELBUFFER:
-//      pexornet_dbg(KERN_NOTICE "** pexornet_ioctl delete buffer\n");
-//      retval = pexornet_ioctl_deletebuffer(privdata, arg);
-//      break;
-//
-//    case PEXORNET_IOC_WAITBUFFER:
-//      pexornet_dbg(KERN_NOTICE "** pexornet_ioctl waitbuffer\n");
-//      up(&privdata->ioctl_sem); /* do not lock ioctl during wait*/
-//      return pexornet_ioctl_waitreceive(privdata, arg);
-//      break;
-//
-//    case PEXORNET_IOC_USEBUFFER:
-//      pexornet_dbg(KERN_NOTICE "** pexornet_ioctl usebuffer\n");
-//      retval = pexornet_ioctl_usebuffer(privdata, arg);
-//      break;
-//
-//    case PEXORNET_IOC_MAPBUFFER:
-//      pexornet_dbg(KERN_NOTICE "** pexornet_ioctl mapbuffer\n");
-//      retval = pexornet_ioctl_mapbuffer(privdata, arg);
-//      break;
-//
-//    case PEXORNET_IOC_UNMAPBUFFER:
-//      pexornet_dbg(KERN_NOTICE "** pexornet_ioctl unmapbuffer\n");
-//      retval = pexornet_ioctl_unmapbuffer(privdata, arg);
-//      break;
 
-//    case PEXORNET_IOC_CLEAR_RCV_BUFFERS:
-//      pexornet_dbg(KERN_NOTICE "** pexornet_ioctl clear receive buffers\n");
-//      retval = pexornet_ioctl_clearreceivebuffers(privdata, arg);
-//      break;
-//
-//    case PEXORNET_IOC_SETSTATE:
-//      pexornet_dbg(KERN_NOTICE "** pexornet_ioctl set\n");
-//      retval = pexornet_ioctl_setrunstate(privdata, arg);
-//      break;
-//
-//    case PEXORNET_IOC_TEST:
-//      pexornet_dbg(KERN_NOTICE "** pexornet_ioctl test\n");
-//      retval = pexornet_ioctl_test(privdata, arg);
-//      break;
-
-//    case PEXORNET_IOC_WRITE_REGISTER:
-//      pexornet_dbg(KERN_NOTICE "** pexornet_ioctl write register\n");
-//      retval = pexornet_ioctl_write_register(privdata, arg);
-//      break;
-//
-//    case PEXORNET_IOC_READ_REGISTER:
-//      pexornet_dbg(KERN_NOTICE "** pexornet_ioctl read register\n");
-//      retval = pexornet_ioctl_read_register(privdata, arg);
-//      break;
 
     case PEXORNET_IOC_WRITE_BUS:
       pexornet_dbg(KERN_NOTICE "** pexornet_ioctl write bus\n");
@@ -145,20 +91,7 @@ int pexornet_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
       retval = pexornet_ioctl_configure_bus(privdata, arg);
       break;
 
-//    case PEXORNET_IOC_REQUEST_TOKEN:
-//      pexornet_dbg(KERN_NOTICE "** pexornet_ioctl request token\n");
-//      retval = pexornet_ioctl_request_token(privdata, arg);
-//      break;
-//
-//    case PEXORNET_IOC_WAIT_TOKEN:
-//      pexornet_dbg(KERN_NOTICE "** pexornet_ioctl wait token\n");
-//      retval = pexornet_ioctl_wait_token(privdata, arg);
-//      break;
-//    case PEXORNET_IOC_WAIT_TRIGGER:
-//      pexornet_dbg(KERN_NOTICE "** pexornet_ioctl wait trigger\n");
-//      up(&privdata->ioctl_sem); /* do not lock ioctl during wait*/
-//      return pexornet_ioctl_wait_trigger(privdata, arg);
-//      break;
+
 
 #ifdef PEXORNET_WITH_TRIXOR
     case PEXORNET_IOC_SET_TRIXOR:
@@ -182,6 +115,7 @@ int pexornet_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
       retval = -ENOTTY;
       break;
   }
+
   up(&privdata->ioctl_sem);
   return retval;
 }
@@ -204,6 +138,8 @@ int pexornet_ioctl_reset (struct pexornet_privdata* priv, unsigned long arg)
   pexornet_sfp_clear_all (priv);
 #endif
   pexornet_cleanup_buffers (priv);
+  pexornet_msg(KERN_ALERT "pexornet_ioctl_reset: Network device pointer is 0x%x, mtu:%d\n",priv->net_dev, priv->net_dev->mtu);
+  pexornet_build_buffers(priv, priv->net_dev->mtu, PEXORNET_DEFAULTBUFFERNUM);
   atomic_set(&(priv->irq_count), 0);
 
   //pexornet_ioctl_clearreceivebuffers (priv, arg);    // this will cleanup dma and irtype queues
@@ -378,13 +314,13 @@ int pexornet_ioctl_set_trixor (struct pexornet_privdata* priv, unsigned long arg
     case PEXORNET_TRIX_GO:
 
       retval=pexornet_trigger_start_acq(priv);
-      pexornet_msg(KERN_ERR "pexornet_ioctl_set_trixor did start acquisition!");
+      pexornet_msg(KERN_ERR "pexornet_ioctl_set_trixor did really start acquisition!");
       break;
 
     case PEXORNET_TRIX_HALT:
 
       retval=pexornet_trigger_stop_acq(priv);
-      pexornet_msg(KERN_ERR "pexornet_ioctl_set_trixor did stop acquisition!");
+      pexornet_msg(KERN_ERR "pexornet_ioctl_set_trixor did really stop acquisition!");
        break;
 
     case PEXORNET_TRIX_TIMESET:
@@ -610,7 +546,7 @@ frbufail:
 struct pexornet_dmabuf* new_dmabuffer (struct pci_dev * pdev, size_t size, unsigned long pgoff)
 {
   struct pexornet_dmabuf* descriptor;
-  descriptor = kmalloc (sizeof(struct pexornet_dmabuf), GFP_KERNEL);
+  descriptor = kmalloc (sizeof(struct pexornet_dmabuf), GFP_ATOMIC);
   if (!descriptor)
   {
     pexornet_dbg(KERN_ERR "new_dmabuffer: could not alloc dma buffer descriptor! \n");
@@ -625,7 +561,7 @@ struct pexornet_dmabuf* new_dmabuffer (struct pci_dev * pdev, size_t size, unsig
 
 #ifdef	DMA_MAPPING_STREAMING
     /* here we use plain kernel memory which we explicitly map for dma*/
-    descriptor->kernel_addr=(unsigned long) kmalloc(size, GFP_KERNEL);
+    descriptor->kernel_addr=(unsigned long) kmalloc(size, GFP_ATOMIC);
     if(!descriptor->kernel_addr)
     {
       pexornet_msg(KERN_ERR "new_dmabuffer: could not alloc streaming dma buffer for size %d \n",size);
@@ -751,7 +687,6 @@ void pexornet_cleanup_buffers (struct pexornet_privdata* priv)
     return;
   }
 
-  pexornet_dma_lock((&(priv->dma_lock)));
   spin_lock_bh( &(priv->buffers_lock));
   /* remove reference in receive queue (discard contents):*/
   list_for_each_entry_safe(cursor, next, &(priv->received_buffers), queue_list)
@@ -774,7 +709,6 @@ void pexornet_cleanup_buffers (struct pexornet_privdata* priv)
     delete_dmabuffer(priv->pdev, cursor);
   }
   spin_unlock_bh( &(priv->buffers_lock));
-  pexornet_dma_unlock((&(priv->dma_lock)));
 
   pexornet_dbg(KERN_NOTICE "**pexornet_cleanup_buffers...done\n");
 }
@@ -909,7 +843,7 @@ irqreturn_t pexornet_isr (int irq, void *dev_id)
   //disable_irq(irq);  // disable and spinlock until any isr of that irq has been finished -> deadlock!
   disable_irq_nosync (irq);    // disable irq line
 #endif
-  ndelay(1000);
+  //ndelay(1000);
   // need this here?
 #ifdef PEXORNET_SHARED_IRQ
 
@@ -917,7 +851,8 @@ irqreturn_t pexornet_isr (int irq, void *dev_id)
   /* check if this interrupt was raised by our device*/
   irtype = ioread32 (privdata->registers.irq_status);
   mb();
-  ndelay(200);
+  ndelay(20);
+  //ndelay(200);
   pexornet_dbg(KERN_NOTICE "pexornet driver interrupt handler with interrupt status 0x%x!\n", irtype);
   if ((irtype & irmask) == irmask) /* test bits */
   {
@@ -927,7 +862,8 @@ irqreturn_t pexornet_isr (int irq, void *dev_id)
     irtype = TRIX_EV_IRQ_CLEAR | TRIX_IRQ_CLEAR;
     iowrite32 (irtype, privdata->registers.irq_status); /*reset interrupt source*/
     mb();
-    ndelay(1000);
+    //ndelay(1000);
+    ndelay(20);
     /* pexornet_dbg(KERN_NOTICE "pexornet driver interrupt handler cleared irq status!\n");*/
     /* now find out if we did interrupt test*/
     state = atomic_read(&(privdata->state));
@@ -1017,10 +953,17 @@ void pexornet_irq_tasklet (unsigned long arg)
   u32 rstat = 0, radd = 0, rdat = 0;
   u32 dmasize = 0, woffset = 0, comm = 0, trigstat = 0;
   int sfp = 0, channelmask = 0;
+  unsigned long flags;
   struct pexornet_trigger_status descriptor;
   struct pexornet_dmabuf dmabuf;
+  struct pexornet_sfp* sfpregisters;
   struct pexornet_privdata *privdata;
   privdata = (struct pexornet_privdata*) arg;
+
+
+  pexornet_gosip_lock(&(privdata->gosip_lock), flags); // to begin with, we lock complete tasklet against ioctl and ifconfig callbacks!
+
+
   trigstat = atomic_read(&(privdata->trigstat));
   pexornet_dbg(
       KERN_NOTICE "pexornet_irq_tasklet is executed, irq_count=%d, trigstat=0x%x\n", atomic_read(&(privdata->irq_count)), trigstat);
@@ -1030,7 +973,7 @@ void pexornet_irq_tasklet (unsigned long arg)
   {
     pexornet_msg(KERN_ALERT "pexornet_irq_tasklet found more than one ir: N.C.H.\n");
   }
-  udelay(20);
+  //udelay(20);
   // waitstate between trigger interrupt and accessing pexornet
 
   pexornet_decode_triggerstatus (trigstat, &descriptor);
@@ -1053,8 +996,14 @@ void pexornet_irq_tasklet (unsigned long arg)
   {
     /** here automatic token request mode*/
 
+
     /* loop over all configured sfps*/
-    struct pexornet_sfp* sfpregisters = &(privdata->registers.sfp);
+    sfpregisters = &(privdata->registers.sfp);
+
+    // JAM 2016: we try some kind of user trigger clear before we read out the stuff...
+    //pexornet_trigger_reset (privdata);
+
+
     for (sfp = 0; sfp < PEXORNET_SFP_NUMBER; ++sfp)
     {
       if (sfpregisters->num_slaves[sfp] == 0)
@@ -1067,7 +1016,7 @@ void pexornet_irq_tasklet (unsigned long arg)
         /* error handling, e.g. no more dma buffer available*/
         pexornet_msg(KERN_ERR "pexornet_irq_tasklet error %d from nextdma\n", retval);
         atomic_set(&(privdata->state), PEXORNET_STATE_STOPPED);
-        return;
+        goto unlockgosip;
       }
       /** the actual token request: */
       comm = PEXORNET_SFP_PT_TK_R_REQ | (0x1 << (16 + sfp)); /* single sfp token mode*/
@@ -1080,12 +1029,19 @@ void pexornet_irq_tasklet (unsigned long arg)
       {
         pexornet_msg(KERN_ERR "** pexornet_irq_tasklet: error %d at sfp_%d reply \n",retval,sfp);
         pexornet_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
-        return;
+        goto unlockgosip;
       }
+
+
+
+      // JAM 2016 test if we can do this before!
+      //pexornet_trigger_reset (privdata);
+
       if ((retval = pexornet_poll_dma_complete (privdata)) != 0)
-        return;
+        goto unlockgosip;
       /* probably poll_dma_complete is not necessary here, since direct dma will reply
        * token request no sooner than dma has finished ?*/
+
 
       /* find out real package length after dma has completed:*/
       dmasize = ioread32 (privdata->registers.dma_len);
@@ -1109,9 +1065,11 @@ void pexornet_irq_tasklet (unsigned long arg)
    * In this case, just the empty next buffer of free queue is moved to receive queue and send
    * to userland as dummy buffer, marked with trigstat.*/
 
-  udelay(10);
+  //udelay(10);
   // waitstate between readout complete and trigger reset
   /** RESET trigger here, probably we can do this already before  pexornet_receive_dma_buffer?*/
+
+  // JAM 2016 test if we can do this before!
   pexornet_trigger_reset (privdata);
 
   /* switch frontend double buffer id for next request!
@@ -1136,6 +1094,8 @@ void pexornet_irq_tasklet (unsigned long arg)
 
 freebuf:
   pexornet_freebuffer (privdata, &dmabuf); // back to free buffer list
+unlockgosip:
+  pexornet_gosip_unlock(&(privdata->gosip_lock), flags);
 
 
 }
@@ -1163,8 +1123,8 @@ int pexornet_next_dma (struct pexornet_privdata* priv, dma_addr_t source, u32 ro
   if (list_empty (&(priv->free_buffers)))
   {
     spin_unlock_bh( &(priv->buffers_lock));
-    pexornet_dbg(KERN_ERR "pexornet_next_dma: list of free buffers is empty. try again later! \n");
-    return -EINVAL;
+    pexornet_msg(KERN_ERR "pexornet_next_dma: list of free buffers is empty. try again later! \n");
+    return -ENOMEM;
     /* TODO: handle dynamically what to do when running out of dma buffers*/
   }
   /* put here search for dedicated buffer in free list:*/
@@ -1361,12 +1321,17 @@ int pexornet_start_dma (struct pexornet_privdata *priv, dma_addr_t source, dma_a
   if (channelmask > 1)
     enable = channelmask; /* set sfp token transfer to initiate the DMA later*/
 
-  rev = pexornet_poll_dma_complete (priv);
-  if (rev)
-  {
-    pexornet_msg(KERN_NOTICE "**pexornet_start_dma: dma was not finished, do not start new one!\n");
-    return rev;
-  }
+  if (enable == PEXORNET_DMA_ENABLED_BIT) // JAM test for nyxor problem: only check previous dma if not in direct dma preparation mode
+    {
+      rev = pexornet_poll_dma_complete (priv);
+      if (rev)
+      {
+        pexornet_msg(KERN_NOTICE "**pexornet_start_dma: dma was not finished, do not start new one!\n");
+        return rev;
+      }
+    }
+
+
   /* calculate maximum burstsize here:*/
   while (dmasize % burstsize)
   {
@@ -1394,10 +1359,16 @@ int pexornet_start_dma (struct pexornet_privdata *priv, dma_addr_t source, dma_a
         KERN_NOTICE "**changed source address to 0x%x, dest:0x%x, dmasize to 0x%x, burstsize:0x%x\n", (unsigned) source, (unsigned) dest, dmasize, burstsize)
   }
 
+  if(dmasize==0)
+  {
+    /* JAM 2016 - for direct DMA mode : always use minimum burst because actual payload size is unknown!*/
+    burstsize=PEXORNET_BURST_MIN;
+  }
+
+
   pexornet_dbg(
       KERN_NOTICE "#### pexornet_start_dma will initiate dma from %p to %p, len=%x, burstsize=%x...\n", (void*) source, (void*) dest, dmasize, burstsize);
 
-  pexornet_dma_lock((&(priv->dma_lock)));
   iowrite32 (source, priv->registers.dma_source);
   mb();
   iowrite32 ((u32) dest, priv->registers.dma_dest);
@@ -1438,7 +1409,6 @@ int pexornet_poll_dma_complete (struct pexornet_privdata* priv)
     //pexornet_dbg(KERN_NOTICE "#### pexornet_poll_dma_complete wait for dma completion #%d\n",loops);
     if (loops++ > PEXORNET_DMA_MAXPOLLS)
     {
-      pexornet_dma_unlock((&(priv->dma_lock)));
       pexornet_msg(KERN_ERR "pexornet_poll_dma_complete: polling longer than %d cycles (delay %d ns) for dma complete!!!\n",PEXORNET_DMA_MAXPOLLS, PEXORNET_DMA_POLLDELAY );
       return -EFAULT;
     }
@@ -1448,8 +1418,6 @@ int pexornet_poll_dma_complete (struct pexornet_privdata* priv)
     //      schedule (); // never do this in irq tasklet!
   };    // while
 
-  pexornet_dma_unlock((&(priv->dma_lock)));
-  //spin_unlock_bh(&(priv->dma_lock));
   return 0;
 }
 
@@ -1511,7 +1479,8 @@ int pexornet_receive_dma_buffer (struct pexornet_privdata *privdata, unsigned lo
   wakeup:
   /* wake up the waiting ioctl*/
   atomic_inc (&(privdata->dma_outstanding));
-  wake_up_interruptible (&(privdata->irq_dma_queue));
+  // JAM2016 do not use this wake queue anymore!
+  //wake_up_interruptible (&(privdata->irq_dma_queue));
 
   return rev;
 }
@@ -1582,7 +1551,6 @@ int pexornet_wait_dma_buffer (struct pexornet_privdata* priv, struct pexornet_dm
     pci_dma_sync_sg_for_cpu (priv->pdev, dmabuf->sg, dmabuf->sg_ents, PCI_DMA_FROMDEVICE);
 
   *result = *dmabuf;
-  //spin_unlock_bh(&(priv->dma_lock));
   return 0;
 }
 
@@ -2044,9 +2012,9 @@ int pexornet_config(struct net_device *dev, struct ifmap *map)
 
 int pexornet_change_mtu(struct net_device *dev, int new_mtu)
 {
-  // JAM TODO spinlock for settings, not only for buffers
-//    unsigned long flags;
-    struct pexornet_privdata *priv= pexornet_get_privdata(dev);
+
+  unsigned long flags;
+  struct pexornet_privdata *priv= pexornet_get_privdata(dev);
 
     //    spinlock_t *lock = &priv->lock;
 //    printk (KERN_NOTICE "snull_change_mtu...\n");
@@ -2055,11 +2023,16 @@ int pexornet_change_mtu(struct net_device *dev, int new_mtu)
         return -EINVAL;
 
 //    spin_lock_irqsave(lock, flags);
+
+    //pexornet_gosip_lock(&(priv->gosip_lock), flags);
+
     dev->mtu = new_mtu;
     pexornet_cleanup_buffers(priv);
     pexornet_build_buffers(priv, dev->mtu, PEXORNET_DEFAULTBUFFERNUM);
 
 //    spin_unlock_irqrestore(lock, flags);
+
+    //pexornet_gosip_unlock(&(priv->gosip_lock), flags);
   pexornet_msg(KERN_NOTICE "pexornet_change_mtu to %d\n",new_mtu);
 
   return 0; /* success */
@@ -2129,6 +2102,11 @@ int pexornet_header(struct sk_buff *skb, struct net_device *dev,
  */
 void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
 {
+
+#ifdef PEXORNET_DEBUGPRINT
+  unsigned int *dmabufbase, *dmabufend , *cursor;
+#endif
+
   int rev = 0, i;
   unsigned long datacnt = 0;
   struct sk_buff *skb;
@@ -2137,7 +2115,8 @@ void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
   struct udphdr *udph;
   struct pexornet_data_header dathead;
   struct pexornet_privdata *priv = pexornet_get_privdata (dev);
-  int maxheadroom = sizeof(struct ethhdr) + sizeof(struct iphdr)   + sizeof(struct udphdr) + 2; /* add 2 bytes to align IP on 16B boundary? */
+  //int maxheadroom = sizeof(struct ethhdr) + sizeof(struct iphdr)   + sizeof(struct udphdr) + 2; /* add 2 bytes to align IP on 16B boundary? */
+  int maxheadroom = sizeof(struct ethhdr) + sizeof(struct iphdr)   + sizeof(struct udphdr); // test april16
   static __be16 ipid=1;
 #ifdef PEXORNET_UDP_CSUM
   __wsum csum;
@@ -2287,6 +2266,15 @@ void pexornet_rx (struct net_device *dev, struct pexornet_dmabuf *pkt)
   pexornet_dbg(KERN_NOTICE "\n");
 
 
+  /**finally some dump of the last words:*/
+#ifdef PEXORNET_DEBUGPRINT
+  pexornet_dbg(KERN_NOTICE "DMA buffer end contents:\n");
+  dmabufbase=(unsigned int*)pkt->kernel_addr;
+  dmabufend=(unsigned int*)(pkt->kernel_addr+pkt->used_size);
+  for(i=0, cursor=dmabufend;i<8;++i, cursor--) {
+    pexornet_dbg(KERN_NOTICE "0x%lx:0x%x \t",(unsigned long) cursor, *cursor);
+  }
+#endif
 
   rev = netif_rx (skb);
 //    if (printk_ratelimit())
@@ -2626,24 +2614,21 @@ static int pexornet_probe (struct pci_dev *dev, const struct pci_device_id *id)
 
   /* TODO may use rw semaphore instead? init_rwsem(struct rw_semaphore *sem); */
 
+  spin_lock_init(&(privdata->gosip_lock));
+
   spin_lock_init(&(privdata->buffers_lock));
   INIT_LIST_HEAD (&(privdata->free_buffers));
   INIT_LIST_HEAD (&(privdata->received_buffers));
   INIT_LIST_HEAD (&(privdata->used_buffers));
 
   /* the interrupt related stuff:*/
-  spin_lock_init(&(privdata->irq_lock));
   atomic_set(&(privdata->irq_count), 0);
   init_waitqueue_head (&(privdata->irq_dma_queue));
   atomic_set(&(privdata->dma_outstanding), 0);
-
   atomic_set(&(privdata->trigstat), 0);
 
-
-
-
   tasklet_init (&(privdata->irq_bottomhalf), pexornet_irq_tasklet, (unsigned long) privdata);
-  spin_lock_init(&(privdata->dma_lock));
+
 
 
 
@@ -2726,8 +2711,7 @@ static int pexornet_probe (struct pci_dev *dev, const struct pci_device_id *id)
             pexornet_cleanup_device(privdata);
             return -EIO;
        }
-  printk(KERN_NOTICE "pexornet_probe has registered network device \"%s\"\n", privdata->net_dev->name);
-
+  pexornet_msg(KERN_NOTICE "pexornet_probe has registered network device \"%s\"\n", privdata->net_dev->name);
   /*******************************************************/
   /** sysfs entries: *************************************/
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
