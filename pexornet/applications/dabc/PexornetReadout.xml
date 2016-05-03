@@ -13,7 +13,7 @@
 
 		<MemoryPool name="Pool">
 			<BufferSize value="200000" />
-			<NumBuffers value="100" />
+			<NumBuffers value="2000" />
 		</MemoryPool>
 
 
