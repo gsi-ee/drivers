@@ -108,7 +108,7 @@ struct pexornet_sfp;
 
 
 /** use disable_irq_nosync and enable_irq in isr.*/
-#define PEXORNET_DISABLE_IRQ_ISR 1
+//#define PEXORNET_DISABLE_IRQ_ISR 1
 
 
 

@@ -887,7 +887,7 @@ irqreturn_t pexornet_isr (int irq, void *dev_id)
       // schedule tasklet
       pexornet_dbg(KERN_NOTICE "pexornet driver interrupt handler schedules tasklet... \n");
       tasklet_hi_schedule (&privdata->irq_bottomhalf);
-
+      //tasklet_schedule (&privdata->irq_bottomhalf);
 
     }
     else
