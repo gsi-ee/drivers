@@ -339,7 +339,9 @@ int pexornet_sfp_get_reply (struct pexornet_privdata* privdata, int ch, u32* com
   pexornet_dbg(KERN_NOTICE "pexornet_sfp_get_reply from SFP: %x got status:%x address:%x data: %x \n", ch,*comm, *addr, *data);
   if (checkvalue == 0)
     return 0;    // no check of reply structure
-  if ((*comm & 0xfff) == checkvalue)
+
+  //if ((*comm & 0xfff) == checkvalue)
+  if ((*comm & checkvalue) == checkvalue)
   {
     if ((*comm & 0x4000) != 0)
     {
@@ -405,8 +407,8 @@ int pexornet_sfp_init_request (struct pexornet_privdata* privdata, int ch, int n
   comm = PEXORNET_SFP_INI_REQ | (0x1 << (16 + sfp));
   pexornet_dbg(KERN_NOTICE "**pexornet_sfp_init_request for channel %d with maxslave index=%d ***\n",ch, maxslave);
   pexornet_sfp_request (privdata, comm, 0, maxslave);
-  if ((retval = pexornet_sfp_get_reply (privdata, sfp, &rstat, &radd, &rdat, 0)) != 0)
-  //if((retval=pexornet_sfp_get_reply(privdata, sfp, &rstat, &radd, &rdat, PEXORNET_SFP_PT_INI_REP))!=0)
+  //if ((retval = pexornet_sfp_get_reply (privdata, sfp, &rstat, &radd, &rdat, 0)) != 0)
+  if((retval=pexornet_sfp_get_reply(privdata, sfp, &rstat, &radd, &rdat, PEXORNET_SFP_PT_INI_REP))!=0)
   {
     pexornet_msg(KERN_ERR "** pexornet_sfp_init_request: error %d at sfp_reply \n",retval);
     pexornet_msg(KERN_ERR "   pexornet_sfp_init_request: incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat);

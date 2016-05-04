@@ -17,6 +17,9 @@ static DEVICE_ATTR(usedbufs, S_IRUGO, pexornet_sysfs_usedbuffers_show, NULL);
 static DEVICE_ATTR(rcvbufs, S_IRUGO, pexornet_sysfs_rcvbuffers_show, NULL);
 static DEVICE_ATTR(codeversion, S_IRUGO, pexornet_sysfs_codeversion_show, NULL);
 static DEVICE_ATTR(dmaregs, S_IRUGO, pexornet_sysfs_dmaregs_show, NULL);
+static DEVICE_ATTR(trixorregs, S_IRUGO, pexornet_sysfs_trixorregs_show, NULL);
+static DEVICE_ATTR(trixorfcti, S_IWUGO | S_IRUGO , pexornet_sysfs_trixor_fctime_show, pexornet_sysfs_trixor_fctime_store);
+static DEVICE_ATTR(trixorcvti, S_IWUGO | S_IRUGO , pexornet_sysfs_trixor_cvtime_show, pexornet_sysfs_trixor_cvtime_store);
 
 #ifdef PEXORNET_WITH_SFP
 static DEVICE_ATTR(sfpregs, S_IRUGO, pexornet_sysfs_sfpregs_show, NULL);
@@ -871,9 +874,21 @@ irqreturn_t pexornet_isr (int irq, void *dev_id)
       atomic_set(&(privdata->trigstat), irstat);
       // trigger status will be evaluated by tasklet, no parallel trigger queue!
       atomic_inc (&(privdata->irq_count));
+
+      // test: we reset trigger module before we launch tasklet:
+#ifdef PEXORNET_TOPHALF_TRIGGERCLEAR
+      pexornet_trigger_reset(privdata);
+      // if we want such thing, we need to check if readout of previous ir has been already done
+      // before resetting trigger and scheduling the bottom half again!
+      // this would be something like napi, and very like the mbs trigger semaphore check
+      // we should try such thing asap, since we might save some interrupt latency here?
+#endif
+
       // schedule tasklet
       pexornet_dbg(KERN_NOTICE "pexornet driver interrupt handler schedules tasklet... \n");
-      tasklet_schedule (&privdata->irq_bottomhalf);
+      tasklet_hi_schedule (&privdata->irq_bottomhalf);
+
+
     }
     else
     {
@@ -946,8 +961,9 @@ irqreturn_t pexornet_isr (int irq, void *dev_id)
 
 void pexornet_irq_tasklet (unsigned long arg)
 {
-  int retval, errcount =0;
-  static int bufid = 0;
+  int retval, errcount =0, intcount=0;
+  //static int bufid = 0;
+  int readflag=0;
   u32 rstat = 0, radd = 0, rdat = 0;
   u32 dmasize = 0, woffset = 0, comm = 0, trigstat = 0;
   int sfp = 0, channelmask = 0;
@@ -966,13 +982,19 @@ void pexornet_irq_tasklet (unsigned long arg)
   pexornet_dbg(
       KERN_NOTICE "pexornet_irq_tasklet is executed, irq_count=%d, trigstat=0x%x\n", atomic_read(&(privdata->irq_count)), trigstat);
 
+#ifndef PEXORNET_TOPHALF_TRIGGERCLEAR
   /* check interrupt count before tasklet. should be one! */
   if (!atomic_dec_and_test (&(privdata->irq_count)))
   {
     pexornet_msg(KERN_ALERT "pexornet_irq_tasklet found more than one ir: N.C.H.\n");
   }
-  //udelay(20);
-  // waitstate between trigger interrupt and accessing pexornet
+#else
+  intcount=atomic_dec_return (&(privdata->irq_count));
+  pexornet_msg(KERN_ALERT "pexornet_irq_tasklet has interrupt count: %d\n",intcount+1); // just to debug what is going on. later quit
+#endif
+
+
+
 
   pexornet_decode_triggerstatus (trigstat, &descriptor);
   pexornet_dbg(
@@ -982,13 +1004,27 @@ void pexornet_irq_tasklet (unsigned long arg)
   {
     pexornet_trigger_do_stop (privdata);
     pexornet_dbg(KERN_NOTICE "pexornet_irq_tasklet has trigger 0x%x, did trixor halt and clear!\n", PEXORNET_TRIGTYPE_STOP);
+#ifndef PEXORNET_TOPHALF_TRIGGERCLEAR
+#ifdef PEXORNET_EARLY_TRIGGERCLEAR
+      pexornet_trigger_reset (privdata);
+#endif
+#endif
+
   }
   else if (descriptor.typ == PEXORNET_TRIGTYPE_START)
   {
     /* do nothing special here. Trigger type is passed upwards with dummy buffer,
      * userland application may react by explicit readout request.*/
     woffset = 0;
-    bufid = 1;    // after start acquisition, always begin with bufid 0
+    atomic_set(&(privdata->bufid), 0); // after start acquisition, always begin with bufid 0
+#ifndef PEXORNET_TOPHALF_TRIGGERCLEAR
+#ifdef PEXORNET_EARLY_TRIGGERCLEAR
+      pexornet_trigger_reset (privdata);
+#endif
+#endif
+
+
+
   }
   else
   {
@@ -1002,6 +1038,32 @@ void pexornet_irq_tasklet (unsigned long arg)
     //pexornet_trigger_reset (privdata);
 
 
+    // first save the readflag from buffer id and switch to second frontend:
+    readflag=atomic_read(&(privdata->bufid));
+    #ifdef PEXORNET_WAIT_FOR_DATA_READY
+      readflag |=2; // TODO: put this into sysfs configuration
+    #endif
+      /* switch frontend double buffer id for next request!
+         * otherwise frontends may stall after 3rd event*/
+        //bufid = (bufid ? 0 : 1);
+        // JAM: try the same with mostly atomic operations:
+         if(atomic_cmpxchg(&(privdata->bufid), 0, 1)==1)
+           atomic_cmpxchg(&(privdata->bufid), 1, 0);
+         ///////////////////////////
+         // int atomic_cmpxchg (  volatile __global int *p, int cmp, int val)
+         //Read the 32-bit value (referred to as old) stored at location p. Compute (old == cmp) ? val : old and store result at location pointed by p.
+         //The function returns old.
+         ///////////////////////////
+
+#ifndef PEXORNET_TOPHALF_TRIGGERCLEAR
+#ifdef PEXORNET_EARLY_TRIGGERCLEAR
+         pexornet_trigger_reset (privdata);
+#endif
+#endif
+
+
+
+
     for (sfp = 0; sfp < PEXORNET_SFP_NUMBER; ++sfp)
     {
       if (sfpregisters->num_slaves[sfp] == 0)
@@ -1009,7 +1071,7 @@ void pexornet_irq_tasklet (unsigned long arg)
       /* for each do token request with direct dma:*/
       channelmask = 1 << (sfp + 1);    // select SFP for PCI Express DMA
 
-      // TODO: put here some retry if temporarily no buffers are available since user changes mtu:
+      // allow here some retry if temporarily no buffers are available if user changes mtu:
       do{
         retval = pexornet_next_dma (privdata, 0, 0, woffset, 0, 0, channelmask);
         if((retval !=0) && ((retval != -ENOMEM) || errcount >= PEXORNET_MAXBUFRETRIES)) // other errors will stop acquisition immediately
@@ -1021,35 +1083,20 @@ void pexornet_irq_tasklet (unsigned long arg)
         errcount++;
       } while(retval!=0);
 
-//////////////old
-//      retval = pexornet_next_dma (privdata, 0, 0, woffset, 0, 0, channelmask);
-//      if (retval)
-//      {
-//        /* error handling, e.g. no more dma buffer available*/
-//        pexornet_msg(KERN_ERR "pexornet_irq_tasklet error %d from nextdma\n", retval);
-//        atomic_set(&(privdata->state), PEXORNET_STATE_STOPPED);
-//        goto unlockgosip;
-//      }
-////////////////
 
       /** the actual token request: */
       comm = PEXORNET_SFP_PT_TK_R_REQ | (0x1 << (16 + sfp)); /* single sfp token mode*/
       pexornet_sfp_clear_channel (privdata, sfp);
-      pexornet_sfp_request (privdata, comm, bufid, 0); /* note: slave is not specified; the chain of all slaves will send everything to receive buffer*/
+      pexornet_sfp_request (privdata, comm, readflag, 0); /* note: slave is not specified; the chain of all slaves will send everything to receive buffer*/
       ndelay(1000);
       /* give pexornet time to evaluate requests?*/
-      if ((retval = pexornet_sfp_get_reply (privdata, sfp, &rstat, &radd, &rdat, 0)) != 0)    // debug: do not check reply status
-        //if((retval=pexornet_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEXORNET_SFP_PT_TK_R_REP))!=0)
+      //if ((retval = pexornet_sfp_get_reply (privdata, sfp, &rstat, &radd, &rdat, 0)) != 0)    // debug: do not check reply status
+      if((retval=pexornet_sfp_get_reply(privdata, sfp, &rstat, &radd, &rdat, PEXORNET_SFP_PT_TK_R_REP))!=0)
       {
         pexornet_msg(KERN_ERR "** pexornet_irq_tasklet: error %d at sfp_%d reply \n",retval,sfp);
         pexornet_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
         goto unlockgosip;
       }
-
-
-
-      // JAM 2016 test if we can do this before!
-      //pexornet_trigger_reset (privdata);
 
       if ((retval = pexornet_poll_dma_complete (privdata)) != 0)
         goto unlockgosip;
@@ -1073,6 +1120,12 @@ void pexornet_irq_tasklet (unsigned long arg)
 
   } /* if else trigtype */
 
+
+  // do not reset trigger before all frontends have been read out!
+  // one could do this with special treatment in top half, emulating such napi  behaviour
+  // i.e. if new trigger has arrived, readout is postponed until previous readout has been done.
+  // would this be faster than directly resetting the irq source?
+
   pexornet_receive_dma_buffer (privdata, woffset);
   /* poll for final dma completion and wake up "DMA wait queue""
    * note that this function is executed even if no token request DMA was performed (special trigger 14/15)
@@ -1084,11 +1137,30 @@ void pexornet_irq_tasklet (unsigned long arg)
   /** RESET trigger here, probably we can do this already before  pexornet_receive_dma_buffer?*/
 
   // JAM 2016 test if we can do this before!
-  pexornet_trigger_reset (privdata);
 
-  /* switch frontend double buffer id for next request!
-   * otherwise frontends may stall after 3rd event*/
-  bufid = (bufid ? 0 : 1);
+  // HERE IT WAS, now we try doing it in top half! not good idea!!!
+
+#ifndef PEXORNET_TOPHALF_TRIGGERCLEAR
+#ifndef PEXORNET_EARLY_TRIGGERCLEAR
+         pexornet_trigger_reset (privdata);
+#endif
+#endif
+
+
+
+//  /* switch frontend double buffer id for next request!
+//   * otherwise frontends may stall after 3rd event*/
+//  //bufid = (bufid ? 0 : 1);
+//  // JAM: try the same with mostly atomic operations:
+//   if(atomic_cmpxchg(&(privdata->bufid), 0, 1)==1)
+//     atomic_cmpxchg(&(privdata->bufid), 1, 0);
+//   ///////////////////////////
+//   // int atomic_cmpxchg (  volatile __global int *p, int cmp, int val)
+//   //Read the 32-bit value (referred to as old) stored at location p. Compute (old == cmp) ? val : old and store result at location pointed by p.
+//   //The function returns old.
+//   ///////////////////////////
+
+
 
   /** for network driver: we do not have waiting ioctl, but tasklet has to fetch received
    * buffer and put it into socket buffer for the moment */
@@ -1497,7 +1569,7 @@ int pexornet_receive_dma_buffer (struct pexornet_privdata *privdata, unsigned lo
 
   wakeup:
   /* wake up the waiting ioctl*/
-  atomic_inc (&(privdata->dma_outstanding));
+  //atomic_inc (&(privdata->dma_outstanding));
   // JAM2016 do not use this wake queue anymore!
   //wake_up_interruptible (&(privdata->irq_dma_queue));
 
@@ -1547,7 +1619,7 @@ int pexornet_wait_dma_buffer (struct pexornet_privdata* priv, struct pexornet_dm
 #endif
 
 
-  atomic_dec (&(priv->dma_outstanding));
+//  atomic_dec (&(priv->dma_outstanding));
 
   /* Take next buffer out of receive queue */
   spin_lock_bh( &(priv->buffers_lock));
@@ -1745,6 +1817,100 @@ ssize_t pexornet_sysfs_buswait_store (struct device *dev, struct device_attribut
 }
 
 
+ssize_t pexornet_sysfs_trixorregs_show (struct device *dev, struct device_attribute *attr, char *buf)
+{
+  ssize_t curs = 0;
+#ifdef PEXORNET_WITH_TRIXOR
+  struct pexornet_privdata *privdata;
+  privdata = (struct pexornet_privdata*) dev_get_drvdata (dev);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "*** PEXORNET trixor register dump:\n");
+
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t trixor stat: 0x%x\n", readl(privdata->registers.irq_status));
+  pexornet_bus_delay();
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t trixor ctrl: 0x%x\n", readl(privdata->registers.irq_control));
+  pexornet_bus_delay();
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t trixor fcti: 0x%x\n", readl(privdata->registers.trix_fcti));
+  pexornet_bus_delay();
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t trixor cvti: 0x%x\n", readl(privdata->registers.trix_cvti));
+#endif
+
+  return curs;
+}
+
+ssize_t pexornet_sysfs_trixor_fctime_show (struct device *dev, struct device_attribute *attr, char *buf)
+{
+  ssize_t curs = 0;
+     struct pexornet_privdata *privdata;
+     privdata = (struct pexornet_privdata*) dev_get_drvdata (dev);
+     curs += snprintf (buf + curs, PAGE_SIZE - curs, "%d\n", (0x10000 - readl(privdata->registers.trix_fcti)));
+     pexornet_bus_delay();
+     return curs;
+}
+
+ssize_t pexornet_sysfs_trixor_fctime_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+  unsigned int val=0;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+  int rev=0;
+#else
+  char* endp=0;
+#endif
+  struct pexornet_privdata *privdata;
+  privdata = (struct pexornet_privdata*) dev_get_drvdata (dev);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+  rev=kstrtouint(buf,0,&val); // this can handle both decimal, hex and octal formats if specified by prefix JAM
+  if(rev!=0) return rev;
+#else
+  val=simple_strtoul(buf,&endp, 0);
+  count= endp - buf; // do we need this?
+#endif
+
+
+   pexornet_bus_delay();
+   iowrite32 (0x10000 - val, privdata->registers.trix_fcti);
+   pexornet_msg( KERN_NOTICE "PEXORNET: trixor fast clear time was set to %d \n", val);
+  return count;
+}
+
+
+ssize_t pexornet_sysfs_trixor_cvtime_show (struct device *dev, struct device_attribute *attr, char *buf)
+{
+    ssize_t curs = 0;
+    struct pexornet_privdata *privdata;
+    privdata = (struct pexornet_privdata*) dev_get_drvdata (dev);
+    curs += snprintf (buf + curs, PAGE_SIZE - curs, "%d\n", (0x10000 - readl(privdata->registers.trix_cvti)));
+    pexornet_bus_delay();
+    return curs;
+}
+
+ssize_t pexornet_sysfs_trixor_cvtime_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+  unsigned int val=0;
+  #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+    int rev=0;
+  #else
+    char* endp=0;
+  #endif
+    struct pexornet_privdata *privdata;
+    privdata = (struct pexornet_privdata*) dev_get_drvdata (dev);
+  #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+    rev=kstrtouint(buf,0,&val); // this can handle both decimal, hex and octal formats if specified by prefix JAM
+    if(rev!=0) return rev;
+  #else
+    val=simple_strtoul(buf,&endp, 0);
+    count= endp - buf; // do we need this?
+  #endif
+     pexornet_bus_delay();
+     iowrite32 (0x10000 - val, privdata->registers.trix_cvti);
+     pexornet_msg( KERN_NOTICE "PEXORNET: trixor conversion time was set to %d \n", val);
+    return count;
+
+}
+
+
+
+
+
 #endif // WITH SFP
 
 #endif // KERNELVERSION CHECK
@@ -1868,6 +2034,9 @@ void pexornet_cleanup_device (struct pexornet_privdata* priv)
   	device_remove_file (priv->class_dev, &dev_attr_gosipretries);
     device_remove_file (priv->class_dev, &dev_attr_gosipbuswait);
 #endif
+    device_remove_file (priv->class_dev, &dev_attr_trixorfcti);
+    device_remove_file (priv->class_dev, &dev_attr_trixorcvti);
+    device_remove_file (priv->class_dev, &dev_attr_trixorregs);
     device_remove_file (priv->class_dev, &dev_attr_dmaregs);
     device_remove_file (priv->class_dev, &dev_attr_codeversion);
     device_remove_file (priv->class_dev, &dev_attr_rcvbufs);
@@ -2627,9 +2796,12 @@ static int pexornet_probe (struct pci_dev *dev, const struct pci_device_id *id)
 
   /* the interrupt related stuff:*/
   atomic_set(&(privdata->irq_count), 0);
-  init_waitqueue_head (&(privdata->irq_dma_queue));
-  atomic_set(&(privdata->dma_outstanding), 0);
+  //init_waitqueue_head (&(privdata->irq_dma_queue));
+  //atomic_set(&(privdata->dma_outstanding), 0);
+
   atomic_set(&(privdata->trigstat), 0);
+
+  atomic_set(&(privdata->bufid), 0);
 
   tasklet_init (&(privdata->irq_bottomhalf), pexornet_irq_tasklet, (unsigned long) privdata);
 
@@ -2746,6 +2918,24 @@ static int pexornet_probe (struct pci_dev *dev, const struct pci_device_id *id)
     {
       pexornet_msg(KERN_ERR "Could not add device file node for dma registers.\n");
     }
+
+    if (device_create_file (privdata->class_dev, &dev_attr_trixorregs) != 0)
+    {
+          pexornet_msg(KERN_ERR "Could not add device file node for trixor registers.\n");
+    }
+
+    if (device_create_file (privdata->class_dev, &dev_attr_trixorfcti) != 0)
+    {
+      pexornet_msg(KERN_ERR "Could not add device file node for trixor fast clear time.\n");
+    }
+    if (device_create_file (privdata->class_dev, &dev_attr_trixorcvti) != 0)
+    {
+      pexornet_msg(KERN_ERR "Could not add device file node for trixor conversion time\n");
+    }
+
+
+
+
 #ifdef PEXORNET_WITH_SFP
     if (device_create_file (privdata->class_dev, &dev_attr_sfpregs) != 0)
     {

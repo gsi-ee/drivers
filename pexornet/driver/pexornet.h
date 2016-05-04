@@ -59,6 +59,9 @@
 //#define PEXORNET_DEBUGPRINT 1
 
 
+
+
+
 /* enable this to use udp checksumming*/
 //#define PEXORNET_UDP_CSUM 1
 
@@ -108,6 +111,28 @@ struct pexornet_sfp;
 #define PEXORNET_DISABLE_IRQ_ISR 1
 
 
+
+/** this define switches token request mode to wait for data ready*/
+#define PEXORNET_WAIT_FOR_DATA_READY 1
+
+
+/** clear trigger already before scheduling readout tasklet
+ * just for testing, currently a very bad ideas
+ * since we do not have proper trigger status queue
+ * and frontend double buffer treatment!*/
+//#define PEXORNET_TOPHALF_TRIGGERCLEAR 1
+
+/** this switches to clear the trigger before read out,
+ * thus polling for data ready on the front ends*/
+#define PEXORNET_EARLY_TRIGGERCLEAR 1
+
+#ifdef PEXORNET_EARLY_TRIGGERCLEAR
+#define PEXORNET_WAIT_FOR_DATA_READY 1
+#endif
+
+#ifdef PEXORNET_TOPHALF_TRIGGERCLEAR
+#define PEXORNET_WAIT_FOR_DATA_READY 1
+#endif
 
 
 /** this defines enables locking the gosip engine between readout (irq) and control ioctl*/
@@ -267,14 +292,19 @@ struct pexornet_privdata
   spinlock_t gosip_lock;        /**< protects gosip access between irq readout and user ioctls */
 
   atomic_t irq_count;           /**< counter for irqs */
-  spinlock_t irq_lock;         /**< optional lock between top and bottom half? */
+  //spinlock_t irq_lock;         /**< optional lock between top and bottom half? */
   struct tasklet_struct irq_bottomhalf; /**< tasklet structure for isr
                                            bottom half */
   atomic_t trigstat;           /**< current trixor status for auto readout mode. Complementary to trigger queue! */
+  atomic_t bufid;              /**< frontend buffer id for next readout*/
 
-  wait_queue_head_t irq_dma_queue;      /**< wait queue between bottom
-                                           half and wait dma ioctl */
-  atomic_t dma_outstanding;     /**< outstanding dma counter */
+  //atomic_t trig_outstanding;    /**< outstanding triggers counter */
+  //struct list_head trig_status; /**< list (queue) of trigger status words corresponding to interrupts*/
+  //spinlock_t trigstat_lock;       /**< protects trigger status queue */
+
+  //wait_queue_head_t irq_dma_queue;      /**< wait queue between bottom
+                                           //half and wait dma ioctl */
+  //atomic_t dma_outstanding;     /**< outstanding dma counter */
   unsigned int wait_timeout; /**< configurable wait timeout for trigger and dma buffer queues. in seconds */
 };
 
@@ -458,6 +488,26 @@ ssize_t pexornet_sysfs_codeversion_show(struct device *dev,
                                      char *buf);
 ssize_t pexornet_sysfs_dmaregs_show(struct device *dev,
                                  struct device_attribute *attr, char *buf);
+
+
+
+/** following functions can be used to tune the trixor fast clear and conversion time registers without
+ * using ioctl calls:*/
+
+ssize_t pexornet_sysfs_trixorregs_show (struct device *dev, struct device_attribute *attr, char *buf);
+
+
+ssize_t pexornet_sysfs_trixor_fctime_show (struct device *dev, struct device_attribute *attr, char *buf);
+
+ssize_t pexornet_sysfs_trixor_fctime_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count);
+
+
+ssize_t pexornet_sysfs_trixor_cvtime_show (struct device *dev, struct device_attribute *attr, char *buf);
+
+ssize_t pexornet_sysfs_trixor_cvtime_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count);
+
+
+
 
 /* show number of retries Nr for sfp request until error is recognized.
  * this will cause request timeout = Nr * (20 ns + arbitrary schedule() switch time)  */
