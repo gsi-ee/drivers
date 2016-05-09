@@ -124,7 +124,7 @@ struct pexornet_sfp;
 
 /** this switches to clear the trigger before read out,
  * thus polling for data ready on the front ends*/
-#define PEXORNET_EARLY_TRIGGERCLEAR 1
+//#define PEXORNET_EARLY_TRIGGERCLEAR 1
 
 #ifdef PEXORNET_EARLY_TRIGGERCLEAR
 #define PEXORNET_WAIT_FOR_DATA_READY 1
@@ -292,18 +292,12 @@ struct pexornet_privdata
   spinlock_t gosip_lock;        /**< protects gosip access between irq readout and user ioctls */
 
   atomic_t irq_count;           /**< counter for irqs */
-  //spinlock_t irq_lock;         /**< optional lock between top and bottom half? */
   struct tasklet_struct irq_bottomhalf; /**< tasklet structure for isr
                                            bottom half */
   atomic_t trigstat;           /**< current trixor status for auto readout mode. Complementary to trigger queue! */
   atomic_t bufid;              /**< frontend buffer id for next readout*/
 
-  //atomic_t trig_outstanding;    /**< outstanding triggers counter */
-  //struct list_head trig_status; /**< list (queue) of trigger status words corresponding to interrupts*/
-  //spinlock_t trigstat_lock;       /**< protects trigger status queue */
 
-  //wait_queue_head_t irq_dma_queue;      /**< wait queue between bottom
-                                           //half and wait dma ioctl */
   //atomic_t dma_outstanding;     /**< outstanding dma counter */
   unsigned int wait_timeout; /**< configurable wait timeout for trigger and dma buffer queues. in seconds */
 };
