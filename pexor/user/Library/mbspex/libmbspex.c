@@ -45,13 +45,15 @@ int mbspex_reset (int handle)
 {
   int rev, errsv=0;;
   mbspex_assert_handle(handle);
-  printm ("mbspex: resetting pex device\n");
+  printm ("mbspex: resetting pex device...");
   rev = ioctl (handle, PEX_IOC_RESET);
   errsv = errno;
     if (rev)
     {
       printm ("\n\nError %d reseting pex device", errsv, strerror (errsv));
     }
+    else
+       printm(" done!\n");
     return rev;
 }
 
@@ -66,13 +68,18 @@ int  mbspex_slave_init (int handle, long l_sfp, long l_n_slaves)
   mbspex_assert_handle(handle);
   descriptor.sfp = l_sfp;
   descriptor.slave = l_n_slaves;
-  printm ("mbspex: initialize SFP chain %d with %d slaves\n", l_sfp, l_n_slaves);
+  printm ("mbspex: initialize SFP chain %d with %d slaves...", l_sfp, l_n_slaves);
   rev = ioctl (handle, PEX_IOC_INIT_BUS, &descriptor);
   errsv = errno;
   if (rev)
   {
     printm ("\n\nError %d  on initializing channel %lx, maxdevices %lx - %s\n", errsv, l_sfp, l_n_slaves, strerror (errsv));
   }
+  else
+   {
+     printm(" done!\n");
+   }
+
   return rev;
 }
 

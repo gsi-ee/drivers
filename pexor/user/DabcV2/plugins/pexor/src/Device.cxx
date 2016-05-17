@@ -302,7 +302,7 @@ void pexorplugin::Device::InitTrixor ()
   {
     //fBoard->StopAcquisition (); // do not send stop trigger interrupt
     // TODO: setters to disable irqs in non trigger mode
-    fBoard->SetTriggerTimes (fTrixConvTime, fTrixFClearTime);
+    fBoard->SetTriggerTimes (fTrixFClearTime, fTrixConvTime);
     fBoard->ResetTrigger ();
   }
 }
@@ -1098,3 +1098,19 @@ double pexorplugin::Device::ProcessTimeout(double last_diff)
 
   return PEXORPLUGIN_REFRESHTIMEOUT;
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+// the most simple readout implementation:
+
+pexorplugin::GenericDevice::GenericDevice(const std::string& name, dabc::Command cmd)
+:pexorplugin::Device (name, cmd)
+{
+  DOUT1("Constructing GenericDevice...\n");
+  PublishPars("$CONTEXT$/PexDevice");
+  fInitDone = true;
+     // initial start acquisition here, not done from transport start anymore:
+  StartAcquisition();
+}
+
+

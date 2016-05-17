@@ -20,7 +20,7 @@
 
 
 /** use disable_irq_nosync and enable_irq in isr.*/
-#define PEXOR_DISABLE_IRQ_ISR 1
+//#define PEXOR_DISABLE_IRQ_ISR 1
 
 
 
@@ -398,6 +398,31 @@ ssize_t pexor_sysfs_codeversion_show(struct device *dev,
                                      char *buf);
 ssize_t pexor_sysfs_dmaregs_show(struct device *dev,
                                  struct device_attribute *attr, char *buf);
+
+
+
+
+/** following functions can be used to tune the trixor fast clear and conversion time registers without
+ * using ioctl calls:*/
+
+ssize_t pexor_sysfs_trixorregs_show (struct device *dev, struct device_attribute *attr, char *buf);
+
+
+ssize_t pexor_sysfs_trixor_fctime_show (struct device *dev, struct device_attribute *attr, char *buf);
+
+ssize_t pexor_sysfs_trixor_fctime_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count);
+
+
+ssize_t pexor_sysfs_trixor_cvtime_show (struct device *dev, struct device_attribute *attr, char *buf);
+
+ssize_t pexor_sysfs_trixor_cvtime_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count);
+
+
+
+
+
+
+
 
 /* show number of retries Nr for sfp request until error is recognized.
  * this will cause request timeout = Nr * (20 ns + arbitrary schedule() switch time)  */

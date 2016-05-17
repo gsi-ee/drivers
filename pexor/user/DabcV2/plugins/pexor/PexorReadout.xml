@@ -1,19 +1,24 @@
 <?xml version="1.0"?>
 <dabc version="2">
 
-<Context host="localhost" name="Pexortest">
+<Context host="localhost" name="PEXOR">
 		<Run>
+			<lib value="libDabcHttp.so"/>
 			<lib value="libDabcMbs.so" />
 			<lib value="libDabcPexor.so" />
+      		<lib value="libDabcGosip.so"/>
 			<!--  lib value="libpexor.so" /-->
 			<logfile value="ReadoutPexor.log" />
 			<!-- <runtime value="20"/> -->
 			<debuglevel value="1"/>
+			<control value="true"/>
+			<halttime value="20"/>
+			
 		</Run>
 
 		<MemoryPool name="Pool">
-			<BufferSize value="400000" />
-			<NumBuffers value="100" />
+			<BufferSize value="65000" />
+			<NumBuffers value="1000" />
 		</MemoryPool>
 
 
@@ -23,28 +28,35 @@
 		</HttpServer>
 
 
+  		<Publisher name="publ" manager="true"/>
 
 
 
-		<Device name="PexorDevice" class="pexorplugin::Device">
+		<Device name="PexorDevice" class="pexorplugin::GenericDevice">
 
 			<PexorID value="0" />
-			<PexorNumSlaves_0 value="1" />
+			<PexorNumSlaves_0 value="2" />
 			<PexorNumSlaves_1 value="0" />
 			<PexorNumSlaves_2 value="0" />
 			<PexorNumSlaves_3 value="0" />
-			<PexorDMALen value="262144" />
+			<PexorDMALen value="32768" />
 			<PexorDMABuffers value="50" />
 			<PexorDMAScatterGather value="false" />
 			<PexorDMAZeroCopy value="false" />
-			<ExploderSubmemSize value="24000" />
+			<PexorMultiTokenDMA  value="false" />
+			<PexorDirectDMA  value="true" />
 			<PexorFormatMbs value="true" />
+			<PexorSingleMbsSubevent value="true"/>
+			<PexorMbsSubcrate  value="0"/>
+			<PexorMbsControl  value="9"/>
+			<PexorMbsProcid   value="1"/>			
 			<PexorSyncReadout value="true" />
-			<PexorParallelReadout value="false" />
-			<PexorUseTrigger value="false" />
-			<TrixorConversionTime value="50" />
-			<TrixorFastClearTime value="40" />
-
+			<PexorUseTrigger value="true" />
+			<PexorAutoReadout value="false"/>
+			<PexorTokenWaitForDataReady value="true"/>
+			<PexorTriggerTimeout value="10"/>
+			<TrixorConversionTime value="250" />
+			<TrixorFastClearTime value="30" />
 		</Device>
 
 
@@ -62,7 +74,20 @@
 			<Ratemeter name="*" debug="true" interval="3" width="5"
 				prec="2" />
 
+			<PexorData width="5" prec="6" low="0" up="1" interval="3" debug="1"/>
+				
+				
+
 		</Module>
+
+		 <Module name="gosip_player" class="gosip::Player">
+	     </Module>
+
+		 <Module name="pexor_player" class="pexorplugin::Player">
+	     <HtmlPath value="/daq/usr/adamczew/workspace/drivers/pexor/user/DabcV2/plugins/pexor/htm/"/>
+	     </Module>
+
+
 
 	</Context>
 </dabc>

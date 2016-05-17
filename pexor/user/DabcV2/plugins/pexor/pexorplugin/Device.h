@@ -363,6 +363,19 @@ protected:
 
 };
 
+
+/** most generic pexor readout implementation.
+ * Required to settle initialization flag*/
+class GenericDevice: public pexorplugin::Device
+{
+public:
+
+  GenericDevice (const std::string& name, dabc::Command cmd);
+
+};
+
+
+
 }    // namespace
 
 #endif

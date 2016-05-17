@@ -235,7 +235,10 @@ void pexorplugin::Device::InitTrixor()
 
   fBoard->StopAcquisition();
   // TODO: setters to disable irqs in non trigger mode
-  fBoard->SetTriggerTimes(fTrixConvTime,fTrixFClearTime);
+  DOUT1(("InitTrixor sets fct=%d (0x%x) fct=%d(0x%x)",fTrixFClearTime,fTrixFClearTime,fTrixConvTime,fTrixConvTime));
+
+
+  fBoard->SetTriggerTimes(fTrixFClearTime, fTrixConvTime);
   fBoard->ResetTrigger();
 
 }

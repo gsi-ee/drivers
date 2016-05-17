@@ -48,12 +48,12 @@ dabc::Module* pexorplugin::Factory::CreateModule (const std::string& classname, 
 dabc::Device* pexorplugin::Factory::CreateDevice (const std::string& classname, const std::string& devname,
     dabc::Command cmd)
 {
-  DOUT0 ("pexorplugin::Factory::CreateDevicee called for class:%s, device:%s", classname.c_str (), devname.c_str ());
+  DOUT0 ("pexorplugin::Factory::CreateDevice called for class:%s, device:%s", classname.c_str (), devname.c_str ());
 
-  if (strcmp (classname.c_str (), "pexorplugin::Device") != 0)
+  if (strcmp (classname.c_str (), "pexorplugin::GenericDevice") != 0)
     return 0;
 
-  dabc::Device* dev = new pexorplugin::Device (devname, cmd);
+  dabc::Device* dev = new pexorplugin::GenericDevice (devname, cmd);
 
   return dev;
 }

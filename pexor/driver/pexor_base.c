@@ -21,6 +21,12 @@ static DEVICE_ATTR(usedbufs, S_IRUGO, pexor_sysfs_usedbuffers_show, NULL);
 static DEVICE_ATTR(rcvbufs, S_IRUGO, pexor_sysfs_rcvbuffers_show, NULL);
 static DEVICE_ATTR(codeversion, S_IRUGO, pexor_sysfs_codeversion_show, NULL);
 static DEVICE_ATTR(dmaregs, S_IRUGO, pexor_sysfs_dmaregs_show, NULL);
+static DEVICE_ATTR(trixorregs, S_IRUGO, pexor_sysfs_trixorregs_show, NULL);
+static DEVICE_ATTR(trixorfcti, S_IWUGO | S_IRUGO , pexor_sysfs_trixor_fctime_show, pexor_sysfs_trixor_fctime_store);
+static DEVICE_ATTR(trixorcvti, S_IWUGO | S_IRUGO , pexor_sysfs_trixor_cvtime_show, pexor_sysfs_trixor_cvtime_store);
+
+
+
 
 #ifdef PEXOR_WITH_SFP
 static DEVICE_ATTR(sfpregs, S_IRUGO, pexor_sysfs_sfpregs_show, NULL);
@@ -873,6 +879,7 @@ int pexor_ioctl_clearreceivebuffers (struct pexor_privdata* priv, unsigned long 
 {
   int i = 0, outstandingbuffers = 0;
   unsigned long wjifs = 0;
+  unsigned long flags=0;
   struct pexor_dmabuf* cursor;
   struct pexor_dmabuf* next;
 #ifdef PEXOR_WITH_TRIXOR
@@ -930,17 +937,17 @@ int pexor_ioctl_clearreceivebuffers (struct pexor_privdata* priv, unsigned long 
       return -EFAULT;
     }
     atomic_dec (&(priv->trig_outstanding));
-    spin_lock( &(priv->trigstat_lock));
+    spin_lock_irqsave( &(priv->trigstat_lock),flags);
     if (list_empty (&(priv->trig_status)))
     {
-      spin_unlock( &(priv->trigstat_lock));
+      spin_unlock_irqrestore( &(priv->trigstat_lock),flags);
       pexor_msg(KERN_ERR "pexor_ioctl_clearreceivebuffers never come here - list of trigger type buffers is empty! \n");
       return -EFAULT;
     }
     trigstat=list_first_entry(&(priv->trig_status), struct pexor_trigger_buf, queue_list);
     trigstat->trixorstat = 0;    // mark status object as free
     list_move_tail (&(trigstat->queue_list), &(priv->trig_status));    // move to end of list
-    spin_unlock( &(priv->trigstat_lock));
+    spin_unlock_irqrestore( &(priv->trigstat_lock),flags);
 
   }    // for outstandingbuffers
 
@@ -1345,6 +1352,7 @@ irqreturn_t pexor_isr (int irq, void *dev_id)
 {
   u32 irtype, irstat, irmask;
   int state;
+  unsigned long flags;
 #ifdef PEXOR_WITH_TRIXOR
   struct pexor_trigger_buf* trigstat;
 #endif
@@ -1403,7 +1411,7 @@ irqreturn_t pexor_isr (int irq, void *dev_id)
 
       /* put current irtype to queue for consumer evaluation: */
       // use first unassigned entry in ring buffer:
-      spin_lock( &(privdata->trigstat_lock));
+      spin_lock_irqsave( &(privdata->trigstat_lock),flags);
       list_for_each_entry(trigstat, &(privdata->trig_status), queue_list)
       {
         if(trigstat->trixorstat == 0)
@@ -1412,7 +1420,7 @@ irqreturn_t pexor_isr (int irq, void *dev_id)
       // todo: handle case where ringbuffer is full, i.e. there is no entry marked with zero status
       // in the above case we would overwrite the last (oldest) entry
       trigstat->trixorstat = irstat;    // change of entry state is also inside the list lock!
-      spin_unlock( &(privdata->trigstat_lock));
+      spin_unlock_irqrestore( &(privdata->trigstat_lock),flags);
 
       pexor_dbg(KERN_NOTICE "pexor driver interrupt handler has triggerstatus 0x%x!\n", trigstat->trixorstat);
 
@@ -2114,7 +2122,7 @@ ssize_t pexor_sysfs_codeversion_show (struct device *dev, struct device_attribut
 #endif
   struct pexor_privdata *privdata;
   privdata = (struct pexor_privdata*) dev_get_drvdata (dev);
-  curs = snprintf (vstring, 512, "*** This is PEXOR driver version %s build on %s at %s \n\t", PEXORVERSION, __DATE__,
+  curs = snprintf (vstring, 512, "*** This is PEXOR driver by JAM(j.adamczewski@gsi.de) version %s build on %s at %s \n\t", PEXORVERSION, __DATE__,
       __TIME__);
 #ifdef PEXOR_WITH_SFP
   pg = &(privdata->pexor);
@@ -2230,6 +2238,102 @@ ssize_t pexor_sysfs_buswait_store (struct device *dev, struct device_attribute *
 }
 
 
+
+ssize_t pexor_sysfs_trixorregs_show (struct device *dev, struct device_attribute *attr, char *buf)
+{
+  ssize_t curs = 0;
+#ifdef PEXOR_WITH_TRIXOR
+  struct pexor_privdata *privdata;
+  privdata = (struct pexor_privdata*) dev_get_drvdata (dev);
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "*** PEXOR trixor register dump:\n");
+
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t trixor stat: 0x%x\n", readl(privdata->pexor.irq_status));
+  pexor_bus_delay();
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t trixor ctrl: 0x%x\n", readl(privdata->pexor.irq_control));
+  pexor_bus_delay();
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t trixor fcti: 0x%x\n", readl(privdata->pexor.trix_fcti));
+  pexor_bus_delay();
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t trixor cvti: 0x%x\n", readl(privdata->pexor.trix_cvti));
+#endif
+
+  return curs;
+}
+
+ssize_t pexor_sysfs_trixor_fctime_show (struct device *dev, struct device_attribute *attr, char *buf)
+{
+  ssize_t curs = 0;
+     struct pexor_privdata *privdata;
+     privdata = (struct pexor_privdata*) dev_get_drvdata (dev);
+     curs += snprintf (buf + curs, PAGE_SIZE - curs, "%d\n", (0x10000 - readl(privdata->pexor.trix_fcti)));
+     pexor_bus_delay();
+     return curs;
+}
+
+ssize_t pexor_sysfs_trixor_fctime_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+  unsigned int val=0;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+  int rev=0;
+#else
+  char* endp=0;
+#endif
+  struct pexor_privdata *privdata;
+  privdata = (struct pexor_privdata*) dev_get_drvdata (dev);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+  rev=kstrtouint(buf,0,&val); // this can handle both decimal, hex and octal formats if specified by prefix JAM
+  if(rev!=0) return rev;
+#else
+  val=simple_strtoul(buf,&endp, 0);
+  count= endp - buf; // do we need this?
+#endif
+
+
+   pexor_bus_delay();
+   iowrite32 (0x10000 - val, privdata->pexor.trix_fcti);
+   pexor_msg( KERN_NOTICE "PEXOR: trixor fast clear time was set to %d \n", val);
+  return count;
+}
+
+
+ssize_t pexor_sysfs_trixor_cvtime_show (struct device *dev, struct device_attribute *attr, char *buf)
+{
+    ssize_t curs = 0;
+    struct pexor_privdata *privdata;
+    privdata = (struct pexor_privdata*) dev_get_drvdata (dev);
+    curs += snprintf (buf + curs, PAGE_SIZE - curs, "%d\n", (0x10000 - readl(privdata->pexor.trix_cvti)));
+    pexor_bus_delay();
+    return curs;
+}
+
+ssize_t pexor_sysfs_trixor_cvtime_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+  unsigned int val=0;
+  #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+    int rev=0;
+  #else
+    char* endp=0;
+  #endif
+    struct pexor_privdata *privdata;
+    privdata = (struct pexor_privdata*) dev_get_drvdata (dev);
+  #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+    rev=kstrtouint(buf,0,&val); // this can handle both decimal, hex and octal formats if specified by prefix JAM
+    if(rev!=0) return rev;
+  #else
+    val=simple_strtoul(buf,&endp, 0);
+    count= endp - buf; // do we need this?
+  #endif
+     pexor_bus_delay();
+     iowrite32 (0x10000 - val, privdata->pexor.trix_cvti);
+     pexor_msg( KERN_NOTICE "PEXOR: trixor conversion time was set to %d \n", val);
+    return count;
+
+}
+
+
+
+
+
+
 #endif // WITH SFP
 
 #endif // KERNELVERSION CHECK
@@ -2337,6 +2441,7 @@ void test_pci (struct pci_dev *dev)
 void cleanup_device (struct pexor_privdata* priv)
 {
   int j = 0;
+  unsigned long flags=0;
   struct pci_dev* pcidev;
   struct pexor_trigger_buf* trigstat;
   struct pexor_trigger_buf* nexttrigstat;
@@ -2353,6 +2458,9 @@ void cleanup_device (struct pexor_privdata* priv)
   	device_remove_file (priv->class_dev, &dev_attr_gosipretries);
     device_remove_file (priv->class_dev, &dev_attr_gosipbuswait);
 #endif
+    device_remove_file (priv->class_dev, &dev_attr_trixorfcti);
+    device_remove_file (priv->class_dev, &dev_attr_trixorcvti);
+    device_remove_file (priv->class_dev, &dev_attr_trixorregs);
     device_remove_file (priv->class_dev, &dev_attr_dmaregs);
     device_remove_file (priv->class_dev, &dev_attr_codeversion);
     device_remove_file (priv->class_dev, &dev_attr_rcvbufs);
@@ -2390,13 +2498,14 @@ void cleanup_device (struct pexor_privdata* priv)
   cleanup_buffers (priv);
 
   // here remove trigger status objects:
-  spin_lock( &(priv->trigstat_lock));
+  spin_lock_irqsave( &(priv->trigstat_lock),flags);
+
   list_for_each_entry_safe(trigstat, nexttrigstat, &(priv->trig_status), queue_list)
   {
     list_del(&(trigstat->queue_list)); /* put out of list*/
     kfree(trigstat);
   }
-  spin_unlock( &(priv->trigstat_lock));
+  spin_unlock_irqrestore( &(priv->trigstat_lock),flags);
 
   for (j = 0; j < 6; ++j)
   {
@@ -2428,6 +2537,7 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
 {
   int err = 0, ix = 0;
   u16 vid = 0, did = 0;
+  unsigned long flags=0;
   char devnameformat[64];
   char devname[64];
   struct pexor_trigger_buf* trigstat;
@@ -2629,9 +2739,9 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
     }
     memset (trigstat, 0, sizeof(struct pexor_trigger_buf));
     INIT_LIST_HEAD (&(trigstat->queue_list));
-    spin_lock( &(privdata->trigstat_lock));
+    spin_lock_irqsave( &(privdata->trigstat_lock),flags);
     list_add (&(trigstat->queue_list), &(privdata->trig_status));
-    spin_unlock( &(privdata->trigstat_lock));
+    spin_unlock_irqrestore( &(privdata->trigstat_lock),flags);
     pexor_dbg(KERN_NOTICE "pexor probe added trigger status buffer #%d .\n", ix);
   }
 
@@ -2771,6 +2881,25 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
     {
       pexor_msg(KERN_ERR "Could not add device file node for dma registers.\n");
     }
+
+
+    if (device_create_file (privdata->class_dev, &dev_attr_trixorregs) != 0)
+    {
+      pexor_msg(KERN_ERR "Could not add device file node for trixor registers.\n");
+    }
+
+    if (device_create_file (privdata->class_dev, &dev_attr_trixorfcti) != 0)
+    {
+      pexor_msg(KERN_ERR "Could not add device file node for trixor fast clear time.\n");
+    }
+    if (device_create_file (privdata->class_dev, &dev_attr_trixorcvti) != 0)
+    {
+      pexor_msg(KERN_ERR "Could not add device file node for trixor conversion time\n");
+    }
+
+
+
+
 #ifdef PEXOR_WITH_SFP
     if (device_create_file (privdata->class_dev, &dev_attr_sfpregs) != 0)
     {

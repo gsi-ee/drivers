@@ -84,7 +84,7 @@ int pexor_ioctl_set_trixor (struct pexor_privdata* priv, unsigned long arg)
 //      mb();
 //      ndelay(20);
 
-      pexor_dbg(KERN_ERR "pexor_ioctl_set_trixor configured trixor as master with fct=0x%x cvt=0x%x!",descriptor.fct, descriptor.cvt);
+      pexor_msg(KERN_ERR "pexor_ioctl_set_trixor configured trixor as master with fct=0x%x cvt=0x%x!",descriptor.fct, descriptor.cvt);
       break;
 
     default:
@@ -656,6 +656,7 @@ int pexor_ioctl_wait_trigger (struct pexor_privdata* priv, unsigned long arg)
 {
   int wjifs = 0;
   int retval = 0;
+  unsigned long flags=0;
   struct pexor_trigger_buf* trigstat;
   struct pexor_trigger_status descriptor;
   wjifs = wait_event_interruptible_timeout (priv->irq_trig_queue, atomic_read( &(priv->trig_outstanding) ) > 0,
@@ -676,10 +677,10 @@ int pexor_ioctl_wait_trigger (struct pexor_privdata* priv, unsigned long arg)
   }
   atomic_dec (&(priv->trig_outstanding));
   /* read triggerstatus of this trigger interrupt from buffering queue:*/
-  spin_lock( &(priv->trigstat_lock));
+  spin_lock_irqsave( &(priv->trigstat_lock),flags);
   if (list_empty (&(priv->trig_status)))
   {
-    spin_unlock( &(priv->trigstat_lock));
+    spin_unlock_irqrestore( &(priv->trigstat_lock),flags);
     pexor_msg(KERN_ERR "pexor_ioctl_wait_trigger never come here - list of trigger status buffers is empty! \n");
     return -EFAULT;
   }
@@ -688,7 +689,7 @@ int pexor_ioctl_wait_trigger (struct pexor_privdata* priv, unsigned long arg)
    * if the trigger waitqueue is woken up by isr, there must be a valid triggerstatus unless something is very wrong*/
   if (trigstat->trixorstat == 0)
   {
-    spin_unlock( &(priv->trigstat_lock));
+    spin_unlock_irqrestore( &(priv->trigstat_lock),flags);
     pexor_msg(KERN_ERR "pexor_ioctl_wait_trigger never come here - first trigger status is zero! \n");
     return -EFAULT;
   }
@@ -697,7 +698,7 @@ int pexor_ioctl_wait_trigger (struct pexor_privdata* priv, unsigned long arg)
 
   trigstat->trixorstat = 0;    // mark status object as free
   list_move_tail (&(trigstat->queue_list), &(priv->trig_status));    // move to end of list
-  spin_unlock( &(priv->trigstat_lock));
+  spin_unlock_irqrestore( &(priv->trigstat_lock),flags);
 
   pexor_dbg(KERN_NOTICE "pexor_ioctl_wait_trigger receives typ:0x%x si:0x%x mis:0x%x lec:0x%x di:0x%x tdt:0x%x eon:0x%x \n",
       descriptor.typ, descriptor.si, descriptor.mis, descriptor.lec, descriptor.di, descriptor.tdt, descriptor.eon);
