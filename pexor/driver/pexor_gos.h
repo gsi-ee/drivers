@@ -309,10 +309,20 @@ int pexor_sfp_clear_channelpattern (struct pexor_privdata* privdata, int pat);
 int pexor_ioctl_request_token(struct pexor_privdata *priv, unsigned long arg);
 
 
+
+
+
 /** Waits for a token to arrive previously requested by
  * an asynchronous ioctl request token
  * Setup and data contained in user arg structure */
 int pexor_ioctl_wait_token(struct pexor_privdata *priv, unsigned long arg);
+
+/** Request single DMA buffer filled from parallel token request on all configured
+ * sfp chains. Buffer consists of all chain data, optionally with MBS padding words in between them.
+ * This function is similar to that in mbspex driver.
+ * Data request is locked against other control ioctls until complete.
+ * */
+int pexor_ioctl_request_receive_token_parallel (struct pexor_privdata *priv, unsigned long arg);
 
 
 /** Wait for a trigger interrupt from pexor. Will be raised from trixor board

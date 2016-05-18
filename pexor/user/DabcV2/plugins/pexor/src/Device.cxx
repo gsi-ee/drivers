@@ -509,6 +509,39 @@ int pexorplugin::Device::RequestMultiToken (dabc::Buffer& buf, bool synchronous,
 
 }
 
+
+int pexorplugin::Device::RequestReceiveParallelTokens (dabc::Buffer& buf, uint16_t trigtype)
+{
+  DOUT3 ("pexorplugin::Device::RequestReceiveParallelTokens");
+  pexor::DMA_Buffer* tokbuf = 0;
+  unsigned int channelmask = 0;
+  for (int ix = 0; ix < PEXORPLUGIN_NUMSFP; ++ix)
+  {
+    if (fEnabledSFP[ix])
+      channelmask |= (1 << ix);
+  }
+  DOUT2 ("pexorplugin::Device::RequestReceiveParallelTokens with channelmask:0x%x", channelmask);
+  int bufflag= (fWaitForDataReady ?  fDoubleBufID[0] | 2 : fDoubleBufID[0]);
+  tokbuf = fBoard->RequestReceiveAllTokens(channelmask, bufflag, 0,0);
+  DOUT3 ("pexorplugin::Device::RequestReceiveParallelTokens gets dma buffer 0x%x", tokbuf);
+
+  if ((long int) tokbuf == -1)    // TODO: handle error situations by exceptions later!
+  {
+    EOUT("**** Error in PEXOR RequestReceiveParallelTokens  with mask %x !\n", channelmask);
+    return dabc::di_Error;
+  }
+  fDoubleBufID[0] = fDoubleBufID[0] == 0 ? 1 : 0;    // in this mode, we only use double buffer id of first sfp
+
+  if (fTriggeredRead)
+    fBoard->ResetTrigger ();
+  return (CopyOutputBuffer (tokbuf, buf, trigtype));
+}
+
+
+
+
+
+
 int pexorplugin::Device::ReceiveTokenBuffer (dabc::Buffer& buf)
 {
   // for asynchronous request, we need to put here again the check for zero copy dma:
@@ -942,70 +975,100 @@ unsigned pexorplugin::Device::Read_Complete (dabc::Buffer& buf)
 
 int pexorplugin::Device::User_Readout (dabc::Buffer& buf, uint8_t trigtype)
 {
-  int res = dabc::di_Ok;
+  //int res = dabc::di_Ok;
   int retsize = 0;
   unsigned int filled_size = 0, used_size = 0;
   mbs::EventHeader* evhdr = 0;
   mbs::SubeventHeader* subhdr = 0;
+
   switch (trigtype)
   {
-
     // do not read out for start or stop trigger:
     case PEXOR_TRIGTYPE_START:
+    case PEXOR_TRIGTYPE_STOP:
+      switch (trigtype)
       {
-        DOUT1("pexorplugin::Device::User_Readout finds start trigger :%d !!", trigtype);
-        SetInfo(dabc::format("User_Readout finds start trigger :%d !!", trigtype));
-        if (!IsAutoReadout ())
-          fBoard->ResetTrigger ();
-        fAqcuisitionRunning = true;
-        if (fMbsFormat)
-        {
-          // as default, we deliver empty event and subevent just marking trigger type and ids:
-          dabc::Pointer ptr (buf);
-          evhdr = PutMbsEventHeader (ptr, fNumEvents, trigtype);    // TODO: get current trigger type from trixor and set
-          if (evhdr == 0)
-            return dabc::di_SkipBuffer;    // buffer too small error
-          used_size += sizeof(mbs::EventHeader);
-          subhdr = PutMbsSubeventHeader (ptr, fSubeventSubcrate, fSubeventControl, fSubeventProcid);
-          if (subhdr == 0)
-            return dabc::di_SkipBuffer;    // buffer too small error
-          used_size += sizeof(mbs::SubeventHeader);
-          filled_size += sizeof(mbs::SubeventHeader);
-          /////////////
-          // put some dummy payload data here:
+        case PEXOR_TRIGTYPE_START:
+
+          DOUT1("pexorplugin::Device::User_Readout finds start trigger :%d !!", trigtype);
+          SetInfo (dabc::format ("User_Readout finds start trigger :%d !!", trigtype));
+
+          // in most generic way, it is problematic to define double buffer id at start,
+          // since we have no means here to intialize any frontend to same number!
+          // we leave this to subclass devices and hope that daq and frontends keep consistency...
+          //InitDAQ(); // need this to sync frontend buf ids ? is it enough? no
+          // JAM2016: need to reset frontend double buffer id after start to 0
+          // otherwise we might end up in unwanted "user trigger clear mode" (or no readout at all...)
+//          for (int sfp = 0; sfp < PEXORPLUGIN_NUMSFP; sfp++)
+//          {
+//            fDoubleBufID[sfp] = 0;
+//          }
+//          DOUT1("pexorplugin::Device::User_Readout resets initial bufid 0 \n");
+          fAqcuisitionRunning = true;
+          break;
+
+        case PEXOR_TRIGTYPE_STOP:
+
+          DOUT1("pexorplugin::Device::User_Readout finds stop trigger :%d !!", trigtype);
+          SetInfo (dabc::format ("User_Readout finds stop trigger :%d !!", trigtype));
+          fAqcuisitionRunning = false;
+          break;
+
+        default:
+          break;
+      }
+      ;
+      if (!IsAutoReadout ())
+        fBoard->ResetTrigger ();
+
+      if (fMbsFormat)
+      {
+        // as default, we deliver empty event and subevent just marking trigger type and ids:
+        dabc::Pointer ptr (buf);
+        evhdr = PutMbsEventHeader (ptr, fNumEvents, trigtype);    // TODO: get current trigger type from trixor and set
+        if (evhdr == 0)
+          return dabc::di_SkipBuffer;    // buffer too small error
+        used_size += sizeof(mbs::EventHeader);
+        subhdr = PutMbsSubeventHeader (ptr, fSubeventSubcrate, fSubeventControl, fSubeventProcid);
+        if (subhdr == 0)
+          return dabc::di_SkipBuffer;    // buffer too small error
+        used_size += sizeof(mbs::SubeventHeader);
+        filled_size += sizeof(mbs::SubeventHeader);
+        /////////////
+        // put some dummy payload data here:
 //              if(PutMbsPaddingWords(ptr, 1)<0)
 //                return dabc::di_SkipBuffer;
 //              used_size += sizeof(int);
 //              filled_size += sizeof(int);
-          /////////////
-          subhdr->SetRawDataSize (filled_size - sizeof(mbs::SubeventHeader));
-          evhdr->SetSubEventsSize (filled_size);
-          buf.SetTypeId (mbs::mbt_MbsEvents);
-          buf.SetTotalSize (used_size);
-          retsize = used_size;
-        }
-        else
-        {
-          // no mbs format (very hypothetical): just skip buffer
-          return dabc::di_SkipBuffer;
-        }
-        //return dabc::di_RepeatTimeOut;
+        /////////////
+        subhdr->SetRawDataSize (filled_size - sizeof(mbs::SubeventHeader));
+        evhdr->SetSubEventsSize (filled_size);
+        buf.SetTypeId (mbs::mbt_MbsEvents);
+        buf.SetTotalSize (used_size);
+        retsize = used_size;
       }
-      break;
-
-    case PEXOR_TRIGTYPE_STOP:
+      else
       {
-        DOUT1("pexorplugin::Device::User_Readout finds stop trigger :%d !!", trigtype);
-        SetInfo(dabc::format("User_Readout finds stop trigger :%d !!", trigtype));
-        if (!IsAutoReadout ())
-          fBoard->ResetTrigger ();
-        fAqcuisitionRunning = false;
-        // TODO: do not repeat with timeout, but return event buffer with start trigger type to data stream
-        //return dabc::di_SkipBuffer;
-
-        return dabc::di_RepeatTimeOut;    // need this timeout for proper shutdown?
+        // no mbs format (very hypothetical): just skip buffer
+        return dabc::di_SkipBuffer;
       }
+      //return dabc::di_RepeatTimeOut;
+
       break;
+
+//    case PEXOR_TRIGTYPE_STOP:
+//      {
+//        DOUT1("pexorplugin::Device::User_Readout finds stop trigger :%d !!", trigtype);
+//        SetInfo(dabc::format("User_Readout finds stop trigger :%d !!", trigtype));
+//        if (!IsAutoReadout ())
+//          fBoard->ResetTrigger ();
+//        fAqcuisitionRunning = false;
+//        // TODO: do not repeat with timeout, but return event buffer with start trigger type to data stream
+//        //return dabc::di_SkipBuffer;
+//
+//        return dabc::di_RepeatTimeOut;    // need this timeout for proper shutdown?
+//      }
+//      break;
 
     case PEXOR_TRIGTYPE_NONE:    // we may put different behaviour for triggerless readout here
       trigtype = mbs::tt_Event;    // for the moment, triggerless events are marked as regular data events
@@ -1024,11 +1087,15 @@ int pexorplugin::Device::User_Readout (dabc::Buffer& buf, uint8_t trigtype)
                 "pexorplugin::Device::  PexorMultiTokenDMA Mode does not work with direct DMA! Please change config.\n");
             exit (1);
           }
-          res = RequestMultiToken (buf, false);    // does not work as synchronous request! dma buffers are still separately send
-          if ((unsigned) res != dabc::di_Ok)
-            return res;    // propagate error type
-          retsize = ReceiveAllTokenBuffer (buf, trigtype);
 
+#ifdef LIBPEXOR_ATOMIC_IOCTLS
+            retsize = RequestReceiveParallelTokens (buf, trigtype);
+#else
+            res = RequestMultiToken (buf, false);    // does not work as synchronous request! dma buffers are still separately send
+            if ((unsigned) res != dabc::di_Ok)
+              return res;    // propagate error type
+            retsize = ReceiveAllTokenBuffer (buf, trigtype);
+#endif
         }
         else
         {
@@ -1039,7 +1106,7 @@ int pexorplugin::Device::User_Readout (dabc::Buffer& buf, uint8_t trigtype)
       }
       else
       {
-        retsize=buf.GetTotalSize(); //account already filled buffer size for ratemeter
+        retsize = buf.GetTotalSize ();    //account already filled buffer size for ratemeter
       }
       break;
   };    // switch

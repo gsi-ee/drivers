@@ -343,6 +343,12 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
       pexor_dbg(KERN_NOTICE "** pexor_ioctl wait token\n");
       retval = pexor_ioctl_wait_token(privdata, arg);
       break;
+
+    case PEXOR_IOC_REQUEST_RECEIVE_TOKENS:
+      pexor_dbg(KERN_NOTICE "** pexor_ioctl request receive token parallel\n");
+      retval = pexor_ioctl_request_receive_token_parallel(privdata, arg);
+      break;
+
     case PEXOR_IOC_WAIT_TRIGGER:
       pexor_dbg(KERN_NOTICE "** pexor_ioctl wait trigger\n");
       up(&privdata->ioctl_sem); /* do not lock ioctl during wait*/
@@ -1605,7 +1611,7 @@ void pexor_irq_tasklet (unsigned long arg)
 }
 
 int pexor_next_dma (struct pexor_privdata* priv, dma_addr_t source, u32 roffset, u32 woffset, u32 dmasize,
-    unsigned long bufid, u32 channelmask)
+    unsigned long* bufid, u32 channelmask)
 {
   struct pexor_dmabuf* nextbuf;
   int i, rev, rest;
@@ -1627,29 +1633,29 @@ int pexor_next_dma (struct pexor_privdata* priv, dma_addr_t source, u32 roffset,
   if (list_empty (&(priv->free_buffers)))
   {
     spin_unlock( &(priv->buffers_lock));
-    pexor_dbg(KERN_ERR "pexor_next_dma: list of free buffers is empty. try again later! \n");
+    pexor_msg(KERN_ERR "pexor_next_dma: list of free buffers is empty. try again later! \n");
     return -EINVAL;
     /* TODO: handle dynamically what to do when running out of dma buffers*/
   }
   /* put here search for dedicated buffer in free list:*/
-  if (bufid != 0)
+  if (bufid && *bufid != 0)
   {
     /* we want to fill a special buffer, find it in free list:*/
     list_for_each_entry(nextbuf, &(priv->free_buffers), queue_list)
     {
-      if(nextbuf->virt_addr==bufid)
+      if(nextbuf->virt_addr==*bufid)
       {
-        pexor_dbg(KERN_NOTICE "** pexor_next_dma is using buffer of id 0x%lx\n",bufid);
+        pexor_dbg(KERN_NOTICE "** pexor_next_dma is using buffer of id 0x%lx\n",*bufid);
         /* put desired buffer to the begin of the free list, this will be treated subsequently*/
         list_move(&(nextbuf->queue_list) , &(priv->free_buffers));
         break;
       }
     }
-    if (nextbuf->virt_addr != bufid)
+    if (nextbuf->virt_addr != *bufid)
     {
       /* check again if we found the correct buffer in list...*/
       spin_unlock( &(priv->buffers_lock));
-      pexor_dbg(KERN_ERR "pexor_next_dma: buffer of desired id 0x%lx is not in free list! \n", bufid);
+      pexor_dbg(KERN_ERR "pexor_next_dma: buffer of desired id 0x%lx is not in free list! \n", *bufid);
       return -EINVAL;
     }
   }
@@ -1657,12 +1663,14 @@ int pexor_next_dma (struct pexor_privdata* priv, dma_addr_t source, u32 roffset,
   {
     /* just take next available buffer to fill by DMA:*/
     nextbuf=list_first_entry(&(priv->free_buffers), struct pexor_dmabuf, queue_list);
+    *bufid=nextbuf->virt_addr; // pass to caller to optionally reuse the same buffer
+    pexor_dbg(KERN_ERR "pexor_next_dma: using buffer id 0x%lx (virt addr:0x%x)! \n", *bufid, nextbuf->virt_addr);
   }
   spin_unlock( &(priv->buffers_lock));
 
   if (woffset > nextbuf->size - 8)
   {
-    pexor_dbg(
+    pexor_msg(
         KERN_NOTICE "#### pexor_next_dma illlegal write offset 0x%x for target buffer size 0x%x\n", woffset, (unsigned) nextbuf->size);
     return -EINVAL;
   }
@@ -1825,7 +1833,7 @@ int pexor_start_dma (struct pexor_privdata *priv, dma_addr_t source, dma_addr_t 
   if (channelmask > 1)
     enable = channelmask; /* set sfp token transfer to initiate the DMA later*/
 
-  if (enable < 1) // JAM test for nyxor problem: only check previous dma if not in direct dma preparation mode
+  if (enable == PEXOR_DMA_ENABLED_BIT) // JAM test for nyxor problem: only check previous dma if not in direct dma preparation mode
    {
      rev = pexor_poll_dma_complete (priv);
      if (rev)

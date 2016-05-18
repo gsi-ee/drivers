@@ -471,7 +471,7 @@ if(descriptor.directdma!=0)
       dmabufid,woffset,channelmask);
 
   atomic_set(&(priv->state), PEXOR_STATE_DMA_SINGLE);
-  retval = pexor_next_dma (priv, 0, 0, woffset, 0, dmabufid, channelmask);
+  retval = pexor_next_dma (priv, 0, 0, woffset, 0, &dmabufid, channelmask);
   if (retval)
   {
     /* error handling, e.g. no more dma buffer available*/
@@ -611,7 +611,7 @@ if(descriptor.directdma ==0)
   pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_token uses dma buffer 0x%lx with write offset  0x%x\n", dmabufid,woffset);
 
   atomic_set(&(priv->state),PEXOR_STATE_DMA_SINGLE);
-  retval=pexor_next_dma( priv, sfp->tk_mem_dma[chan], 0 , woffset, dmasize, dmabufid,0);
+  retval=pexor_next_dma( priv, sfp->tk_mem_dma[chan], 0 , woffset, dmasize, &dmabufid,0);
   if(retval)
   {
     /* error handling, e.g. no more dma buffer available*/
@@ -651,6 +651,267 @@ else
   return retval;
 
 }
+
+
+int pexor_ioctl_request_receive_token_parallel (struct pexor_privdata *priv, unsigned long arg)
+{
+  int retval = 0, i;
+  u32 comm = 0, chan = 0, chanpattern, chmask, bufid = 0, sfp = 0;
+  u32 rstat = 0, radd = 0, rdat = 0;
+  struct pexor_token_io descriptor;
+  struct pexor_sfp* sfpregisters;
+  dma_addr_t dmasource = 0, dmatmp=0;
+  //phys_addr_t pipephys=0;
+  phys_addr_t poff[PEXOR_SFP_NUMBER] = { 0 };    // dma buffer pointer offset
+  phys_addr_t woffset=0;
+  u32 paddington[PEXOR_SFP_NUMBER] = { 0 };
+  u32 dmalen = 0, dmaburst = 0, tokenmemsize = 0, dmalencheck = 0, datalensum = 0, paddingdelta=0;
+  u32* pipepartbase = 0;
+  u32* pdat = 0;
+  unsigned long dmabufid;
+  struct pexor_dmabuf dmabuf;
+
+  retval = copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pexor_token_io));
+  if (retval)
+    return retval;
+  chan = ((u32) descriptor.sfp) & 0xFFFF;
+  chanpattern = (((u32) descriptor.sfp) & 0xFFFF0000) >> 16; /* optionally use sfp pattern in upper bytes*/
+  bufid = (u32) descriptor.bufid;
+  //dmatarget = (dma_addr_t) descriptor.dmatarget;
+  // instead of mbs pipe, we need here next free buffer:
+
+
+
+
+  if (chanpattern != 0)
+  {
+    // TODO: might check here if channelpattern is consistent with initialized chains!
+    pexor_dbg(
+        KERN_NOTICE "** pexor_ioctl_request_receive_token_parallel with channelpattern 0x%x\n", (unsigned) chanpattern);
+    comm = PEXOR_SFP_PT_TK_R_REQ | (chanpattern << 16); /* token broadcast mode*/
+    pexor_sfp_clear_channelpattern (priv, chanpattern);
+  }
+  else
+  {
+    pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_receive_token_parallel for channel 0x%x\n", (unsigned) chan);
+    comm = PEXOR_SFP_PT_TK_R_REQ | (0x1 << (16 + chan)); /* single sfp token mode*/
+    pexor_sfp_clear_channel (priv, chan);
+  }
+
+  pexor_sfp_request (priv, comm, bufid, 0); /* note: slave is not specified; the chain of all slaves will send everything to receive buffer*/
+
+  ////////////////////////////////////////////////////////////
+  // first loop over all registered sfps for token receive complete
+  sfpregisters = &(priv->pexor.sfp);
+  for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
+  {
+    if (sfpregisters->num_slaves[sfp] == 0)
+      continue;    // exclude not configured sfps
+    if ((chanpattern == 0) && (sfp != chan))
+      continue;    //single channel mode
+    if (chanpattern != 0)
+    {
+      chmask = (0x1 << sfp);
+      if ((chmask & chanpattern) != chmask)
+        continue;    // check for channel pattern
+    }
+    pexor_dbg(KERN_ERR "pexor_ioctl_request_receive_token_parallel waits for reply of sfp %d...\n", sfp);
+    if((retval=pexor_sfp_get_reply(priv, sfp, &rstat, &radd, &rdat, PEXOR_SFP_PT_TK_R_REP))!=0) // JAM2016
+    {
+      pexor_msg(KERN_ERR "** pexor_ioctl_request_receive_token_parallel: wait token error %d at sfp_%d reply \n", retval, sfp);
+      pexor_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
+      return -EIO;
+    }
+  }    // for sfp first loop
+
+  ////////////////////////////////////////////////////////////
+  // second loop over all registered sfps:
+  woffset=descriptor.offset; // initial user offset from begin of dma buffer
+  dmabufid=descriptor.tkbuf.addr; // initial user dma buffer if requested
+  for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
+  {
+    if (sfpregisters->num_slaves[sfp] == 0)
+      continue;
+    if ((chanpattern == 0) && (sfp != chan))
+      continue;    //single channel mode
+    if (chanpattern != 0)
+    {
+      chmask = (0x1 << sfp);
+      if ((chmask & chanpattern) != chmask)
+        continue;    // check for channel pattern
+    }
+    //poff[sfp] = dmatarget - (dma_addr_t) descriptor.dmatarget;    // at the start of each sfp, current pipe pointer offset refers to intended dma target
+
+    poff[sfp]=woffset; // initial user offset and last token offset
+
+    // - get token memsize:
+    tokenmemsize = ioread32 (sfpregisters->tk_memsize[sfp]);
+    pexor_sfp_delay()
+    ;
+    tokenmemsize += 4;    // wg. shizu !!??
+    pexor_dbg(
+        KERN_NOTICE "** pexor_ioctl_request_receive_token_parallel token data len (sfp_%d)=%d bytes\n", sfp, tokenmemsize);
+
+    // choose burst size to accept max. 20% padding size
+    if (tokenmemsize < 0xa0)
+    {
+      dmaburst = 0x10;
+    }
+    else if (tokenmemsize < 0x140)
+    {
+      dmaburst = 0x20;
+    }
+    else if (tokenmemsize < 0x280)
+    {
+      dmaburst = 0x40;
+    }
+    else
+    {
+      dmaburst = 0x80;
+    }
+
+    // - calculate DMA transfer size up to full burstlength multiples
+    if ((tokenmemsize % dmaburst) != 0)
+    {
+      dmalen = tokenmemsize + dmaburst     // in bytes
+      - (tokenmemsize % dmaburst);
+    }
+    else
+    {
+      dmalen = tokenmemsize;
+    }
+    // - calculate padding offset from current destination pointer:
+    paddington[sfp] = 0;
+    dmatmp=poff[sfp]; // we assume that begin of allocated dma buffer is always page aligned. so padding only refers to offset within this buffer
+    paddingdelta = do_div(dmatmp, dmaburst); // this will also work on 32 bit platforms, note that dmatmp will be modified by do_div
+    //paddingdelta= dmatarget % dmaburst; // works only on 64 bit arch, 32 bit gives linker error "__umoddi3 undefined!
+    if (paddingdelta != 0)
+    {
+      paddington[sfp] = dmaburst - paddingdelta;
+      poff[sfp] = poff[sfp] + paddington[sfp];
+    }
+    // - perform DMA
+    dmasource = sfpregisters->tk_mem_dma[sfp];
+
+    /* now handle dma buffer id and user write offset:*/
+
+      pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_token uses dma buffer 0x%lx with write offset  0x%lx\n", dmabufid,woffset);
+
+      atomic_set(&(priv->state),PEXOR_STATE_DMA_SINGLE);
+      retval=pexor_next_dma( priv, dmasource, 0 , poff[sfp], dmalen, &dmabufid,0);
+      // note that dmabufid returns the really used dma buffer id, i.e. next call will reuse same buffer.
+      if(retval)
+      {
+        /* error handling, e.g. no more dma buffer available*/
+        pexor_msg(KERN_ERR "pexor_ioctl_pexor_ioctl_request_token error %d from nextdma\n", retval);
+        atomic_set(&(priv->state),PEXOR_STATE_STOPPED);
+        return retval;
+      }
+
+
+
+
+//    if ((retval = pexor_start_dma (priv, dmasource, dmatarget, dmalen, 1, dmaburst)) != 0)
+//      return retval;
+//
+    if ((retval = pexor_poll_dma_complete (priv)) != 0)
+      return retval;
+
+
+      //    /* find out real package length after dma:*/
+    dmalencheck = ioread32 (priv->pexor.dma_len);
+    pexor_bus_delay()    ;
+    if (dmalencheck != dmalen)
+    {
+      pexor_msg(KERN_ERR "** pexor_ioctl_request_receive_token_parallel: dmalen mismatch at sfp_%d, transferred %d bytes, requested %d bytes\n",
+          sfp, dmalencheck, dmalen);
+      return -EIO;
+    }
+
+//    dmatarget =  descriptor.dmatarget + poff[sfp] + paddington[sfp]+ tokenmemsize; // increment pipe data pointer to end of real payload
+//    datalensum += tokenmemsize + paddington[sfp];    // for ioremap also account possible padding space here
+     woffset =  poff[sfp] + paddington[sfp]+ tokenmemsize; // increment dma data pointer to end of real payload
+     datalensum += tokenmemsize + paddington[sfp];    // for ioremap also account possible padding space here
+  }    // for sfp second loop dma
+
+
+
+  if ((retval = pexor_receive_dma_buffer (priv, 0, 0)) != 0) /* poll for dma completion and wake up "DMA wait queue""*/
+    return retval;
+
+if ((retval = pexor_wait_dma_buffer (priv, &dmabuf)) != 0) /* evaluate wait queue of received buffers*/
+{
+  pexor_msg(KERN_ERR "pexor_ioctl_request_receive_token_parallel error %d from wait_dma_buffer\n", retval);
+  return retval;
+}
+if (dmabuf.virt_addr != dmabufid)
+{
+  pexor_msg(KERN_ERR "pexor_ioctl_request_receive_token_parallel bufid mismatch: received  0x%lx but DMA filled was 0x%lx !!!\n", dmabuf.virt_addr, dmabufid);
+  return EIO;
+}
+
+  descriptor.tkbuf.addr = dmabuf.virt_addr;
+
+
+
+
+
+  ////////////////////////////////////////////////////////////
+  // third loop to put padding words into ioremapped pipe. this may reduce overhead of ioremap call:
+
+  //pipepartbase = ioremap_nocache (descriptor.dmatarget, dmalensum);
+  // < JAM this gives error on kernel 3.2.0-4:  ioremap error for 0xa641000-0xa643000, requested 0x10, got 0x0
+//  pipephys=descriptor.dmatarget;
+//  pipepartbase = ioremap_cache(pipephys, datalensum);
+//  // JAM need to sync page cache with phys pipe afterwards?
+//  if (pipepartbase == NULL )
+//  {
+//    pexor_msg(KERN_ERR "** pex_ioctl_request_receive_token_parallel: Could not remap %d bytes of pipe memory at 0x%lx  ", datalensum, descriptor.dmatarget);
+//    return -EIO;
+//  }
+//  pex_dbg(KERN_NOTICE "** pex_ioctl_request_receive_token_parallel: remapped %d bytes of pipe memory at 0x%lx, kernel address:0x%x  ",
+//      datalensum, descriptor.dmatarget, pipepartbase);
+
+  pipepartbase= (u32*) dmabuf.kernel_addr; // instead of mbs pipe, we just put padding entries into received dma buffer
+  pdat = pipepartbase;
+  for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
+  {
+    if (sfpregisters->num_slaves[sfp] == 0)
+      continue;
+    if ((chanpattern == 0) && (sfp != chan))
+      continue;    //single channel mode
+    if (chanpattern != 0)
+    {
+      chmask = (0x1 << sfp);
+      if ((chmask & chanpattern) != chmask)
+        continue;    // check for channel pattern
+    }
+    pdat =  pipepartbase + (poff[sfp] >> 2);     // set padding start pointer to pipe offset for this sfp's part
+    paddington[sfp] = paddington[sfp] >> 2;      // padding length also now in 4 bytes (longs)
+    for (i = 0; i < paddington[sfp]; i++)
+    {
+      pexor_dbg(KERN_NOTICE ">>> Fill padding pattern at 0x%lx with 0x%x ,l_k=%d times\n", pdat, 0xadd00000 + (paddington[sfp] << 8) + i, i);
+      *(pdat++) = 0xadd00000 + (paddington[sfp] << 8) + i;
+    }
+  }      // for sfp end padding loop
+
+ // iounmap (pipepartbase); // seems to be that any cache is sync'ed to phys memory after this...
+  // now return new position of data pointer in pipe:
+ // descriptor.dmasize = datalensum; /* contains sum of token data length and sum of padding fields => new pdat offset */
+  descriptor.tkbuf.size = datalensum;
+  retval = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pexor_token_io));
+  pexor_dbg(KERN_NOTICE "pexor_ioctl_request_receive_token_parallel returns\n");
+  return retval;
+
+}
+
+
+
+
+
+
+
+
 
 int pexor_ioctl_wait_trigger (struct pexor_privdata* priv, unsigned long arg)
 {
@@ -784,7 +1045,7 @@ int pexor_sfp_get_reply (struct pexor_privdata* privdata, int ch, u32* comm, u32
     if (loopcount > privdata->sfp_maxpolls)/* 1000000*/
     {
       pexor_msg(KERN_WARNING "**pexor_sfp_get_reply polled %d times = %d ns without success, abort\n", loopcount, (loopcount* PEXOR_SFP_DELAY));
-      print_register (" ... status after FAILED pex_sfp_get_reply:", sfp->rep_stat[ch]);
+      print_register (" ... status after FAILED pexor_sfp_get_reply:", sfp->rep_stat[ch]);
 	return -EIO;
     }
     status = ioread32 (sfp->rep_stat[ch]);
@@ -842,7 +1103,7 @@ int pexor_sfp_get_token_reply (struct pexor_privdata* privdata, int ch, u32* sta
     if (loopcount > privdata->sfp_maxpolls)
     {
       pexor_msg(KERN_WARNING "**pexor_sfp_get_token reply polled %d times = %d ns without success, abort\n", loopcount, (loopcount* PEXOR_SFP_DELAY));
-      print_register (" ... status after FAILED pex_sfp_get_token_reply:0x%x", sfp->tk_stat[ch]);
+      print_register (" ... status after FAILED pexor_sfp_get_token_reply:0x%x", sfp->tk_stat[ch]);
 	  return -EIO;
     }
     status = ioread32 (sfp->tk_stat[ch]);
@@ -902,7 +1163,7 @@ int pexor_sfp_clear_all (struct pexor_privdata* privdata)
     if (loopcount > privdata->sfp_maxpolls)
     {
       pexor_msg(KERN_WARNING "**pexor_sfp_clear_all tried  %d times = %d ns  without success, abort\n", loopcount, (loopcount* 2 * PEXOR_SFP_DELAY));
-      print_register (" ... stat_clr after FAILED pex_sfp_clear_all: 0x%x", sfp->rep_stat_clr);
+      print_register (" ... stat_clr after FAILED pexor_sfp_clear_all: 0x%x", sfp->rep_stat_clr);
       return -EIO;
     }
     iowrite32 (clrval, sfp->rep_stat_clr);
@@ -932,8 +1193,8 @@ int pexor_sfp_clear_channel (struct pexor_privdata* privdata, int ch)
     if (loopcount > privdata->sfp_maxpolls)
     {
       pexor_msg(KERN_WARNING "**pexor_sfp_clear_channel %d tried %d times = %d ns without success, abort\n", ch, loopcount, (loopcount* (2 * PEXOR_SFP_DELAY+ 2 * PEXOR_BUS_DELAY)));
-      print_register (" ... reply status after FAILED pex_sfp_clear_channel:", sfp->rep_stat[ch]);
-      print_register (" ... token reply status after FAILED pex_sfp_clear_channel:", sfp->tk_stat[ch]);
+      print_register (" ... reply status after FAILED pexor_sfp_clear_channel:", sfp->rep_stat[ch]);
+      print_register (" ... token reply status after FAILED pexor_sfp_clear_channel:", sfp->tk_stat[ch]);
 	 return -EIO;
     }
 
@@ -972,7 +1233,7 @@ int pexor_sfp_clear_channelpattern (struct pexor_privdata* privdata, int pat)
     {
       pexor_msg(
           KERN_WARNING "**pexor_sfp_clear_channelpattern 0x%x tried %d  times = %d ns without success, abort\n", pat, loopcount, (loopcount* 2 * PEXOR_SFP_DELAY));
-	  print_register (" ... reply status after FAILED pex_sfp_clear_channelpattern:", sfp->rep_stat_clr);
+	  print_register (" ... reply status after FAILED pexor_sfp_clear_channelpattern:", sfp->rep_stat_clr);
       return -EIO;
     }
     iowrite32 (clrval, sfp->rep_stat_clr);
@@ -984,7 +1245,7 @@ int pexor_sfp_clear_channelpattern (struct pexor_privdata* privdata, int pat)
 	loopcount++;
   } while ((repstatus != 0x0));
 
-  pexor_dbg(KERN_INFO "**after pex_sfp_clear_channelpattern 0x%x : loopcount:%d \n", pat, loopcount);
+  pexor_dbg(KERN_INFO "**after pexor_sfp_clear_channelpattern 0x%x : loopcount:%d \n", pat, loopcount);
   /*print_register(" ... reply status:", sfp->rep_stat_clr); */
   return 0;
 }

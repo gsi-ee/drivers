@@ -51,6 +51,16 @@ public:
 
 
 
+   /** Request next token buffer from all connected devices on all sfps specified bitwise by channelmask:
+    *  1: sfp 0, 2: sfp 1, 4: sfp 2, 8: sfp 3, 0xf: all four SFPs
+    *  Method blocks until dma is complete and returns filled dma buffer
+    *  In contrast to RequestMultiToken, this method does not use "direct dma", but
+    *  parallel requests on all chains with subsequent DMA from PEXOR RAM to driver buffer
+    *  This is protected against concurrent control ioctls to gosip*/
+   pexor::DMA_Buffer* RequestReceiveAllTokens(const unsigned long channelmask, const int bufid, int* dmabuf, unsigned int woffset);
+
+
+
    /** Wait until next token buffer has arrived for sfp channel
     * needs a previous RequestToken in async mode
     * directdma mode must match to that of previous RequestToken calls

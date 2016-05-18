@@ -28,6 +28,12 @@
 /* interval in seconds to refresh exported control variables*/
 #define PEXORPLUGIN_REFRESHTIMEOUT 1.0
 
+
+/* test switch to check difference between new atomic parallel token request*/
+#define LIBPEXOR_ATOMIC_IOCTLS 1
+
+
+
 namespace pexorplugin
 {
 
@@ -111,6 +117,15 @@ public:
      * If synchronous mode false, return before getting dma buffer,
      * needs to call ReceivetokenBuffer afterwards.*/
    virtual int RequestMultiToken (dabc::Buffer& buf, bool synchronous = true, uint16_t trigtype=mbs::tt_Event);
+
+
+
+   /** Request tokens in parallel from all enabled sfp by channelpattern and
+    *  fill single output buffer by DMA from PEXOR internal memory.
+        * if mbs formating is enabled, put mbs headers into buffer
+        * This method blocks until buffer buf is complete.
+        * data readout is protected in kernel driver agains*/
+   virtual int RequestReceiveParallelTokens (dabc::Buffer& buf, uint16_t trigtype=mbs::tt_Event);
 
   /** Receive token buffer of currently active sfp after asynchronous RequestToken call.
    * NOTE: this method is not used for default daq case, kept for user convencience to be called

@@ -17,7 +17,7 @@ PEXORDRIVER = $(PEXORSYS)/driver
 PEXORLIB  = $(PEXORSYS)/user/Library/Pexor
 MBSPEXLIB  = $(PEXORSYS)/user/Library/mbspex
 PEXORTEST  = $(PEXORSYS)/user/Tests/pexor
-PEXORDABC =  $(PEXORSYS)/user/Dabc/plugins/pexor
+PEXORDABC =  $(PEXORSYS)/user/DabcV2/plugins/
 PEXORGO4 =  $(PEXORSYS)/user/Go4
 GOSIPCMD =  $(PEXORSYS)/user/gosipcmd
 
@@ -26,7 +26,7 @@ PEXORPACKDABC = PexorDABC
 
 PACKDIR = pexor_$(VERSION)
 PACKAGEFILES = $(PACKDIR)/driver/ $(PACKDIR)/user/Library/Pexor/ $(PACKDIR)/user/Tests/pexor/ $(PACKDIR)/user/bin/pexorlogin.sh $(PACKDIR)/user/common.mk $(PACKDIR)/Makefile $(PACKDIR)/README.txt
-DABCFILES = $(PACKDIR)/user/Dabc/plugins/pexor $(PACKDIR)/user/Go4 $(PACKDIR)/README_DABC.txt
+DABCFILES = $(PACKDIR)/user/DabcV2/plugins/ $(PACKDIR)/user/Go4 $(PACKDIR)/README_DABC.txt
 
 
 
@@ -35,7 +35,7 @@ INSTALLDIR ?= /lib/modules/$(shell uname -r)/extra
 LIBINSTALLDIR ?= /usr/lib64
 
 
-.PHONY: all clean driver lib examples install uninstall driver-install driver-uninstall lib-install lib-uninstall pack
+.PHONY: all clean driver lib examples dabc install uninstall driver-install driver-uninstall lib-install lib-uninstall pack
 
 all: driver lib gosiplib examples gosipcmd 
 
@@ -52,7 +52,9 @@ clean:
 	cd $(PEXORDRIVER); make clean
 	
 clean-dabc:
-	cd $(PEXORDABC); make clean
+	cd $(PEXORDABC)/pexor; make clean
+	cd $(PEXORDABC)/explodertest; make clean 
+	cd $(PEXORDABC)/poland; make clean	
 	cd $(PEXORGO4); make clean
 
 driver:
@@ -101,7 +103,10 @@ lib-uninstall:
 	@echo "UNINSTALL /usr/include/pexor"
 	@rm -rf /usr/include/pexor
 
-
+dabc:
+	cd $(PEXORDABC)/pexor; make install
+	cd $(PEXORDABC)/explodertest; make install 
+	cd $(PEXORDABC)/poland; make install
 
 pack: clean clean-dabc
 	@mkdir -p $(PACKDIR)

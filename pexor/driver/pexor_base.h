@@ -342,7 +342,7 @@ void pexor_irq_tasklet(unsigned long);
  * channelmask is used to initiate direct dma while reading token requested sfp data
  * bit i of channelmask (1...4) will decide sfp (i-1) will send data to dma buffer*/
 int pexor_next_dma(struct pexor_privdata *priv, dma_addr_t source,
-                   u32 roffset, u32 woffset, u32 dmasize, unsigned long bufid, u32 channelmask);
+                   u32 roffset, u32 woffset, u32 dmasize, unsigned long *bufid, u32 channelmask);
 
 /** start dma engine to transfer dmasize bytes from source to dest.
  * Will not block until transfer is complete

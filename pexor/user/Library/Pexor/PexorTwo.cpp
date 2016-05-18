@@ -105,6 +105,30 @@ pexor::DMA_Buffer* PexorTwo::WaitForToken(const unsigned long channel, bool dire
 
 }
 
+
+
+pexor::DMA_Buffer* PexorTwo::RequestReceiveAllTokens (const unsigned long channelmask, const int bufid, int* dmabuf,
+    unsigned int woffset)
+{
+  int rev = 0;
+  struct pexor_token_io descriptor;
+  descriptor.sfp = (channelmask << 16);    // upper bytes expected as sfp pattern by driver
+  descriptor.bufid = bufid;
+  descriptor.tkbuf.addr = (unsigned long) dmabuf;
+  descriptor.offset = woffset;
+  descriptor.directdma = 0;
+  rev = ioctl (fFileHandle, PEXOR_IOC_REQUEST_RECEIVE_TOKENS, &descriptor);
+  if (rev)
+  {
+    int er = errno;
+    PexorError("\n\nError %d  RequestReceiveAllTokens - %s\n", er, strerror(er));
+    return (pexor::DMA_Buffer*) -1;
+  }
+  return (PrepareReceivedBuffer (descriptor, dmabuf));
+
+}
+
+
 pexor::DMA_Buffer* PexorTwo::PrepareReceivedBuffer(struct pexor_token_io & descriptor, int* dmabuf)
 {
 	int* rcvbuffer=(int*) descriptor.tkbuf.addr;
