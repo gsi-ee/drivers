@@ -20,8 +20,12 @@
 
 
 /** use disable_irq_nosync and enable_irq in isr.*/
-//#define PEXOR_DISABLE_IRQ_ISR 1
+#define PEXOR_DISABLE_IRQ_ISR 1
 
+
+/** if this is set, use trigger status queue.
+ * othewise, just atomic variable, since there can be only one trigger processed at same time*/
+//#define PEXOR_TRIGSTAT_QUEUE 1
 
 
 /** test: use spinlock to protect dma engine vs buffers. do we need this?
@@ -80,14 +84,16 @@
 #define PEXOR_DMA_MAXPOLLS 10000
 
 /** polling delay for each cycle in ns for dma complete bit*/
-#define PEXOR_DMA_POLLDELAY 20
+#define PEXOR_DMA_POLLDELAY 100
+//20
+
 
 /** if set, we use a schedule() in the dma complete polling.
  * Note: according to linux kernel book, yield() will just prepare this
  * task to be scheduled in near future, but schedpriv->pexor.irq_statusule() will initiate the
  * schedule directly
  * this must not be enabled if dma completion is polled in interrupt tasklet*/
-//#define PEXOR_DMA_POLL_SCHEDULE 0
+#define PEXOR_DMA_POLL_SCHEDULE 0
 
 /** maximum number of outstandin buffers in receive queue,
    do we still need this?*/
@@ -188,7 +194,7 @@ struct pexor_privdata
 
   spinlock_t buffers_lock;      /**< protect any buffer lists operations */
   spinlock_t dma_lock;		/**< protects DMA Buffer */
-  spinlock_t trigstat_lock;       /**< protects trigger status queue */
+
 
   atomic_t irq_count;           /**< counter for irqs */
   spinlock_t irq_lock;         /**< optional lock between top and bottom half? */
@@ -202,7 +208,10 @@ struct pexor_privdata
   wait_queue_head_t irq_trig_queue;     /**< wait queue between bottom half
                                            and user wait trigger ioctl */
   atomic_t trig_outstanding;    /**< outstanding triggers counter */
+#ifdef PEXOR_TRIGSTAT_QUEUE
   struct list_head trig_status; /**< list (queue) of trigger status words corresponding to interrupts*/
+  spinlock_t trigstat_lock;       /**< protects trigger status queue */
+#endif
   unsigned int wait_timeout; /**< configurable wait timeout for trigger and dma buffer queues. in seconds */
 };
 
@@ -342,7 +351,7 @@ void pexor_irq_tasklet(unsigned long);
  * channelmask is used to initiate direct dma while reading token requested sfp data
  * bit i of channelmask (1...4) will decide sfp (i-1) will send data to dma buffer*/
 int pexor_next_dma(struct pexor_privdata *priv, dma_addr_t source,
-                   u32 roffset, u32 woffset, u32 dmasize, unsigned long *bufid, u32 channelmask);
+                   u32 roffset, u32 woffset, u32 dmasize, unsigned long *bufid, u32 channelmask, u32 burstsize);
 
 /** start dma engine to transfer dmasize bytes from source to dest.
  * Will not block until transfer is complete
@@ -350,11 +359,13 @@ int pexor_next_dma(struct pexor_privdata *priv, dma_addr_t source,
  * if channelmask >0, instead of starting dma immediately the mask defines which sfp channel may write
  *         data on next token request to the dest address with direct dma*/
 int pexor_start_dma(struct pexor_privdata *priv, dma_addr_t source, dma_addr_t dest,
-					u32 dmasize, int firstchunk, u32 channelmask);
+					u32 dmasize, int firstchunk, u32 channelmask, u32 burstsize);
 
 /** poll the dma register complete bit.
-   returns error if loop exceeds certain cycle number */
-int pexor_poll_dma_complete(struct pexor_privdata *priv);
+   returns error if loop exceeds certain cycle number
+   flag doschedule will switch if polling shall be done with schedule()
+   which is forbiden for automatic readout in ir tasklet*/
+int pexor_poll_dma_complete(struct pexor_privdata *priv, int doschedule);
 
 
 /** wait for next received dma read buffer.
@@ -370,6 +381,13 @@ int pexor_wait_dma_buffer(struct pexor_privdata *priv,
  * Optionally after direct dma the used size may be set in receive buffer.
  * for automatic readout mode, triggerstatus can be appended to dma buffer structure*/
 int pexor_receive_dma_buffer(struct pexor_privdata *priv, unsigned long used_size, u32 triggerstatus);
+
+
+
+/** evaluate optimum burst size for dma for given dma size dmasize.
+ * dmasize might be increased to fulfill the burst alignment.
+ * New values will be set in pointer argument contents*/
+void pexor_eval_dma_size(u32* dmasize, u32* dmaburst);
 
 
 /** general cleanup function*/

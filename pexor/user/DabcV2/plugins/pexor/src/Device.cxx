@@ -1091,7 +1091,7 @@ int pexorplugin::Device::User_Readout (dabc::Buffer& buf, uint8_t trigtype)
 #ifdef LIBPEXOR_ATOMIC_IOCTLS
             retsize = RequestReceiveParallelTokens (buf, trigtype);
 #else
-            res = RequestMultiToken (buf, false);    // does not work as synchronous request! dma buffers are still separately send
+            unsigned res = RequestMultiToken (buf, false);    // does not work as synchronous request! dma buffers are still separately send
             if ((unsigned) res != dabc::di_Ok)
               return res;    // propagate error type
             retsize = ReceiveAllTokenBuffer (buf, trigtype);

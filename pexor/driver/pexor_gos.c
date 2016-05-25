@@ -471,7 +471,7 @@ if(descriptor.directdma!=0)
       dmabufid,woffset,channelmask);
 
   atomic_set(&(priv->state), PEXOR_STATE_DMA_SINGLE);
-  retval = pexor_next_dma (priv, 0, 0, woffset, 0, &dmabufid, channelmask);
+  retval = pexor_next_dma (priv, 0, 0, woffset, 0, &dmabufid, channelmask,0);
   if (retval)
   {
     /* error handling, e.g. no more dma buffer available*/
@@ -514,8 +514,8 @@ int pexor_ioctl_wait_token (struct pexor_privdata* priv, unsigned long arg)
   u32 rstat = 0, radd = 0, rdat = 0;
   struct pexor_dmabuf dmabuf;
   struct pexor_token_io descriptor;
-  u32 woffset , oldsize=0;
-  u32 dmasize=0;
+  u32 woffset , oldsize=0, dmaburst=0;
+  u32 dmasize=0, dmalen=0;
   unsigned long dmabufid=0;
   struct pexor_sfp* sfp=&(priv->pexor.sfp);
 
@@ -610,8 +610,12 @@ if(descriptor.directdma ==0)
   woffset=descriptor.offset;
   pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_token uses dma buffer 0x%lx with write offset  0x%x\n", dmabufid,woffset);
 
+
+  dmalen=dmasize;
+  pexor_eval_dma_size(&dmalen,&dmaburst);
+  pexor_dbg(KERN_NOTICE "** pexor_ioctl_wait_token uses dmaburst 0x%lx, dmalen:0x%lx\n", dmaburst,dmalen);
   atomic_set(&(priv->state),PEXOR_STATE_DMA_SINGLE);
-  retval=pexor_next_dma( priv, sfp->tk_mem_dma[chan], 0 , woffset, dmasize, &dmabufid,0);
+  retval=pexor_next_dma( priv, sfp->tk_mem_dma[chan], 0 , woffset, dmalen, &dmabufid,0,dmaburst);
   if(retval)
   {
     /* error handling, e.g. no more dma buffer available*/
@@ -700,6 +704,13 @@ int pexor_ioctl_request_receive_token_parallel (struct pexor_privdata *priv, uns
 
   pexor_sfp_request (priv, comm, bufid, 0); /* note: slave is not specified; the chain of all slaves will send everything to receive buffer*/
 
+
+  ndelay(10000); // like in synchronous mode of single request token!
+  // test: additionally put us to sleep a while during gosip token transfer:
+  // this is a BAD idea, seems to be that we produce deadlock which causes to occupy dabc all cores in the end...
+  //schedule();
+
+
   ////////////////////////////////////////////////////////////
   // first loop over all registered sfps for token receive complete
   sfpregisters = &(priv->pexor.sfp);
@@ -722,7 +733,21 @@ int pexor_ioctl_request_receive_token_parallel (struct pexor_privdata *priv, uns
       pexor_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
       return -EIO;
     }
+    ndelay(1000);     // like in single wait token
   }    // for sfp first loop
+
+
+  // TEST put here some delay between finishing token request and initiating DMA:
+  // problem: after a while dma engine seems to hang, complete pexor access delivers -1 on bus!
+  // 20 times runs for 11 h 23-05-2016
+  // 50 times runs for 3 minutes ? 23-05-2016
+//  for(i=0; i<50; ++i) {
+//    pexor_sfp_delay();
+//  }
+
+  // this should also do, schedule might take some microseconds!
+  //schedule();
+
 
   ////////////////////////////////////////////////////////////
   // second loop over all registered sfps:
@@ -742,7 +767,9 @@ int pexor_ioctl_request_receive_token_parallel (struct pexor_privdata *priv, uns
     }
     //poff[sfp] = dmatarget - (dma_addr_t) descriptor.dmatarget;    // at the start of each sfp, current pipe pointer offset refers to intended dma target
 
-    poff[sfp]=woffset; // initial user offset and last token offset
+    //poff[sfp]=woffset; // initial user offset and last token offset
+
+    poff[sfp] = woffset;
 
     // - get token memsize:
     tokenmemsize = ioread32 (sfpregisters->tk_memsize[sfp]);
@@ -752,43 +779,20 @@ int pexor_ioctl_request_receive_token_parallel (struct pexor_privdata *priv, uns
     pexor_dbg(
         KERN_NOTICE "** pexor_ioctl_request_receive_token_parallel token data len (sfp_%d)=%d bytes\n", sfp, tokenmemsize);
 
-    // choose burst size to accept max. 20% padding size
-    if (tokenmemsize < 0xa0)
-    {
-      dmaburst = 0x10;
-    }
-    else if (tokenmemsize < 0x140)
-    {
-      dmaburst = 0x20;
-    }
-    else if (tokenmemsize < 0x280)
-    {
-      dmaburst = 0x40;
-    }
-    else
-    {
-      dmaburst = 0x80;
-    }
+    dmalen=tokenmemsize;
+    pexor_eval_dma_size(&dmalen,&dmaburst);
+    pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_token uses dmaburst 0x%lx, dmalen:0x%lx\n", dmaburst,dmalen);
 
-    // - calculate DMA transfer size up to full burstlength multiples
-    if ((tokenmemsize % dmaburst) != 0)
-    {
-      dmalen = tokenmemsize + dmaburst     // in bytes
-      - (tokenmemsize % dmaburst);
-    }
-    else
-    {
-      dmalen = tokenmemsize;
-    }
+
     // - calculate padding offset from current destination pointer:
     paddington[sfp] = 0;
-    dmatmp=poff[sfp]; // we assume that begin of allocated dma buffer is always page aligned. so padding only refers to offset within this buffer
+    dmatmp=woffset; // we assume that begin of allocated dma buffer is always page aligned. so padding only refers to offset within this buffer
     paddingdelta = do_div(dmatmp, dmaburst); // this will also work on 32 bit platforms, note that dmatmp will be modified by do_div
     //paddingdelta= dmatarget % dmaburst; // works only on 64 bit arch, 32 bit gives linker error "__umoddi3 undefined!
     if (paddingdelta != 0)
     {
       paddington[sfp] = dmaburst - paddingdelta;
-      poff[sfp] = poff[sfp] + paddington[sfp];
+      woffset = woffset + paddington[sfp];
     }
     // - perform DMA
     dmasource = sfpregisters->tk_mem_dma[sfp];
@@ -798,7 +802,7 @@ int pexor_ioctl_request_receive_token_parallel (struct pexor_privdata *priv, uns
       pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_token uses dma buffer 0x%lx with write offset  0x%lx\n", dmabufid,woffset);
 
       atomic_set(&(priv->state),PEXOR_STATE_DMA_SINGLE);
-      retval=pexor_next_dma( priv, dmasource, 0 , poff[sfp], dmalen, &dmabufid,0);
+      retval=pexor_next_dma( priv, dmasource, 0 , woffset, dmalen, &dmabufid,0,dmaburst);
       // note that dmabufid returns the really used dma buffer id, i.e. next call will reuse same buffer.
       if(retval)
       {
@@ -809,12 +813,9 @@ int pexor_ioctl_request_receive_token_parallel (struct pexor_privdata *priv, uns
       }
 
 
+      ndelay(10000);     // TEST: give dma engine also some time before accessing status register...
 
-
-//    if ((retval = pexor_start_dma (priv, dmasource, dmatarget, dmalen, 1, dmaburst)) != 0)
-//      return retval;
-//
-    if ((retval = pexor_poll_dma_complete (priv)) != 0)
+    if ((retval = pexor_poll_dma_complete (priv,1)) != 0)
       return retval;
 
 
@@ -828,9 +829,7 @@ int pexor_ioctl_request_receive_token_parallel (struct pexor_privdata *priv, uns
       return -EIO;
     }
 
-//    dmatarget =  descriptor.dmatarget + poff[sfp] + paddington[sfp]+ tokenmemsize; // increment pipe data pointer to end of real payload
-//    datalensum += tokenmemsize + paddington[sfp];    // for ioremap also account possible padding space here
-     woffset =  poff[sfp] + paddington[sfp]+ tokenmemsize; // increment dma data pointer to end of real payload
+     woffset =  descriptor.offset + poff[sfp] + paddington[sfp]+ tokenmemsize; // increment dma data pointer to end of real payload
      datalensum += tokenmemsize + paddington[sfp];    // for ioremap also account possible padding space here
   }    // for sfp second loop dma
 
@@ -895,7 +894,6 @@ if (dmabuf.virt_addr != dmabufid)
     }
   }      // for sfp end padding loop
 
- // iounmap (pipepartbase); // seems to be that any cache is sync'ed to phys memory after this...
   // now return new position of data pointer in pipe:
  // descriptor.dmasize = datalensum; /* contains sum of token data length and sum of padding fields => new pdat offset */
   descriptor.tkbuf.size = datalensum;
@@ -917,8 +915,10 @@ int pexor_ioctl_wait_trigger (struct pexor_privdata* priv, unsigned long arg)
 {
   int wjifs = 0;
   int retval = 0;
+#ifdef PEXOR_TRIGSTAT_QUEUE
   unsigned long flags=0;
   struct pexor_trigger_buf* trigstat;
+#endif
   struct pexor_trigger_status descriptor;
   wjifs = wait_event_interruptible_timeout (priv->irq_trig_queue, atomic_read( &(priv->trig_outstanding) ) > 0,
       priv->wait_timeout * HZ);
@@ -937,6 +937,8 @@ int pexor_ioctl_wait_trigger (struct pexor_privdata* priv, unsigned long arg)
   {
   }
   atomic_dec (&(priv->trig_outstanding));
+
+#ifdef PEXOR_TRIGSTAT_QUEUE
   /* read triggerstatus of this trigger interrupt from buffering queue:*/
   spin_lock_irqsave( &(priv->trigstat_lock),flags);
   if (list_empty (&(priv->trig_status)))
@@ -960,7 +962,9 @@ int pexor_ioctl_wait_trigger (struct pexor_privdata* priv, unsigned long arg)
   trigstat->trixorstat = 0;    // mark status object as free
   list_move_tail (&(trigstat->queue_list), &(priv->trig_status));    // move to end of list
   spin_unlock_irqrestore( &(priv->trigstat_lock),flags);
-
+#else
+  pexor_decode_triggerstatus(atomic_read(&(priv->trigstat)), &descriptor);
+#endif
   pexor_dbg(KERN_NOTICE "pexor_ioctl_wait_trigger receives typ:0x%x si:0x%x mis:0x%x lec:0x%x di:0x%x tdt:0x%x eon:0x%x \n",
       descriptor.typ, descriptor.si, descriptor.mis, descriptor.lec, descriptor.di, descriptor.tdt, descriptor.eon);
   // here we have to perform the real halt if trigger was stop acquisition!

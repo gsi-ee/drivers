@@ -552,7 +552,7 @@ int pexor_ioctl_freebuffer (struct pexor_privdata* priv, unsigned long arg)
         /* this state indicates that dma flow was running out of buffer. We enable it again and restart dma*/
         atomic_set(&(priv->state),PEXOR_STATE_DMA_FLOW);
         pexor_dbg(KERN_NOTICE "** pexor_ioctl_freebuffer restarts dma flow \n");
-        retval=pexor_next_dma(priv, priv->pexor.ram_dma_cursor, 0, 0 ,0 ,0, 0 ); /* set previous dma source that was tried before suspend*/
+        retval=pexor_next_dma(priv, priv->pexor.ram_dma_cursor, 0, 0 ,0 ,0, 0, 0); /* set previous dma source that was tried before suspend*/
         if(retval)
         {
           atomic_set(&(priv->state),PEXOR_STATE_STOPPED);
@@ -606,7 +606,7 @@ int pexor_ioctl_deletebuffer (struct pexor_privdata* priv, unsigned long arg)
   if (retval)
     return retval;
 
-  retval = pexor_poll_dma_complete (priv);
+  retval = pexor_poll_dma_complete (priv,1);
   if (retval)
   {
     pexor_msg(KERN_NOTICE "**pexor_ioctl_deletebuffer: dma is not finished, do not touch buffers!\n");
@@ -716,7 +716,7 @@ int pexor_ioctl_setrunstate (struct pexor_privdata* priv, unsigned long arg)
     case PEXOR_STATE_DMA_FLOW:
     case PEXOR_STATE_DMA_SINGLE:
       /* these are test modes for DMA engine*/
-      retval = pexor_next_dma (priv, 0, 0, 0, 0, 0, 0); /* TODO: set source address cursor?*/
+      retval = pexor_next_dma (priv, 0, 0, 0, 0, 0, 0, 0); /* TODO: set source address cursor?*/
       if (retval)
       {
         /* error handling, e.g. no more dma buffer available*/
@@ -885,11 +885,13 @@ int pexor_ioctl_clearreceivebuffers (struct pexor_privdata* priv, unsigned long 
 {
   int i = 0, outstandingbuffers = 0;
   unsigned long wjifs = 0;
-  unsigned long flags=0;
   struct pexor_dmabuf* cursor;
   struct pexor_dmabuf* next;
+#ifdef PEXOR_TRIGSTAT_QUEUE
+  unsigned long flags=0;
 #ifdef PEXOR_WITH_TRIXOR
   struct pexor_trigger_buf* trigstat;
+#endif
 #endif
   pexor_dbg(KERN_NOTICE "** pexor_ioctl_clearreceivebuffers...\n");
   spin_lock( &(priv->buffers_lock));
@@ -943,6 +945,7 @@ int pexor_ioctl_clearreceivebuffers (struct pexor_privdata* priv, unsigned long 
       return -EFAULT;
     }
     atomic_dec (&(priv->trig_outstanding));
+#ifdef PEXOR_TRIGSTAT_QUEUE
     spin_lock_irqsave( &(priv->trigstat_lock),flags);
     if (list_empty (&(priv->trig_status)))
     {
@@ -954,6 +957,7 @@ int pexor_ioctl_clearreceivebuffers (struct pexor_privdata* priv, unsigned long 
     trigstat->trixorstat = 0;    // mark status object as free
     list_move_tail (&(trigstat->queue_list), &(priv->trig_status));    // move to end of list
     spin_unlock_irqrestore( &(priv->trigstat_lock),flags);
+#endif
 
   }    // for outstandingbuffers
 
@@ -1224,7 +1228,7 @@ void cleanup_buffers (struct pexor_privdata* priv)
   struct pexor_dmabuf* next;
   pexor_dbg(KERN_NOTICE "**pexor_cleanup_buffers...\n");
 
-  if (pexor_poll_dma_complete (priv))
+  if (pexor_poll_dma_complete (priv,1))
   {
     pexor_msg(KERN_NOTICE "**pexor_cleanup_buffers: dma is not finished, do not touch buffers!\n");
     return;
@@ -1358,9 +1362,11 @@ irqreturn_t pexor_isr (int irq, void *dev_id)
 {
   u32 irtype, irstat, irmask;
   int state;
+#ifdef  PEXOR_TRIGSTAT_QUEUE
   unsigned long flags;
 #ifdef PEXOR_WITH_TRIXOR
   struct pexor_trigger_buf* trigstat;
+#endif
 #endif
   struct pexor_privdata *privdata;
 
@@ -1413,8 +1419,10 @@ irqreturn_t pexor_isr (int irq, void *dev_id)
     else
     {
       /* regular readout mode with explicit user request for data.
-       * We just put trigger type into queue and wake up waiting application:*/
+       * We just put trigger type into queue (or atomic variable), and wake up waiting application:*/
 
+
+#ifdef PEXOR_TRIGSTAT_QUEUE
       /* put current irtype to queue for consumer evaluation: */
       // use first unassigned entry in ring buffer:
       spin_lock_irqsave( &(privdata->trigstat_lock),flags);
@@ -1427,8 +1435,12 @@ irqreturn_t pexor_isr (int irq, void *dev_id)
       // in the above case we would overwrite the last (oldest) entry
       trigstat->trixorstat = irstat;    // change of entry state is also inside the list lock!
       spin_unlock_irqrestore( &(privdata->trigstat_lock),flags);
+      pexor_dbg(KERN_NOTICE "pexor driver interrupt handler has queued triggerstatus 0x%x!\n", trigstat->trixorstat);
+#else
+      atomic_set(&(privdata->trigstat), irstat);
+      pexor_dbg(KERN_NOTICE "pexor driver interrupt handler has atomic triggerstatus 0x%x!\n", irstat);
+#endif
 
-      pexor_dbg(KERN_NOTICE "pexor driver interrupt handler has triggerstatus 0x%x!\n", trigstat->trixorstat);
 
       /* trigger interrupt from trixor. wake up waiting application if any:*/
       /* pexor_dbg(KERN_NOTICE "pexor driver interrupt handler sees trigger ir!\n"); */
@@ -1550,7 +1562,7 @@ void pexor_irq_tasklet (unsigned long arg)
         continue;
       /* for each do token request with direct dma:*/
       channelmask = 1 << (sfp + 1);    // select SFP for PCI Express DMA
-      retval = pexor_next_dma (privdata, 0, 0, woffset, 0, 0, channelmask);
+      retval = pexor_next_dma (privdata, 0, 0, woffset, 0, 0, channelmask,0);
       if (retval)
       {
         /* error handling, e.g. no more dma buffer available*/
@@ -1571,7 +1583,7 @@ void pexor_irq_tasklet (unsigned long arg)
         pexor_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
         return;
       }
-      if ((retval = pexor_poll_dma_complete (privdata)) != 0)
+      if ((retval = pexor_poll_dma_complete (privdata,0)) != 0)
         return;
       /* probably poll_dma_complete is not necessary here, since direct dma will reply
        * token request no sooner than dma has finished ?*/
@@ -1611,7 +1623,7 @@ void pexor_irq_tasklet (unsigned long arg)
 }
 
 int pexor_next_dma (struct pexor_privdata* priv, dma_addr_t source, u32 roffset, u32 woffset, u32 dmasize,
-    unsigned long* bufid, u32 channelmask)
+    unsigned long* bufid, u32 channelmask, u32 burstsize)
 {
   struct pexor_dmabuf* nextbuf;
   int i, rev, rest;
@@ -1688,7 +1700,7 @@ int pexor_next_dma (struct pexor_privdata* priv, dma_addr_t source, u32 roffset,
 
       if ((dmasize == 0) || (dmasize > nextbuf->size - woffset))
       {
-        pexor_dbg(KERN_NOTICE "#### pexor_next_dma resetting old dma size %x to %lx\n", dmasize, nextbuf->size);
+        pexor_msg(KERN_NOTICE "#### pexor_next_dma resetting old dma size %x to %lx\n", dmasize, nextbuf->size);
         dmasize = nextbuf->size - woffset;
       }
 
@@ -1709,38 +1721,16 @@ int pexor_next_dma (struct pexor_privdata* priv, dma_addr_t source, u32 roffset,
 
     }
 
-    /* check if size is multiple of burstsize and correct:*/
-    rest = dmasize % PEXOR_BURST;
-    if (rest)
-    {
-      dmasize = dmasize + PEXOR_BURST - rest;
-      if (dmasize > nextbuf->size)
-        dmasize -= PEXOR_BURST; /*avoid exceeding buf limits*/
-
-      pexor_dbg(KERN_NOTICE "#### pexor_next_dma correcting dmasize %x for rest:%x, burst:%x\n", dmasize, rest, PEXOR_BURST);
-      /*if(dmasize==nextbuf->size)
- {
- pexor_dbg(KERN_NOTICE "#### pexor_next_dma substracting dmasize rest:%x\n",rest);
- dmasize-=rest;
- }
- else
- {
- dmasize= dmasize + PEXOR_BURST - rest;  if not at buffer end, try to increase to next burst edge
- if(dmasize > nextbuf->size) dmasize -= PEXOR_BURST;  avoid exceeding buf limits anyway
- pexor_dbg(KERN_NOTICE "#### pexor_next_dma correcting dmasize %x for rest:%x, burst:%x\n", dmasize, rest, PEXOR_BURST);
- }*/
-    }
-
 #ifdef PEXOR_WITH_SFP
     if (channelmask > 1)
     {
-      if (pexor_start_dma (priv, 0, nextbuf->dma_addr + woffset, 0, 0, channelmask) < 0)
+      if (pexor_start_dma (priv, 0, nextbuf->dma_addr + woffset, 0, 0, channelmask, burstsize) < 0)
         return -EINVAL;
     }
     else
 #endif
 
-      if (pexor_start_dma (priv, priv->pexor.ram_dma_cursor, nextbuf->dma_addr + woffset, dmasize, 0, channelmask) < 0)
+      if (pexor_start_dma (priv, priv->pexor.ram_dma_cursor, nextbuf->dma_addr + woffset, dmasize, 0, channelmask, burstsize) < 0)
         return -EINVAL;
 
   }
@@ -1792,12 +1782,12 @@ int pexor_next_dma (struct pexor_privdata* priv, dma_addr_t source, u32 roffset,
 
       /**** END DEBUG*/
       /* initiate dma to next sg part:*/
-      if (pexor_start_dma (priv, sgcursor, sg_dma_address(sgentry) + woffset, sglen, (woffset > 0), 0) < 0)
+      if (pexor_start_dma (priv, sgcursor, sg_dma_address(sgentry) + woffset, sglen, (woffset > 0), 0, 0 ) < 0)
         return -EINVAL;
       if (woffset > 0)
         woffset = 0; /* reset write offset, once it was applied to first sg segment*/
 
-      if ((rev = pexor_poll_dma_complete (priv)) != 0)
+      if ((rev = pexor_poll_dma_complete (priv,1)) != 0)
       {
         pexor_dbg(KERN_ERR "#### pexor_next_dma error on polling for sg entry %d completion, \n", i);
         return rev;
@@ -1825,17 +1815,16 @@ int pexor_next_dma (struct pexor_privdata* priv, dma_addr_t source, u32 roffset,
 }
 
 int pexor_start_dma (struct pexor_privdata *priv, dma_addr_t source, dma_addr_t dest, u32 dmasize, int firstchunk,
-    u32 channelmask)
+    u32 channelmask, u32 burstsize)
 {
   int rev;
-  u32 burstsize = PEXOR_BURST;
   u32 enable = PEXOR_DMA_ENABLED_BIT; /* this will start dma immediately from given source address*/
   if (channelmask > 1)
     enable = channelmask; /* set sfp token transfer to initiate the DMA later*/
 
   if (enable == PEXOR_DMA_ENABLED_BIT) // JAM test for nyxor problem: only check previous dma if not in direct dma preparation mode
    {
-     rev = pexor_poll_dma_complete (priv);
+     rev = pexor_poll_dma_complete (priv,1);
      if (rev)
      {
        pexor_msg(KERN_NOTICE "**pexor_start_dma: dma was not finished, do not start new one!\n");
@@ -1843,14 +1832,21 @@ int pexor_start_dma (struct pexor_privdata *priv, dma_addr_t source, dma_addr_t 
      }
    }
 
-  /* calculate maximum burstsize here:*/
-  while (dmasize % burstsize)
-  {
+
+
+  if (burstsize == 0)
+    {
+    /* automatic burst size mode. currently only used for sg emulation*/
+    burstsize = PEXOR_BURST;
+
+    /* calculate maximum burstsize here:*/
+    while (dmasize % burstsize)
+    {
     burstsize = (burstsize >> 1);
-  }
-  if (burstsize < PEXOR_BURST_MIN)
-  {
-    pexor_dbg(KERN_NOTICE "**pexor_start_dma: correcting for too small burstsize %x\n", burstsize);
+    }
+    if (burstsize < PEXOR_BURST_MIN)
+    {
+    pexor_msg(KERN_NOTICE "**pexor_start_dma: correcting for too small burstsize %x\n", burstsize);
     burstsize = PEXOR_BURST_MIN;
     while (dmasize % burstsize)
     {
@@ -1866,9 +1862,12 @@ int pexor_start_dma (struct pexor_privdata *priv, dma_addr_t source, dma_addr_t 
       /* otherwise this can only happen in the last chunk of sg dma.
        * here it should be no deal to transfer a little bit more...*/
     }
-    pexor_dbg(
-        KERN_NOTICE "**changed source address to 0x%x, dest:0x%x, dmasize to 0x%x, burstsize:0x%x\n", (unsigned) source, (unsigned) dest, dmasize, burstsize)
-  }
+    pexor_msg(
+      KERN_NOTICE "**changed source address to 0x%x, dest:0x%x, dmasize to 0x%x, burstsize:0x%x\n", (unsigned) source, (unsigned) dest, dmasize, burstsize)
+    }
+
+    }    // if automatic burstsizemode
+
 
   pexor_dbg(
       KERN_NOTICE "#### pexor_start_dma will initiate dma from %p to %p, len=%x, burstsize=%x...\n", (void*) source, (void*) dest, dmasize, burstsize);
@@ -1895,7 +1894,57 @@ int pexor_start_dma (struct pexor_privdata *priv, dma_addr_t source, dma_addr_t 
   return 0;
 }
 
-int pexor_poll_dma_complete (struct pexor_privdata* priv)
+
+void pexor_eval_dma_size(u32* dmasize, u32* dmaburst)
+{
+  // choose burst size to accept max. 20% padding size
+     if (*dmasize < 0xa0)
+     {
+       *dmaburst = 0x10;
+     }
+     else if (*dmasize < 0x140)
+     {
+       *dmaburst = 0x20;
+     }
+     else if (*dmasize < 0x280)
+     {
+       *dmaburst = 0x40;
+     }
+     else
+     {
+       *dmaburst = 0x80;
+     }
+
+
+     // JAM2016: try to avoid case with wrongly read tkmemsize which might confuse dma engine: ???
+     if(*dmasize<*dmaburst)
+     {
+
+       pexor_msg(KERN_NOTICE "** pexor_eval_dma_size sees dmasize 0x%x, correcting to burstsize:0x%x\n", *dmasize,
+           *dmaburst);
+       *dmasize=*dmaburst;
+     }
+
+
+
+     // - calculate DMA transfer size up to full burstlength multiples
+     if ((*dmasize % *dmaburst) != 0)
+     {
+       *dmasize = *dmasize + *dmaburst     // in bytes
+       - (*dmasize % *dmaburst);
+
+     }
+     else
+     {
+       //dmalen = *dmasize;
+     }
+
+}
+
+
+
+
+int pexor_poll_dma_complete (struct pexor_privdata* priv, int doschedule)
 {
   int loops = 0;
   u32 enable = PEXOR_DMA_ENABLED_BIT;
@@ -1920,8 +1969,8 @@ int pexor_poll_dma_complete (struct pexor_privdata* priv)
     }
     if (PEXOR_DMA_POLLDELAY)
       ndelay(PEXOR_DMA_POLLDELAY);
-    //    if (PEXOR_DMA_POLL_SCHEDULE)
-    //      schedule (); // never do this in irq tasklet!
+//     if (PEXOR_DMA_POLL_SCHEDULE && doschedule)
+//          schedule (); // never do this in irq tasklet!
   };    // while
 
   pexor_dma_unlock((&(priv->dma_lock)));
@@ -1933,7 +1982,7 @@ int pexor_receive_dma_buffer (struct pexor_privdata *privdata, unsigned long use
 {
   int state, rev = 0;
   struct pexor_dmabuf* nextbuf;
-  if ((rev = pexor_poll_dma_complete (privdata)) != 0)
+  if ((rev = pexor_poll_dma_complete (privdata,1)) != 0)
     return rev;
 
   /* transfer buffer from free queue to receive queue*/
@@ -1972,7 +2021,7 @@ int pexor_receive_dma_buffer (struct pexor_privdata *privdata, unsigned long use
  atomic_set(&(privdata->state),PEXOR_STATE_DMA_SUSPENDED);
  break;
  }*/
-      rev = pexor_next_dma (privdata, 0, 0, 0, 0, 0, 0); /* TODO: inc source address cursor? Handle sfp double buffering?*/
+      rev = pexor_next_dma (privdata, 0, 0, 0, 0, 0, 0, 0); /* TODO: inc source address cursor? Handle sfp double buffering?*/
       if (rev)
       {
         /* no more dma buffers at the moment: suspend flow?*/
@@ -2449,10 +2498,12 @@ void test_pci (struct pci_dev *dev)
 void cleanup_device (struct pexor_privdata* priv)
 {
   int j = 0;
-  unsigned long flags=0;
   struct pci_dev* pcidev;
+#ifdef PEXOR_TRIGSTAT_QUEUE
+   unsigned long flags=0;
   struct pexor_trigger_buf* trigstat;
   struct pexor_trigger_buf* nexttrigstat;
+#endif
   if (!priv)
     return;
 
@@ -2505,6 +2556,7 @@ void cleanup_device (struct pexor_privdata* priv)
 
   cleanup_buffers (priv);
 
+#ifdef PEXOR_TRIGSTAT_QUEUE
   // here remove trigger status objects:
   spin_lock_irqsave( &(priv->trigstat_lock),flags);
 
@@ -2514,7 +2566,7 @@ void cleanup_device (struct pexor_privdata* priv)
     kfree(trigstat);
   }
   spin_unlock_irqrestore( &(priv->trigstat_lock),flags);
-
+#endif
   for (j = 0; j < 6; ++j)
   {
     if (priv->bases[j] == 0)
@@ -2545,10 +2597,13 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
 {
   int err = 0, ix = 0;
   u16 vid = 0, did = 0;
-  unsigned long flags=0;
+
   char devnameformat[64];
   char devname[64];
+#ifdef PEXOR_TRIGSTAT_QUEUE
+  unsigned long flags=0;
   struct pexor_trigger_buf* trigstat;
+#endif
 #ifdef PEXOR_ENABLE_IRQ
   unsigned char irpin = 0, irline = 0, irnumbercount = 0;
 #ifdef PEXOR_WITH_TRIXOR
@@ -2730,13 +2785,14 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
   atomic_set(&(privdata->dma_outstanding), 0);
   init_waitqueue_head (&(privdata->irq_trig_queue));
   atomic_set(&(privdata->trig_outstanding), 0);
+#ifdef PEXOR_TRIGSTAT_QUEUE
   spin_lock_init(&(privdata->trigstat_lock));
   INIT_LIST_HEAD (&(privdata->trig_status));
-
+#endif
   atomic_set(&(privdata->trigstat), 0);
 
   /* TODO: fill ringbuffer of irq status in advance:*/
-
+#ifdef PEXOR_TRIGSTAT_QUEUE
   for (ix = 0; ix < PEXOR_IRSTATBUFFER_SIZE; ++ix)
   {
     trigstat = kmalloc (sizeof(struct pexor_trigger_buf), GFP_KERNEL);
@@ -2752,7 +2808,7 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
     spin_unlock_irqrestore( &(privdata->trigstat_lock),flags);
     pexor_dbg(KERN_NOTICE "pexor probe added trigger status buffer #%d .\n", ix);
   }
-
+#endif
   tasklet_init (&(privdata->irq_bottomhalf), pexor_irq_tasklet, (unsigned long) privdata);
   spin_lock_init(&(privdata->dma_lock));
 

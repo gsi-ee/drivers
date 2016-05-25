@@ -59,6 +59,11 @@ unsigned pexorplugin::Input::Read_Complete (dabc::Buffer& buf)
     DOUT1 ("pexorplugin::Input() returns with timeout\n");
     return dabc::di_RepeatTimeOut;
   }
-  return res > 0 ? dabc::di_Ok : dabc::di_Error;
+  if ((unsigned) res == dabc::di_Error)
+   {
+      DOUT1 ("pexorplugin::Input() returns with Error\n");
+      return dabc::di_Error;
+   }
+  return res > 0 ? dabc::di_Ok : dabc::di_Error; // JAM2016 probably this check fails on 64 bit system
 }
 
