@@ -210,6 +210,15 @@ public:
    * application.*/
   virtual int InitDAQ();
 
+
+  /**  Forwarded interface for user defined readout.*/
+  virtual double Read_Timeout ();
+
+
+  /** Forwarded interface for user defined readout. Here we handle the timeout case for
+   * triggerless async readout*/
+  virtual unsigned Read_Size ();
+
   /** Forwarded interface for user defined readout:
    * User code may overwrite the default behaviour (gosip token dma)
    * For example, optionally some register settings may be added to buffer contents*/

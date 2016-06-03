@@ -17,7 +17,7 @@
 		</Run>
 
 		<MemoryPool name="Pool">
-			<BufferSize value="65000" />
+			<BufferSize value="128000" />
 			<NumBuffers value="1000" />
 		</MemoryPool>
 
@@ -35,8 +35,8 @@
 		<Device name="PexorDevice" class="pexorplugin::GenericDevice">
 
 			<PexorID value="0" />
-			<PexorNumSlaves_0 value="2" />
-			<PexorNumSlaves_1 value="0" />
+			<PexorNumSlaves_0 value="1" />
+			<PexorNumSlaves_1 value="1" />
 			<PexorNumSlaves_2 value="0" />
 			<PexorNumSlaves_3 value="0" />
 			<PexorDMALen value="32768" />

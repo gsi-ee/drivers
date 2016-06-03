@@ -123,7 +123,7 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
 
 
   // initialize here the connected channels:
-
+  int sfpcount=0;
   for (int sfp = 0; sfp < PEXORPLUGIN_NUMSFP; sfp++)
   {
 
@@ -141,11 +141,14 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
         return;    // TODO: proper error handling
       }
       fDoubleBufID[sfp] = 0;
+      sfpcount++;
     }
     fRequestedSFP[sfp] = false;
   }
   unsigned int size = Cfg (pexorplugin::xmlDMABufLen, cmd).AsInt (4096);
-  fReadLength = size;    // initial value is maximum length of dma buffer
+  fReadLength = size * sfpcount;    // initial value is maximum length of dma buffer times number of active chains
+  DOUT1("ReadLength is %d bytes. sfpcount=%d\n", fReadLength,sfpcount );
+
   //fReadLength=33000;
   if (fZeroCopyMode)
   {
@@ -933,6 +936,46 @@ bool pexorplugin::Device::NextSFP ()
   return true;
 }
 
+
+double pexorplugin::Device::Read_Timeout ()
+{
+  if (!IsAcquisitionRunning ())
+    return 10;
+  else
+    return 1.0e-3; // 10s JAM - timeout for triggerless polling mode TODO: configure in device
+}
+
+
+unsigned pexorplugin::Device::Read_Size ()
+{
+  PEXORPLUGIN_ASSERT_DEVICEINIT(dabc::di_Error);
+  int res = GetReadLength ();
+  DOUT3 ("Read_Size()=%d\n", res);
+  if (IsTriggeredRead () || IsSynchronousRead ())
+    {
+      return res;
+    }
+  else
+    {
+      if (!IsAcquisitionRunning ())
+        {
+
+              DOUT0("pexorplugin::Device::Read_Size: acquisition is stopped.\n");
+              return dabc::di_RepeatTimeOut;
+        }
+      else if(!fHasData)
+        {
+              fHasData=true; // next time we want to retry reading
+              DOUT3("pexorplugin::Device::Read_Size: no data on polling, transport timeout...\n");
+              return dabc::di_RepeatTimeOut;
+        }
+      else
+         return res;
+    }
+}
+
+
+
 unsigned pexorplugin::Device::Read_Start (dabc::Buffer& buf)
 {
   PEXORPLUGIN_ASSERT_DEVICEINIT(dabc::di_Error);
@@ -942,14 +985,7 @@ unsigned pexorplugin::Device::Read_Start (dabc::Buffer& buf)
   }
   else
   {
-    if (!IsAcquisitionRunning ())
-    {
-
-        DOUT0("pexorplugin::Device::Read_Start: acquisition is stopped, transport timeout...\n");
-      return dabc::di_RepeatTimeOut;
-    }
     return (unsigned) (RequestAllTokens (buf, false));
-
   }
 }
 

@@ -39,10 +39,7 @@ protected:
 
   virtual unsigned Read_Complete (dabc::Buffer& buf);
 
-  virtual double Read_Timeout ()
-  {
-    return 1.0; // 10s JAM - timeout for triggerless polling mode TODO: configure in device
-  }
+  virtual double Read_Timeout ();
 
   Device* fPexorDevice;    //< reference to device object that does all actions
 

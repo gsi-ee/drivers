@@ -29,23 +29,21 @@ pexorplugin::Input::~Input ()
 
 }
 
+double pexorplugin::Input::Read_Timeout ()
+  {
+    return (fPexorDevice->Read_Timeout ());
+  }
+
+
 unsigned pexorplugin::Input::Read_Size ()
 {
-  //return dabc::di_Error;
-  int res = fPexorDevice->GetReadLength ();
-  DOUT3 ("Read_Size()=%d\n", res);
-
-  return res > 0 ? res : dabc::di_Error;
+  return (fPexorDevice->Read_Size ());
 }
 
 unsigned pexorplugin::Input::Read_Start (dabc::Buffer& buf)
 {
   DOUT2 ("Read_Start() with bufsize %d\n", buf.GetTotalSize ());
   unsigned res = fPexorDevice->Read_Start (buf);
-  if ((unsigned) res == dabc::di_RepeatTimeOut)
-    {
-      return dabc::di_RepeatTimeOut;
-    }
   return ((unsigned) res == dabc::di_Ok) ? dabc::di_Ok : dabc::di_Error;
 }
 

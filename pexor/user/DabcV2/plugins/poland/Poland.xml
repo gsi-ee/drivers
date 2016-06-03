@@ -18,8 +18,8 @@
 		</Run>
 
 		<MemoryPool name="Pool">
-			<BufferSize value="65000" />
-			<NumBuffers value="1000" />
+			<BufferSize value="128000" />
+			<NumBuffers value="500" />
 		</MemoryPool>
 
 
@@ -35,8 +35,8 @@
 		<Device name="PexorDevice" class="poland::Device">
 
 			<PexorID value="0" />
-			<PexorNumSlaves_0 value="0" />
-			<PexorNumSlaves_1 value="2" />
+			<PexorNumSlaves_0 value="1" />
+			<PexorNumSlaves_1 value="1" />
 			<PexorNumSlaves_2 value="0" />
 			<PexorNumSlaves_3 value="0" />
 			<PexorDMALen value="32768" />
@@ -44,13 +44,13 @@
 			<PexorDMAScatterGather value="false" />
 			<PexorDMAZeroCopy value="false" />
 			<PexorMultiTokenDMA  value="false" />
-			<PexorDirectDMA  value="true" />
+			<PexorDirectDMA  value="false" />
 			<PexorFormatMbs value="true" />
 			<PexorSingleMbsSubevent value="true"/>
 			<PexorMbsSubcrate  value="0"/>
 			<PexorMbsControl  value="9"/>
 			<PexorMbsProcid   value="1"/>			
-			<PexorSyncReadout value="true" />
+			<PexorSyncReadout value="false" />
 			<PexorUseTrigger value="false" />
 			<PexorAutoReadout value="false"/>
 			<PexorTokenWaitForDataReady value="true"/>
