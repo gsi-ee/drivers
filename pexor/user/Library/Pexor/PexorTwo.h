@@ -65,8 +65,9 @@ public:
     * needs a previous RequestToken in async mode
     * directdma mode must match to that of previous RequestToken calls
     * For sg DMA, optionally we can specify pointer to desired receive buffer and a write offset within
-	 * this buffer to skip the mbs event headers in the DMA*/
-   pexor::DMA_Buffer* WaitForToken(const unsigned long channel, bool directdma=true, int* dmabuf=0, unsigned int woffset=0);
+	 * this buffer to skip the mbs event headers in the DMA
+	 * sync flag is used to enable/disable warnings if wait encounters time out*/
+   pexor::DMA_Buffer* WaitForToken(const unsigned long channel, bool directdma=true, int* dmabuf=0, unsigned int woffset=0,  bool sync=true);
 
 
 

@@ -1576,8 +1576,8 @@ void pexor_irq_tasklet (unsigned long arg)
       pexor_sfp_request (privdata, comm, bufid, 0); /* note: slave is not specified; the chain of all slaves will send everything to receive buffer*/
       ndelay(1000);
       /* give pexor time to evaluate requests?*/
-      if ((retval = pexor_sfp_get_reply (privdata, sfp, &rstat, &radd, &rdat, 0)) != 0)    // debug: do not check reply status
-        //if((retval=pexor_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEXOR_SFP_PT_TK_R_REP))!=0)
+      if ((retval = pexor_sfp_get_reply (privdata, sfp, &rstat, &radd, &rdat, 0, 0)) != 0)    // debug: do not check reply status
+        //if((retval=pexor_sfp_get_reply(priv, chan, &rstat, &radd, &rdat, PEXOR_SFP_PT_TK_R_REP,0))!=0)
       {
         pexor_msg(KERN_ERR "** pexor_irq_tasklet: error %d at sfp_%d reply \n",retval,sfp);
         pexor_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
@@ -1969,8 +1969,10 @@ int pexor_poll_dma_complete (struct pexor_privdata* priv, int doschedule)
     }
     if (PEXOR_DMA_POLLDELAY)
       ndelay(PEXOR_DMA_POLLDELAY);
-//     if (PEXOR_DMA_POLL_SCHEDULE && doschedule)
-//          schedule (); // never do this in irq tasklet!
+#ifdef  PEXOR_DMA_POLL_SCHEDULE
+    if (doschedule)
+          schedule (); // never do this in irq tasklet!
+#endif
   };    // while
 
   pexor_dma_unlock((&(priv->dma_lock)));

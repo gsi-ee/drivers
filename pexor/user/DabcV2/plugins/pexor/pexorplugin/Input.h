@@ -41,7 +41,7 @@ protected:
 
   virtual double Read_Timeout ()
   {
-    return 10;
+    return 1.0; // 10s JAM - timeout for triggerless polling mode TODO: configure in device
   }
 
   Device* fPexorDevice;    //< reference to device object that does all actions

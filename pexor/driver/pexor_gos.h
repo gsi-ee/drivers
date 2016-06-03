@@ -202,6 +202,11 @@
  * via sysfs handle*/
 #define PEXOR_SFP_MAXPOLLS 10000
 
+/**  maximum number of polls for sfp request response for asynchronous (triggerless) readout
+ * timeout value is (PEXOR_SFP_MAXPOLLS_ASYNC * PEXOR_SFP_DELAY ns)
+ * This cause the asynchronous polling to be done in application, not in kernel!*/
+#define PEXOR_SFP_MAXPOLLS_ASYNC 10
+
 /* delay in nanoseconds (ns) for any operation on gosip sfp protocol*/
 #define PEXOR_SFP_DELAY 20
 
@@ -273,9 +278,11 @@ void pexor_sfp_request(struct pexor_privdata *privdata, u32 comm, u32 addr,
 /** wait for sfp reply on channel ch.
  * return values are put into comm, addr, and data.
  * checkvalue specifies which return type is expected;
- * will return error if not matching */
+ * will return error if not matching
+ * asycnmode flag is used to supress receive timeout errors in case
+ * of async triggerless read out*/
 int pexor_sfp_get_reply(struct pexor_privdata *privdata, int ch, u32 * comm,
-                        u32 * addr, u32 * data, u32 checkvalue);
+                        u32 * addr, u32 * data, u32 checkvalue, int asyncmode);
 
 /** wait for sfp token reply on channel ch.
  * return values are put into stat, head, and foot. */
@@ -323,6 +330,17 @@ int pexor_ioctl_wait_token(struct pexor_privdata *priv, unsigned long arg);
  * Data request is locked against other control ioctls until complete.
  * */
 int pexor_ioctl_request_receive_token_parallel (struct pexor_privdata *priv, unsigned long arg);
+
+/** Request single DMA buffer filled from asynchronous token request on all configured
+ * sfp chains. If data is not immediately available at chain, it will be tested without a new token request
+ * the next time this function is invoked.
+ * Returned buffer consists of all currently available chain data, optionally with MBS padding words in between them.
+ * Buffer may also be empty if none of the chains sees a token reply within the configured wait time.
+ * Data request is locked against other control ioctls until complete.
+ * */
+
+int pexor_ioctl_request_receive_token_async (struct pexor_privdata *priv, unsigned long arg);
+
 
 
 /** Wait for a trigger interrupt from pexor. Will be raised from trixor board

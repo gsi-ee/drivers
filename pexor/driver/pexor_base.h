@@ -90,10 +90,11 @@
 
 /** if set, we use a schedule() in the dma complete polling.
  * Note: according to linux kernel book, yield() will just prepare this
- * task to be scheduled in near future, but schedpriv->pexor.irq_statusule() will initiate the
+ * task to be scheduled in near future, but schedule() will initiate the
  * schedule directly
- * this must not be enabled if dma completion is polled in interrupt tasklet*/
-#define PEXOR_DMA_POLL_SCHEDULE 0
+ * this must not be enabled if dma completion is polled in interrupt tasklet
+ * note that termination of ioctl during schedule might leave pexor inconsistent!*/
+//#define PEXOR_DMA_POLL_SCHEDULE 1
 
 /** maximum number of outstandin buffers in receive queue,
    do we still need this?*/

@@ -84,7 +84,7 @@ pexor::DMA_Buffer* PexorTwo::RequestMultiToken(const unsigned long channelmask, 
 
 
 
-pexor::DMA_Buffer* PexorTwo::WaitForToken(const unsigned long channel, bool directdma, int* dmabuf, unsigned int woffset)
+pexor::DMA_Buffer* PexorTwo::WaitForToken(const unsigned long channel, bool directdma, int* dmabuf, unsigned int woffset, bool sync)
 {
 	int rev=0;
 	struct pexor_token_io descriptor;
@@ -92,16 +92,19 @@ pexor::DMA_Buffer* PexorTwo::WaitForToken(const unsigned long channel, bool dire
 	descriptor.tkbuf.addr=(unsigned long) dmabuf;
 	descriptor.offset=woffset;
     descriptor.directdma=0;
+    descriptor.sync= sync ; // use sync property to supress kernel log warnings!
     if(directdma) descriptor.directdma=1;
 	rev=ioctl(fFileHandle, PEXOR_IOC_WAIT_TOKEN, &descriptor);
 	if(rev)
 		{
-	        int er=errno;
-			PexorError("\n\nError %d  on wait token from channel 0x%x - %s\n",er, channel, strerror(er));
-			return (pexor::DMA_Buffer*) -1;
+	        if(sync) // do not complain in case of triggerless read out
+	          {
+	            int er=errno;
+	            PexorError("\n\nError %d  on wait token from channel 0x%x - %s\n",er, channel, strerror(er));
+	          }
+	          return (pexor::DMA_Buffer*) -1;
 		}
 	return (PrepareReceivedBuffer(descriptor, dmabuf));
-
 
 }
 

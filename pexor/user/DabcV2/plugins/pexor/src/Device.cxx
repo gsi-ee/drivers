@@ -98,7 +98,7 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
         fSubeventProcid (0), fSubeventControl (0), fWaitTimeout(1), fAqcuisitionRunning (false), fSynchronousRead (true),
         fTriggeredRead (false), fDirectDMA (true), fMultichannelRequest (false), fAutoTriggerRead (false),
         fMemoryTest (false), fSkipRequest (false), fWaitForDataReady(true) ,fCurrentSFP (0), fReadLength (0), fTrixConvTime (0x20),
-        fTrixFClearTime (0x10), fInitDone (false), fNumEvents (0)
+        fTrixFClearTime (0x10), fInitDone (false), fHasData(true), fNumEvents (0)
 
 {
   fDeviceNum = Cfg (pexorplugin::xmlPexorID, cmd).AsInt (0);
@@ -142,6 +142,7 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
       }
       fDoubleBufID[sfp] = 0;
     }
+    fRequestedSFP[sfp] = false;
   }
   unsigned int size = Cfg (pexorplugin::xmlDMABufLen, cmd).AsInt (4096);
   fReadLength = size;    // initial value is maximum length of dma buffer
@@ -488,7 +489,7 @@ int pexorplugin::Device::RequestMultiToken (dabc::Buffer& buf, bool synchronous,
   for (int ix = 0; ix < PEXORPLUGIN_NUMSFP; ++ix)
   {
     if (fEnabledSFP[ix])
-      channelmask |= (1 << ix);
+        channelmask |= (1 << ix);
   }DOUT2 ("pexorplugin::Device::RequestMultiToken with channelmask:0x%x", channelmask);
   int bufflag= (fWaitForDataReady ?  fDoubleBufID[0] | 2 : fDoubleBufID[0]);
   tokbuf = fBoard->RequestMultiToken (channelmask, bufflag, synchronous, fDirectDMA);
@@ -554,10 +555,12 @@ int pexorplugin::Device::ReceiveTokenBuffer (dabc::Buffer& buf)
       headeroffset = sizeof(mbs::EventHeader) + sizeof(mbs::SubeventHeader) + sizeof(int);
   }
   pexor::DMA_Buffer* tokbuf = fBoard->WaitForToken (fCurrentSFP, fDirectDMA, bptr, headeroffset);
-  if (tokbuf == 0)
+  //if (tokbuf == 0)
+    if ((tokbuf == 0) || ((long int) tokbuf == -1))
   {
     EOUT("**** Error in PEXOR ReceiveTokenBuffer from sfp %d !\n", fCurrentSFP);
-    return dabc::di_SkipBuffer;
+    return dabc::di_Error;
+    //return dabc::di_SkipBuffer;
   }
   if (fTriggeredRead)
     fBoard->ResetTrigger ();
@@ -577,16 +580,20 @@ int pexorplugin::Device::RequestAllTokens (dabc::Buffer& buf, bool synchronous, 
       tokbuf[fCurrentSFP] = 0;
       if (!fEnabledSFP[fCurrentSFP])
         continue;
+
+      if (!synchronous && fRequestedSFP[fCurrentSFP]) continue; // no second request if data has not yet been received
+
       int bufflag= (fWaitForDataReady ?  fDoubleBufID[fCurrentSFP] | 2 : fDoubleBufID[fCurrentSFP]);
       tokbuf[fCurrentSFP] = fBoard->RequestToken (fCurrentSFP, bufflag, synchronous, fDirectDMA);
       DOUT3 ("pexorplugin::Device::RequestAllTokens gets dma buffer 0x%x for sfp:%d ", tokbuf[fCurrentSFP],
           fCurrentSFP);
 
+      if (!synchronous)  fRequestedSFP[fCurrentSFP]=true; // mark request for receiver function
       if ((long int) tokbuf[fCurrentSFP] == -1)    // TODO: handle error situations by exceptions later!
-      {
-        EOUT("**** Error in PEXOR Token Request from sfp %d !\n", fCurrentSFP);
-        return dabc::di_Error;
-      }
+        {
+          EOUT("**** Error in PEXOR Token Request from sfp %d !\n", fCurrentSFP);
+          return dabc::di_Error;
+        }
       fDoubleBufID[fCurrentSFP] = fDoubleBufID[fCurrentSFP] == 0 ? 1 : 0;
     }
 
@@ -614,14 +621,32 @@ int pexorplugin::Device::ReceiveAllTokenBuffer (dabc::Buffer& buf, uint16_t trig
     tokbuf[sfp] = 0;
     if (!fEnabledSFP[sfp])
       continue;
+    if(!IsSynchronousRead() && !fRequestedSFP[sfp])
+      continue;
+
     if ((fMemoryTest && !fSkipRequest) || !fMemoryTest)
     {
-      tokbuf[sfp] = fBoard->WaitForToken (sfp, fDirectDMA);
-      if (tokbuf[sfp] == 0)
+      tokbuf[sfp] = fBoard->WaitForToken (sfp, fDirectDMA, 0, 0, IsSynchronousRead()); // error messages supressed for sync read
+      if ((tokbuf[sfp] == 0) || ((long int) tokbuf[sfp] == -1))
       {
-        EOUT("**** Error in PEXOR ReceiveAllTokenBuffer from sfp %d !\n", sfp);
-        return dabc::di_SkipBuffer;
+        if(IsSynchronousRead()) // no error on timeout for asynchronous triggerless mode!
+          {
+          EOUT("**** Error in PEXOR ReceiveAllTokenBuffer from sfp %d !\n", sfp);
+          return dabc::di_Error;
+        //return dabc::di_SkipBuffer;
+          }
+        else
+        {
+          tokbuf[sfp] = 0; // mark currently empty "sfp subevent" for Combine function (for -1 return value of WaitForToken)
+          continue;
+        }
+
       }
+      else
+        {
+          fRequestedSFP[sfp]=false; // data was received, reset the request flag
+
+        }
       oldbuflen = tokbuf[sfp]->UsedSize ();
       DOUT3 ("pexorplugin::Device::ReceiveAllTokenBuffer got token buffer of len %d\n", oldbuflen);
     }
@@ -739,6 +764,19 @@ int pexorplugin::Device::CopyOutputBuffer (pexor::DMA_Buffer* tokbuf, dabc::Buff
 
 int pexorplugin::Device::CombineTokenBuffers (pexor::DMA_Buffer** src, dabc::Buffer& buf, uint16_t trigtype)
 {
+  // for asynch triggerless mode, we have to check here if there is data anyhow:
+  fHasData=false;
+  for (int sfp = 0; sfp < PEXORPLUGIN_NUMSFP; ++sfp)
+   {
+     if (src[sfp] != 0)
+       {
+         fHasData=true;
+         break;
+       }
+   }
+  if(!fHasData) return dabc::di_SkipBuffer;
+  // end check for triggerless readout
+
 
   dabc::Pointer ptr (buf);
   DOUT3 ("pexorplugin::Device::CombineTokenBuffers initial pointer is 0x%x", ptr.ptr ());
@@ -906,10 +944,12 @@ unsigned pexorplugin::Device::Read_Start (dabc::Buffer& buf)
   {
     if (!IsAcquisitionRunning ())
     {
-      DOUT0("pexorplugin::Device::Read_Start: acquisition is stopped, transport timeout...\n");
+
+        DOUT0("pexorplugin::Device::Read_Start: acquisition is stopped, transport timeout...\n");
       return dabc::di_RepeatTimeOut;
     }
     return (unsigned) (RequestAllTokens (buf, false));
+
   }
 }
 

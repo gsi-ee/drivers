@@ -346,6 +346,10 @@ protected:
   /** array indicating which sfps are connected for readout*/
   bool fEnabledSFP[PEXORPLUGIN_NUMSFP];
 
+  /** array indicating which sfps have already been requested for data token.
+   * This is used for triggerless asynchronous readout.*/
+   bool fRequestedSFP[PEXORPLUGIN_NUMSFP];
+
   /** array indicating number of slaves in chain at each sfp*/
   unsigned int fNumSlavesSFP[PEXORPLUGIN_NUMSFP];
 
@@ -372,6 +376,9 @@ protected:
 
   /** set true if initialization of board is successful*/
   bool fInitDone;
+
+  /** flag for triggerless read out to issue a timeout on next retry */
+  bool fHasData;
 
   /** Event number since device init*/
   unsigned int fNumEvents;
