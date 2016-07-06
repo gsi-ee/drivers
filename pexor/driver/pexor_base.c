@@ -349,6 +349,11 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
       retval = pexor_ioctl_request_receive_token_parallel(privdata, arg);
       break;
 
+    case PEXOR_IOC_REQUEST_RECEIVE_ASYNC:
+      pexor_dbg(KERN_NOTICE "** pexor_ioctl request receive token asynchronous\n");
+      retval = pexor_ioctl_request_receive_token_async(privdata, arg);
+      break;
+
     case PEXOR_IOC_WAIT_TRIGGER:
       pexor_dbg(KERN_NOTICE "** pexor_ioctl wait trigger\n");
       up(&privdata->ioctl_sem); /* do not lock ioctl during wait*/
@@ -798,6 +803,7 @@ int pexor_ioctl_test (struct pexor_privdata* priv, unsigned long arg)
 
 int pexor_ioctl_reset (struct pexor_privdata* priv, unsigned long arg)
 {
+  int ix;
   pexor_dbg(KERN_NOTICE "** pexor_ioctl_reset...\n");
 
   pexor_dbg(KERN_NOTICE "Clearing DMA status... \n");
@@ -816,6 +822,18 @@ int pexor_ioctl_reset (struct pexor_privdata* priv, unsigned long arg)
   pexor_ioctl_clearreceivebuffers (priv, arg);    // this will cleanup dma and irtype queues
 
   atomic_set(&(priv->state), PEXOR_STATE_STOPPED);
+
+  /** JAM2016 reset flags for the asynchronous triggerless readout:*/
+  for(ix=0; ix<PEXOR_SFP_NUMBER;++ix)
+     {
+      atomic_set(&(priv->bufid[ix]), 0);
+      atomic_set (&(priv->sfprequested[ix]), 0);
+      atomic_set (&(priv->sfpreceived[ix]), 0);
+     }
+
+
+
+
 #ifdef PEXOR_WITH_TRIXOR
   pexor_dbg(KERN_NOTICE "Initalizing TRIXOR... \n");
 
@@ -2787,6 +2805,8 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
   atomic_set(&(privdata->dma_outstanding), 0);
   init_waitqueue_head (&(privdata->irq_trig_queue));
   atomic_set(&(privdata->trig_outstanding), 0);
+
+
 #ifdef PEXOR_TRIGSTAT_QUEUE
   spin_lock_init(&(privdata->trigstat_lock));
   INIT_LIST_HEAD (&(privdata->trig_status));
@@ -2813,6 +2833,15 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
 #endif
   tasklet_init (&(privdata->irq_bottomhalf), pexor_irq_tasklet, (unsigned long) privdata);
   spin_lock_init(&(privdata->dma_lock));
+
+  /** JAM2016 flags for the asynchronous triggerless readout:*/
+  for(ix=0; ix<PEXOR_SFP_NUMBER;++ix)
+   {
+    atomic_set(&(privdata->bufid[ix]), 0);
+    atomic_set (&(privdata->sfprequested[ix]), 0);
+    atomic_set (&(privdata->sfpreceived[ix]), 0);
+   }
+
 
   /* pexor_msg(KERN_NOTICE "Initialized ircount to %d.\n",atomic_read( &(privdata->dma_outstanding)));
    */

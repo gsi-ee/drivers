@@ -57,7 +57,18 @@ public:
     *  In contrast to RequestMultiToken, this method does not use "direct dma", but
     *  parallel requests on all chains with subsequent DMA from PEXOR RAM to driver buffer
     *  This is protected against concurrent control ioctls to gosip*/
-   pexor::DMA_Buffer* RequestReceiveAllTokens(const unsigned long channelmask, const int bufid, int* dmabuf, unsigned int woffset);
+   pexor::DMA_Buffer* RequestReceiveAllTokens(const unsigned long channelmask, const int bufid, int* dmabuf=0, unsigned int woffset=0);
+
+
+   /** Request next token buffer from all connected devices on all registered sfps in triggerless/asynchronous mode.
+       *  Method returns filled dma buffer if any data was available.
+       *  If no data was available, pointer value -1 is returned for further user polling.
+       *  In contrast to RequestMultiToken, this method does not use "direct dma", but
+       *  parallel requests on all chains with subsequent DMA from PEXOR RAM to driver buffer
+       *  When called the next time, already requested sfp chains are not requested again, but checked for data arrival only.
+       *  These request states are handled in kernel module.
+       *  This is protected against concurrent control ioctls to gosip*/
+   pexor::DMA_Buffer* RequestReceiveAsyncTokens (int* dmabuf=0, unsigned int woffset=0);
 
 
 

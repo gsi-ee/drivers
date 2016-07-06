@@ -52,6 +52,7 @@ const char* pexorplugin::xmlFormatMbs = "PexorFormatMbs";    //<  switch Mbs for
 const char* pexorplugin::xmlSingleMbsSubevt = "PexorSingleMbsSubevent";    //<  use one single subevent for all sfps
 const char* pexorplugin::xmlMultichannelRequest = "PexorMultiTokenDMA";    //<  enable channelpattern request with combined dma for multiple sfps
 const char* pexorplugin::xmlAutoTriggerRead = "PexorAutoReadout";    //<  enable automatic readout of all configured token data in driver for each trigger
+const char* pexorplugin::xmlAutoAsyncRead= "PexorAutoAsync"; //< enable automatic triggerless readout of asynchronous sfp chains in driver
 const char* pexorplugin::xmlMbsSubevtCrate = "PexorMbsSubcrate";    //<  define crate number for subevent header
 const char* pexorplugin::xmlMbsSubevtControl = "PexorMbsControl";    //<  define crate number for subevent header
 const char* pexorplugin::xmlMbsSubevtProcid = "PexorMbsProcid";    //<  define procid number for subevent header
@@ -98,7 +99,7 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
         fSubeventProcid (0), fSubeventControl (0), fWaitTimeout(1), fAqcuisitionRunning (false), fSynchronousRead (true),
         fTriggeredRead (false), fDirectDMA (true), fMultichannelRequest (false), fAutoTriggerRead (false),
         fMemoryTest (false), fSkipRequest (false), fWaitForDataReady(true) ,fCurrentSFP (0), fReadLength (0), fTrixConvTime (0x20),
-        fTrixFClearTime (0x10), fInitDone (false), fHasData(true), fNumEvents (0)
+        fTrixFClearTime (0x10), fInitDone (false), fHasData(true), fNumEvents (0), fRequestMutex(true)
 
 {
   fDeviceNum = Cfg (pexorplugin::xmlPexorID, cmd).AsInt (0);
@@ -170,19 +171,26 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
   fSingleSubevent = Cfg (pexorplugin::xmlSingleMbsSubevt, cmd).AsBool (false);
   fMultichannelRequest = Cfg (pexorplugin::xmlMultichannelRequest, cmd).AsBool (false);
   fAutoTriggerRead = Cfg (pexorplugin::xmlAutoTriggerRead, cmd).AsBool (false);
+  fAutoAsyncRead = Cfg (pexorplugin::xmlAutoAsyncRead, cmd).AsBool (false);
+
 
   fSubeventSubcrate = Cfg (pexorplugin::xmlMbsSubevtCrate, cmd).AsInt (0);
   fSubeventProcid = Cfg (pexorplugin::xmlMbsSubevtProcid, cmd).AsInt (fDeviceNum);
   fSubeventControl = Cfg (pexorplugin::xmlMbsSubevtControl, cmd).AsInt (0);
   DOUT1(
       "Setting mbsformat=%d, singlesubevent=%d, with subcrate:%d, procid:%d, control:%d\n", fMbsFormat, fSingleSubevent, fSubeventSubcrate, fSubeventProcid, fSubeventControl);
-  DOUT1("Created PEXOR device %d\n", fDeviceNum);
+
 
   fSynchronousRead = Cfg (pexorplugin::xmlSyncRead, cmd).AsBool (true);
   fTriggeredRead = Cfg (pexorplugin::xmlTriggeredRead, cmd).AsBool (false);
   fDirectDMA = Cfg (pexorplugin::xmlDmaMode, cmd).AsBool (true);
   fTrixConvTime = Cfg (pexorplugin::xmlTrixorConvTime, cmd).AsInt (0x200);
   fTrixFClearTime = Cfg (pexorplugin::xmlTrixorFastClearTime, cmd).AsInt (0x100);
+
+  DOUT1("Setting synchronous=%d, triggered=%d, autotriggered=%d, autoasync=%d \n", fSynchronousRead, fTriggeredRead, fAutoTriggerRead, fAutoAsyncRead);
+  DOUT1("Setting directdma=%d, multichannelrequest=%d\n", fDirectDMA, fMultichannelRequest);
+
+
 
   fWaitForDataReady= Cfg (pexorplugin::xmlWaitForDataReady, cmd).AsBool (true);
   DOUT1("---------- Readout mode : wait for data ready is %d\n",fWaitForDataReady);
@@ -210,7 +218,8 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
   fMemoryTest = false;    // put this to true to make memcopy performance test between driver buffer and dabc buffer
   fSkipRequest = false;
 
-  //fInitDone=true; // do this in subclass after constructor has finnished.
+  DOUT1("Created PEXOR device %d\n", fDeviceNum);
+  //fInitDone=true; // do this in subclass after constructor has finished.
 }
 
 void pexorplugin::Device::OnThreadAssigned()
@@ -575,6 +584,9 @@ int pexorplugin::Device::ReceiveTokenBuffer (dabc::Buffer& buf)
 int pexorplugin::Device::RequestAllTokens (dabc::Buffer& buf, bool synchronous, uint16_t trigtype)
 {
   DOUT3 ("pexorplugin::Device::RequestAllTokens with synchronous=%d ", synchronous);
+
+  dabc::LockGuard(fRequestMutex, true); // for asynchronous request from several SFPS may need to protect our flags
+
   static pexor::DMA_Buffer* tokbuf[PEXORPLUGIN_NUMSFP];
   if ((fMemoryTest && !fSkipRequest) || (!fMemoryTest))
   {
@@ -617,6 +629,12 @@ int pexorplugin::Device::RequestAllTokens (dabc::Buffer& buf, bool synchronous, 
 int pexorplugin::Device::ReceiveAllTokenBuffer (dabc::Buffer& buf, uint16_t trigtype)
 {
   DOUT3 ("pexorplugin::Device::ReceiveAllTokenBuffer...\n");
+  ///////////////// JAM DEBUG
+  static unsigned long emptytokbufcount[4]={0,0,0,0};
+
+
+  ///////////////
+   dabc::LockGuard(fRequestMutex,true); // for asynchronous request from several SFPS may need to protect our flags
   static pexor::DMA_Buffer* tokbuf[PEXORPLUGIN_NUMSFP];
   static int oldbuflen = 0;
   for (int sfp = 0; sfp < PEXORPLUGIN_NUMSFP; ++sfp)
@@ -641,6 +659,13 @@ int pexorplugin::Device::ReceiveAllTokenBuffer (dabc::Buffer& buf, uint16_t trig
         else
         {
           tokbuf[sfp] = 0; // mark currently empty "sfp subevent" for Combine function (for -1 return value of WaitForToken)
+          emptytokbufcount[sfp]++;
+
+          if((emptytokbufcount[sfp]>10000) && (emptytokbufcount[sfp] % 10000)==0)
+          {
+            DOUT0 ("pexorplugin::Device::ReceiveAllTokenBuffer sfp %d has seen  %d empty tokens\n", sfp, emptytokbufcount[sfp]);
+            DOUT0 ("******** DUMP fRequestedSFP[%d]=%d , fDoubleBufID[%d]=%d, hasdata=%d\n", sfp, fRequestedSFP[sfp], sfp, fDoubleBufID[sfp],fHasData );
+          }
           continue;
         }
 
@@ -648,6 +673,8 @@ int pexorplugin::Device::ReceiveAllTokenBuffer (dabc::Buffer& buf, uint16_t trig
       else
         {
           fRequestedSFP[sfp]=false; // data was received, reset the request flag
+          emptytokbufcount[sfp]=0;
+
 
         }
       oldbuflen = tokbuf[sfp]->UsedSize ();
@@ -668,42 +695,68 @@ int pexorplugin::Device::ReceiveAllTokenBuffer (dabc::Buffer& buf, uint16_t trig
     fBoard->ResetTrigger ();
     DOUT3 ("RRRRRRRRRRRRRRRR pexorplugin::Device::ReceiveAllTokenBuffer has reset trigger!\n");
   }
+
+
+
   return (CombineTokenBuffers (tokbuf, buf, trigtype));
 }
 
 int pexorplugin::Device::ReceiveAutoTriggerBuffer (dabc::Buffer& buf, uint8_t& trigtype)
 {
   pexor::DMA_Buffer* trigbuf = fBoard->WaitForTriggerBuffer ();
+   if (trigbuf == 0)
+   {
+     EOUT("**** Error in ReceiveAutoTriggerBuffer\n");
+     return dabc::di_SkipBuffer;
+   }
+   else if ((long int) trigbuf == -1)
+   {
+     EOUT(("**** Timout of trigger in ReceiveAutoTriggerBuffer, retry...\n"));
+     fBoard->ResetTrigger ();
+     return dabc::di_RepeatTimeOut;
+   }
+
+   trigtype = fBoard->GetTriggerType ();
+   if (trigtype == 14 || trigtype == 15)
+   {
+     // workaround for empty dma buffers when processing special triggers
+     // do not copy anything, just free dma buffers and account event:
+     if (!fZeroCopyMode)
+     {
+       fBoard->Free_DMA_Buffer (trigbuf);    // put dma buffer back to free lists
+     }
+     else
+     {
+       delete trigbuf;    // for zero copy mode, this is just a temporary wrapper. Will be freed before request
+     }
+     fNumEvents++;    // for unique header sequence number
+     return 0;
+   }
+   return (CopyOutputBuffer (trigbuf, buf,trigtype));
+  }
+
+
+
+int pexorplugin::Device::ReceiveAutoAsyncBuffer (dabc::Buffer& buf)
+{
+  pexor::DMA_Buffer* trigbuf = fBoard->RequestReceiveAsyncTokens();
   if (trigbuf == 0)
   {
-    EOUT("**** Error in ReceiveAutoTriggerBuffer\n");
+    EOUT("**** Error in ReceiveAutoAsyncBuffer\n");
     return dabc::di_SkipBuffer;
   }
   else if ((long int) trigbuf == -1)
   {
-    EOUT(("**** Timout of trigger in ReceiveAutoTriggerBuffer, retry...\n"));
-    fBoard->ResetTrigger ();
-    return dabc::di_RepeatTimeOut;
+    return dabc::di_RepeatTimeOut; // polling for data mode
   }
-
-  trigtype = fBoard->GetTriggerType ();
-  if (trigtype == 14 || trigtype == 15)
+  else
   {
-    // workaround for empty dma buffers when processing special triggers
-    // do not copy anything, just free dma buffers and account event:
-    if (!fZeroCopyMode)
-    {
-      fBoard->Free_DMA_Buffer (trigbuf);    // put dma buffer back to free lists
-    }
-    else
-    {
-      delete trigbuf;    // for zero copy mode, this is just a temporary wrapper. Will be freed before request
-    }
-    fNumEvents++;    // for unique header sequence number
-    return 0;
+    return (CopyOutputBuffer (trigbuf, buf, PEXOR_TRIGTYPE_NONE));
   }
-  return (CopyOutputBuffer (trigbuf, buf, trigtype));
 }
+
+
+
 
 int pexorplugin::Device::CopyOutputBuffer (pexor::DMA_Buffer* tokbuf, dabc::Buffer& buf, uint16_t trigtype)
 {
@@ -942,7 +995,7 @@ double pexorplugin::Device::Read_Timeout ()
   if (!IsAcquisitionRunning ())
     return 10;
   else
-    return 1.0e-3; // 10s JAM - timeout for triggerless polling mode TODO: configure in device
+    return 0.5e-3; //1.0e-3; // 10s JAM - timeout for triggerless polling mode TODO: configure in device
 }
 
 
@@ -957,6 +1010,7 @@ unsigned pexorplugin::Device::Read_Size ()
     }
   else
     {
+      dabc::LockGuard(fRequestMutex, true); // for asynchronous request from several SFPS may need to protect our flags
       if (!IsAcquisitionRunning ())
         {
 
@@ -979,7 +1033,7 @@ unsigned pexorplugin::Device::Read_Size ()
 unsigned pexorplugin::Device::Read_Start (dabc::Buffer& buf)
 {
   PEXORPLUGIN_ASSERT_DEVICEINIT(dabc::di_Error);
-  if (IsTriggeredRead () || IsSynchronousRead ())
+  if (IsTriggeredRead () || IsSynchronousRead () || IsAutoAsync())
   {
     return dabc::di_Ok;    // synchronous mode, all handled in Read_Complete
   }
@@ -1037,6 +1091,11 @@ unsigned pexorplugin::Device::Read_Complete (dabc::Buffer& buf)
     }
     retsize = User_Readout (buf, trigtype);
   }
+  else if (IsAutoAsync())
+   {
+    // implicit free running mode with asynchronous sfps
+    retsize = ReceiveAutoAsyncBuffer(buf);
+   }
   else
   {
     // asynchronous dabc readout without trigger - special case not used for standard daq

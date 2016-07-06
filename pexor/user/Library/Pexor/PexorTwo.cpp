@@ -132,6 +132,30 @@ pexor::DMA_Buffer* PexorTwo::RequestReceiveAllTokens (const unsigned long channe
 }
 
 
+pexor::DMA_Buffer* PexorTwo::RequestReceiveAsyncTokens (int* dmabuf,
+    unsigned int woffset)
+{
+  int rev = 0;
+  struct pexor_token_io descriptor;
+  descriptor.tkbuf.addr = (unsigned long) dmabuf;
+  descriptor.offset = woffset;
+  descriptor.directdma = 0;
+  rev = ioctl (fFileHandle, PEXOR_IOC_REQUEST_RECEIVE_ASYNC, &descriptor);
+  if (rev)
+  {
+    // no error output when polling for the missing data
+    //int er = errno;
+    //PexorError("\n\nError %d  RequestReceiveAsyncTokens - %s\n", er, strerror(er));
+    return (pexor::DMA_Buffer*) -1;
+  }
+  return (PrepareReceivedBuffer (descriptor, dmabuf));
+
+}
+
+
+
+
+
 pexor::DMA_Buffer* PexorTwo::PrepareReceivedBuffer(struct pexor_token_io & descriptor, int* dmabuf)
 {
 	int* rcvbuffer=(int*) descriptor.tkbuf.addr;

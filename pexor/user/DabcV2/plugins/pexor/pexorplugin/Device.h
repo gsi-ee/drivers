@@ -17,6 +17,7 @@
 #include "dabc/Device.h"
 #include "dabc/Object.h"
 #include "dabc/MemoryPool.h"
+#include "dabc/threads.h"
 
 #include "pexor/PexorTwo.h"
 
@@ -49,6 +50,7 @@ extern const char* xmlFormatMbs;    //< enable mbs formating already in device t
 extern const char* xmlSingleMbsSubevt;    //<  use one single subevent for all sfps
 extern const char* xmlMultichannelRequest;  //<  enable channelpattern request with combined dma for multiple sfps
 extern const char* xmlAutoTriggerRead ; //<  enable automatic readout of all configured token data in driver for each trigger
+extern const char* xmlAutoAsyncRead ; //<  enable automatic triggerless readout of all configured token data in driver
 extern const char* xmlMbsSubevtCrate;    //<  define crate number for subevent header
 extern const char* xmlMbsSubevtControl;    //<  define crate number for subevent header
 extern const char* xmlMbsSubevtProcid;    //<  define procid number for subevent header
@@ -148,6 +150,14 @@ public:
    * Copy and format it to dabc buffer. Pass actual trigtype back to caller.*/
   int ReceiveAutoTriggerBuffer(dabc::Buffer& buf, uint8_t& trigtype);
 
+  /** For automatic kernelmodule asynchronous triggerless readout mode:
+   * request token data from each configured sfp. Receive data via dma from pexor memory from the sfps that are ready.
+     * Copy and format them to dabc buffer. Next time this method is called only those sfps are requested again
+     * that have already send their data, the others are checked if they have finished the previous token request.
+     * This method is intended to be used in "polling for data" mode without a trigger signal*/
+  int ReceiveAutoAsyncBuffer (dabc::Buffer& buf);
+
+
 
   virtual const char* ClassName () const
   {
@@ -181,6 +191,14 @@ public:
    {
      return fAutoTriggerRead;
    }
+
+  bool IsAutoAsync()
+     {
+       return fAutoAsyncRead;
+     }
+
+
+
   bool IsMultichannelMode()
   {
     return fMultichannelRequest;
@@ -343,6 +361,11 @@ protected:
   bool fAutoTriggerRead;
 
 
+  /** if true, data readout will be done automatically in driver kernel module.
+   * The already filled token buffer is fetched without trigger from asynchronously running sfp chains1  */
+   bool fAutoAsyncRead;
+
+
   /** flag to switch on memory speed measurements without acquisition*/
   bool fMemoryTest;
 
@@ -391,6 +414,10 @@ protected:
 
   /** Event number since device init*/
   unsigned int fNumEvents;
+
+
+  /** Mutex to protect flags for asynchronous requests*/
+  dabc::Mutex fRequestMutex;
 
 };
 

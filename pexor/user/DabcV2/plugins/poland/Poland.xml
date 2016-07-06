@@ -53,6 +53,7 @@
 			<PexorSyncReadout value="false" />
 			<PexorUseTrigger value="false" />
 			<PexorAutoReadout value="false"/>
+			<PexorAutoAsync  value="false"/>
 			<PexorTokenWaitForDataReady value="true"/>
 			<PexorTriggerTimeout value="10"/>
 			<TrixorConversionTime value="300" />

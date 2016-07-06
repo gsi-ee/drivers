@@ -14,7 +14,7 @@
 #include <linux/ioctl.h>
 
 
-#define PEXORVERSION  "2.34"
+#define PEXORVERSION  "2.40"
 
 /** identify name in dev : */
 #define PEXORNAME 		"pexor"
@@ -164,10 +164,11 @@ struct pexor_trigger_readout{
 #define PEXOR_IOC_GET_SFP_LINKS    _IOR(  PEXOR_IOC_MAGIC, 20, struct pexor_sfp_links)
 #define PEXOR_IOC_SET_WAIT_TIMEOUT    _IOW(  PEXOR_IOC_MAGIC, 21, int)
 #define PEXOR_IOC_REQUEST_RECEIVE_TOKENS    _IOWR(  PEXOR_IOC_MAGIC, 22, struct pexor_token_io)    /**<  Request data from parallel slaves via token and initiate DMA to destination address in PC memory. MBS padding words are provided between slave DMA data sections.*/
+#define PEXOR_IOC_REQUEST_RECEIVE_ASYNC     _IOWR(  PEXOR_IOC_MAGIC, 23, struct pexor_token_io)    /**<  Request data from asynchronously triggered parallel slaves via token and initiate DMA to destination address in PC memory. MBS padding words are provided between slave DMA data sections.*/
 
 
 
-#define PEXOR_IOC_MAXNR 22
+#define PEXOR_IOC_MAXNR 23
 
 
 /** some alias ioctl definitions for goiscmd/mbspex lib:*/

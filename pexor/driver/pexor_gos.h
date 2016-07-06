@@ -207,6 +207,11 @@
  * This cause the asynchronous polling to be done in application, not in kernel!*/
 #define PEXOR_SFP_MAXPOLLS_ASYNC 10
 
+
+/** switch between checking token reply status or command reply status in async receiver mode*/
+#define PEXOR_ASYNC_USETOKENREPLY 1
+
+
 /* delay in nanoseconds (ns) for any operation on gosip sfp protocol*/
 #define PEXOR_SFP_DELAY 20
 

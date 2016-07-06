@@ -201,7 +201,11 @@ struct pexor_privdata
   spinlock_t irq_lock;         /**< optional lock between top and bottom half? */
   struct tasklet_struct irq_bottomhalf; /**< tasklet structure for isr
                                            bottom half */
-  atomic_t trigstat;           /**< current trixor status for auto readout mode. Complementary to trigger queue! */
+  atomic_t trigstat;                        /**< current trixor status for auto readout mode. Complementary to trigger queue! */
+  atomic_t bufid[PEXOR_SFP_NUMBER];        /**< frontend buffer id for next readout for each sfp chain*/
+  atomic_t sfprequested[PEXOR_SFP_NUMBER]; /**< flags for asynchronous triggerless readout. if 1 token request has already been done*/
+  atomic_t sfpreceived[PEXOR_SFP_NUMBER]; /**< flags for asynchronous triggerless readout. if 1 token request has received data*/
+
 
   wait_queue_head_t irq_dma_queue;      /**< wait queue between bottom
                                            half and wait dma ioctl */
