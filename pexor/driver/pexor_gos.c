@@ -920,8 +920,8 @@ if (dmabuf.virt_addr != dmabufid)
 int pexor_ioctl_request_receive_token_async (struct pexor_privdata *priv, unsigned long arg)
 {
   // async request without channelpattern and channel specifier:
-  // we use all configured channels and return only when at least one sfp buffer has data
-  // this means we need polling loop inside the ioctl ?1
+  // we use all configured channels and return buffer only when at least one sfp buffer has data
+  // otherwise return -EIO, i.e. user application has to poll
 
 
 
@@ -1129,7 +1129,7 @@ if ((retval = pexor_wait_dma_buffer (priv, &dmabuf)) != 0) /* evaluate wait queu
 }
 if (dmabuf.virt_addr != dmabufid)
 {
-  pexor_msg(KERN_ERR "pexor_ioctl_request_receive_token_async_tokenp rallel bufid mismatch: received  0x%lx but DMA filled was 0x%lx !!!\n", dmabuf.virt_addr, dmabufid);
+  pexor_msg(KERN_ERR "pexor_ioctl_request_receive_token_async  bufid mismatch: received  0x%lx but DMA filled was 0x%lx !!!\n", dmabuf.virt_addr, dmabufid);
   return -EIO;
 }
 
@@ -1180,7 +1180,320 @@ if (dmabuf.virt_addr != dmabufid)
  // descriptor.dmasize = datalensum; /* contains sum of token data length and sum of padding fields => new pdat offset */
   descriptor.tkbuf.size = datalensum;
   retval = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pexor_token_io));
-  pexor_dbg(KERN_NOTICE "pexor_ioctl_request_receive_token_parallel returns\n");
+  pexor_dbg(KERN_NOTICE "pexor_ioctl_request_receive_token_async returns\n");
+  return retval;
+
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+int pexor_ioctl_request_token_async_polling (struct pexor_privdata *priv, unsigned long arg)
+{
+  // async request without channelpattern and channel specifier:
+  // we use all configured channels and return only when _all_ sfp buffers have data
+  // this means we need polling loop inside the ioctl
+  // requires also some time out behaviour if no channel delivers anything.
+
+
+
+
+  int retval = 0, i;
+  int readflag=0, hasalldata=0, hasanydata=0, hasnobuffers=0;
+  int hasdata[PEXOR_SFP_NUMBER] = { 0 };
+  int pollcount=0;
+  u32 comm = 0, sfp = 0;
+  u32 rstat = 0, radd = 0, rdat = 0;
+  struct pexor_sfp* sfpregisters;
+  dma_addr_t dmasource = 0, dmatmp=0;
+  phys_addr_t poff[PEXOR_SFP_NUMBER] = { 0 };    // dma buffer pointer offset
+  phys_addr_t woffset=0;
+  u32 paddington[PEXOR_SFP_NUMBER] = { 0 };
+  u32 dmalen = 0, dmaburst = 0, tokenmemsize = 0, dmalencheck = 0, datalensum = 0, paddingdelta=0;
+  u32* pipepartbase = 0;
+  u32* pdat = 0;
+  unsigned long dmabufid;
+  struct pexor_dmabuf dmabuf;
+  struct pexor_dmabuf* pdmabuf;
+
+
+// request from all registered sfps until we have something from everyone, or until no more receive buffers in pool:
+while(!hasalldata)
+{
+
+  ////////////////////////////////////////////////////////////
+  // first loop over all registered sfps and request new data if not yet done:
+    sfpregisters = &(priv->pexor.sfp);
+    for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
+    {
+      if (sfpregisters->num_slaves[sfp] == 0)
+        continue;    // exclude not configured sfps
+      if (atomic_read(&priv->sfprequested[sfp]) == 1)
+                      continue;    // exclude already requested, but not yet fetched sfps
+
+      // first save the readflag from buffer id and switch to second frontend:
+      readflag=atomic_read(&(priv->bufid[sfp])) | 2; // always "wait for data ready" mode in free running system!
+      /* switch frontend double buffer id for next but one request!
+       * otherwise frontends may stall after 3rd event*/
+      if(atomic_cmpxchg(&(priv->bufid[sfp]), 0, 1)==1)
+        atomic_cmpxchg(&(priv->bufid[sfp]), 1, 0);
+      ///////////////////////////
+      //          // int atomic_cmpxchg (  volatile __global int *p, int cmp, int val)
+      //          //Read the 32-bit value (referred to as old) stored at location p. Compute (old == cmp) ? val : old and store result at location pointed by p.
+      //          //The function returns old.
+      //          ///////////////////////////
+
+
+      pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_receive_token_polling for channel 0x%x, readflag=%d\n", (unsigned) sfp, readflag);
+      comm = PEXOR_SFP_PT_TK_R_REQ | (0x1 << (16 + sfp)); /* single sfp token mode*/
+      pexor_sfp_clear_channel (priv, sfp);
+      pexor_sfp_request (priv, comm, readflag, 0);
+      atomic_set(&priv->sfprequested[sfp],1);
+      ndelay(1000);     // like in single wait token
+    }    // for sfp first loop
+
+
+
+
+  // test: additionally put us to sleep a while during gosip token transfer:
+//#ifdef  PEXOR_DMA_POLL_SCHEDULE
+  if (need_resched())
+          schedule(); /* Will sleep */
+//#endif
+
+while(hasanydata==0) // polling until any of the chains has something!
+{
+  if(pollcount++ > PEXOR_ASYNC_MAXPOLLS)
+    {
+      pexor_msg(KERN_ERR "pexor_ioctl_request_receive_token_polling restartssys after pollcount=%d...\n", pollcount);
+      return -ERESTARTSYS; // only try internal polling for 10 seconds, then let system (?) repeat user request
+    }
+
+  ////////////////////////////////////////////////////////////
+  // second loop over all requested sfps if token receive is complete:
+  sfpregisters = &(priv->pexor.sfp);
+  for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
+  {
+    if (sfpregisters->num_slaves[sfp] == 0)
+      continue;    // exclude not configured sfps
+    if (atomic_read(&priv->sfprequested[sfp]) == 0)
+      continue;    // exclude not yet requested sfps - NEVER COME HERE!
+    ndelay(1000);
+    pexor_dbg(KERN_ERR "pexor_ioctl_request_receive_token_polling waits for reply of sfp %d...\n", sfp);
+
+
+#ifdef PEXOR_ASYNC_USETOKENREPLY
+    if((retval=pexor_sfp_get_token_reply (priv, sfp, &rstat, &radd, &rdat))!=0) continue;// no data received, try next one!
+#else
+
+
+    if((retval=pexor_sfp_get_reply(priv, sfp, &rstat, &radd, &rdat, PEXOR_SFP_PT_TK_R_REP,1))!=0) // asyncmode without warnings
+    {
+      //pexor_msg(KERN_ERR "** pexor_ioctl_request_receive_token_parallel: wait token error %d at sfp_%d reply \n", retval, sfp);
+      //pexor_msg(KERN_ERR "    incorrect reply: 0x%x 0x%x 0x%x \n", rstat, radd, rdat)
+      //return -EIO;
+      continue; // no data received, try next one!
+    }
+#endif
+    pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_receive_token_polling succeeds with reply of sfp=0x%x, next bufid=%d\n",sfp,atomic_read(&(priv->bufid[sfp])));
+    atomic_set(&priv->sfpreceived[sfp],1);
+    hasanydata=1;
+
+  }    // for sfp second loop
+  msleep(1); // polling for data
+} // while(hasanydata==0)
+
+hasanydata=0; // reset for next while(!hasalldata) cycle!
+
+
+ndelay(10000); // give pexor some time to evaluate tk_memsize correctly?
+
+  // this should also do, schedule might take some microseconds!
+//#ifdef  PEXOR_DMA_POLL_SCHEDULE
+  if (need_resched())
+          schedule(); /* Will sleep */
+//#endif
+  ////////////////////////////////////////////////////////////
+  // third loop over all registered sfps:
+  //woffset=descriptor.offset; // initial user offset from begin of dma buffer
+  datalensum=0;
+  woffset=0;
+  dmabufid=0; // initially use next available dma buffer
+  for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
+  {
+    if (sfpregisters->num_slaves[sfp] == 0)
+      continue;
+    if (atomic_read(&priv->sfpreceived[sfp]) == 0)
+       continue;    // exclude channels with no data
+
+
+    poff[sfp] = woffset;
+
+    // - get token memsize:
+    tokenmemsize = ioread32 (sfpregisters->tk_memsize[sfp]);
+    pexor_sfp_delay()
+    ;
+    tokenmemsize += 4;    // wg. shizu !!??
+    pexor_dbg(
+        KERN_NOTICE "** pexor_ioctl_request_receive_token_polling token data len (sfp_%d)=%d bytes\n", sfp, tokenmemsize);
+
+    dmalen=tokenmemsize;
+    pexor_eval_dma_size(&dmalen,&dmaburst);
+    pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_receive_token_polling uses dmaburst 0x%lx, dmalen:0x%lx\n", dmaburst,dmalen);
+
+
+    // - calculate padding offset from current destination pointer:
+    paddington[sfp] = 0;
+    dmatmp=woffset; // we assume that begin of allocated dma buffer is always page aligned. so padding only refers to offset within this buffer
+    paddingdelta = do_div(dmatmp, dmaburst); // this will also work on 32 bit platforms, note that dmatmp will be modified by do_div
+    //paddingdelta= dmatarget % dmaburst; // works only on 64 bit arch, 32 bit gives linker error "__umoddi3 undefined!
+    if (paddingdelta != 0)
+    {
+      paddington[sfp] = dmaburst - paddingdelta;
+      woffset = woffset + paddington[sfp];
+    }
+    // - perform DMA
+    dmasource = sfpregisters->tk_mem_dma[sfp];
+
+    /* now handle dma buffer id and user write offset:*/
+
+      pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_receive_token_polling uses dma buffer 0x%lx with write offset  0x%lx\n", dmabufid,woffset);
+
+      atomic_set(&(priv->state),PEXOR_STATE_DMA_SINGLE);
+      retval=pexor_next_dma( priv, dmasource, 0 , woffset, dmalen, &dmabufid,0,dmaburst);
+      // note that dmabufid returns the really used dma buffer id, i.e. next call will reuse same buffer.
+      if(retval)
+      {
+        /* error handling, e.g. no more dma buffer available*/
+        pexor_msg(KERN_ERR "pexor_ioctl_request_receive_token_polling_token error %d from nextdma\n", retval);
+        atomic_set(&(priv->state),PEXOR_STATE_STOPPED);
+        return retval;
+      }
+      pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_receive_token_polling sees dma buffer 0x%lx after pexor_next_dma\n", dmabufid);
+
+      ndelay(10000);     // TEST: give dma engine also some time before accessing status register...
+
+    if ((retval = pexor_poll_dma_complete (priv,1)) != 0)
+      {
+        pexor_msg(KERN_ERR "pexor_ioctl_request_receive_token_polling_token error %d from pexor_poll_dma_complete\n", retval);
+        return retval;
+      }
+
+      //    /* find out real package length after dma:*/
+    dmalencheck = ioread32 (priv->pexor.dma_len);
+    pexor_bus_delay()    ;
+    if (dmalencheck != dmalen)
+    {
+      pexor_msg(KERN_ERR "** pexor_ioctl_request_receive_token_polling: dmalen mismatch at sfp_%d, transferred %d bytes, requested %d bytes\n",
+          sfp, dmalencheck, dmalen);
+      return -EIO;
+    }
+
+     woffset =  poff[sfp] + paddington[sfp]+ tokenmemsize; // increment dma data pointer to end of real payload
+     datalensum += tokenmemsize + paddington[sfp];    // for ioremap also account possible padding space here
+  }    // for sfp third loop dma
+
+  ////////////////////////////////////////////////////////////////
+  // up to here, the first buffer in the free buffer queue is used.
+
+  if ((retval = pexor_receive_dma_buffer (priv, 0, 0)) != 0) /* poll for dma completion and wake up "DMA wait queue""*/
+    {
+    pexor_msg(KERN_ERR "pexor_ioctl_request_receive_token_polling_token error %d from pexor_receive_dma_buffer\n", retval);
+      return retval;
+    }
+ //////////////////////////////////////////////////
+ // here the dma buffer is in the received queue
+
+if ((retval = pexor_wait_dma_buffer (priv, &dmabuf)) != 0) /* evaluate wait queue of received buffers. Sync buffers for cpu*/
+{
+  pexor_msg(KERN_ERR "pexor_ioctl_request_receive_token_polling error %d from wait_dma_buffer\n", retval);
+  return retval;
+}
+  //////////////////////////////////////////////
+  // here the dma buffer is in the used queue.
+
+if (dmabuf.virt_addr != dmabufid)
+{
+  pexor_msg(KERN_ERR "pexor_ioctl_request_receive_token_polling bufid mismatch: received  0x%lx but DMA filled was 0x%lx !!!\n", dmabuf.virt_addr, dmabufid);
+  return -EIO;
+}
+
+
+// now access most recent buffer in the used queue. Only here we can write something from CPU into it!:
+pdmabuf=pexor_get_last_usedbuffer(priv);
+if(pdmabuf==0)
+{
+  pexor_msg(KERN_ERR "pexor_ioctl_request_receive_token_polling error from pexor_get_last_usedbuffer\n");
+  return -EFAULT;
+}
+pdmabuf->used_size = datalensum; /* set this to the receive buffer in used buffer queue*/
+
+pexor_dbg(KERN_ERR "pexor_ioctl_request_receive_token_polling - sets data size for buffer 0x%p (id:0x%x) to 0x%x...\n",
+    pdmabuf, pdmabuf->virt_addr, datalensum);
+
+  ////////////////////////////////////////////////////////////
+  // 4th loop to put padding words into ioremapped pipe. this may reduce overhead of ioremap call:
+  pipepartbase= (u32*) pdmabuf->kernel_addr; // instead of mbs pipe, we just put padding entries into received dma buffer
+  pdat = pipepartbase;
+  for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
+  {
+
+    if (sfpregisters->num_slaves[sfp] == 0)
+      continue;
+    if (atomic_read(&priv->sfpreceived[sfp]) == 0)
+         continue;    // exclude channels with no data
+    pdat =  pipepartbase + (poff[sfp] >> 2);     // set padding start pointer to pipe offset for this sfp's part
+    paddington[sfp] = paddington[sfp] >> 2;      // padding length also now in 4 bytes (longs)
+    for (i = 0; i < paddington[sfp]; i++)
+    {
+      pexor_dbg(KERN_NOTICE ">>> Fill padding pattern at 0x%lx with 0x%x ,l_k=%d times\n", pdat, 0xadd00000 + (paddington[sfp] << 8) + i, i);
+      *(pdat++) = 0xadd00000 + (paddington[sfp] << 8) + i;
+    }
+
+    // finally reset flags after data has been received:
+    atomic_set(&priv->sfprequested[sfp],0);
+    atomic_set(&priv->sfpreceived[sfp],0);
+    hasdata[sfp]=1; // mark occurence for this sfp
+  }      // for sfp end padding loop
+
+
+
+
+  // here we check if we have data from everyone
+hasalldata=1;
+for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
+  {
+    if (sfpregisters->num_slaves[sfp] == 0)
+        continue;
+    if (hasdata[sfp]!=1)
+      { hasalldata=0; break;}
+  }
+
+
+
+
+ // check here if we have anymore free buffers for next reception:
+ spin_lock( &(priv->buffers_lock));
+ hasnobuffers=list_empty (&(priv->free_buffers));
+ spin_unlock( &(priv->buffers_lock));
+ if (hasnobuffers) {
+   // TODO: proper error handling?
+   pexor_msg(KERN_NOTICE "pexor_ioctl_request_receive_token_polling no more free buffers for receiving, leaving loop\n");
+   break;
+ }
+  // add some polling delay here:
+   msleep (1);
+   // probably we may rather use schedule_timeout or something later
+
+} // while(!hasalldata)
+
+
+  //retval = copy_to_user ((void __user *) arg, &descriptor, sizeof(struct pexor_multitoken_io));
+  // resulting buffers are not copied to user, but just stay in used buffer list until user fetches them
+  pexor_dbg(KERN_NOTICE "pexor_ioctl_request_receive_token_polling returns\n");
   return retval;
 
 }
@@ -1188,7 +1501,7 @@ if (dmabuf.virt_addr != dmabufid)
 
 ////////////////// END CONSTRUCTION AREA
 /////////////////////////////////////////////////////////////////////////////7
-//////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
 
 
 

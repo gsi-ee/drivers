@@ -755,6 +755,25 @@ int pexorplugin::Device::ReceiveAutoAsyncBuffer (dabc::Buffer& buf)
   }
 }
 
+int pexorplugin::Device::ReceiveAutoAsyncBufferPolling (dabc::Buffer& buf)
+{
+  pexor::DMA_Buffer* trigbuf = fBoard->RequestReceiveAsyncTokensPolling();
+  if (trigbuf == 0)
+  {
+    EOUT("**** TimeOut in ReceiveAutoAsyncBufferPolling\n");
+    return dabc::di_RepeatTimeOut; //poll again from userland, but this is not save
+  }
+  else if ((long int) trigbuf == -1)
+  {
+    EOUT("**** Error in ReceiveAutoAsyncBufferPolling\n");
+    return dabc::di_Error; // no explicit polling here, this is a real error.
+  }
+  else
+  {
+    return (CopyOutputBuffer (trigbuf, buf, PEXOR_TRIGTYPE_NONE));
+  }
+}
+
 
 
 
@@ -1094,7 +1113,11 @@ unsigned pexorplugin::Device::Read_Complete (dabc::Buffer& buf)
   else if (IsAutoAsync())
    {
     // implicit free running mode with asynchronous sfps
+#ifdef IMPLICIT_ASYNC_POLLING
+    retsize = ReceiveAutoAsyncBufferPolling(buf);
+#else
     retsize = ReceiveAutoAsyncBuffer(buf);
+#endif
    }
   else
   {

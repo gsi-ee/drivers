@@ -33,6 +33,9 @@
 /* test switch to check difference between new atomic parallel token request*/
 #define LIBPEXOR_ATOMIC_IOCTLS 1
 
+/** switch between implicit polling in driver (locked), and explicit dabc polling
+ * in case of free running async readout from different fast sfp chains*/
+#define IMPLICIT_ASYNC_POLLING 1
 
 
 namespace pexorplugin
@@ -157,6 +160,12 @@ public:
      * This method is intended to be used in "polling for data" mode without a trigger signal*/
   int ReceiveAutoAsyncBuffer (dabc::Buffer& buf);
 
+   /** For automatic kernelmodule asynchronous triggerless readout mode:
+    * request token data from each configured sfp. Receive data via dma from pexor memory from the sfps that are ready.
+      * Copy and format them to dabc buffer. This method will always return a buffer filled from these requests, or an error.
+      * In contrast to ReceiveAutoAsyncBuffer, polling is done inside kernel module and not handled by dabc time out.
+      * This method is intended to be used in "polling for data" mode without a trigger signal*/
+  int ReceiveAutoAsyncBufferPolling (dabc::Buffer& buf);
 
 
   virtual const char* ClassName () const

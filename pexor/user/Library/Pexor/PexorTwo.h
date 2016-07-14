@@ -71,6 +71,14 @@ public:
    pexor::DMA_Buffer* RequestReceiveAsyncTokens (int* dmabuf=0, unsigned int woffset=0);
 
 
+   /** Request next token buffer from all connected devices on all registered sfps in triggerless/asynchronous mode.
+    *  Method returns filled dma buffer if any data was available.
+    *  In contrast to RequestReceiveAsyncTokens, this method will poll internally and should always return a received buffer.
+    *  Pointer value -1 is returned to indicate a receive error only!
+    *  This is protected against concurrent control ioctls to gosip*/
+   pexor::DMA_Buffer* RequestReceiveAsyncTokensPolling ();
+
+
 
    /** Wait until next token buffer has arrived for sfp channel
     * needs a previous RequestToken in async mode

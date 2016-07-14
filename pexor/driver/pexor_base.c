@@ -354,6 +354,17 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
       retval = pexor_ioctl_request_receive_token_async(privdata, arg);
       break;
 
+    case PEXOR_IOC_REQUEST_ASYNC_POLLING:
+       pexor_dbg(KERN_NOTICE "** pexor_ioctl request asynchronous tokens with internal polling\n");
+       retval = pexor_ioctl_request_token_async_polling(privdata, arg);
+       break;
+
+    case PEXOR_IOC_GET_ASYNC_BUFFER:
+      pexor_dbg(KERN_NOTICE "** pexor_ioctl get async buffer a\n");
+      retval = pexor_ioctl_first_usedbuffer(privdata, arg);
+      break;
+
+
     case PEXOR_IOC_WAIT_TRIGGER:
       pexor_dbg(KERN_NOTICE "** pexor_ioctl wait trigger\n");
       up(&privdata->ioctl_sem); /* do not lock ioctl during wait*/
@@ -601,6 +612,60 @@ int pexor_ioctl_usebuffer (struct pexor_privdata* priv, unsigned long arg)
   rev = copy_to_user ((void __user *) arg, &userbuf, sizeof(struct pexor_userbuf));
   return rev; /* if address pointers not matching */
 }
+
+
+int pexor_ioctl_first_usedbuffer(struct pexor_privdata *priv, unsigned long arg)
+{
+  int rev = 0;
+  struct pexor_dmabuf* dmabuf;
+  struct pexor_userbuf userbuf;
+  dmabuf=pexor_get_first_usedbuffer(priv);
+  if(dmabuf==0)  return -EFAULT;
+  userbuf.addr = dmabuf->virt_addr;
+  userbuf.size = dmabuf->used_size;
+  pexor_dbg(KERN_NOTICE "** pexor_ioctl_first_usedbuffer: dmabuf %p, virtual:0x%x, used_size:0x%x!\n", dmabuf, dmabuf->virt_addr, dmabuf->used_size);
+  rev = copy_to_user ((void __user *) arg, &userbuf, sizeof(struct pexor_userbuf));
+  return rev;
+}
+
+
+struct pexor_dmabuf* pexor_get_first_usedbuffer(struct pexor_privdata *priv)
+{
+  struct pexor_dmabuf* dmabuf;
+  spin_lock( &(priv->buffers_lock));
+  if (list_empty (&(priv->used_buffers)))
+    {
+      /* this may happen if user calls free buffer without taking or receiving one before*/
+      spin_unlock( &(priv->buffers_lock));
+      pexor_dbg(KERN_NOTICE "** pexor_get_first_usedbuffer: List of used buffers is empty!\n");
+      return 0;
+    }
+  dmabuf=list_first_entry(&(priv->used_buffers), struct pexor_dmabuf, queue_list); // do not change list, just access first entry
+  spin_unlock( &(priv->buffers_lock));
+  return dmabuf;
+}
+
+
+struct pexor_dmabuf* pexor_get_last_usedbuffer(struct pexor_privdata *priv)
+{
+  struct pexor_dmabuf* dmabuf;
+  spin_lock( &(priv->buffers_lock));
+  if (list_empty (&(priv->used_buffers)))
+    {
+      /* this may happen if user calls free buffer without taking or receiving one before*/
+      spin_unlock( &(priv->buffers_lock));
+      pexor_dbg(KERN_NOTICE "** pexor_get_last_usedbuffer: List of used buffers is empty!\n");
+      return 0;
+    }
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0)
+  dmabuf=list_last_entry(&(priv->used_buffers), struct pexor_dmabuf, queue_list); // do not change list, just access last entry
+#else
+  dmabuf=list_entry((&(priv->used_buffers))->prev, struct pexor_dmabuf, queue_list);
+#endif
+  spin_unlock( &(priv->buffers_lock));
+  return dmabuf;
+}
+
 
 int pexor_ioctl_deletebuffer (struct pexor_privdata* priv, unsigned long arg)
 {
@@ -1694,7 +1759,7 @@ int pexor_next_dma (struct pexor_privdata* priv, dma_addr_t source, u32 roffset,
     /* just take next available buffer to fill by DMA:*/
     nextbuf=list_first_entry(&(priv->free_buffers), struct pexor_dmabuf, queue_list);
     *bufid=nextbuf->virt_addr; // pass to caller to optionally reuse the same buffer
-    pexor_dbg(KERN_ERR "pexor_next_dma: using buffer id 0x%lx (virt addr:0x%x)! \n", *bufid, nextbuf->virt_addr);
+    pexor_dbg(KERN_ERR "pexor_next_dma: using buffer id 0x%lx (virt addr:0x%lx)! \n", *bufid, nextbuf->virt_addr);
   }
   spin_unlock( &(priv->buffers_lock));
 

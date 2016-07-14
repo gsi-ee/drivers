@@ -296,6 +296,24 @@ int pexor_ioctl_deletebuffer(struct pexor_privdata *priv, unsigned long arg);
  * Will wait for dma complete interrupt if receive queue is empty on calling */
 int pexor_ioctl_waitreceive(struct pexor_privdata *priv, unsigned long arg);
 
+
+/** get first filled dma buffer (descriptor pointer) from used buffer queue.
+ * To be used for triggerless asynchronous token request that may produce more than one result buffer on a single call
+ * user has to call pexor_ioctl_freebuffer after the buffer has been used to get the next one.
+ * Returns error if no buffer is in usedbuffer list. */
+int pexor_ioctl_first_usedbuffer(struct pexor_privdata *priv, unsigned long arg);
+
+
+/** helper function to access first buffer in used list. For ioctl and for the async receive functions*/
+struct pexor_dmabuf* pexor_get_first_usedbuffer(struct pexor_privdata *priv);
+
+
+/** helper function to access last buffer in used list. For ioctl and for the async receive functions*/
+struct pexor_dmabuf* pexor_get_last_usedbuffer(struct pexor_privdata *priv);
+
+
+
+
 /** switch internal run state of device (e.g. start/stop daq)
  * when daq is started, driver will receive dma buffers
  * and put them into receive queue, etc */

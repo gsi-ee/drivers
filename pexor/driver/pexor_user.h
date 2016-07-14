@@ -14,7 +14,7 @@
 #include <linux/ioctl.h>
 
 
-#define PEXORVERSION  "2.40"
+#define PEXORVERSION  "2.5"
 
 /** identify name in dev : */
 #define PEXORNAME 		"pexor"
@@ -54,7 +54,7 @@
 #define PEXOR_SFP_NUMBER 4 /**< number of used sfp connections*/
 #define PEXOR_MAXCONFIG_VALS 60 /**< number of configuration commands treated by driver in a single operation*/
 
-
+#define PEXOR_MAX_MULTIBUF 100 /**< maximum number of dma buffers passed in a single ioctl request */
 
 
 
@@ -165,10 +165,11 @@ struct pexor_trigger_readout{
 #define PEXOR_IOC_SET_WAIT_TIMEOUT    _IOW(  PEXOR_IOC_MAGIC, 21, int)
 #define PEXOR_IOC_REQUEST_RECEIVE_TOKENS    _IOWR(  PEXOR_IOC_MAGIC, 22, struct pexor_token_io)    /**<  Request data from parallel slaves via token and initiate DMA to destination address in PC memory. MBS padding words are provided between slave DMA data sections.*/
 #define PEXOR_IOC_REQUEST_RECEIVE_ASYNC     _IOWR(  PEXOR_IOC_MAGIC, 23, struct pexor_token_io)    /**<  Request data from asynchronously triggered parallel slaves via token and initiate DMA to destination address in PC memory. MBS padding words are provided between slave DMA data sections.*/
+#define PEXOR_IOC_REQUEST_ASYNC_POLLING     _IO(  PEXOR_IOC_MAGIC, 24)    /**<  Request data from asynchronously triggered parallel slaves via token and initiate DMA to destination address in PC memory. MBS padding words are provided between slave DMA data sections. Received buffers must be fetched by PEXOR_IOC_GET_ASYNC_BUFFER*/
+#define PEXOR_IOC_GET_ASYNC_BUFFER      _IOR(  PEXOR_IOC_MAGIC, 25, struct pexor_token_io)    /**< get first entry from used buffer queue after finishing request with PEXOR_IOC_REQUEST_ASYNC_POLLING*/
 
 
-
-#define PEXOR_IOC_MAXNR 23
+#define PEXOR_IOC_MAXNR 25
 
 
 /** some alias ioctl definitions for goiscmd/mbspex lib:*/

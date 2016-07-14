@@ -153,6 +153,62 @@ pexor::DMA_Buffer* PexorTwo::RequestReceiveAsyncTokens (int* dmabuf,
 }
 
 
+///////////////////////////////////
+// JAM16 ATWORK
+
+pexor::DMA_Buffer* PexorTwo::RequestReceiveAsyncTokensPolling ()
+{
+  int rev = 0;
+  struct pexor_token_io wrapper;
+  struct pexor_userbuf data;
+  bool requested=false;
+  PexorDebug("RequestReceiveAsyncTokensPolling begins...\n");
+  while (true)
+  {
+    rev = ioctl (fFileHandle, PEXOR_IOC_GET_ASYNC_BUFFER, &data);    // first fetch previously requested buffers from user queue
+    if (rev == 0)
+    {
+      PexorDebug("RequestReceiveAsyncTokensPolling has data buffer of size %d.\n",data.size);
+      // pass received data upwards to application:
+      wrapper.tkbuf = data;
+      return (PrepareReceivedBuffer (wrapper, 0));
+
+    }
+    else
+    {
+      ///// for DEBUG only
+      //int er = errno;
+      //PexorError("\n\nError %d  RequestReceiveAsyncTokensPolling from PEXOR_IOC_GET_ASYNC_BUFFER - %s\n", er, strerror(er));
+      ///////////////////
+      if (requested)
+      {
+        int er = errno;
+        PexorError(
+            "\n\nError %d  RequestReceiveAsyncTokensPolling: no data from PEXOR_IOC_GET_ASYNC_BUFFER although requested- %s\n", er, strerror(er));
+        return (pexor::DMA_Buffer*) -1;    //
+      }
+      PexorDebug("RequestReceiveAsyncTokensPolling is requesting next polling ioctl... .\n");
+      // no user buffer yet in queue, issue a new request first:
+      rev = ioctl (fFileHandle, PEXOR_IOC_REQUEST_ASYNC_POLLING);    // polling is done inside kernel module
+
+      if (rev)
+      {
+        int er = errno;
+        if(er==512) return 0; //ERESTARTSYS is 512 as errno? means timeout for receive polling, try again
+
+
+        PexorError(
+            "\n\nError %d  RequestReceiveAsyncTokensPolling from PEXOR_IOC_REQUEST_ASYNC_POLLING - %s\n", er, strerror(er));
+        return (pexor::DMA_Buffer*) -1;    // this is a real error inside ioctl
+      }
+      requested = true;
+    }
+  }    // while true
+  PexorInfo("RequestReceiveAsyncTokensPolling  NEVER COME HERE \n");
+  return (pexor::DMA_Buffer*) -1; // NEVER COME HERE
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////77
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 

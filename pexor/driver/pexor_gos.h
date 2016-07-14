@@ -211,6 +211,9 @@
 /** switch between checking token reply status or command reply status in async receiver mode*/
 #define PEXOR_ASYNC_USETOKENREPLY 1
 
+/** maximum number of 1ms poll cycles until any of async sfp chains delivers something */
+#define PEXOR_ASYNC_MAXPOLLS 10000
+
 
 /* delay in nanoseconds (ns) for any operation on gosip sfp protocol*/
 #define PEXOR_SFP_DELAY 20
@@ -343,9 +346,20 @@ int pexor_ioctl_request_receive_token_parallel (struct pexor_privdata *priv, uns
  * Buffer may also be empty if none of the chains sees a token reply within the configured wait time.
  * Data request is locked against other control ioctls until complete.
  * */
-
 int pexor_ioctl_request_receive_token_async (struct pexor_privdata *priv, unsigned long arg);
 
+
+
+/** Request multiple DMA buffers filled from asynchronous token request on all configured
+ * sfp chains. Function returns no sooner than data of all chains has been received, or if a timeout is hit.
+ * Faster sfp chains may be requested multiple times within this function.
+ * Resulting data is queued in received buffer list and must be fetched by user with
+ * subsequent calls of PEXOR_IOC_WAITBUFFER / pexor_ioctl_waitreceive.
+ * Therefore number of received buffers is passed back in pexor_multitoken_io argument.
+ * The dma buffers consists of all available data, optionally with MBS padding words in between them.
+ * Data request and gosip/DMA transfer is locked against other control ioctls until complete.
+ * */
+int pexor_ioctl_request_token_async_polling (struct pexor_privdata *priv, unsigned long arg);
 
 
 /** Wait for a trigger interrupt from pexor. Will be raised from trixor board
