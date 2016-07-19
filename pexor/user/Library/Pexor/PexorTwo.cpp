@@ -146,7 +146,8 @@ pexor::DMA_Buffer* PexorTwo::RequestReceiveAsyncTokens (int* dmabuf,
     // no error output when polling for the missing data
     //int er = errno;
     //PexorError("\n\nError %d  RequestReceiveAsyncTokens - %s\n", er, strerror(er));
-    return (pexor::DMA_Buffer*) -1;
+    return 0; // return value indicates to poll again
+ //   return (pexor::DMA_Buffer*) -1;
   }
   return (PrepareReceivedBuffer (descriptor, dmabuf));
 
@@ -194,7 +195,11 @@ pexor::DMA_Buffer* PexorTwo::RequestReceiveAsyncTokensPolling ()
       if (rev)
       {
         int er = errno;
-        if(er==512) return 0; //ERESTARTSYS is 512 as errno? means timeout for receive polling, try again
+        if(er==EAGAIN){
+          PexorInfo("RequestReceiveAsyncTokensPolling sees EAGAIN.\n");
+          return 0;
+        }
+        //if(er==512) return 0; //ERESTARTSYS is 512 as errno? means timeout for receive polling, try again
 
 
         PexorError(

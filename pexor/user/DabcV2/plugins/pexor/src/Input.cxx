@@ -58,7 +58,7 @@ unsigned pexorplugin::Input::Read_Complete (dabc::Buffer& buf)
   }
   if ((unsigned) res == dabc::di_RepeatTimeOut)
   {
-    DOUT3 ("pexorplugin::Input() returns with timeout\n");
+    DOUT1 ("pexorplugin::Input() returns with timeout\n");
     return dabc::di_RepeatTimeOut;
   }
   if ((unsigned) res == dabc::di_Error)

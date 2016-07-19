@@ -741,13 +741,13 @@ int pexorplugin::Device::ReceiveAutoAsyncBuffer (dabc::Buffer& buf)
 {
   pexor::DMA_Buffer* trigbuf = fBoard->RequestReceiveAsyncTokens();
   if (trigbuf == 0)
+    {
+      return dabc::di_RepeatTimeOut; // polling for data mode
+    }
+  else if ((long int) trigbuf == -1)
   {
     EOUT("**** Error in ReceiveAutoAsyncBuffer\n");
     return dabc::di_SkipBuffer;
-  }
-  else if ((long int) trigbuf == -1)
-  {
-    return dabc::di_RepeatTimeOut; // polling for data mode
   }
   else
   {
@@ -1039,7 +1039,7 @@ unsigned pexorplugin::Device::Read_Size ()
       else if(!fHasData)
         {
               fHasData=true; // next time we want to retry reading
-              DOUT3("pexorplugin::Device::Read_Size: no data on polling, transport timeout...\n");
+              DOUT0("pexorplugin::Device::Read_Size: no data on polling, transport timeout...\n");
               return dabc::di_RepeatTimeOut;
         }
       else

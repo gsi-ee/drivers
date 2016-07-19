@@ -27,7 +27,7 @@
 #include <linux/page-flags.h>
 #include <linux/sched.h>
 #include <linux/list.h>
-
+#include <linux/jiffies.h>
 #include <linux/wait.h>
 
 

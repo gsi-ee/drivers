@@ -1260,16 +1260,25 @@ while(!hasalldata)
 
   // test: additionally put us to sleep a while during gosip token transfer:
 //#ifdef  PEXOR_DMA_POLL_SCHEDULE
-  if (need_resched())
-          schedule(); /* Will sleep */
+//  if (need_resched())
+//          schedule(); /* Will sleep */
 //#endif
 
 while(hasanydata==0) // polling until any of the chains has something!
 {
   if(pollcount++ > PEXOR_ASYNC_MAXPOLLS)
     {
-      pexor_msg(KERN_ERR "pexor_ioctl_request_receive_token_polling restartssys after pollcount=%d...\n", pollcount);
-      return -ERESTARTSYS; // only try internal polling for 10 seconds, then let system (?) repeat user request
+      pexor_msg(KERN_ERR "pexor_ioctl_request_receive_token_polling: EAGAIN after pollcount=%d...\n", pollcount);
+// debug
+//         for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
+//           {
+//             if (sfpregisters->num_slaves[sfp] == 0)
+//                 continue;
+//             pexor_msg(KERN_NOTICE "sfp:%d - sfprequested=%d, sfpreceived=%d \n",sfp,
+//                 atomic_read(&priv->sfprequested[sfp]), atomic_read(&priv->sfpreceived[sfp]));
+//           }
+////////// END DEBUG
+      return -EAGAIN; // only try internal polling for 10 seconds, then let system (?) repeat user request
     }
 
   ////////////////////////////////////////////////////////////
@@ -1303,7 +1312,11 @@ while(hasanydata==0) // polling until any of the chains has something!
     hasanydata=1;
 
   }    // for sfp second loop
-  msleep(1); // polling for data
+  //msleep(1); // polling for data
+
+  set_current_state(TASK_INTERRUPTIBLE);
+  schedule_timeout (PEXOR_ASYNC_POLLDELAY);
+
 } // while(hasanydata==0)
 
 hasanydata=0; // reset for next while(!hasalldata) cycle!
@@ -1313,8 +1326,8 @@ ndelay(10000); // give pexor some time to evaluate tk_memsize correctly?
 
   // this should also do, schedule might take some microseconds!
 //#ifdef  PEXOR_DMA_POLL_SCHEDULE
-  if (need_resched())
-          schedule(); /* Will sleep */
+//  if (need_resched())
+//          schedule(); /* Will sleep */
 //#endif
   ////////////////////////////////////////////////////////////
   // third loop over all registered sfps:
@@ -1482,10 +1495,20 @@ for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
  if (hasnobuffers) {
    // TODO: proper error handling?
    pexor_msg(KERN_NOTICE "pexor_ioctl_request_receive_token_polling no more free buffers for receiving, leaving loop\n");
+// debug
+//   for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
+//     {
+//       if (sfpregisters->num_slaves[sfp] == 0)
+//           continue;
+//       pexor_msg(KERN_NOTICE "sfp:%d - hasdata=%d, sfprequested=%d, sfpreceived=%d \n",sfp, hasdata[sfp],
+//           atomic_read(&priv->sfprequested[sfp]), atomic_read(&priv->sfpreceived[sfp]));
+//     }
+//   pexor_msg(KERN_NOTICE "   hasalldata=%d, datalensum=%d bytes\n", hasalldata, datalensum);
+////////// END DEBUG
    break;
  }
   // add some polling delay here:
-   msleep (1);
+   //msleep (1);
    // probably we may rather use schedule_timeout or something later
 
 } // while(!hasalldata)

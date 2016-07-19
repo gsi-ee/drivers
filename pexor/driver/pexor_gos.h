@@ -200,7 +200,7 @@
  * This causes a timeout value =(PEXOR_SFP_MAXPOLLS * PEXOR_SFP_DELAY ns)
  * note that this default can be tuned by setting privdata->sfp_maxpolls
  * via sysfs handle*/
-#define PEXOR_SFP_MAXPOLLS 10000
+#define PEXOR_SFP_MAXPOLLS 1000
 
 /**  maximum number of polls for sfp request response for asynchronous (triggerless) readout
  * timeout value is (PEXOR_SFP_MAXPOLLS_ASYNC * PEXOR_SFP_DELAY ns)
@@ -213,6 +213,10 @@
 
 /** maximum number of 1ms poll cycles until any of async sfp chains delivers something */
 #define PEXOR_ASYNC_MAXPOLLS 10000
+// 1000000 without any sleep
+//1000 for msleep case
+
+#define PEXOR_ASYNC_POLLDELAY HZ/100.0
 
 
 /* delay in nanoseconds (ns) for any operation on gosip sfp protocol*/
