@@ -14,7 +14,7 @@
 #include <linux/ioctl.h>
 
 
-#define PEXORVERSION  "2.5"
+#define PEXORVERSION  "2.6.1"
 
 /** identify name in dev : */
 #define PEXORNAME 		"pexor"
@@ -167,9 +167,10 @@ struct pexor_trigger_readout{
 #define PEXOR_IOC_REQUEST_RECEIVE_ASYNC     _IOWR(  PEXOR_IOC_MAGIC, 23, struct pexor_token_io)    /**<  Request data from asynchronously triggered parallel slaves via token and initiate DMA to destination address in PC memory. MBS padding words are provided between slave DMA data sections.*/
 #define PEXOR_IOC_REQUEST_ASYNC_POLLING     _IO(  PEXOR_IOC_MAGIC, 24)    /**<  Request data from asynchronously triggered parallel slaves via token and initiate DMA to destination address in PC memory. MBS padding words are provided between slave DMA data sections. Received buffers must be fetched by PEXOR_IOC_GET_ASYNC_BUFFER*/
 #define PEXOR_IOC_GET_ASYNC_BUFFER      _IOR(  PEXOR_IOC_MAGIC, 25, struct pexor_token_io)    /**< get first entry from used buffer queue after finishing request with PEXOR_IOC_REQUEST_ASYNC_POLLING*/
+#define PEXOR_IOC_START_ASYNC_ACQ      _IOW(  PEXOR_IOC_MAGIC, 26, int) /**< start internal triggerless readout. argument may specify mode (1=ringbuffer, 0=backpressure)*/
+#define PEXOR_IOC_STOP_ASYNC_ACQ      _IO(  PEXOR_IOC_MAGIC, 27) /**< stop internal triggerless readout */
 
-
-#define PEXOR_IOC_MAXNR 25
+#define PEXOR_IOC_MAXNR 27
 
 
 /** some alias ioctl definitions for goiscmd/mbspex lib:*/

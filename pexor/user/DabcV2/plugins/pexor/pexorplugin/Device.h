@@ -35,7 +35,10 @@
 
 /** switch between implicit polling in driver (locked), and explicit dabc polling
  * in case of free running async readout from different fast sfp chains*/
-#define IMPLICIT_ASYNC_POLLING 1
+//#define IMPLICIT_ASYNC_POLLING 1
+
+/** this switches to polling in asynchronous kernel worker*/
+#define IMPLICIT_ASYNC_WORKER 1
 
 
 namespace pexorplugin
@@ -166,6 +169,13 @@ public:
       * In contrast to ReceiveAutoAsyncBuffer, polling is done inside kernel module and not handled by dabc time out.
       * This method is intended to be used in "polling for data" mode without a trigger signal*/
   int ReceiveAutoAsyncBufferPolling (dabc::Buffer& buf);
+
+
+  /** For automatic kernelmodule asynchronous triggerless readout mode, third variant:
+   *  Just fetch next buffer in kernel module output queue (used buffers).
+   *  If nothing in it, try again after dabc timeout.
+   * */
+  int ReceiveNextAsyncBuffer(dabc::Buffer& buf);
 
 
   virtual const char* ClassName () const

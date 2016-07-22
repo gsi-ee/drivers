@@ -212,11 +212,14 @@
 #define PEXOR_ASYNC_USETOKENREPLY 1
 
 /** maximum number of 1ms poll cycles until any of async sfp chains delivers something */
-#define PEXOR_ASYNC_MAXPOLLS 10000
+#define PEXOR_ASYNC_MAXPOLLS 5000
 // 1000000 without any sleep
 //1000 for msleep case
 
 #define PEXOR_ASYNC_POLLDELAY HZ/100.0
+
+/** maximum number of sfp spinlock counter. When exceeded, the sfp lock is released also when frontends did not respond  */
+#define PEXOR_ASYNC_MAXSPINLOCKS 2000
 
 
 /* delay in nanoseconds (ns) for any operation on gosip sfp protocol*/
@@ -363,7 +366,22 @@ int pexor_ioctl_request_receive_token_async (struct pexor_privdata *priv, unsign
  * The dma buffers consists of all available data, optionally with MBS padding words in between them.
  * Data request and gosip/DMA transfer is locked against other control ioctls until complete.
  * */
+
 int pexor_ioctl_request_token_async_polling (struct pexor_privdata *priv, unsigned long arg);
+
+
+/** helper function to embed async polling either in explicit ioctl, or into free running kernel tasklet.*/
+int pexor_request_token_async_polling (struct pexor_privdata *priv, unsigned long arg);
+
+
+#ifdef PEXOR_TRIGGERLESS_WORKER
+/** start automatic triggerless acquisition. This is done by polling in internal kernel tasklet*/
+int pexor_ioctl_start_async_acquisition (struct pexor_privdata *priv, unsigned long arg);
+
+/** stop automatic triggereless acquisition, i.e. quit the working tasklet.
+ * Acquired buffers are not deleted.*/
+int pexor_ioctl_stop_async_acquisition(struct pexor_privdata *priv, unsigned long arg);
+#endif
 
 
 /** Wait for a trigger interrupt from pexor. Will be raised from trixor board
@@ -415,6 +433,15 @@ int pexor_trigger_stop_acq(struct pexor_privdata* priv);
 
 /** perform stop acquisition action. This is done after software trigger 15 is received.*/
 int pexor_trigger_do_stop(struct pexor_privdata* priv);
+
+
+#ifdef PEXOR_TRIGGERLESS_WORKER
+/** This workqueue function is intended for autonomous request and readout of triggerless asynchronous slaves.*/
+void pexor_triggerless_workfunc(struct work_struct *parent);
+
+#endif
+
+
 
 
 

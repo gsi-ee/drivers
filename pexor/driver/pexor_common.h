@@ -55,6 +55,14 @@
 
 #define PEXOR_SYSFS_ENABLE 1
 
+/** if set, triggerless readout may use autonomous workqueue task. For development*/
+#define PEXOR_TRIGGERLESS_WORKER 1
+
+/** define this to use a channelwise spinlock for triggerless acquisiton*/
+//#define PEXOR_TRIGGERLESS_SPINLOCK 1
+
+/** next try: semaphores instead of spinlocks, since we may sleep in worker.*/
+#define PEXOR_TRIGGERLESS_SEMAPHORE 1
 
 #ifdef PEXOR_DEBUGPRINT
 #define pexor_dbg( args... )                    \

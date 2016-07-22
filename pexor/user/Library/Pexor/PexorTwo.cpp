@@ -212,6 +212,31 @@ pexor::DMA_Buffer* PexorTwo::RequestReceiveAsyncTokensPolling ()
   PexorInfo("RequestReceiveAsyncTokensPolling  NEVER COME HERE \n");
   return (pexor::DMA_Buffer*) -1; // NEVER COME HERE
 }
+
+
+
+
+pexor::DMA_Buffer* PexorTwo::ReceiveNextAsyncBuffer ()
+{
+  int rev = 0;
+  struct pexor_token_io wrapper;
+  struct pexor_userbuf data;
+  rev = ioctl (fFileHandle, PEXOR_IOC_GET_ASYNC_BUFFER, &data);    // first fetch previously requested buffers from user queue
+  if (rev)
+    {
+      // no error output when polling for the missing data
+      //int er = errno;
+      //PexorError("\n\nError %d  RequestReceiveAsyncTokens - %s\n", er, strerror(er));
+      return 0; // zero return value indicates to poll again
+    }
+  wrapper.tkbuf = data;
+  return (PrepareReceivedBuffer (wrapper, 0));
+}
+
+
+
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////77
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -370,6 +395,29 @@ pexor::DMA_Buffer* PexorTwo::WaitForTriggerBuffer ()
   return (PrepareReceivedBuffer (wrapper, 0));
   // TODO: change interface of PrepareReceived Buffer to userbuf instead of token_io
 }
+
+
+bool PexorTwo::StartTriggerlessAcquisition(int mode)
+{
+  int rev=ioctl(fFileHandle, PEXOR_IOC_START_ASYNC_ACQ, &mode);
+  int er=errno;
+  if(rev==0)
+      return true;
+  else
+    PexorWarning("\nStartTriggerlessAcquisition returned error %d  -  %s\n",er, strerror(er));
+  return false;
+}
+
+  bool PexorTwo::StopTriggerlessAcquisition()
+  {
+    int rev=ioctl(fFileHandle, PEXOR_IOC_STOP_ASYNC_ACQ);
+    int er=errno;
+    if(rev==0)
+        return true;
+    else
+      PexorWarning("\nStopTriggerlessAcquisition returned error %d  -  %s\n",er, strerror(er));
+    return false;
+  }
 
 
 

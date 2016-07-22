@@ -79,6 +79,19 @@ public:
    pexor::DMA_Buffer* RequestReceiveAsyncTokensPolling ();
 
 
+   /** Just try to receive next buffer from used queue. This should be filled by kernel worker function automatically
+    * after started.*/
+   pexor::DMA_Buffer* ReceiveNextAsyncBuffer ();
+
+
+   /** for triggerless asynchronous readout: start polling acquisition in kernel module worker.
+    * argument mode specifies ringbuffer (=1) or backpressure(=0) behaviour in output queue*/
+   bool StartTriggerlessAcquisition(int mode=0);
+
+   /** for triggerless asynchronous readout: stop polling acquisition in kernel module worker.
+    * Already acquired buffers in output queue are not dropped by this operation.*/
+   bool StopTriggerlessAcquisition();
+
 
    /** Wait until next token buffer has arrived for sfp channel
     * needs a previous RequestToken in async mode

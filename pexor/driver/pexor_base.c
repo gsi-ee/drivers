@@ -61,6 +61,7 @@ int pexor_open (struct inode *inode, struct file *filp)
   struct pexor_privdata *privdata;
   pexor_dbg(KERN_NOTICE "** starting pexor_open...\n");
   /* Set the private data area for the file */
+
   privdata = container_of( inode->i_cdev, struct pexor_privdata, cdev);
   filp->private_data = privdata;
   return 0;
@@ -363,6 +364,17 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
       pexor_dbg(KERN_NOTICE "** pexor_ioctl get async buffer a\n");
       retval = pexor_ioctl_first_usedbuffer(privdata, arg);
       break;
+
+#ifdef PEXOR_TRIGGERLESS_WORKER
+    case PEXOR_IOC_START_ASYNC_ACQ:
+      pexor_msg(KERN_NOTICE "** pexor_ioctl start triggerless acquisition a\n");
+      retval = pexor_ioctl_start_async_acquisition(privdata, arg);
+      break;
+    case PEXOR_IOC_STOP_ASYNC_ACQ:
+      pexor_msg(KERN_NOTICE "** pexor_ioctl stop triggerless acquisition a\n");
+      retval = pexor_ioctl_stop_async_acquisition(privdata, arg);
+      break;
+#endif
 
 
     case PEXOR_IOC_WAIT_TRIGGER:
@@ -881,20 +893,33 @@ int pexor_ioctl_reset (struct pexor_privdata* priv, unsigned long arg)
   pexor_sfp_reset (priv);
   pexor_sfp_clear_all (priv);
 #endif
+
+/** JAM2016 reset flags for the asynchronous triggerless readout:*/
+for (ix = 0; ix < PEXOR_SFP_NUMBER; ++ix)
+  {
+    atomic_set(&(priv->bufid[ix]), 0);
+    atomic_set(&(priv->sfprequested[ix]), 0);
+    atomic_set(&(priv->sfpreceived[ix]), 0);
+#ifdef PEXOR_TRIGGERLESS_SEMAPHORE
+    atomic_set(&(priv->sfp_worker_haslock[ix]),0);
+#endif
+
+  }
+
+#ifdef PEXOR_TRIGGERLESS_WORKER
+  /** terminate worker thread for asynchronous read out before we remove buffers:*/
+  atomic_set(&(priv->triggerless_acquisition),0);
+  ndelay(100);
+  cancel_work_sync(&(priv->triggerless_work));
+  flush_workqueue(priv->triggerless_workqueue);
+#endif
+
   cleanup_buffers (priv);
   atomic_set(&(priv->irq_count), 0);
 
   pexor_ioctl_clearreceivebuffers (priv, arg);    // this will cleanup dma and irtype queues
 
   atomic_set(&(priv->state), PEXOR_STATE_STOPPED);
-
-  /** JAM2016 reset flags for the asynchronous triggerless readout:*/
-  for(ix=0; ix<PEXOR_SFP_NUMBER;++ix)
-     {
-      atomic_set(&(priv->bufid[ix]), 0);
-      atomic_set (&(priv->sfprequested[ix]), 0);
-      atomic_set (&(priv->sfpreceived[ix]), 0);
-     }
 
 
 
@@ -2630,6 +2655,13 @@ void cleanup_device (struct pexor_privdata* priv)
   /* need to explicitely disable interrupt tasklet?*/
   tasklet_kill (&priv->irq_bottomhalf);
 
+#ifdef   PEXOR_TRIGGERLESS_WORKER
+  cancel_work_sync(&(priv->triggerless_work));
+  flush_workqueue(priv->triggerless_workqueue);
+  destroy_workqueue(priv->triggerless_workqueue);
+#endif
+
+
   /* may put disabling device irqs here?*/
 #ifdef PEXOR_ENABLE_IRQ
   free_irq (pcidev->irq, priv);
@@ -2907,6 +2939,34 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
     atomic_set (&(privdata->sfpreceived[ix]), 0);
    }
 
+
+#ifdef   PEXOR_TRIGGERLESS_WORKER
+  /** CONSTRUCTION AREA for triggerless readout JAM2016: */
+  atomic_set(&(privdata->triggerless_acquisition), 0);
+  atomic_set(&(privdata->triggerless_ringmode), 0);
+  privdata->triggerless_workqueue= create_singlethread_workqueue("PexorQueue"); // TODO: change to new API later
+  INIT_WORK(&(privdata->triggerless_work), &pexor_triggerless_workfunc);
+#endif
+#ifdef   PEXOR_TRIGGERLESS_SPINLOCK
+  for(ix=0; ix<PEXOR_SFP_NUMBER;++ix)
+    {
+      spin_lock_init(&(privdata->sfp_lock[ix]));
+      atomic_set(&(privdata->sfp_lock_count[ix]),0);
+    }
+
+ #endif
+#ifdef   PEXOR_TRIGGERLESS_SEMAPHORE
+  for(ix=0; ix<PEXOR_SFP_NUMBER;++ix)
+     {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 37)
+      init_MUTEX (&(privdata->sfpsem[ix]));
+#else
+      sema_init(&(privdata->sfpsem[ix]),1);
+#endif
+      atomic_set(&(privdata->sfp_lock_count[ix]),0);
+      atomic_set(&(privdata->sfp_worker_haslock[ix]),0);
+     }
+#endif
 
   /* pexor_msg(KERN_NOTICE "Initialized ircount to %d.\n",atomic_read( &(privdata->dma_outstanding)));
    */

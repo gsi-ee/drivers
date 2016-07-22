@@ -23,6 +23,7 @@
 #define PEXOR_DISABLE_IRQ_ISR 1
 
 
+
 /** if this is set, use trigger status queue.
  * othewise, just atomic variable, since there can be only one trigger processed at same time*/
 //#define PEXOR_TRIGSTAT_QUEUE 1
@@ -206,7 +207,28 @@ struct pexor_privdata
   atomic_t sfprequested[PEXOR_SFP_NUMBER]; /**< flags for asynchronous triggerless readout. if 1 token request has already been done*/
   atomic_t sfpreceived[PEXOR_SFP_NUMBER]; /**< flags for asynchronous triggerless readout. if 1 token request has received data*/
 
+  /** CONSTRUCTION AREA for triggerless readout JAM2016: */
+#ifdef   PEXOR_TRIGGERLESS_WORKER
 
+  atomic_t triggerless_acquisition;        /**< state of triggerless acquisition. To end triggerless_task*/
+  atomic_t triggerless_ringmode;           /**< switch between triggerless ringbuffer mode or backpressure.*/
+  //struct tasklet_struct triggerless_task; /**< tasklet structure for triggerless polling readout*/
+  struct workqueue_struct* triggerless_workqueue; /**< workqueue for triggerless polling readout*/
+  struct work_struct triggerless_work;  /**< worker structure for triggerless polling readout*/
+#endif
+#ifdef   PEXOR_TRIGGERLESS_SPINLOCK
+   spinlock_t sfp_lock[PEXOR_SFP_NUMBER];      /**< protect triggerless sfp request against gosipcmd*/
+   atomic_t sfp_lock_count[PEXOR_SFP_NUMBER];  /**< counters for lock break threshold if an sfp is broken*/
+#endif
+
+#ifdef   PEXOR_TRIGGERLESS_SEMAPHORE
+   struct semaphore sfpsem[PEXOR_SFP_NUMBER]; /**< protect triggerless sfp request against gosipcmd*/
+   atomic_t sfp_lock_count[PEXOR_SFP_NUMBER]; /**< counters for lock break threshold if an sfp is broken*/
+   atomic_t sfp_worker_haslock[PEXOR_SFP_NUMBER];  /**< extra flag to test if polling worker has acquired lock*/
+#endif
+
+
+  /** CONSTRUCTION AREA for triggerless readout END */
   wait_queue_head_t irq_dma_queue;      /**< wait queue between bottom
                                            half and wait dma ioctl */
   atomic_t dma_outstanding;     /**< outstanding dma counter */

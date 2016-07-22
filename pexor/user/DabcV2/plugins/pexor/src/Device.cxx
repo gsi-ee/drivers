@@ -337,6 +337,12 @@ bool pexorplugin::Device::StartAcquisition ()
     fBoard->SetAutoTriggerReadout (IsAutoReadout (), true);
     rev = fBoard->StartAcquisition ();
   }
+#ifdef   IMPLICIT_ASYNC_WORKER
+  else if(IsAutoAsync())
+  {
+    rev = fBoard->StartTriggerlessAcquisition (); // TODO: ringbuffer parameter
+  }
+#endif
   SetInfo("Acqusition is started.");
   return rev;
 }
@@ -357,6 +363,14 @@ bool pexorplugin::Device::StopAcquisition ()
   else
     // for triggered read, do not change transport running state unless we recevied back trigger 15 from pexor
     fAqcuisitionRunning = false;
+
+#ifdef   IMPLICIT_ASYNC_WORKER
+  if(IsAutoAsync())
+  {
+    rev = fBoard->StopTriggerlessAcquisition ();
+  }
+#endif
+
 
   SetInfo("Acqusition is stopped.");
   return rev;
@@ -774,6 +788,25 @@ int pexorplugin::Device::ReceiveAutoAsyncBufferPolling (dabc::Buffer& buf)
   }
 }
 
+int pexorplugin::Device::ReceiveNextAsyncBuffer(dabc::Buffer& buf)
+{
+  pexor::DMA_Buffer* trigbuf = fBoard->ReceiveNextAsyncBuffer();
+   if (trigbuf == 0)
+   {
+     DOUT3("**** TimeOut in ReceiveNextAsyncBuffer\n");
+     return dabc::di_RepeatTimeOut; //poll again explicitely from userland
+   }
+   else if ((long int) trigbuf == -1)
+   {
+     EOUT("**** Error in ReceiveNextAsyncBuffer, NEVER COME HERE\n");
+     return dabc::di_Error; // no explicit polling here, this is a real error.
+   }
+   else
+   {
+     return (CopyOutputBuffer (trigbuf, buf, PEXOR_TRIGTYPE_NONE));
+   }
+}
+
 
 
 
@@ -1113,8 +1146,10 @@ unsigned pexorplugin::Device::Read_Complete (dabc::Buffer& buf)
   else if (IsAutoAsync())
    {
     // implicit free running mode with asynchronous sfps
-#ifdef IMPLICIT_ASYNC_POLLING
+#if defined(IMPLICIT_ASYNC_POLLING)
     retsize = ReceiveAutoAsyncBufferPolling(buf);
+#elif defined(IMPLICIT_ASYNC_WORKER)
+    retsize = ReceiveNextAsyncBuffer(buf);
 #else
     retsize = ReceiveAutoAsyncBuffer(buf);
 #endif
