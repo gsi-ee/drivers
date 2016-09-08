@@ -48,6 +48,7 @@ int Pexor::Reset()
 	}
 	Remove_All_DMA_Pools(); // get rid of dma buffer references, since reset will cleanup all remaining ones
 
+// JAM2016-8 TEST TEST
 	rev=ioctl(fFileHandle, PEXOR_IOC_RESET);
 	errsv = errno;
 	if(rev)

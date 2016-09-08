@@ -210,6 +210,8 @@ int pexor_ioctl_init_bus (struct pexor_privdata* priv, unsigned long arg)
   retval = pexor_sfp_clear_channel (priv, sfp);
   if (retval)
     return retval;
+  if(priv->sfp_buswait) udelay(priv->sfp_buswait); // JAM2016-8 : does this help for x86l-22?
+
   retval = pexor_sfp_init_request (priv, sfp, slave);
   if (retval)
     return retval;
@@ -2404,13 +2406,24 @@ ssize_t pexor_sysfs_sfpregs_show(struct device *dev, struct device_attribute *at
   for(i=0; i<PEXOR_SFP_NUMBER;++i)
   {
     curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t  ** sfp %d:\n",i);
-    curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  reply status:  0x%x\n",readl(sfp->rep_stat[i]));
+    curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  reply status:    0x%x\n",readl(sfp->rep_stat[i]));
     pexor_bus_delay();
-    curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  reply address: 0x%x\n",readl(sfp->rep_addr[i]));
+    curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  reply address:   0x%x\n",readl(sfp->rep_addr[i]));
     pexor_bus_delay();
-    curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  reply data:    0x%x\n",readl(sfp->rep_data[i]));
+    curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  reply data:      0x%x\n",readl(sfp->rep_data[i]));
     pexor_bus_delay();
-    curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  token memsize: 0x%x\n",readl(sfp->tk_memsize[i]));
+    curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  tk reply status: 0x%x\n",readl(sfp->tk_stat[i]));
+    pexor_bus_delay();
+    curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  tk reply header: 0x%x\n",readl(sfp->tk_head[i]));
+    pexor_bus_delay();
+    curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  tk reply footer: 0x%x\n",readl(sfp->tk_foot[i]));
+    pexor_bus_delay();
+    curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  tk data size:    0x%x\n",readl(sfp->tk_dsize[i]));
+    pexor_bus_delay();
+    curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  tk dsize sel:    0x%x\n",readl(sfp->tk_dsize_sel[i]));
+    pexor_bus_delay();
+
+    curs+=snprintf(buf+curs, PAGE_SIZE-curs, "\t\t  token memsize:   0x%x\n",readl(sfp->tk_memsize[i]));
     pexor_bus_delay();
   }
 

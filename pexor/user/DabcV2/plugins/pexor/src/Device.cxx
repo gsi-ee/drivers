@@ -118,10 +118,11 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
   bool sgmode = Cfg (pexorplugin::xmlDMAScatterGatherMode, cmd).AsBool (false);
   fBoard->SetScatterGatherMode (sgmode);
   DOUT1("Setting scatter gather mode to %d\n", sgmode);
-  fWaitTimeout=Cfg (pexorplugin::xmlWaitTimeout, cmd).AsInt (2);
-  fBoard->SetWaitTimeout(fWaitTimeout);
-  DOUT1("Setting trigger wait timeout to %d s\n", fWaitTimeout);
-
+//  fWaitTimeout=Cfg (pexorplugin::xmlWaitTimeout, cmd).AsInt (2);
+//  fBoard->SetWaitTimeout(fWaitTimeout);
+//  DOUT1("Setting trigger wait timeout to %d s\n", fWaitTimeout);
+  //DOUT1("Sleep 10 seconds before initializing the bus\n");
+  //sleep(10); // JAM 2016-8 test
 
   // initialize here the connected channels:
   int sfpcount=0;
@@ -134,12 +135,19 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
         "Sfp %d is %s with %d slave devices.\n", sfp, (fEnabledSFP[sfp] ? "enabled" : "disabled"), fNumSlavesSFP[sfp]);
     if (fEnabledSFP[sfp])
     {
+      if(1)
+      {
       int iret = fBoard->InitBus (sfp, fNumSlavesSFP[sfp]);
       if (iret)
       {
         EOUT("**** Error %d in PEXOR InitBus for sfp %d \n", iret, sfp);
         delete fBoard;
         return;    // TODO: proper error handling
+      }
+      }
+      else
+      {
+        DOUT1("DO NOT INIT CHAIN for configured sfp %d\n",sfp);
       }
       fDoubleBufID[sfp] = 0;
       sfpcount++;
@@ -190,6 +198,11 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
   DOUT1("Setting synchronous=%d, triggered=%d, autotriggered=%d, autoasync=%d \n", fSynchronousRead, fTriggeredRead, fAutoTriggerRead, fAutoAsyncRead);
   DOUT1("Setting directdma=%d, multichannelrequest=%d\n", fDirectDMA, fMultichannelRequest);
 
+  if(fTriggeredRead){
+    fWaitTimeout=Cfg (pexorplugin::xmlWaitTimeout, cmd).AsInt (2);
+    fBoard->SetWaitTimeout(fWaitTimeout);
+    DOUT1("Setting trigger wait timeout to %d s\n", fWaitTimeout);
+  }
 
 
   fWaitForDataReady= Cfg (pexorplugin::xmlWaitForDataReady, cmd).AsBool (true);
@@ -379,6 +392,7 @@ bool pexorplugin::Device::StopAcquisition ()
 void pexorplugin::Device::ObjectCleanup ()
 {
   DOUT1("_______pexorplugin::Device::ObjectCleanup...");
+  StopAcquisition();
   if (fTriggeredRead)
   {
     //fBoard->StopAcquisition ();
@@ -386,6 +400,7 @@ void pexorplugin::Device::ObjectCleanup ()
     fBoard->ResetTrigger ();
 //     DOUT1 ("DDDDDDDDDDd pexorplugin::ObjectCleanup did reset trigger\n");
   }
+
   fBoard->Reset ();    // throw away optionally user buffer mappings here
 //   DOUT1 ("DDDDDDDDDDd pexorplugin::ObjectCleanup did board reset\n");
   fInitDone = false;
@@ -1072,7 +1087,7 @@ unsigned pexorplugin::Device::Read_Size ()
       else if(!fHasData)
         {
               fHasData=true; // next time we want to retry reading
-              DOUT0("pexorplugin::Device::Read_Size: no data on polling, transport timeout...\n");
+              DOUT3("pexorplugin::Device::Read_Size: no data on polling, transport timeout...\n");
               return dabc::di_RepeatTimeOut;
         }
       else
