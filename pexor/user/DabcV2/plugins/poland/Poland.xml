@@ -36,9 +36,9 @@
 
 			<PexorID value="0" />
 			<PexorNumSlaves_0 value="0" />
-			<PexorNumSlaves_1 value="2" />
-			<PexorNumSlaves_2 value="0" />
-			<PexorNumSlaves_3 value="0" />
+			<PexorNumSlaves_1 value="0" />
+			<PexorNumSlaves_2 value="1" />
+			<PexorNumSlaves_3 value="1" />
 			<PexorDMALen value="32768" />
 			<PexorDMABuffers value="50" />
 			<PexorDMAScatterGather value="false" />
@@ -55,6 +55,7 @@
 			<PexorAutoReadout value="false"/>
 			<PexorAutoAsync  value="false"/>
 			<PexorTokenWaitForDataReady value="true"/>
+			<PexorInitDelay value="10"/>
 			<PexorTriggerTimeout value="10"/>
 			<TrixorConversionTime value="300" />
 			<TrixorFastClearTime value="10" />

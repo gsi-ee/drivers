@@ -66,6 +66,7 @@ const char* pexorplugin::xmlWaitTimeout = "PexorTriggerTimeout";    //<  specify
 
 const char* pexorplugin::xmlWaitForDataReady = "PexorTokenWaitForDataReady";    //<  token request returns only when frontend has data ready
 
+const char* pexorplugin::xmlInitDelay= "PexorInitDelay"; //<  sleep time after board reset until pexor is ready
 
 const char* pexorplugin::xmlTrixorConvTime = "TrixorConversionTime";    //<  conversion time of TRIXOR module
 const char* pexorplugin::xmlTrixorFastClearTime = "TrixorFastClearTime";    //<  fast clear time of TRIXOR module
@@ -118,11 +119,15 @@ pexorplugin::Device::Device (const std::string& name, dabc::Command cmd) :
   bool sgmode = Cfg (pexorplugin::xmlDMAScatterGatherMode, cmd).AsBool (false);
   fBoard->SetScatterGatherMode (sgmode);
   DOUT1("Setting scatter gather mode to %d\n", sgmode);
+
+  int initDelay=Cfg (pexorplugin::xmlInitDelay, cmd).AsInt (1);
+
 //  fWaitTimeout=Cfg (pexorplugin::xmlWaitTimeout, cmd).AsInt (2);
 //  fBoard->SetWaitTimeout(fWaitTimeout);
 //  DOUT1("Setting trigger wait timeout to %d s\n", fWaitTimeout);
-  //DOUT1("Sleep 10 seconds before initializing the bus\n");
-  //sleep(10); // JAM 2016-8 test
+
+  DOUT1("Sleep %d seconds before initializing the bus\n",initDelay);
+  sleep(initDelay); // JAM 2016 - required for some kinpex board code
 
   // initialize here the connected channels:
   int sfpcount=0;

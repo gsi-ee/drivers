@@ -67,6 +67,7 @@ extern const char* xmlWaitTimeout;    //<  specify kernel waitqueue timeout for 
 
 extern const char* xmlWaitForDataReady; //<  token request returns only when frontend has data ready
 
+extern const char* xmlInitDelay;        //<  sleep time after board reset until pexor is ready
 
 extern const char* xmlTrixorConvTime;    //< conversion time of TRIXOR module
 extern const char* xmlTrixorFastClearTime;    //< fast clear time of TRIXOR module
