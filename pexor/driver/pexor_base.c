@@ -56,6 +56,37 @@ static int my_major_nr = 0;
 static struct class* pexor_class;
 #endif
 
+
+/* JAM2016 the following nice thing was googled and stolen from compat.h of M.Stapelberg, 2009:
+ * https://github.com/lerwys/FPGA_PCIe_drivers/blob/master/opencores_driver/src/driver/compat.h*/
+/** TODO: adjust for kernels > 4.4*/
+/* SetPageLocked disappeared in v2.6.27 */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
+    #define compat_lock_page SetPageLocked
+    #define compat_unlock_page ClearPageLocked
+#else
+    /* in v2.6.28, __set_page_locked and __clear_page_locked was introduced */
+    #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
+        #define compat_lock_page __set_page_locked
+        #define compat_unlock_page __clear_page_locked
+    #else
+        /* However, in v2.6.27 itself, neither of them is there, so
+         * we need to use our own function fiddling with bits inside
+         * the page struct :-\ */
+        static inline void compat_lock_page(struct page *page) {
+            __set_bit(PG_locked, &page->flags);
+        }
+
+        static inline void compat_unlock_page(struct page *page) {
+            __clear_bit(PG_locked, &page->flags);
+        }
+    #endif
+#endif
+/** End M.Stapelbergs helper*/
+
+
+
+
 int pexor_open (struct inode *inode, struct file *filp)
 {
   struct pexor_privdata *privdata;
@@ -468,7 +499,8 @@ int pexor_ioctl_mapbuffer (struct pexor_privdata *priv, unsigned long arg)
   /* populate sg list:*/
   /* page0 is different */
   if (!PageReserved (pages[0]))
-    __set_page_locked (pages[0]);
+    compat_lock_page(pages[0]);
+   //__set_page_locked (pages[0]);
   //SetPageLocked(pages[0]);
 
   /* for first chunk, we take into account that memory is possibly not starting at
@@ -481,7 +513,8 @@ int pexor_ioctl_mapbuffer (struct pexor_privdata *priv, unsigned long arg)
   for (i = 1; i < nr_pages; i++)
   {
     if (!PageReserved (pages[i]))
-      __set_page_locked (pages[i]);
+      compat_lock_page(pages[i]);
+//      __set_page_locked (pages[i]);
     //SetPageLocked(pages[i]);
 
     sg_set_page (&sg[i], pages[i], ((count > PAGE_SIZE)? PAGE_SIZE : count), 0);
@@ -522,7 +555,8 @@ int pexor_ioctl_mapbuffer (struct pexor_privdata *priv, unsigned long arg)
   for (i = 0; i < nr_pages; i++)
   {
     if (PageLocked (pages[i]))
-      __clear_page_locked (pages[i]);
+      compat_unlock_page(pages[i]);
+//      __clear_page_locked (pages[i]);
     //ClearPageLocked(pages[i]);
     if (!PageReserved (pages[i]))
       SetPageDirty (pages[i]);
@@ -1318,7 +1352,8 @@ int unmap_sg_dmabuffer (struct pci_dev *pdev, struct pexor_dmabuf *buf)
     if (!PageReserved (buf->pages[i]))
     {
       SetPageDirty (buf->pages[i]);
-      __clear_page_locked (buf->pages[i]);
+      compat_unlock_page(buf->pages[i]);
+//      __clear_page_locked (buf->pages[i]);
       //ClearPageLocked(buf->pages[i]);
     }
     page_cache_release( buf->pages[i]);
