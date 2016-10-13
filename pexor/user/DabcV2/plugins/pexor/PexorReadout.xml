@@ -84,7 +84,7 @@
 	     </Module>
 
 		 <Module name="pexor_player" class="pexorplugin::Player">
-	     <HtmlPath value="/daq/usr/adamczew/workspace/drivers/pexor/user/DabcV2/plugins/pexor/htm/"/>
+	     <HtmlPath value="${PEXORSYS}/user/DabcV2/plugins/pexor/htm/"/>
 	     </Module>
 
 
