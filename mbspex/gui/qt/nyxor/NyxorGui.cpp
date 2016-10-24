@@ -32,8 +32,8 @@ NyxorGui* NyxorGui::fInstance = 0;
  *  Constructs a NyxorGui which is a child of 'parent', with the
  *  name 'name'.'
  */
-NyxorGui::NyxorGui (QWidget* parent) :
-    QWidget (parent), fDebug (false), fSaveConfig (false), fSFP (0), fSlave (0), fSFPSave (0), fSlaveSave (0),
+NyxorGui::NyxorGui (QWidget* parent, bool oldsetup) :
+    QWidget (parent), fOldSetup(oldsetup), fDebug (false), fSaveConfig (false), fSFP (0), fSlave (0), fSFPSave (0), fSlaveSave (0),
         fConfigFile (0)
 {
   setupUi (this);
@@ -714,8 +714,11 @@ void NyxorGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "NyxorGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText (
-      "Welcome to NYXOR GUI!\n\t v0.981 of 18-April-2016 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI");
+  QString msg=QString( "Welcome to NYXOR GUI!\n\t v0.990 of 24-October-2016 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI\n\t%1").
+        arg(fOldSetup ? "Using old register adresses.": "Using new register addresses.");
+
+  TextOutput->setPlainText (msg);
+//      "Welcome to NYXOR GUI!\n\t v0.990 of 24-October-2016 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI\n\t");
 
 }
 
@@ -938,10 +941,17 @@ uint8_t NyxorGui::ReadNyxorI2c (int nxid, uint8_t address)
 
   int dat;
   int nxad = 0;
-  if (nxid == 1)
-    nxad = I2C_ADDR_NX0 + 1;
-  else if (nxid == 0)
+  if(fOldSetup)
+  {
+    if (nxid == 1)
+      nxad = I2C_ADDR_NX0 + 1;
+    else if (nxid == 0)
+      nxad = I2C_ADDR_NX1 + 1;
+  }
+  else
+  {
     nxad = I2C_ADDR_NX1 + 1;
+  }
 
   dat = 0;
   dat += address << 8;
@@ -991,8 +1001,11 @@ uint16_t NyxorGui::ReadNyxorDAC(int nxid, uint8_t dacid)
 //                                                     l_l, GOS_I2C_DRR1, l_data));
 //             l_data    = (l_data >> 6) & 0x3ff;
 //             l_check_d = l_ext_dac[l_i][l_j][l_k][l_l];
-
-   int dat=I2C_DAC_BASE_R + (0x100000 * nxid) + (0x1000 << dacid); // ?? really shift by dacid 0..3?
+  int dat=0;
+  if(fOldSetup)
+    dat=I2C_DAC_BASE_R + (0x100000 * nxid) + (0x1000 << dacid);
+  else
+    dat=I2C_DAC_BASE_R + (0x1000 << dacid);
 
   // set i2c address to read from:
     WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
@@ -1080,10 +1093,17 @@ int NyxorGui::WriteNyxorI2c (int nxid, uint8_t address, uint8_t value, bool veri
 {
   int dat = 0;    // data word to send
   int nxad = 0;
-  if (nxid == 1)
-    nxad = I2C_ADDR_NX0;
-  else if (nxid == 0)
+  if(fOldSetup)
+  {
+    if (nxid == 1)
+      nxad = I2C_ADDR_NX0;
+    else if (nxid == 0)
+      nxad = I2C_ADDR_NX1;
+  }
+  else
+  {
     nxad = I2C_ADDR_NX1;
+  }
 
   dat = value;
   dat += address << 8;
@@ -1109,7 +1129,12 @@ int NyxorGui::WriteNyxorDAC(int nxid, uint8_t dacid, uint16_t value)
 
       //write external dac values
        //         l_wr_d = 0xb430000 + (0x100000 * l_k) + (0x1000 << l_l) + l_ext_dac[l_i][l_j][l_k][l_l];
-  int dat= I2C_DAC_BASE_W + (0x100000 * nxid) + (0x1000 << dacid) + (value & 0xFFF);
+  int dat=0;
+  if(fOldSetup)
+    dat= I2C_DAC_BASE_W + (0x100000 * nxid) + (0x1000 << dacid) + (value & 0xFFF);
+  else
+    dat= I2C_DAC_BASE_W + (0x1000 << dacid) + (value & 0xFFF);
+
   return WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 }
 

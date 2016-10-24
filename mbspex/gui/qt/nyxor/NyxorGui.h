@@ -87,7 +87,7 @@ class NyxorGui: public QWidget, public Ui::NyxorGui
   Q_OBJECT
 
 public:
-  NyxorGui (QWidget* parent = 0);
+  NyxorGui (QWidget* parent = 0 , bool oldsetup=false);
   virtual ~NyxorGui ();
 
 
@@ -187,6 +187,9 @@ protected:
   GeneralNyxorWidget* fGeneralTab;
   NyxorDACWidget* fDACTab;
   NyxorADCWidget* fADCTab;
+
+  /* this flag specifies if we use register backward compatibility JAM2016*/
+  bool fOldSetup;
 
   /** text debug mode*/
   bool fDebug;
