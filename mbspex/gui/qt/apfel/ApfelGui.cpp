@@ -202,6 +202,42 @@ ApfelGui::ApfelGui (QWidget* parent) :
   QObject::connect (Apfel8_DACSlider_3, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_7_2(int)));
   QObject::connect (Apfel8_DACSlider_4, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_7_3(int)));
 
+
+  QObject::connect (Apfel1_DAClineEdit_1, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_0_0( )));
+  QObject::connect (Apfel1_DAClineEdit_2, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_0_1( )));
+  QObject::connect (Apfel1_DAClineEdit_3, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_0_2( )));
+  QObject::connect (Apfel1_DAClineEdit_4, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_0_3( )));
+  QObject::connect (Apfel2_DAClineEdit_1, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_1_0( )));
+  QObject::connect (Apfel2_DAClineEdit_2, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_1_1( )));
+  QObject::connect (Apfel2_DAClineEdit_3, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_1_2( )));
+  QObject::connect (Apfel2_DAClineEdit_4, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_1_3( )));
+  QObject::connect (Apfel3_DAClineEdit_1, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_2_0( )));
+  QObject::connect (Apfel3_DAClineEdit_2, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_2_1( )));
+  QObject::connect (Apfel3_DAClineEdit_3, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_2_2( )));
+  QObject::connect (Apfel3_DAClineEdit_4, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_2_3( )));
+  QObject::connect (Apfel4_DAClineEdit_1, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_3_0( )));
+  QObject::connect (Apfel4_DAClineEdit_2, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_3_1( )));
+  QObject::connect (Apfel4_DAClineEdit_3, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_3_2( )));
+  QObject::connect (Apfel4_DAClineEdit_4, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_3_3( )));
+  QObject::connect (Apfel5_DAClineEdit_1, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_4_0( )));
+  QObject::connect (Apfel5_DAClineEdit_2, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_4_1( )));
+  QObject::connect (Apfel5_DAClineEdit_3, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_4_2( )));
+  QObject::connect (Apfel5_DAClineEdit_4, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_4_3( )));
+  QObject::connect (Apfel6_DAClineEdit_1, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_5_0( )));
+  QObject::connect (Apfel6_DAClineEdit_2, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_5_1( )));
+  QObject::connect (Apfel6_DAClineEdit_3, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_5_2( )));
+  QObject::connect (Apfel6_DAClineEdit_4, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_5_3( )));
+  QObject::connect (Apfel7_DAClineEdit_1, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_6_0( )));
+  QObject::connect (Apfel7_DAClineEdit_2, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_6_1( )));
+  QObject::connect (Apfel7_DAClineEdit_3, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_6_2( )));
+  QObject::connect (Apfel7_DAClineEdit_4, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_6_3( )));
+  QObject::connect (Apfel8_DAClineEdit_1, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_7_0( )));
+  QObject::connect (Apfel8_DAClineEdit_2, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_7_1( )));
+  QObject::connect (Apfel8_DAClineEdit_3, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_7_2( )));
+  QObject::connect (Apfel8_DAClineEdit_4, SIGNAL(editingFinished()), this, SLOT (DAC_enterText_7_3( )));
+
+
+
   QObject::connect (AutocalibrateButton_1, SIGNAL(pressed()), this, SLOT (AutoCalibrate_0()));
   QObject::connect (AutocalibrateButton_2, SIGNAL(pressed()), this, SLOT (AutoCalibrate_1()));
   QObject::connect (AutocalibrateButton_3, SIGNAL(pressed()), this, SLOT (AutoCalibrate_2()));
@@ -796,10 +832,11 @@ int ApfelGui::AdjustBaseline(int channel, int adctarget)
   bool initial=true; // supress evaluation of scan direction at first cycle
   //std::cout << "ApfelGui::AdjustBaseline of channel "<<channel<<" to "<<adctarget<< std::endl;
 
-  double resolution= 1.0/APFEL_MCP433_MAXVAL * 0xFFF /2; // for 12 bit
-    // test if APFEL is for 14 bit values:
+  double resolution= 1.0/APFEL_DAC_MAXVALUE * 0xFFF /2; // for 12 bit febex ADC
+    // test if febex adc is for 14 bit values:
   if(autoApply(channel, 1000)>0xFFF)
         resolution*=4;
+
   do{
      adc=autoApply(channel, dac); // this gives already mean value of 3 adc samples
      if(adc<0) break; // avoid broadcast
@@ -988,6 +1025,33 @@ void ApfelGui::Slave_changed (int)
   }
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////7
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+void ApfelGui::AutoApplyPulser(int apfel)
+{
+  BoardSetup& theSetup= fSetup[fSFP].at(fSlave);
+
+// first copy view elements to structure:
+  EvaluatePulser(apfel);
+
+  // todo: SetPulser(apfel);
+  bool on_1=theSetup.GetTestPulseEnable(apfel,0);
+  bool on_2=theSetup.GetTestPulseEnable(apfel,1);
+  bool on_any= on_1 || on_2;
+  SetTestPulse(apfel,on_any,on_1,on_2,theSetup.GetTestPulsePositive(apfel,0));
+
+
+}
+
+
+
+ void AutoApplyGain(int apfel, int channel, bool lowgain)
+ {
+
+ }
+
+
+
 
 
 void ApfelGui::AutoApplyDAC(int apfel, int dac, int val)
@@ -997,6 +1061,178 @@ void ApfelGui::AutoApplyDAC(int apfel, int dac, int val)
   theSetup.SetDACValue(apfel,dac,val);
   WriteDAC_ApfelI2c (apfel, dac, theSetup.GetDACValue (apfel, dac));
 }
+
+
+void ApfelGui::DAC_enterText(int apfel, int dac)
+{
+  // catch signal editingFinished() from Apfel1_DAClineEdit_1 etc.
+  // need to synchronize with the sliders anyway:
+  int val=fDACLineEdit[apfel][dac]->text ().toUInt (0, fNumberBase);
+  fDACSlider[apfel][dac]->setValue(val & 0x3FF);
+
+  if (checkBox_AA->isChecked () && !fBroadcasting)
+     {
+       EvaluateSlave ();
+       APFEL_BROADCAST_ACTION(AutoApplyDAC(apfel,dac, val));
+     }
+}
+
+void ApfelGui::DAC_enterText_0_0 ()
+{
+  DAC_enterText (0, 0);
+}
+
+void ApfelGui::DAC_enterText_0_1 ()
+{
+  DAC_enterText (0, 1);
+}
+
+void ApfelGui::DAC_enterText_0_2 ()
+{
+  DAC_enterText (0, 2);
+}
+
+void ApfelGui::DAC_enterText_0_3 ()
+{
+  DAC_enterText (0, 3);
+}
+
+void ApfelGui::DAC_enterText_1_0 ()
+{
+  DAC_enterText (1, 0);
+}
+
+void ApfelGui::DAC_enterText_1_1 ()
+{
+  DAC_enterText (1, 1);
+}
+
+void ApfelGui::DAC_enterText_1_2 ()
+{
+  DAC_enterText (1, 2);
+}
+
+void ApfelGui::DAC_enterText_1_3 ()
+{
+  DAC_enterText (1, 3);
+}
+
+void ApfelGui::DAC_enterText_2_0 ()
+{
+  DAC_enterText (2, 0);
+}
+void ApfelGui::DAC_enterText_2_1 ()
+{
+  DAC_enterText (2, 1);
+}
+
+void ApfelGui::DAC_enterText_2_2 ()
+{
+  DAC_enterText (2, 2);
+}
+
+void ApfelGui::DAC_enterText_2_3 ()
+{
+  DAC_enterText (2, 3);
+}
+
+void ApfelGui::DAC_enterText_3_0 ()
+{
+  DAC_enterText (3, 0);
+}
+
+void ApfelGui::DAC_enterText_3_1 ()
+{
+  DAC_enterText (3, 1);
+}
+
+void ApfelGui::DAC_enterText_3_2 ()
+{
+  DAC_enterText (3, 2);
+}
+
+void ApfelGui::DAC_enterText_3_3 ()
+{
+  DAC_enterText (3, 3);
+}
+
+void ApfelGui::DAC_enterText_4_0 ()
+{
+  DAC_enterText (4, 0);
+}
+
+void ApfelGui::DAC_enterText_4_1 ()
+{
+  DAC_enterText (4, 1);
+}
+void ApfelGui::DAC_enterText_4_2 ()
+{
+  DAC_enterText (4, 2);
+}
+
+void ApfelGui::DAC_enterText_4_3 ()
+{
+  DAC_enterText (4, 3);
+}
+
+void ApfelGui::DAC_enterText_5_0 ()
+{
+  DAC_enterText (5, 0);
+}
+
+void ApfelGui::DAC_enterText_5_1 ()
+{
+  DAC_enterText (5, 1);
+}
+
+void ApfelGui::DAC_enterText_5_2 ()
+{
+  DAC_enterText (5, 2);
+}
+
+void ApfelGui::DAC_enterText_5_3 ()
+{
+  DAC_enterText (5, 3);
+}
+
+void ApfelGui::DAC_enterText_6_0 ()
+{
+  DAC_enterText (6, 0);
+}
+
+void ApfelGui::DAC_enterText_6_1 ()
+{
+  DAC_enterText (6, 1);
+}
+
+void ApfelGui::DAC_enterText_6_2 ()
+{
+  DAC_enterText (6, 2);
+}
+void ApfelGui::DAC_enterText_6_3 ()
+{
+  DAC_enterText (6, 3);
+}
+
+void ApfelGui::DAC_enterText_7_0 ()
+{
+  DAC_enterText (7, 0);
+}
+
+void ApfelGui::DAC_enterText_7_1 ()
+{
+  DAC_enterText (7, 1);
+}
+void ApfelGui::DAC_enterText_7_2 ()
+{
+  DAC_enterText (7, 2);
+}
+void ApfelGui::DAC_enterText_7_3 ()
+{
+  DAC_enterText (7, 3);
+}
+
+
 
 
 
@@ -1542,6 +1778,21 @@ void ApfelGui::RefreshChains ()
 }
 
 
+
+void ApfelGui::EvaluatePulser (int apfel)
+{
+  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  bool positive = (fApfelPulsePolarityCombo[apfel]->currentIndex () == 0);
+  theSetup.SetTestPulsePostive (apfel, positive);
+  for (int chan = 0; chan < APFEL_NUMCHANS; ++chan)
+  {
+    bool on = fApfelPulseEnabledCheckbox[apfel][chan]->isChecked ();
+    theSetup.SetTestPulseEnable (apfel, chan, on);
+  }
+}
+
+
+
 void ApfelGui::EvaluateView ()
 {
   // here the current gui display is just copied to setup structure in local memory
@@ -1595,13 +1846,7 @@ else
 // pulser config from gui
 for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
    {
-        bool positive = (fApfelPulsePolarityCombo[apfel]->currentIndex () == 0);
-        theSetup.SetTestPulsePostive(apfel, positive);
-        for (int chan = 0; chan < APFEL_NUMCHANS; ++chan)
-          {
-            bool on=fApfelPulseEnabledCheckbox[apfel][chan]->isChecked();
-            theSetup.SetTestPulseEnable(apfel, chan, on);
-          }
+      EvaluatePulser(apfel);
    }
 }
 
@@ -1623,32 +1868,37 @@ void ApfelGui::SetRegisters ()
   SetSwitches(theSetup.fUseApfel, theSetup.fHighGainOutput, theSetup.fStretcher);
 
 
-  for (int apf = 0; apf < APFEL_NUMCHIPS; ++apf)
+  for (uint8_t apf = 0; apf < APFEL_NUMCHIPS; ++apf)
   {
-    for (int dac = 0; dac < APFEL_NUMDACS; ++dac)
+    for (uint8_t dac = 0; dac < APFEL_NUMDACS; ++dac)
     {
       WriteDAC_ApfelI2c (apf, dac, theSetup.GetDACValue (apf, dac));
     }
 
-    for (int ch = 0; ch < APFEL_NUMCHANS; ++ch)
+    for (uint8_t ch = 0; ch < APFEL_NUMCHANS; ++ch)
     {
       // here set gain factors for each channel:
       SetGain (apf, ch, theSetup.GetLowGain (apf, ch));
     }
-
-    // here set test pulser properties. we must use both channels simultaneously:
-    bool on_1=theSetup.GetTestPulseEnable(apf,0);
-    bool on_2=theSetup.GetTestPulseEnable(apf,1);
-    bool on_any= on_1 || on_2;
-    SetTestPulse(apf,on_any,on_1,on_2,theSetup.GetTestPulsePositive(apf,0));
-
-
+    SetPulser(apf);
   }
 
   DisableI2C ();
   QApplication::restoreOverrideCursor ();
 
 }
+
+
+void ApfelGui::SetPulser(uint8_t apf)
+{
+  BoardSetup& theSetup=fSetup[fSFP].at(fSlave);
+   // here set test pulser properties. we must use both channels simultaneously:
+  bool on_1=theSetup.GetTestPulseEnable(apf,0);
+  bool on_2=theSetup.GetTestPulseEnable(apf,1);
+  bool on_any= on_1 || on_2;
+  SetTestPulse(apf,on_any,on_1,on_2,theSetup.GetTestPulsePositive(apf,0));
+}
+
 
 void ApfelGui::GetRegisters ()
 {

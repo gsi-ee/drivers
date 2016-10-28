@@ -111,6 +111,9 @@ struct pex_sfp_links{
 /** this value will enable settings of control register*/
 #define APFEL_IO_SET 0x91000000
 
+/** 10 bit registers for apfeldac settings:*/
+#define APFEL_DAC_MAXVALUE 0x3ff
+
 /** adress to read actual adc value. adc id and channel must be
  * written to this address first*/
 #define APFEL_ADC_PORT  0x20001c
@@ -588,9 +591,20 @@ protected:
   void EvaluateSlave ();
 
 
+  /** put test pulser settings for apfel chip from gui into setup structure*/
+  void EvaluatePulser(int apfel);
+
+
 
   /** set register from status structure*/
   void SetRegisters ();
+
+
+  /** apply test pulser settings for apfel chip from setup structure to device*/
+  void SetPulser(uint8_t apfel);
+
+
+
 
   /** get register contents to status structure*/
   void GetRegisters ();
@@ -680,8 +694,8 @@ protected:
   /** append text to currently open config file*/
   int WriteConfigFile(const QString& text);
 
-  /** Set relativ DAC value dac to APFELchannel, returns ADC value*/
-  int autoApply(int channel, int dac);
+  /** Set relativ DAC value permille to APFELchannel, returns ADC value*/
+  int autoApply(int channel, int permille);
 
 
   /** apply relative DAC value permille and refresh gui from ADC sample.
@@ -692,13 +706,32 @@ protected:
   * This function is capable of usage in APFEL_BROADCAST_ACTION macro*/
   void AutoApplyDAC(int apfel, int dac, int val);
 
+  /** apply pulser settings directly
+    * This function is capable of usage in APFEL_BROADCAST_ACTION macro*/
+  void AutoApplyPulser(int apfel);
+
+
+
+  /** apply gain settings directly
+      * This function is capable of usage in APFEL_BROADCAST_ACTION macro*/
+  void AutoApplyGain(int apfel, int channel, bool lowgain);
+
+
+
 
  /** evaluate change of spinbox for febex channel channel*/
   void DAC_spinBox_changed(int channel, int val);
 
   /** evaluate change of dacslider for apfelchip and dac
-   * also refresh display of textline*/
+   * refresh display of textline
+   * may do automatic apply*/
   void DAC_changed(int apfel, int dac, int val);
+
+
+  /** evaluate input of dac textline for apfelchip and dac
+   * also refresh display of slider here
+   *  may do automatic apply**/
+  void DAC_enterText(int apfel, int dac);
 
 
   /** start interactive autocalibration of apfel chip dacs.*/
@@ -797,6 +830,41 @@ public slots:
   virtual void DAC_changed_7_1(int val);
   virtual void DAC_changed_7_2(int val);
   virtual void DAC_changed_7_3(int val);
+
+
+  virtual void DAC_enterText_0_0 ();
+  virtual void DAC_enterText_0_1 ();
+  virtual void DAC_enterText_0_2 ();
+  virtual void DAC_enterText_0_3 ();
+  virtual void DAC_enterText_1_0 ();
+  virtual void DAC_enterText_1_1 ();
+  virtual void DAC_enterText_1_2 ();
+  virtual void DAC_enterText_1_3 ();
+  virtual void DAC_enterText_2_0 ();
+  virtual void DAC_enterText_2_1 ();
+  virtual void DAC_enterText_2_2 ();
+  virtual void DAC_enterText_2_3 ();
+  virtual void DAC_enterText_3_0 ();
+  virtual void DAC_enterText_3_1 ();
+  virtual void DAC_enterText_3_2 ();
+  virtual void DAC_enterText_3_3 ();
+  virtual void DAC_enterText_4_0 ();
+  virtual void DAC_enterText_4_1 ();
+  virtual void DAC_enterText_4_2 ();
+  virtual void DAC_enterText_4_3 ();
+  virtual void DAC_enterText_5_0 ();
+  virtual void DAC_enterText_5_1 ();
+  virtual void DAC_enterText_5_2 ();
+  virtual void DAC_enterText_5_3 ();
+  virtual void DAC_enterText_6_0 ();
+  virtual void DAC_enterText_6_1 ();
+  virtual void DAC_enterText_6_2 ();
+  virtual void DAC_enterText_6_3 ();
+  virtual void DAC_enterText_7_0 ();
+  virtual void DAC_enterText_7_1 ();
+  virtual void DAC_enterText_7_2 ();
+  virtual void DAC_enterText_7_3 ();
+
 
   virtual void AutoCalibrate_0();
   virtual void AutoCalibrate_1();
