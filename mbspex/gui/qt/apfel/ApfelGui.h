@@ -591,10 +591,15 @@ protected:
   void EvaluateSlave ();
 
 
+  /** put io switch settings for apfel chip from gui into setup structure*/
+  void EvaluateIOSwitch();
+
   /** put test pulser settings for apfel chip from gui into setup structure*/
   void EvaluatePulser(int apfel);
 
 
+  /** put gain settings for apfel chip and channel from gui into setup structure*/
+  void EvaluateGain(int apfel, int channel);
 
   /** set register from status structure*/
   void SetRegisters ();
@@ -604,6 +609,8 @@ protected:
   void SetPulser(uint8_t apfel);
 
 
+  /** set io switch from setup structures to device */
+  void SetIOSwitch();
 
 
   /** get register contents to status structure*/
@@ -702,33 +709,44 @@ protected:
    * This function is capable of usage in APFEL_BROADCAST_ACTION macro*/
   void AutoApplyRefresh(int channel, int permille);
 
-  /** apply absolute DAC value val directly
-  * This function is capable of usage in APFEL_BROADCAST_ACTION macro*/
-  void AutoApplyDAC(int apfel, int dac, int val);
+  /** evaluate change of spinbox for febex channel channel*/
+  void DAC_spinBox_changed(int channel, int val);
+
+
+  /** apply io switch settings directly.
+   * * This function is capable of usage in APFEL_BROADCAST_ACTION macro*/
+  void AutoApplySwitch();
+
+
 
   /** apply pulser settings directly
     * This function is capable of usage in APFEL_BROADCAST_ACTION macro*/
   void AutoApplyPulser(int apfel);
 
-
+ /** slot forward when change of pulser settings on gui*/
+  void PulserChanged(int apfel);
 
   /** apply gain settings directly
       * This function is capable of usage in APFEL_BROADCAST_ACTION macro*/
-  void AutoApplyGain(int apfel, int channel, bool lowgain);
+  void AutoApplyGain(int apfel, int channel);
 
 
+  /** slot forward when change of pulser settings on gui*/
+   void GainChanged(int apfel, int channel);
 
 
- /** evaluate change of spinbox for febex channel channel*/
-  void DAC_spinBox_changed(int channel, int val);
+   /** apply absolute DAC value val directly
+  * This function is capable of usage in APFEL_BROADCAST_ACTION macro*/
+  void AutoApplyDAC(int apfel, int dac, int val);
 
-  /** evaluate change of dacslider for apfelchip and dac
+
+  /** slot forward when change of dacslider for apfelchip and dac
    * refresh display of textline
    * may do automatic apply*/
   void DAC_changed(int apfel, int dac, int val);
 
 
-  /** evaluate input of dac textline for apfelchip and dac
+  /** slot forward when  input of dac textline for apfelchip and dac
    * also refresh display of slider here
    *  may do automatic apply**/
   void DAC_enterText(int apfel, int dac);
@@ -875,15 +893,33 @@ public slots:
   virtual void AutoCalibrate_6();
   virtual void AutoCalibrate_7();
 
+  virtual void PulserChanged_0();
+  virtual void PulserChanged_1();
+  virtual void PulserChanged_2();
+  virtual void PulserChanged_3();
+  virtual void PulserChanged_4();
+  virtual void PulserChanged_5();
+  virtual void PulserChanged_6();
+  virtual void PulserChanged_7();
 
+  virtual void GainChanged_0();
+  virtual void GainChanged_1();
+  virtual void GainChanged_2();
+  virtual void GainChanged_3();
+  virtual void GainChanged_4();
+  virtual void GainChanged_5();
+  virtual void GainChanged_6();
+  virtual void GainChanged_7();
+  virtual void GainChanged_8();
+  virtual void GainChanged_9();
+  virtual void GainChanged_10();
+  virtual void GainChanged_11();
+  virtual void GainChanged_12();
+  virtual void GainChanged_13();
+  virtual void GainChanged_14();
+  virtual void GainChanged_15();
 
-
-
-
-
-
-
-
+  virtual void SwitchChanged();
 
 
 };

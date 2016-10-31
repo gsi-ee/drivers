@@ -249,6 +249,37 @@ ApfelGui::ApfelGui (QWidget* parent) :
 
 
 
+  QObject::connect (PulserCheckBox_0, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_0()));
+  QObject::connect (PulserCheckBox_1, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_0()));
+  QObject::connect (ApfelTestPolarityBox_0, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_0()));
+  QObject::connect (PulserCheckBox_2, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_1()));
+  QObject::connect (PulserCheckBox_3, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_1()));
+  QObject::connect (ApfelTestPolarityBox_1, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_1()));
+  QObject::connect (PulserCheckBox_4, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_2()));
+  QObject::connect (PulserCheckBox_5, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_2()));
+  QObject::connect (ApfelTestPolarityBox_2, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_2()));
+  QObject::connect (PulserCheckBox_6, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_3()));
+  QObject::connect (PulserCheckBox_7, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_3()));
+  QObject::connect (ApfelTestPolarityBox_3, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_3()));
+  QObject::connect (PulserCheckBox_8, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_4()));
+  QObject::connect (PulserCheckBox_9, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_4()));
+  QObject::connect (ApfelTestPolarityBox_4, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_4()));
+  QObject::connect (PulserCheckBox_10, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_5()));
+  QObject::connect (PulserCheckBox_11, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_5()));
+  QObject::connect (ApfelTestPolarityBox_5, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_5()));
+  QObject::connect (PulserCheckBox_12, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_6()));
+  QObject::connect (PulserCheckBox_13, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_6()));
+  QObject::connect (ApfelTestPolarityBox_6, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_6()));
+  QObject::connect (PulserCheckBox_14, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_7()));
+  QObject::connect (PulserCheckBox_15, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_7()));
+  QObject::connect (ApfelTestPolarityBox_7, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_7()));
+
+
+  QObject::connect (ApfelradioButton, SIGNAL(toggled()), this, SLOT (SwitchChanged()));
+  QObject::connect (LoGainRadioButton, SIGNAL(toggled()), this, SLOT (SwitchChanged()));
+  QObject::connect (StretcherOnradioButton, SIGNAL(toggled()), this, SLOT (SwitchChanged()));
+
+
 
   /** JAM put references to designer checkboxes into array to be handled later easily: */
   fBaselineBoxes[0]=Baseline_Box_00;
@@ -929,7 +960,7 @@ void ApfelGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "ApfelGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.90 of 21-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.666 of 31-October-2016 by JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -1027,29 +1058,192 @@ void ApfelGui::Slave_changed (int)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////7
 //////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void ApfelGui::AutoApplySwitch()
+{
+  EvaluateIOSwitch();
+  SetIOSwitch();
+}
+
+
+ void ApfelGui::SwitchChanged ()
+{
+  if (checkBox_AA->isChecked () && !fBroadcasting)
+  {
+    EvaluateSlave ();
+    APFEL_BROADCAST_ACTION(AutoApplySwitch());
+  }
+}
+
+
 void ApfelGui::AutoApplyPulser(int apfel)
 {
-  BoardSetup& theSetup= fSetup[fSFP].at(fSlave);
-
-// first copy view elements to structure:
   EvaluatePulser(apfel);
+  SetPulser(apfel);
+}
 
-  // todo: SetPulser(apfel);
-  bool on_1=theSetup.GetTestPulseEnable(apfel,0);
-  bool on_2=theSetup.GetTestPulseEnable(apfel,1);
-  bool on_any= on_1 || on_2;
-  SetTestPulse(apfel,on_any,on_1,on_2,theSetup.GetTestPulsePositive(apfel,0));
-
+void ApfelGui::PulserChanged(int apfel)
+{
+  if (checkBox_AA->isChecked () && !fBroadcasting)
+  {
+    EvaluateSlave ();
+    APFEL_BROADCAST_ACTION(AutoApplyPulser(apfel));
+  }
 
 }
 
 
+void ApfelGui::PulserChanged_0()
+{
+  PulserChanged(0);
+}
 
- void AutoApplyGain(int apfel, int channel, bool lowgain)
+void ApfelGui::PulserChanged_1()
+{
+  PulserChanged(1);
+}
+
+void ApfelGui::PulserChanged_2()
+{
+  PulserChanged(2);
+}
+
+void ApfelGui::PulserChanged_3()
+{
+  PulserChanged(3);
+}
+
+void ApfelGui::PulserChanged_4()
+{
+  PulserChanged(4);
+}
+
+void ApfelGui::PulserChanged_5()
+{
+  PulserChanged(5);
+}
+
+void ApfelGui::PulserChanged_6()
+{
+  PulserChanged(6);
+}
+
+void ApfelGui::PulserChanged_7()
+{
+  PulserChanged(7);
+}
+
+
+
+
+void ApfelGui::AutoApplyGain(int apfel, int channel)
  {
-
+    BoardSetup& theSetup= fSetup[fSFP].at(fSlave);
+    EvaluateGain(apfel, channel);
+    std::cout << "AutoApplyGain apfel="<<apfel<<", channel="<<channel<<", lowgain:"<< theSetup.GetLowGain (apfel, channel)<<std::endl;
+    SetGain (apfel, channel, theSetup.GetLowGain (apfel, channel));
  }
 
+
+void ApfelGui::GainChanged (int apfel, int channel)
+{
+  if (checkBox_AA->isChecked () && !fBroadcasting)
+  {
+    EvaluateSlave ();
+    APFEL_BROADCAST_ACTION(AutoApplyGain(apfel,channel));
+  }
+}
+
+
+void  ApfelGui::GainChanged_0()
+{
+  GainChanged (0, 0);
+}
+
+virtual void ApfelGui::GainChanged_1()
+{
+  GainChanged(0, 1);
+}
+
+void ApfelGui::GainChanged_2()
+{
+  GainChanged(1, 0);
+}
+
+void ApfelGui::GainChanged_3()
+{
+  GainChanged(1, 1);
+}
+
+
+void ApfelGui::GainChanged_4()
+{
+  GainChanged(2, 0);
+}
+
+
+void ApfelGui::GainChanged_5()
+{
+  GainChanged(2, 1);
+}
+
+void ApfelGui::GainChanged_6()
+{
+  GainChanged(3, 0);
+}
+
+
+void ApfelGui::GainChanged_7()
+{
+  GainChanged(3, 1);
+}
+
+
+void ApfelGui::GainChanged_8()
+{
+  GainChanged(4, 0);
+}
+
+
+void ApfelGui::GainChanged_9()
+{
+  GainChanged(4, 1);
+}
+
+
+void ApfelGui::GainChanged_10()
+{
+  GainChanged(5, 0);
+}
+
+void ApfelGui::GainChanged_11()
+{
+  GainChanged(5, 1);
+}
+
+
+void ApfelGui::GainChanged_12()
+{
+  GainChanged(6, 0);
+}
+
+void ApfelGui::GainChanged_13()
+{
+  GainChanged(6, 1);
+}
+
+
+void ApfelGui::GainChanged_14()
+{
+  GainChanged(7, 0);
+}
+
+
+void ApfelGui::GainChanged_15()
+{
+  GainChanged(7, 1);
+}
 
 
 
@@ -1070,6 +1264,7 @@ void ApfelGui::DAC_enterText(int apfel, int dac)
   int val=fDACLineEdit[apfel][dac]->text ().toUInt (0, fNumberBase);
   fDACSlider[apfel][dac]->setValue(val & 0x3FF);
 
+  std::cout << "ApfelGui::DAC_enterText="<<apfel<<", dac="<<dac<<", val="<<val << std::endl;
   if (checkBox_AA->isChecked () && !fBroadcasting)
      {
        EvaluateSlave ();
@@ -1239,6 +1434,7 @@ void ApfelGui::DAC_enterText_7_3 ()
 
 void ApfelGui::DAC_changed(int apfel, int dac, int val)
 {
+  std::cout << "ApfelGui::DAC__changed, apfel="<<apfel<<", dac="<<dac<<", val="<<val << std::endl;
   QString text;
   QString pre;
   fNumberBase == 16 ? pre = "0x" : pre = "";
@@ -1492,7 +1688,7 @@ void ApfelGui::AutoCalibrate_7()
 
  void ApfelGui::DAC_spinBox_all_changed(int val)
 {
-  //std::cout << "ApfelGui::DAC_spinBox_all_changed, val="<<val << std::endl;
+  std::cout << "ApfelGui::DAC_spinBox_all_changed, val="<<val << std::endl;
    for(int chan=0;chan<16;++chan)
      fDACSpinBoxes[chan]->setValue (val);
   
@@ -1501,7 +1697,6 @@ void ApfelGui::AutoCalibrate_7()
 
  void ApfelGui::DAC_spinBox_changed (int channel, int val)
 {
-  //if (checkBox_AA->isChecked () && AssertNoBroadcast (false))
   if (checkBox_AA->isChecked () && !fBroadcasting)
   {
     EvaluateSlave ();
@@ -1791,6 +1986,22 @@ void ApfelGui::EvaluatePulser (int apfel)
   }
 }
 
+void ApfelGui::EvaluateGain(int apfel, int channel)
+{
+  BoardSetup& theSetup= fSetup[fSFP].at(fSlave);
+  bool logain = (fApfelGainCombo[apfel][chan]->currentIndex () == 0);
+  theSetup.SetLowGain (apfel, chan, logain);
+}
+
+void ApfelGui::EvaluateIOSwitch()
+{
+  BoardSetup& theSetup= fSetup[fSFP].at(fSlave);
+  // get io config from gui
+  theSetup.fUseApfel=ApfelradioButton->isChecked();
+  theSetup.fHighGainOutput=HiGainRadioButton->isChecked();
+  theSetup.fStretcher=StretcherOnRadioButton->isChecked();
+
+}
 
 
 void ApfelGui::EvaluateView ()
@@ -1798,11 +2009,7 @@ void ApfelGui::EvaluateView ()
   // here the current gui display is just copied to setup structure in local memory
 BoardSetup& theSetup= fSetup[fSFP].at(fSlave);
 
-
-// get io config from gui
-theSetup.fUseApfel=ApfelradioButton->isChecked();
-theSetup.fHighGainOutput=HiGainRadioButton->isChecked();
-theSetup.fStretcher=StretcherOnRadioButton->isChecked();
+EvaluateIOSwitch();
 
 if (theSetup.fHighGainOutput)
   {
@@ -1811,8 +2018,7 @@ if (theSetup.fHighGainOutput)
     {
       for (int chan = 0; chan < APFEL_NUMCHANS; ++chan)
       {
-        bool logain = (fApfelGainCombo[apfel][chan]->currentIndex () == 0);
-        theSetup.SetLowGain (apfel, chan, logain);
+        EvaluateGain(apfel, chan);
       }
     }
   }
@@ -1863,11 +2069,9 @@ void ApfelGui::SetRegisters ()
   QApplication::setOverrideCursor (Qt::WaitCursor);
   EnableI2C ();    // must be done since mbs setup program may shut i2c off at the end
 
-  // todo: here setup of io switches:
   BoardSetup& theSetup=fSetup[fSFP].at(fSlave); // check for indices is done in broadcast action macro that calls this function
-  SetSwitches(theSetup.fUseApfel, theSetup.fHighGainOutput, theSetup.fStretcher);
 
-
+  SetIOSwitch();
   for (uint8_t apf = 0; apf < APFEL_NUMCHIPS; ++apf)
   {
     for (uint8_t dac = 0; dac < APFEL_NUMDACS; ++dac)
@@ -1885,6 +2089,14 @@ void ApfelGui::SetRegisters ()
 
   DisableI2C ();
   QApplication::restoreOverrideCursor ();
+
+}
+
+
+void ApfelGui::SetIOSwitch()
+{
+  BoardSetup& theSetup=fSetup[fSFP].at(fSlave);
+  SetSwitches(theSetup.fUseApfel, theSetup.fHighGainOutput, theSetup.fStretcher);
 
 }
 
