@@ -4,6 +4,7 @@
 #include "ui_ApfelGui.h"
 #include <stdio.h>
 #include <stdint.h>
+#include <math.h>
 
 #include <QProcess>
 #include <QString>
@@ -93,7 +94,7 @@ struct pex_sfp_links{
 #define APFEL_RESET 0x60010600
 
 /** general call with wake up */
-#define APFEL_RESET 0x60010900
+#define APFEL_RESET_WAKE 0x60010900
 
 /* control register base for io setup, data is in ls bits:
  * [0] - 0: use apfel, 1: use something else (POLAND)
@@ -229,11 +230,12 @@ class ApfelSetup
 {
 public:
 
-//  int fDAC; // remember currently set dac chip (for beginners gui)
-//  int fChannel; // remember currently set dac channel (for beginners gui)
+
+  /** the address id of this apfel chip on the board*/
+  uint8_t fAddressID;
 
   /** the absolute values of the APFEL dacs*/
-  uint8_t fDACValueSet[APFEL_NUMDACS];
+  uint16_t fDACValueSet[APFEL_NUMDACS];
 
   /** low gain setting for high amplification mode (16 or 32). Default is 32*/
   bool fLowGainSet[APFEL_NUMCHANS];
@@ -249,7 +251,7 @@ public:
 
 
   /* all initialization here:*/
-  ApfelSetup ()
+  ApfelSetup ():fAddressID(0)
   {
     for (int c = 0; c < APFEL_NUMDACS; ++c)
     {
@@ -258,7 +260,7 @@ public:
 
     for (int c = 0; c < APFEL_NUMCHANS; ++c)
     {
-      fLowGainSet[c] = false;
+      fLowGainSet[c] = true;
       fTestPulsEnable[c] = false;
 
     }
@@ -270,15 +272,15 @@ public:
   int GetDACValue(int dac)
   {
     ASSERT_DAC_VALID(dac)
-    std::cout << "GetDACValue ("<<dac<<")="<< (int)(fDACValueSet[dac])<< std::endl;
+    //std::cout << "GetDACValue ("<<dac<<")="<< (int)(fDACValueSet[dac])<< std::endl;
     return (fDACValueSet[dac]& 0x3FF);
   }
 
-  int SetDACValue(int dac, uint8_t value)
+  int SetDACValue(int dac, uint16_t value)
     {
       ASSERT_DAC_VALID(dac)
       fDACValueSet[dac]=(value & 0x3FF);
-      std::cout << "SetDACValue ("<<dac<<")="<< (int)(fDACValueSet[dac])<<", val="<<(int) value<< std::endl;
+      //std::cout << "SetDACValue ("<<dac<<")="<< (int)(fDACValueSet[dac])<<", val="<<(int) value<< std::endl;
       return 0;
     }
 
@@ -319,6 +321,16 @@ public:
           return ( fTestPulsPositive ? 1: 0);
         }
 
+    void SetAddressID(uint8_t address)
+          {
+            fAddressID=address;
+          }
+
+    uint8_t GetAddressID()
+      {
+        return fAddressID;
+      }
+
 
 
 
@@ -346,11 +358,29 @@ public:
   ApfelSetup fApfel[APFEL_NUMCHIPS];
 
 
-
   BoardSetup (): fUseApfel(true),fHighGainOutput(true),fStretcher(false)
    {
-
+      SetApfelMapping(true);
    }
+
+  void SetApfelMapping(bool regular=true)
+    {
+      for(int i=0; i<APFEL_NUMCHIPS; ++i)
+        {
+          uint8_t add=0;
+          if(i<4)
+          {
+              // regular mapping: indices 0..3 before 8...11
+              add= (regular ? i : i+8);
+          }
+          else
+          {
+            add= (regular ? i+4 : i-4);
+          }
+
+          fApfel[i].SetAddressID(add+1); // shift to id number 1...12 already here!
+        }
+    }
 
 
   /** convert febex channel to DAC indices*/
@@ -383,15 +413,20 @@ public:
      /** get absolute DAC setting from relative baseline slider*/
      int EvaluateDACvalueAbsolute(int permillevalue)
      {
-         //int value=0x3FFF-round((permillevalue* ((double) 0x3FFF) / 1000.0));
-         int value=round((permillevalue* ((double) 0x3FFF) / 1000.0));
+         // TODO: here put calibration curve ADC->DACfor each channel
+
+
+         int value=0x3FF-round((permillevalue* ((double) 0x3FF) / 1000.0));
+         //int value=round((permillevalue* ((double) 0x3FF) / 1000.0));
          return value;
      }
 
      int EvaluateDACvaluePermille(int value)
      {
-       // probably need to get complement ratio 1000-permille here?
-       int permille= round (1000.0 * ((double)value/ (double) 0x3FFF));
+        // TODO: inverse DAC to ADC calibration
+
+       //int permille= round (1000.0 * ((double)value/ (double) 0x3FF));
+       int permille= 1000 - round (1000.0 * ((double)value/ (double) 0x3FF));
        return permille;
      }
 
@@ -402,7 +437,7 @@ public:
            return fApfel[apfel].GetDACValue(dac);
        }
 
-    int SetDACValue(int apfel, int dac, uint8_t value)
+    int SetDACValue(int apfel, int dac, uint16_t value)
     {
         ASSERT_APFEL_VALID(apfel);
         return fApfel[apfel].SetDACValue(dac, value);
@@ -417,7 +452,7 @@ public:
       }
 
     /** helper function to set DAC value via global febex channel number*/
-    int SetDACValue(int febexchannel,  uint8_t value)
+    int SetDACValue(int febexchannel,  uint16_t value)
        {
             int chip=0, chan=0;
             EvaluateDACIndices(febexchannel, chip, chan);
@@ -462,6 +497,17 @@ public:
         ASSERT_APFEL_VALID(apfel);
         return fApfel[apfel].GetTestPulsePositive();
     }
+
+
+    int GetApfelID(int apfel)
+    {
+        ASSERT_APFEL_VALID(apfel);
+        return fApfel[apfel].GetAddressID();
+
+    }
+
+
+
 
 };
 
@@ -637,11 +683,15 @@ protected:
   QString ExecuteGosipCmd (QString& command,  int timeout=5000);
 
 
-  /** Write value to i2c bus address of currently selected slave. mcp433 chip id and local channel id are specified*/
-    int WriteDAC_ApfelI2c (uint8_t apfelchip, uint8_t chan, uint8_t value);
+  /** Map index of apfel chip on board to addressing id number*/
+  uint8_t GetApfelId(int sfp, int slave, uint8_t apfelchip);
 
-    /** Read value to i2c bus address of currently selected slave. mcp433 chip id and local channel id are specified*/
-    int ReadDAC_ApfelI2c (uint8_t apfelchip, uint8_t chan);
+
+  /** Write value to i2c bus address of currently selected slave. apfel chip id and local dac id are specified*/
+    int WriteDAC_ApfelI2c (uint8_t apfelchip, uint8_t dac, uint16_t value);
+
+    /** Read value to i2c bus address of currently selected slave. apfel id and local dac id are specified*/
+    int ReadDAC_ApfelI2c (uint8_t apfelchip, uint8_t dac);
 
 
     /** evaluate i2c channel adress offset on apfel for given channel number*/
@@ -892,6 +942,7 @@ public slots:
   virtual void AutoCalibrate_5();
   virtual void AutoCalibrate_6();
   virtual void AutoCalibrate_7();
+  virtual void AutoCalibrate_all();
 
   virtual void PulserChanged_0();
   virtual void PulserChanged_1();

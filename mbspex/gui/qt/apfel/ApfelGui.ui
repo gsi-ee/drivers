@@ -317,7 +317,7 @@
            <item row="1" column="0">
             <widget class="QTabWidget" name="ApfelTabWidget">
              <property name="currentIndex">
-              <number>0</number>
+              <number>3</number>
              </property>
              <widget class="QWidget" name="OutputTab">
               <attribute name="title">
@@ -331,7 +331,7 @@
                  </property>
                  <layout class="QGridLayout" name="gridLayout_16">
                   <item row="0" column="0">
-                   <widget class="QRadioButton" name="ApfelradioButton">
+                   <widget class="QRadioButton" name="ApfelRadioButton">
                     <property name="text">
                      <string>Use APFEL</string>
                     </property>
@@ -341,7 +341,7 @@
                    </widget>
                   </item>
                   <item row="1" column="0">
-                   <widget class="QRadioButton" name="PolandadioButton">
+                   <widget class="QRadioButton" name="PolandRadioButton">
                     <property name="text">
                      <string>Use POLAND</string>
                     </property>
@@ -356,7 +356,45 @@
                   <string>Channel gain</string>
                  </property>
                  <layout class="QGridLayout" name="gridLayout_26">
-                  <item row="0" column="0">
+                  <item row="0" column="0" colspan="4">
+                   <layout class="QHBoxLayout" name="horizontalLayout_68">
+                    <item>
+                     <widget class="QLabel" name="gainalllabel">
+                      <property name="text">
+                       <string>All channels </string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QComboBox" name="gainCombo_all">
+                      <item>
+                       <property name="text">
+                        <string>Gain 16</string>
+                       </property>
+                      </item>
+                      <item>
+                       <property name="text">
+                        <string>Gain 32</string>
+                       </property>
+                      </item>
+                     </widget>
+                    </item>
+                    <item>
+                     <spacer name="horizontalSpacer_14">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>178</width>
+                        <height>20</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                   </layout>
+                  </item>
+                  <item row="1" column="0">
                    <widget class="QGroupBox" name="ApfelGainBox_1">
                     <property name="title">
                      <string>APFEL1</string>
@@ -415,7 +453,7 @@
                     </layout>
                    </widget>
                   </item>
-                  <item row="0" column="1">
+                  <item row="1" column="1">
                    <widget class="QGroupBox" name="ApfelGainBox_2">
                     <property name="title">
                      <string>APFEL2</string>
@@ -474,7 +512,7 @@
                     </layout>
                    </widget>
                   </item>
-                  <item row="0" column="2">
+                  <item row="1" column="2">
                    <widget class="QGroupBox" name="ApfelGainBox_3">
                     <property name="title">
                      <string>APFEL3</string>
@@ -533,7 +571,7 @@
                     </layout>
                    </widget>
                   </item>
-                  <item row="0" column="3">
+                  <item row="1" column="3">
                    <widget class="QGroupBox" name="ApfelGainBox_4">
                     <property name="title">
                      <string>APFEL4</string>
@@ -592,10 +630,10 @@
                     </layout>
                    </widget>
                   </item>
-                  <item row="1" column="0">
+                  <item row="2" column="0">
                    <widget class="QGroupBox" name="ApfelGainBox_5">
                     <property name="title">
-                     <string>APFEL5</string>
+                     <string>APFEL9</string>
                     </property>
                     <layout class="QGridLayout" name="gridLayout_22">
                      <item row="0" column="0">
@@ -651,10 +689,10 @@
                     </layout>
                    </widget>
                   </item>
-                  <item row="1" column="1">
+                  <item row="2" column="1">
                    <widget class="QGroupBox" name="ApfelGainBox_6">
                     <property name="title">
-                     <string>APFEL6</string>
+                     <string>APFEL10</string>
                     </property>
                     <layout class="QGridLayout" name="gridLayout_23">
                      <item row="0" column="0">
@@ -710,10 +748,10 @@
                     </layout>
                    </widget>
                   </item>
-                  <item row="1" column="2">
+                  <item row="2" column="2">
                    <widget class="QGroupBox" name="ApfelGainBox_7">
                     <property name="title">
-                     <string>APFEL7</string>
+                     <string>APFEL11</string>
                     </property>
                     <layout class="QGridLayout" name="gridLayout_24">
                      <item row="0" column="0">
@@ -769,10 +807,10 @@
                     </layout>
                    </widget>
                   </item>
-                  <item row="1" column="3">
+                  <item row="2" column="3">
                    <widget class="QGroupBox" name="ApfelGainBox_8">
                     <property name="title">
-                     <string>APFEL8</string>
+                     <string>APFEL12</string>
                     </property>
                     <layout class="QGridLayout" name="gridLayout_25">
                      <item row="0" column="0">
@@ -934,7 +972,7 @@
                            </widget>
                           </item>
                           <item>
-                           <widget class="QSlider" name="Apfe1_DACSlider_1">
+                           <widget class="QSlider" name="Apfel1_DACSlider_1">
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -1294,7 +1332,7 @@
                            </widget>
                           </item>
                           <item>
-                           <widget class="QSlider" name="Apfel3_DACSlider_4">
+                           <widget class="QSlider" name="Apfel2_DACSlider_4">
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1516,7 +1554,7 @@
                            </widget>
                           </item>
                           <item>
-                           <widget class="QSlider" name="Apfel3_DACSlider_5">
+                           <widget class="QSlider" name="Apfel3_DACSlider_4">
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1544,7 +1582,7 @@
                            </widget>
                           </item>
                           <item>
-                           <widget class="QLineEdit" name="Apfel4_DAClineEdit_4">
+                           <widget class="QLineEdit" name="Apfel3_DAClineEdit_4">
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1766,7 +1804,7 @@
                            </widget>
                           </item>
                           <item>
-                           <widget class="QLineEdit" name="Apfel4_DAClineEdit_5">
+                           <widget class="QLineEdit" name="Apfel4_DAClineEdit_4">
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1808,13 +1846,13 @@
                  </widget>
                  <widget class="QWidget" name="tab_2">
                   <attribute name="title">
-                   <string>APFEL 5-8</string>
+                   <string>APFEL 9-12</string>
                   </attribute>
                   <layout class="QGridLayout" name="gridLayout_13">
                    <item row="0" column="0">
                     <widget class="QGroupBox" name="ApfelBox5">
                      <property name="title">
-                      <string>APFEL 5</string>
+                      <string>APFEL 9</string>
                      </property>
                      <layout class="QGridLayout" name="gridLayout_9">
                       <item row="0" column="0">
@@ -2036,7 +2074,7 @@
                    <item row="0" column="1">
                     <widget class="QGroupBox" name="ApfelBox6">
                      <property name="title">
-                      <string>APFEL 6</string>
+                      <string>APFEL 10</string>
                      </property>
                      <layout class="QGridLayout" name="gridLayout_10">
                       <item row="0" column="0">
@@ -2258,7 +2296,7 @@
                    <item row="0" column="2">
                     <widget class="QGroupBox" name="ApfelBox7">
                      <property name="title">
-                      <string>APFEL 6</string>
+                      <string>APFEL 11</string>
                      </property>
                      <layout class="QGridLayout" name="gridLayout_11">
                       <item row="0" column="0">
@@ -2480,7 +2518,7 @@
                    <item row="0" column="3">
                     <widget class="QGroupBox" name="ApfelBox8">
                      <property name="title">
-                      <string>APFEL 6</string>
+                      <string>APFEL 12</string>
                      </property>
                      <layout class="QGridLayout" name="gridLayout_12">
                       <item row="0" column="0">
@@ -2703,6 +2741,33 @@
                  </widget>
                 </widget>
                </item>
+               <item row="1" column="0">
+                <layout class="QHBoxLayout" name="horizontalLayout_69">
+                 <item>
+                  <widget class="QPushButton" name="AutocalibrateButton_all">
+                   <property name="toolTip">
+                    <string>Press this button to autocalibrate all apfel baselines</string>
+                   </property>
+                   <property name="text">
+                    <string>AutoCalibrate All</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_15">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>588</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </item>
               </layout>
              </widget>
              <widget class="QWidget" name="tab_3">
@@ -2711,446 +2776,488 @@
               </attribute>
               <layout class="QGridLayout" name="gridLayout_49">
                <item row="0" column="0">
-                <layout class="QGridLayout" name="gridLayout_39">
-                 <item row="0" column="0">
-                  <widget class="QGroupBox" name="ApfelPulseBox_1">
-                   <property name="title">
-                    <string>APFEL 1</string>
-                   </property>
-                   <layout class="QGridLayout" name="gridLayout_40">
-                    <item row="0" column="0">
-                     <layout class="QGridLayout" name="gridLayout_31">
-                      <item row="0" column="0">
-                       <widget class="QLabel" name="plabel_0">
-                        <property name="text">
-                         <string>00</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="0" column="1">
-                       <widget class="QCheckBox" name="PulserCheckBox_0">
-                        <property name="text">
-                         <string>TestPulser</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="0">
-                       <widget class="QLabel" name="plabel_1">
-                        <property name="text">
-                         <string>01</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="1">
-                       <widget class="QCheckBox" name="PulserCheckBox_1">
-                        <property name="text">
-                         <string>TestPulser</string>
-                        </property>
-                       </widget>
-                      </item>
-                     </layout>
-                    </item>
-                    <item row="0" column="1">
-                     <widget class="QComboBox" name="ApfelTestPolarityBox_0">
-                      <item>
-                       <property name="text">
-                        <string>Positive</string>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>Negative</string>
-                       </property>
-                      </item>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
+                <layout class="QVBoxLayout" name="verticalLayout_11">
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_70">
+                   <item>
+                    <widget class="QCheckBox" name="PulserCheckBox_all">
+                     <property name="text">
+                      <string>All</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QComboBox" name="ApfelTestPolarityBox_all">
+                     <item>
+                      <property name="text">
+                       <string>Positive</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>Negative</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
+                   <item>
+                    <spacer name="horizontalSpacer_16">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                  </layout>
                  </item>
-                 <item row="0" column="1">
-                  <widget class="QGroupBox" name="ApfelPulseBox_2">
-                   <property name="title">
-                    <string>APFEL 2</string>
-                   </property>
-                   <layout class="QGridLayout" name="gridLayout_43">
-                    <item row="0" column="0">
-                     <layout class="QGridLayout" name="gridLayout_32">
+                 <item>
+                  <layout class="QGridLayout" name="gridLayout_39">
+                   <item row="0" column="0">
+                    <widget class="QGroupBox" name="ApfelPulseBox_1">
+                     <property name="title">
+                      <string>APFEL 1</string>
+                     </property>
+                     <layout class="QGridLayout" name="gridLayout_40">
                       <item row="0" column="0">
-                       <widget class="QLabel" name="plabel_2">
-                        <property name="text">
-                         <string>02</string>
-                        </property>
-                       </widget>
+                       <layout class="QGridLayout" name="gridLayout_31">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="plabel_0">
+                          <property name="text">
+                           <string>00</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QCheckBox" name="PulserCheckBox_0">
+                          <property name="text">
+                           <string>TestPulser</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QLabel" name="plabel_1">
+                          <property name="text">
+                           <string>01</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QCheckBox" name="PulserCheckBox_1">
+                          <property name="text">
+                           <string>TestPulser</string>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
                       </item>
                       <item row="0" column="1">
-                       <widget class="QCheckBox" name="PulserCheckBox_2">
-                        <property name="text">
-                         <string>TestPulser</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="0">
-                       <widget class="QLabel" name="plabel_3">
-                        <property name="text">
-                         <string>03</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="1">
-                       <widget class="QCheckBox" name="PulserCheckBox_3">
-                        <property name="text">
-                         <string>TestPulser</string>
-                        </property>
+                       <widget class="QComboBox" name="ApfelTestPolarityBox_0">
+                        <item>
+                         <property name="text">
+                          <string>Positive</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>Negative</string>
+                         </property>
+                        </item>
                        </widget>
                       </item>
                      </layout>
-                    </item>
-                    <item row="0" column="1">
-                     <widget class="QComboBox" name="ApfelTestPolarityBox_1">
-                      <item>
-                       <property name="text">
-                        <string>Positive</string>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>Negative</string>
-                       </property>
-                      </item>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                 <item row="0" column="2">
-                  <widget class="QGroupBox" name="ApfelPulseBox_3">
-                   <property name="title">
-                    <string>APFEL 3</string>
-                   </property>
-                   <layout class="QGridLayout" name="gridLayout_44">
-                    <item row="0" column="0">
-                     <layout class="QGridLayout" name="gridLayout_33">
+                    </widget>
+                   </item>
+                   <item row="0" column="2">
+                    <widget class="QGroupBox" name="ApfelPulseBox_3">
+                     <property name="title">
+                      <string>APFEL 3</string>
+                     </property>
+                     <layout class="QGridLayout" name="gridLayout_44">
                       <item row="0" column="0">
-                       <widget class="QLabel" name="plabel_4">
-                        <property name="text">
-                         <string>04</string>
-                        </property>
-                       </widget>
+                       <layout class="QGridLayout" name="gridLayout_33">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="plabel_4">
+                          <property name="text">
+                           <string>04</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QCheckBox" name="PulserCheckBox_4">
+                          <property name="text">
+                           <string>TestPulser</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QLabel" name="plabel_5">
+                          <property name="text">
+                           <string>05</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QCheckBox" name="PulserCheckBox_5">
+                          <property name="text">
+                           <string>TestPulser</string>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
                       </item>
                       <item row="0" column="1">
-                       <widget class="QCheckBox" name="PulserCheckBox_4">
-                        <property name="text">
-                         <string>TestPulser</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="0">
-                       <widget class="QLabel" name="plabel_5">
-                        <property name="text">
-                         <string>05</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="1">
-                       <widget class="QCheckBox" name="PulserCheckBox_5">
-                        <property name="text">
-                         <string>TestPulser</string>
-                        </property>
+                       <widget class="QComboBox" name="ApfelTestPolarityBox_2">
+                        <item>
+                         <property name="text">
+                          <string>Positive</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>Negative</string>
+                         </property>
+                        </item>
                        </widget>
                       </item>
                      </layout>
-                    </item>
-                    <item row="0" column="1">
-                     <widget class="QComboBox" name="ApfelTestPolarityBox_2">
-                      <item>
-                       <property name="text">
-                        <string>Positive</string>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>Negative</string>
-                       </property>
-                      </item>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                 <item row="0" column="3">
-                  <widget class="QGroupBox" name="ApfelPulseBox_4">
-                   <property name="title">
-                    <string>APFEL 4</string>
-                   </property>
-                   <layout class="QGridLayout" name="gridLayout_45">
-                    <item row="0" column="0">
-                     <layout class="QGridLayout" name="gridLayout_34">
+                    </widget>
+                   </item>
+                   <item row="0" column="3">
+                    <widget class="QGroupBox" name="ApfelPulseBox_4">
+                     <property name="title">
+                      <string>APFEL 4</string>
+                     </property>
+                     <layout class="QGridLayout" name="gridLayout_45">
                       <item row="0" column="0">
-                       <widget class="QLabel" name="plabel_6">
-                        <property name="text">
-                         <string>06</string>
-                        </property>
-                       </widget>
+                       <layout class="QGridLayout" name="gridLayout_34">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="plabel_6">
+                          <property name="text">
+                           <string>06</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QCheckBox" name="PulserCheckBox_6">
+                          <property name="text">
+                           <string>TestPulser</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QLabel" name="plabel_7">
+                          <property name="text">
+                           <string>07</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QCheckBox" name="PulserCheckBox_7">
+                          <property name="text">
+                           <string>TestPulser</string>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
                       </item>
                       <item row="0" column="1">
-                       <widget class="QCheckBox" name="PulserCheckBox_6">
-                        <property name="text">
-                         <string>TestPulser</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="0">
-                       <widget class="QLabel" name="plabel_7">
-                        <property name="text">
-                         <string>07</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="1">
-                       <widget class="QCheckBox" name="PulserCheckBox_7">
-                        <property name="text">
-                         <string>TestPulser</string>
-                        </property>
+                       <widget class="QComboBox" name="ApfelTestPolarityBox_3">
+                        <item>
+                         <property name="text">
+                          <string>Positive</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>Negative</string>
+                         </property>
+                        </item>
                        </widget>
                       </item>
                      </layout>
-                    </item>
-                    <item row="0" column="1">
-                     <widget class="QComboBox" name="ApfelTestPolarityBox_3">
-                      <item>
-                       <property name="text">
-                        <string>Positive</string>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>Negative</string>
-                       </property>
-                      </item>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                 <item row="1" column="0">
-                  <widget class="QGroupBox" name="ApfelPulseBox_5">
-                   <property name="title">
-                    <string>APFEL 5</string>
-                   </property>
-                   <layout class="QGridLayout" name="gridLayout_42">
-                    <item row="0" column="0">
-                     <layout class="QGridLayout" name="gridLayout_35">
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QGroupBox" name="ApfelPulseBox_5">
+                     <property name="title">
+                      <string>APFEL 9</string>
+                     </property>
+                     <layout class="QGridLayout" name="gridLayout_42">
                       <item row="0" column="0">
-                       <widget class="QLabel" name="plabel_8">
-                        <property name="text">
-                         <string>08</string>
-                        </property>
-                       </widget>
+                       <layout class="QGridLayout" name="gridLayout_35">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="plabel_8">
+                          <property name="text">
+                           <string>08</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QCheckBox" name="PulserCheckBox_8">
+                          <property name="text">
+                           <string>TestPulser</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QLabel" name="plabel_9">
+                          <property name="text">
+                           <string>09</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QCheckBox" name="PulserCheckBox_9">
+                          <property name="text">
+                           <string>TestPulser</string>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
                       </item>
                       <item row="0" column="1">
-                       <widget class="QCheckBox" name="PulserCheckBox_8">
-                        <property name="text">
-                         <string>TestPulser</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="0">
-                       <widget class="QLabel" name="plabel_9">
-                        <property name="text">
-                         <string>09</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="1">
-                       <widget class="QCheckBox" name="PulserCheckBox_9">
-                        <property name="text">
-                         <string>TestPulser</string>
-                        </property>
+                       <widget class="QComboBox" name="ApfelTestPolarityBox_4">
+                        <item>
+                         <property name="text">
+                          <string>Positive</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>Negative</string>
+                         </property>
+                        </item>
                        </widget>
                       </item>
                      </layout>
-                    </item>
-                    <item row="0" column="1">
-                     <widget class="QComboBox" name="ApfelTestPolarityBox_4">
-                      <item>
-                       <property name="text">
-                        <string>Positive</string>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>Negative</string>
-                       </property>
-                      </item>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                 <item row="1" column="1">
-                  <widget class="QGroupBox" name="ApfelPulseBox_6">
-                   <property name="title">
-                    <string>APFEL 6</string>
-                   </property>
-                   <layout class="QGridLayout" name="gridLayout_46">
-                    <item row="0" column="0">
-                     <layout class="QGridLayout" name="gridLayout_36">
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QGroupBox" name="ApfelPulseBox_6">
+                     <property name="title">
+                      <string>APFEL 10</string>
+                     </property>
+                     <layout class="QGridLayout" name="gridLayout_46">
                       <item row="0" column="0">
-                       <widget class="QLabel" name="plabel_10">
-                        <property name="text">
-                         <string>10</string>
-                        </property>
-                       </widget>
+                       <layout class="QGridLayout" name="gridLayout_36">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="plabel_10">
+                          <property name="text">
+                           <string>10</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QCheckBox" name="PulserCheckBox_10">
+                          <property name="text">
+                           <string>TestPulser</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QLabel" name="plabel_11">
+                          <property name="text">
+                           <string>11</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QCheckBox" name="PulserCheckBox_11">
+                          <property name="text">
+                           <string>TestPulser</string>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
                       </item>
                       <item row="0" column="1">
-                       <widget class="QCheckBox" name="PulserCheckBox_10">
-                        <property name="text">
-                         <string>TestPulser</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="0">
-                       <widget class="QLabel" name="plabel_11">
-                        <property name="text">
-                         <string>11</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="1">
-                       <widget class="QCheckBox" name="PulserCheckBox_11">
-                        <property name="text">
-                         <string>TestPulser</string>
-                        </property>
+                       <widget class="QComboBox" name="ApfelTestPolarityBox_5">
+                        <item>
+                         <property name="text">
+                          <string>Positive</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>Negative</string>
+                         </property>
+                        </item>
                        </widget>
                       </item>
                      </layout>
-                    </item>
-                    <item row="0" column="1">
-                     <widget class="QComboBox" name="ApfelTestPolarityBox_5">
-                      <item>
-                       <property name="text">
-                        <string>Positive</string>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>Negative</string>
-                       </property>
-                      </item>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                 <item row="1" column="2">
-                  <widget class="QGroupBox" name="ApfelPulseBox_7">
-                   <property name="title">
-                    <string>APFEL 7</string>
-                   </property>
-                   <layout class="QGridLayout" name="gridLayout_47">
-                    <item row="0" column="0">
-                     <layout class="QGridLayout" name="gridLayout_37">
+                    </widget>
+                   </item>
+                   <item row="1" column="2">
+                    <widget class="QGroupBox" name="ApfelPulseBox_7">
+                     <property name="title">
+                      <string>APFEL 11</string>
+                     </property>
+                     <layout class="QGridLayout" name="gridLayout_47">
                       <item row="0" column="0">
-                       <widget class="QLabel" name="plabel_12">
-                        <property name="text">
-                         <string>12</string>
-                        </property>
-                       </widget>
+                       <layout class="QGridLayout" name="gridLayout_37">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="plabel_12">
+                          <property name="text">
+                           <string>12</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QCheckBox" name="PulserCheckBox_12">
+                          <property name="text">
+                           <string>TestPulser</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QLabel" name="plabel_13">
+                          <property name="text">
+                           <string>13</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QCheckBox" name="PulserCheckBox_13">
+                          <property name="text">
+                           <string>TestPulser</string>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
                       </item>
                       <item row="0" column="1">
-                       <widget class="QCheckBox" name="PulserCheckBox_12">
-                        <property name="text">
-                         <string>TestPulser</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="0">
-                       <widget class="QLabel" name="plabel_13">
-                        <property name="text">
-                         <string>13</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="1">
-                       <widget class="QCheckBox" name="PulserCheckBox_13">
-                        <property name="text">
-                         <string>TestPulser</string>
-                        </property>
+                       <widget class="QComboBox" name="ApfelTestPolarityBox_6">
+                        <item>
+                         <property name="text">
+                          <string>Positive</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>Negative</string>
+                         </property>
+                        </item>
                        </widget>
                       </item>
                      </layout>
-                    </item>
-                    <item row="0" column="1">
-                     <widget class="QComboBox" name="ApfelTestPolarityBox_6">
-                      <item>
-                       <property name="text">
-                        <string>Positive</string>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>Negative</string>
-                       </property>
-                      </item>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                 <item row="1" column="3">
-                  <widget class="QGroupBox" name="ApfelPulseBox_8">
-                   <property name="title">
-                    <string>APFEL 8</string>
-                   </property>
-                   <layout class="QGridLayout" name="gridLayout_48">
-                    <item row="0" column="0">
-                     <layout class="QGridLayout" name="gridLayout_38">
+                    </widget>
+                   </item>
+                   <item row="1" column="3">
+                    <widget class="QGroupBox" name="ApfelPulseBox_8">
+                     <property name="title">
+                      <string>APFEL 12</string>
+                     </property>
+                     <layout class="QGridLayout" name="gridLayout_48">
                       <item row="0" column="0">
-                       <widget class="QLabel" name="plabel_14">
-                        <property name="text">
-                         <string>14</string>
-                        </property>
-                       </widget>
+                       <layout class="QGridLayout" name="gridLayout_38">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="plabel_14">
+                          <property name="text">
+                           <string>14</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QCheckBox" name="PulserCheckBox_14">
+                          <property name="text">
+                           <string>TestPulser</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QLabel" name="plabel_15">
+                          <property name="text">
+                           <string>15</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QCheckBox" name="PulserCheckBox_15">
+                          <property name="text">
+                           <string>TestPulser</string>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
                       </item>
                       <item row="0" column="1">
-                       <widget class="QCheckBox" name="PulserCheckBox_14">
-                        <property name="text">
-                         <string>TestPulser</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="0">
-                       <widget class="QLabel" name="plabel_15">
-                        <property name="text">
-                         <string>15</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="1">
-                       <widget class="QCheckBox" name="PulserCheckBox_15">
-                        <property name="text">
-                         <string>TestPulser</string>
-                        </property>
+                       <widget class="QComboBox" name="ApfelTestPolarityBox_7">
+                        <item>
+                         <property name="text">
+                          <string>Positive</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>Negative</string>
+                         </property>
+                        </item>
                        </widget>
                       </item>
                      </layout>
-                    </item>
-                    <item row="0" column="1">
-                     <widget class="QComboBox" name="ApfelTestPolarityBox_7">
-                      <item>
-                       <property name="text">
-                        <string>Positive</string>
-                       </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QGroupBox" name="ApfelPulseBox_2">
+                     <property name="title">
+                      <string>APFEL 2</string>
+                     </property>
+                     <layout class="QGridLayout" name="gridLayout_43">
+                      <item row="0" column="0">
+                       <layout class="QGridLayout" name="gridLayout_32">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="plabel_2">
+                          <property name="text">
+                           <string>02</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="0" column="1">
+                         <widget class="QCheckBox" name="PulserCheckBox_2">
+                          <property name="text">
+                           <string>TestPulser</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="0">
+                         <widget class="QLabel" name="plabel_3">
+                          <property name="text">
+                           <string>03</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item row="1" column="1">
+                         <widget class="QCheckBox" name="PulserCheckBox_3">
+                          <property name="text">
+                           <string>TestPulser</string>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
                       </item>
-                      <item>
-                       <property name="text">
-                        <string>Negative</string>
-                       </property>
+                      <item row="0" column="1">
+                       <widget class="QComboBox" name="ApfelTestPolarityBox_1">
+                        <item>
+                         <property name="text">
+                          <string>Positive</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>Negative</string>
+                         </property>
+                        </item>
+                       </widget>
                       </item>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
+                     </layout>
+                    </widget>
+                   </item>
+                  </layout>
                  </item>
                 </layout>
                </item>
@@ -3175,7 +3282,7 @@
                  <property name="sizeHint" stdset="0">
                   <size>
                    <width>20</width>
-                   <height>92</height>
+                   <height>65</height>
                   </size>
                  </property>
                 </spacer>
@@ -4621,12 +4728,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>161</x>
-     <y>172</y>
+     <x>162</x>
+     <y>208</y>
     </hint>
     <hint type="destinationlabel">
-     <x>221</x>
-     <y>174</y>
+     <x>297</x>
+     <y>210</y>
     </hint>
    </hints>
   </connection>
@@ -4637,12 +4744,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>221</x>
-     <y>174</y>
+     <x>297</x>
+     <y>210</y>
     </hint>
     <hint type="destinationlabel">
-     <x>161</x>
-     <y>172</y>
+     <x>162</x>
+     <y>208</y>
     </hint>
    </hints>
   </connection>
@@ -4653,12 +4760,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>161</x>
-     <y>200</y>
+     <x>162</x>
+     <y>236</y>
     </hint>
     <hint type="destinationlabel">
-     <x>221</x>
-     <y>202</y>
+     <x>297</x>
+     <y>238</y>
     </hint>
    </hints>
   </connection>
@@ -4669,12 +4776,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>221</x>
-     <y>202</y>
+     <x>297</x>
+     <y>238</y>
     </hint>
     <hint type="destinationlabel">
-     <x>161</x>
-     <y>200</y>
+     <x>162</x>
+     <y>236</y>
     </hint>
    </hints>
   </connection>
@@ -4685,12 +4792,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>161</x>
-     <y>228</y>
+     <x>162</x>
+     <y>264</y>
     </hint>
     <hint type="destinationlabel">
-     <x>221</x>
-     <y>230</y>
+     <x>297</x>
+     <y>266</y>
     </hint>
    </hints>
   </connection>
@@ -4701,12 +4808,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>221</x>
-     <y>230</y>
+     <x>297</x>
+     <y>266</y>
     </hint>
     <hint type="destinationlabel">
-     <x>161</x>
-     <y>228</y>
+     <x>162</x>
+     <y>264</y>
     </hint>
    </hints>
   </connection>
@@ -4717,12 +4824,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>161</x>
-     <y>256</y>
+     <x>162</x>
+     <y>292</y>
     </hint>
     <hint type="destinationlabel">
-     <x>221</x>
-     <y>258</y>
+     <x>297</x>
+     <y>294</y>
     </hint>
    </hints>
   </connection>
@@ -4733,12 +4840,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>221</x>
-     <y>258</y>
+     <x>297</x>
+     <y>294</y>
     </hint>
     <hint type="destinationlabel">
-     <x>161</x>
-     <y>256</y>
+     <x>162</x>
+     <y>292</y>
     </hint>
    </hints>
   </connection>
@@ -4749,12 +4856,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>161</x>
-     <y>284</y>
+     <x>162</x>
+     <y>320</y>
     </hint>
     <hint type="destinationlabel">
-     <x>221</x>
-     <y>286</y>
+     <x>297</x>
+     <y>322</y>
     </hint>
    </hints>
   </connection>
@@ -4765,12 +4872,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>221</x>
-     <y>286</y>
+     <x>297</x>
+     <y>322</y>
     </hint>
     <hint type="destinationlabel">
-     <x>161</x>
-     <y>284</y>
+     <x>162</x>
+     <y>320</y>
     </hint>
    </hints>
   </connection>
@@ -4781,12 +4888,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>161</x>
-     <y>312</y>
+     <x>162</x>
+     <y>348</y>
     </hint>
     <hint type="destinationlabel">
-     <x>221</x>
-     <y>314</y>
+     <x>297</x>
+     <y>350</y>
     </hint>
    </hints>
   </connection>
@@ -4797,12 +4904,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>221</x>
-     <y>314</y>
+     <x>297</x>
+     <y>350</y>
     </hint>
     <hint type="destinationlabel">
-     <x>161</x>
-     <y>312</y>
+     <x>162</x>
+     <y>348</y>
     </hint>
    </hints>
   </connection>
@@ -4813,12 +4920,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>161</x>
-     <y>340</y>
+     <x>162</x>
+     <y>376</y>
     </hint>
     <hint type="destinationlabel">
-     <x>221</x>
-     <y>342</y>
+     <x>297</x>
+     <y>378</y>
     </hint>
    </hints>
   </connection>
@@ -4829,12 +4936,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>221</x>
-     <y>342</y>
+     <x>297</x>
+     <y>378</y>
     </hint>
     <hint type="destinationlabel">
-     <x>161</x>
-     <y>340</y>
+     <x>162</x>
+     <y>376</y>
     </hint>
    </hints>
   </connection>
@@ -4845,12 +4952,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>161</x>
-     <y>368</y>
+     <x>162</x>
+     <y>404</y>
     </hint>
     <hint type="destinationlabel">
-     <x>221</x>
-     <y>370</y>
+     <x>297</x>
+     <y>406</y>
     </hint>
    </hints>
   </connection>
@@ -4861,12 +4968,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>221</x>
-     <y>370</y>
+     <x>297</x>
+     <y>406</y>
     </hint>
     <hint type="destinationlabel">
-     <x>161</x>
-     <y>368</y>
+     <x>162</x>
+     <y>404</y>
     </hint>
    </hints>
   </connection>
@@ -4877,12 +4984,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>526</x>
-     <y>172</y>
+     <x>659</x>
+     <y>208</y>
     </hint>
     <hint type="destinationlabel">
-     <x>586</x>
-     <y>174</y>
+     <x>794</x>
+     <y>210</y>
     </hint>
    </hints>
   </connection>
@@ -4893,12 +5000,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>174</y>
+     <x>794</x>
+     <y>210</y>
     </hint>
     <hint type="destinationlabel">
-     <x>526</x>
-     <y>172</y>
+     <x>659</x>
+     <y>208</y>
     </hint>
    </hints>
   </connection>
@@ -4909,12 +5016,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>526</x>
-     <y>228</y>
+     <x>659</x>
+     <y>264</y>
     </hint>
     <hint type="destinationlabel">
-     <x>586</x>
-     <y>230</y>
+     <x>794</x>
+     <y>266</y>
     </hint>
    </hints>
   </connection>
@@ -4925,12 +5032,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>230</y>
+     <x>794</x>
+     <y>266</y>
     </hint>
     <hint type="destinationlabel">
-     <x>526</x>
-     <y>228</y>
+     <x>659</x>
+     <y>264</y>
     </hint>
    </hints>
   </connection>
@@ -4941,12 +5048,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>526</x>
-     <y>256</y>
+     <x>659</x>
+     <y>292</y>
     </hint>
     <hint type="destinationlabel">
-     <x>586</x>
-     <y>258</y>
+     <x>794</x>
+     <y>294</y>
     </hint>
    </hints>
   </connection>
@@ -4957,12 +5064,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>258</y>
+     <x>794</x>
+     <y>294</y>
     </hint>
     <hint type="destinationlabel">
-     <x>526</x>
-     <y>256</y>
+     <x>659</x>
+     <y>292</y>
     </hint>
    </hints>
   </connection>
@@ -4973,12 +5080,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>526</x>
-     <y>284</y>
+     <x>659</x>
+     <y>320</y>
     </hint>
     <hint type="destinationlabel">
-     <x>586</x>
-     <y>286</y>
+     <x>794</x>
+     <y>322</y>
     </hint>
    </hints>
   </connection>
@@ -4989,12 +5096,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>286</y>
+     <x>794</x>
+     <y>322</y>
     </hint>
     <hint type="destinationlabel">
-     <x>526</x>
-     <y>284</y>
+     <x>659</x>
+     <y>320</y>
     </hint>
    </hints>
   </connection>
@@ -5005,12 +5112,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>526</x>
-     <y>312</y>
+     <x>659</x>
+     <y>348</y>
     </hint>
     <hint type="destinationlabel">
-     <x>586</x>
-     <y>314</y>
+     <x>794</x>
+     <y>350</y>
     </hint>
    </hints>
   </connection>
@@ -5021,12 +5128,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>314</y>
+     <x>794</x>
+     <y>350</y>
     </hint>
     <hint type="destinationlabel">
-     <x>526</x>
-     <y>312</y>
+     <x>659</x>
+     <y>348</y>
     </hint>
    </hints>
   </connection>
@@ -5037,12 +5144,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>526</x>
-     <y>340</y>
+     <x>659</x>
+     <y>376</y>
     </hint>
     <hint type="destinationlabel">
-     <x>586</x>
-     <y>342</y>
+     <x>794</x>
+     <y>378</y>
     </hint>
    </hints>
   </connection>
@@ -5053,12 +5160,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>342</y>
+     <x>794</x>
+     <y>378</y>
     </hint>
     <hint type="destinationlabel">
-     <x>526</x>
-     <y>340</y>
+     <x>659</x>
+     <y>376</y>
     </hint>
    </hints>
   </connection>
@@ -5069,12 +5176,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>526</x>
-     <y>368</y>
+     <x>659</x>
+     <y>404</y>
     </hint>
     <hint type="destinationlabel">
-     <x>586</x>
-     <y>370</y>
+     <x>794</x>
+     <y>406</y>
     </hint>
    </hints>
   </connection>
@@ -5085,12 +5192,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>370</y>
+     <x>794</x>
+     <y>406</y>
     </hint>
     <hint type="destinationlabel">
-     <x>526</x>
-     <y>368</y>
+     <x>659</x>
+     <y>404</y>
     </hint>
    </hints>
   </connection>
@@ -5101,12 +5208,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>170</x>
-     <y>130</y>
+     <x>141</x>
+     <y>160</y>
     </hint>
     <hint type="destinationlabel">
-     <x>230</x>
-     <y>132</y>
+     <x>352</x>
+     <y>166</y>
     </hint>
    </hints>
   </connection>
@@ -5117,12 +5224,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>230</x>
-     <y>132</y>
+     <x>352</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>170</x>
-     <y>130</y>
+     <x>141</x>
+     <y>160</y>
     </hint>
    </hints>
   </connection>
@@ -5133,12 +5240,12 @@ p, li { white-space: pre-wrap; }
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>79</x>
-     <y>132</y>
+     <x>90</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>170</x>
-     <y>130</y>
+     <x>141</x>
+     <y>160</y>
     </hint>
    </hints>
   </connection>
@@ -5149,12 +5256,12 @@ p, li { white-space: pre-wrap; }
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>79</x>
-     <y>132</y>
+     <x>90</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>230</x>
-     <y>132</y>
+     <x>352</x>
+     <y>166</y>
     </hint>
    </hints>
   </connection>
@@ -5165,12 +5272,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>202</y>
+     <x>794</x>
+     <y>238</y>
     </hint>
     <hint type="destinationlabel">
-     <x>526</x>
-     <y>200</y>
+     <x>659</x>
+     <y>236</y>
     </hint>
    </hints>
   </connection>
@@ -5181,12 +5288,12 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>526</x>
-     <y>200</y>
+     <x>659</x>
+     <y>236</y>
     </hint>
     <hint type="destinationlabel">
-     <x>586</x>
-     <y>202</y>
+     <x>794</x>
+     <y>238</y>
     </hint>
    </hints>
   </connection>
@@ -5197,12 +5304,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>683</x>
-     <y>129</y>
+     <x>1016</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>388</x>
-     <y>174</y>
+     <x>530</x>
+     <y>210</y>
     </hint>
    </hints>
   </connection>
@@ -5213,12 +5320,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>695</x>
-     <y>131</y>
+     <x>1016</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>388</x>
-     <y>202</y>
+     <x>530</x>
+     <y>238</y>
     </hint>
    </hints>
   </connection>
@@ -5229,12 +5336,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>743</x>
-     <y>132</y>
+     <x>1016</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>388</x>
-     <y>230</y>
+     <x>530</x>
+     <y>266</y>
     </hint>
    </hints>
   </connection>
@@ -5245,12 +5352,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>743</x>
-     <y>132</y>
+     <x>1016</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>364</x>
-     <y>252</y>
+     <x>530</x>
+     <y>294</y>
     </hint>
    </hints>
   </connection>
@@ -5261,12 +5368,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>723</x>
-     <y>126</y>
+     <x>1016</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>368</x>
-     <y>286</y>
+     <x>530</x>
+     <y>322</y>
     </hint>
    </hints>
   </connection>
@@ -5277,12 +5384,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>673</x>
-     <y>125</y>
+     <x>1016</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>371</x>
-     <y>310</y>
+     <x>530</x>
+     <y>350</y>
     </hint>
    </hints>
   </connection>
@@ -5293,12 +5400,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>743</x>
-     <y>132</y>
+     <x>1016</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>388</x>
-     <y>342</y>
+     <x>530</x>
+     <y>378</y>
     </hint>
    </hints>
   </connection>
@@ -5309,12 +5416,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>743</x>
-     <y>132</y>
+     <x>1016</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>374</x>
-     <y>367</y>
+     <x>530</x>
+     <y>406</y>
     </hint>
    </hints>
   </connection>
@@ -5325,12 +5432,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>743</x>
-     <y>132</y>
+     <x>1016</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>753</x>
-     <y>174</y>
+     <x>1026</x>
+     <y>210</y>
     </hint>
    </hints>
   </connection>
@@ -5341,12 +5448,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>743</x>
-     <y>132</y>
+     <x>1016</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>753</x>
-     <y>202</y>
+     <x>1026</x>
+     <y>238</y>
     </hint>
    </hints>
   </connection>
@@ -5357,12 +5464,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>720</x>
-     <y>127</y>
+     <x>1016</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>753</x>
-     <y>230</y>
+     <x>1026</x>
+     <y>266</y>
     </hint>
    </hints>
   </connection>
@@ -5373,12 +5480,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>719</x>
-     <y>132</y>
+     <x>1016</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>753</x>
-     <y>258</y>
+     <x>1026</x>
+     <y>294</y>
     </hint>
    </hints>
   </connection>
@@ -5389,12 +5496,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>705</x>
-     <y>122</y>
+     <x>1016</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>753</x>
-     <y>286</y>
+     <x>1026</x>
+     <y>322</y>
     </hint>
    </hints>
   </connection>
@@ -5405,12 +5512,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>716</x>
-     <y>132</y>
+     <x>1016</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>722</x>
-     <y>307</y>
+     <x>1026</x>
+     <y>350</y>
     </hint>
    </hints>
   </connection>
@@ -5421,12 +5528,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>743</x>
-     <y>132</y>
+     <x>1016</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>753</x>
-     <y>342</y>
+     <x>1026</x>
+     <y>378</y>
     </hint>
    </hints>
   </connection>
@@ -5437,12 +5544,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>722</x>
-     <y>131</y>
+     <x>1016</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>718</x>
-     <y>370</y>
+     <x>1026</x>
+     <y>406</y>
     </hint>
    </hints>
   </connection>
@@ -5453,12 +5560,652 @@ p, li { white-space: pre-wrap; }
    <slot>click()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>602</x>
-     <y>123</y>
+     <x>914</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>518</x>
-     <y>123</y>
+     <x>804</x>
+     <y>168</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_0</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>306</x>
+     <y>173</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>236</x>
+     <y>249</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_1</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>303</x>
+     <y>185</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>255</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_2</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>296</x>
+     <y>178</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>377</x>
+     <y>248</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_3</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>296</x>
+     <y>178</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>377</x>
+     <y>276</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_4</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>170</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>468</x>
+     <y>242</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_5</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>170</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>468</x>
+     <y>270</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_6</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>170</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>594</x>
+     <y>242</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_7</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>170</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>594</x>
+     <y>270</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_8</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>170</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>216</x>
+     <y>339</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_9</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>170</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>216</x>
+     <y>367</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_10</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>170</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>342</x>
+     <y>339</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_11</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>170</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>342</x>
+     <y>367</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_12</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>170</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>468</x>
+     <y>339</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_13</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>170</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>468</x>
+     <y>367</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_14</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>170</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>594</x>
+     <y>339</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_15</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>170</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>594</x>
+     <y>367</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ApfelTestPolarityBox_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>ApfelTestPolarityBox_0</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>155</x>
+     <y>143</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>227</x>
+     <y>208</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ApfelTestPolarityBox_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>ApfelTestPolarityBox_1</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ApfelTestPolarityBox_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>ApfelTestPolarityBox_2</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ApfelTestPolarityBox_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>ApfelTestPolarityBox_3</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ApfelTestPolarityBox_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>ApfelTestPolarityBox_4</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ApfelTestPolarityBox_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>ApfelTestPolarityBox_5</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ApfelTestPolarityBox_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>ApfelTestPolarityBox_6</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ApfelTestPolarityBox_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>ApfelTestPolarityBox_7</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PulserCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PulserCheckBox_0</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>60</x>
+     <y>146</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>80</x>
+     <y>195</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PulserCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PulserCheckBox_1</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PulserCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PulserCheckBox_2</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PulserCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PulserCheckBox_3</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PulserCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PulserCheckBox_4</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PulserCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PulserCheckBox_5</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PulserCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PulserCheckBox_6</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PulserCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PulserCheckBox_7</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PulserCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PulserCheckBox_8</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PulserCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PulserCheckBox_9</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PulserCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PulserCheckBox_10</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PulserCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PulserCheckBox_11</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PulserCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PulserCheckBox_12</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PulserCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PulserCheckBox_13</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PulserCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PulserCheckBox_14</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PulserCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PulserCheckBox_15</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
     </hint>
    </hints>
   </connection>

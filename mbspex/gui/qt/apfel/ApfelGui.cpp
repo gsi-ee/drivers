@@ -17,7 +17,7 @@
 #include <sstream>
 #include <string.h>
 #include <errno.h>
-#include <math.h>
+
 
 // *********************************************************
 
@@ -96,7 +96,7 @@ void ApfelGui::I2c_sleep ()
 {
   //usleep(300);
 
-  usleep(900); // JAM2016 need to increase wait time since some problems with adc read?
+  usleep(1000); // JAM2016 2x time specified in docu
 }
 
 #endif
@@ -247,7 +247,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
   QObject::connect (AutocalibrateButton_7, SIGNAL(pressed()), this, SLOT (AutoCalibrate_6()));
   QObject::connect (AutocalibrateButton_8, SIGNAL(pressed()), this, SLOT (AutoCalibrate_7()));
 
-
+  QObject::connect (AutocalibrateButton_all, SIGNAL(pressed()), this, SLOT (AutoCalibrate_all()));
 
   QObject::connect (PulserCheckBox_0, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_0()));
   QObject::connect (PulserCheckBox_1, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_0()));
@@ -275,9 +275,28 @@ ApfelGui::ApfelGui (QWidget* parent) :
   QObject::connect (ApfelTestPolarityBox_7, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_7()));
 
 
-  QObject::connect (ApfelradioButton, SIGNAL(toggled()), this, SLOT (SwitchChanged()));
-  QObject::connect (LoGainRadioButton, SIGNAL(toggled()), this, SLOT (SwitchChanged()));
-  QObject::connect (StretcherOnradioButton, SIGNAL(toggled()), this, SLOT (SwitchChanged()));
+  QObject::connect (gainCombo_0, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_0()));
+  QObject::connect (gainCombo_1, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_1()));
+  QObject::connect (gainCombo_2, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_2()));
+  QObject::connect (gainCombo_3, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_3()));
+  QObject::connect (gainCombo_4, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_4()));
+  QObject::connect (gainCombo_5, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_5()));
+  QObject::connect (gainCombo_6, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_6()));
+  QObject::connect (gainCombo_7, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_7()));
+  QObject::connect (gainCombo_8, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_8()));
+  QObject::connect (gainCombo_9, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_9()));
+  QObject::connect (gainCombo_10, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_10()));
+  QObject::connect (gainCombo_11, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_11()));
+  QObject::connect (gainCombo_12, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_12()));
+  QObject::connect (gainCombo_13, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_13()));
+  QObject::connect (gainCombo_14, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_14()));
+  QObject::connect (gainCombo_15, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_15()));
+
+
+
+  QObject::connect (ApfelRadioButton, SIGNAL(toggled(bool)), this, SLOT (SwitchChanged()));
+  QObject::connect (LoGainRadioButton, SIGNAL(toggled(bool)), this, SLOT (SwitchChanged()));
+  QObject::connect (StretcherOnRadioButton, SIGNAL(toggled(bool)), this, SLOT (SwitchChanged()));
 
 
 
@@ -706,6 +725,10 @@ void ApfelGui::DisableI2C ()
 
 void ApfelGui::InitApfel()
 {
+  printm("Resetting APFEL for SFP %d Slave %d...",fSFP,fSlave);
+  WriteGosip (fSFP, fSlave,GOS_I2C_DWR,APFEL_RESET);
+  sleep(1);
+
 
 #ifdef DO_APFEL_INIT
   WriteGosip (fSFP, fSlave, DATA_FILT_CONTROL_REG, 0x00);
@@ -861,7 +884,7 @@ int ApfelGui::AdjustBaseline(int channel, int adctarget)
   bool upwards=true; // scan direction up or down
   bool changed=false; // do we have changed scan direction?
   bool initial=true; // supress evaluation of scan direction at first cycle
-  //std::cout << "ApfelGui::AdjustBaseline of channel "<<channel<<" to "<<adctarget<< std::endl;
+  std::cout << "ApfelGui::AdjustBaseline of channel "<<channel<<" to "<<adctarget<< std::endl;
 
   double resolution= 1.0/APFEL_DAC_MAXVALUE * 0xFFF /2; // for 12 bit febex ADC
     // test if febex adc is for 14 bit values:
@@ -872,7 +895,7 @@ int ApfelGui::AdjustBaseline(int channel, int adctarget)
      adc=autoApply(channel, dac); // this gives already mean value of 3 adc samples
      if(adc<0) break; // avoid broadcast
      validdac=dac;
-     //std::cout << "ApfelGui::AdjustBaseline after autoApply of dac:"<<dac<<" gets adc:"<<adc<<", resolution:"<<resolution<< std::endl;
+     std::cout << "ApfelGui::AdjustBaseline after autoApply of dac:"<<dac<<" gets adc:"<<adc<<", resolution:"<<resolution<< std::endl;
      if(adc<adctarget){
        dac+=dacstep;
        changed=(!upwards ? true : false);
@@ -891,7 +914,7 @@ int ApfelGui::AdjustBaseline(int channel, int adctarget)
      if(!changed || dacstep==1) escapecounter--; // get us out of loop if user wants to reach value outside adc range, or if we oscillate around target value
      initial=false;
   } while (fabs(adc-adctarget) >= resolution && escapecounter);
-  //std::cout << "   ApfelGui::AdjustBaseline after loop dac:"<<validdac<<" adc:"<<adc<<", resolution:"<<resolution<< std::endl;
+  std::cout << "   ApfelGui::AdjustBaseline after loop dac:"<<validdac<<" adc:"<<adc<<", resolution:"<<resolution<< std::endl;
   return validdac;
 }
 
@@ -960,7 +983,7 @@ void ApfelGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "ApfelGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.666 of 31-October-2016 by JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.747 of 1-November-2016 by JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -1161,7 +1184,7 @@ void  ApfelGui::GainChanged_0()
   GainChanged (0, 0);
 }
 
-virtual void ApfelGui::GainChanged_1()
+void ApfelGui::GainChanged_1()
 {
   GainChanged(0, 1);
 }
@@ -1434,7 +1457,7 @@ void ApfelGui::DAC_enterText_7_3 ()
 
 void ApfelGui::DAC_changed(int apfel, int dac, int val)
 {
-  std::cout << "ApfelGui::DAC__changed, apfel="<<apfel<<", dac="<<dac<<", val="<<val << std::endl;
+  //std::cout << "ApfelGui::DAC__changed, apfel="<<apfel<<", dac="<<dac<<", val="<<val << std::endl;
   QString text;
   QString pre;
   fNumberBase == 16 ? pre = "0x" : pre = "";
@@ -1626,7 +1649,7 @@ void ApfelGui::AutoCalibrate(int apfel)
   {
      // first show confirm window if not running in auto apply mode:
     char buffer[1024];
-    snprintf (buffer, 1024, "Really Do APFEL DAC autocalibration for SFP %d Device %d?", fSFP, fSlave);
+    snprintf (buffer, 1024, "Really Do APFEL DAC %d autocalibration for SFP %d Device %d?", apfel, fSFP, fSlave);
     if (QMessageBox::question (this, "APFEL GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
         != QMessageBox::Yes)
     {
@@ -1638,6 +1661,8 @@ void ApfelGui::AutoCalibrate(int apfel)
       EvaluateSlave ();
       APFEL_BROADCAST_ACTION(DoAutoCalibrate(apfel));
     }
+
+  //ShowBtn_clicked ();
 }
 
 
@@ -1675,7 +1700,29 @@ void ApfelGui::AutoCalibrate_7()
 }
 
 
-
+void ApfelGui::AutoCalibrate_all()
+{
+  if (!checkBox_AA->isChecked ())
+   {
+      // first show confirm window if not running in auto apply mode:
+     char buffer[1024];
+     snprintf (buffer, 1024, "Really Do ALL APFEL DAC autocalibration for SFP %d Device %d?", fSFP, fSlave);
+     if (QMessageBox::question (this, "APFEL GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
+         != QMessageBox::Yes)
+     {
+       return;
+     }
+   }
+   if (!fBroadcasting)
+     {
+       EvaluateSlave ();
+       // TODO: later use calibrate broadcast command of board
+       for(int apfel=0; apfel<APFEL_NUMCHIPS; ++apfel)
+       {
+         APFEL_BROADCAST_ACTION(DoAutoCalibrate(apfel));
+       }
+     }
+}
 
 
 
@@ -1807,6 +1854,9 @@ int ApfelGui::autoApply(int channel, int permillevalue)
   BoardSetup& theSetup=fSetup[fSFP].at(fSlave);
   theSetup.EvaluateDACIndices(channel, apfel, dac);
   int value=theSetup.EvaluateDACvalueAbsolute(permillevalue);
+
+  //std::cout << "ApfelGui::autoApply channel="<<channel<<", permille="<<permillevalue<<"apfel="<<apfel<<", dac="<<dac<<", value="<<value << std::endl;
+
   theSetup.SetDACValue(apfel, dac, value);
    
    EnableI2C ();  
@@ -1850,10 +1900,10 @@ void ApfelGui::RefreshView ()
 
 //////////////////////////////////////////////////////
 // first io configuration and gain:
-ApfelradioButton->setChecked(theSetup.fUseApfel);
-PolandradioButton->setChecke(!theSetup.fUseApfel); // probably we do not need this because of autoExclusive flag
+ApfelRadioButton->setChecked(theSetup.fUseApfel);
+PolandRadioButton->setChecked(!theSetup.fUseApfel); // probably we do not need this because of autoExclusive flag
 LoGainRadioButton->setChecked(!theSetup.fHighGainOutput);
-HoGainRadioButton->setChecked(theSetup.fHighGainOutput); // probably we do not need this because of autoExclusive flag
+HiGainRadioButton->setChecked(theSetup.fHighGainOutput); // probably we do not need this because of autoExclusive flag
 StretcherOnRadioButton->setChecked(theSetup.fStretcher);
 StretcherOffRadioButton->setChecked(!theSetup.fStretcher);
 
@@ -1910,7 +1960,6 @@ for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
      {
 
           int val=theSetup.GetDACValue(channel);
-          //int permille=1000 - round((val*1000.0/255.0)) ;
           int permille=theSetup.EvaluateDACvaluePermille(val);
           fDACSpinBoxes[channel]->setValue(permille);
           int adc=AcquireBaselineSample(channel);
@@ -1989,15 +2038,15 @@ void ApfelGui::EvaluatePulser (int apfel)
 void ApfelGui::EvaluateGain(int apfel, int channel)
 {
   BoardSetup& theSetup= fSetup[fSFP].at(fSlave);
-  bool logain = (fApfelGainCombo[apfel][chan]->currentIndex () == 0);
-  theSetup.SetLowGain (apfel, chan, logain);
+  bool logain = (fApfelGainCombo[apfel][channel]->currentIndex () == 0);
+  theSetup.SetLowGain (apfel, channel, logain);
 }
 
 void ApfelGui::EvaluateIOSwitch()
 {
   BoardSetup& theSetup= fSetup[fSFP].at(fSlave);
   // get io config from gui
-  theSetup.fUseApfel=ApfelradioButton->isChecked();
+  theSetup.fUseApfel=ApfelRadioButton->isChecked();
   theSetup.fHighGainOutput=HiGainRadioButton->isChecked();
   theSetup.fStretcher=StretcherOnRadioButton->isChecked();
 
@@ -2031,6 +2080,7 @@ if(ApfelTabWidget->currentIndex()==3)
      {
           int permille=fDACSpinBoxes[channel]->value();
           int value=theSetup.EvaluateDACvalueAbsolute(permille);
+          std::cout<<"EvaluateView for channel:"<<channel<<", permille:"<<permille<<" - val="<<value<< std::endl;
           theSetup.SetDACValue(channel, value);
      }
 }
@@ -2042,6 +2092,7 @@ else
       for (int dac = 0; dac < APFEL_NUMDACS; ++dac)
       {
         int value = fDACSlider[apfel][dac]->value () & 0x3FF;
+        std::cout<<"EvaluateView for apfel:"<<apfel<<", dac:"<<dac<<" - val="<<value<< std::endl;
         theSetup.SetDACValue (apfel, dac, value);
       }
 
@@ -2076,13 +2127,16 @@ void ApfelGui::SetRegisters ()
   {
     for (uint8_t dac = 0; dac < APFEL_NUMDACS; ++dac)
     {
-      WriteDAC_ApfelI2c (apf, dac, theSetup.GetDACValue (apf, dac));
+      int val= theSetup.GetDACValue (apf, dac);
+      WriteDAC_ApfelI2c (apf, dac, val);
+      std::cout << "SetRegisters DAC(" << apf <<"," << dac << ") val=" <<  val << std::endl;
     }
 
     for (uint8_t ch = 0; ch < APFEL_NUMCHANS; ++ch)
     {
       // here set gain factors for each channel:
       SetGain (apf, ch, theSetup.GetLowGain (apf, ch));
+
     }
     SetPulser(apf);
   }
@@ -2096,6 +2150,7 @@ void ApfelGui::SetRegisters ()
 void ApfelGui::SetIOSwitch()
 {
   BoardSetup& theSetup=fSetup[fSFP].at(fSlave);
+  std::cout << "SetIOSwitch: apfel=" << theSetup.fUseApfel <<", highgain=" << theSetup.fHighGainOutput << ", stretcher="<< theSetup.fStretcher<<")"<< std::endl;
   SetSwitches(theSetup.fUseApfel, theSetup.fHighGainOutput, theSetup.fStretcher);
 
 }
@@ -2108,7 +2163,7 @@ void ApfelGui::SetPulser(uint8_t apf)
   bool on_1=theSetup.GetTestPulseEnable(apf,0);
   bool on_2=theSetup.GetTestPulseEnable(apf,1);
   bool on_any= on_1 || on_2;
-  SetTestPulse(apf,on_any,on_1,on_2,theSetup.GetTestPulsePositive(apf,0));
+  SetTestPulse(apf,on_any,on_1,on_2,theSetup.GetTestPulsePositive(apf));
 }
 
 
@@ -2126,8 +2181,7 @@ void ApfelGui::GetRegisters ()
     {
 
       int val = ReadDAC_ApfelI2c (chip, dac);
-      std::cout << "GetRegisters(" << chip
-      "," << dac << ") val=" << val << std::endl;
+      //std::cout << "GetRegisters DAC(" << chip <<"," << dac << ") val=" << val << std::endl;
 
       if (val < 0)
       {
@@ -2182,7 +2236,9 @@ void ApfelGui::GetSFPChainSetup()
     {
       while(fSetup[sfp].size()<fSFPChains.numslaves[sfp])
       {
-        fSetup[sfp].push_back(ApfelSetup());
+        fSetup[sfp].push_back(BoardSetup());
+        // TODO: evaluate real mapping of apfel chips here!
+
         //std::cout<<"GetSFPChainSetup increased setup at sfp "<<sfp<<" to "<<fSetup[sfp].size()<<" slaves." << std::endl;
       }
     }
@@ -2190,24 +2246,29 @@ void ApfelGui::GetSFPChainSetup()
 }
 
     
-int ApfelGui::ReadDAC_ApfelI2c (uint8_t apfelchip, uint8_t chan)
+int ApfelGui::ReadDAC_ApfelI2c (uint8_t apfelchip, uint8_t dac)
 {
   int val = 0;
   if(apfelchip>=APFEL_NUMCHIPS){
      AppendTextWindow ("#Error: ReadDAC_ApfelI2c with illegal chip number!");
      return -1;
    }
+  int apid=GetApfelId(fSFP, fSlave, apfelchip);
 
   // first: read transfer request from apfel chip with id to core register
-
-   int dat=APFEL_TRANSFER_BASE_RD + (dac+1) * APFEL_TRANSFER_DAC_OFFSET + (apfelchip & 0xFF);
+   int dat=APFEL_TRANSFER_BASE_RD + (dac+1) * APFEL_TRANSFER_DAC_OFFSET + (apid & 0xFF);
    // mind that dac index starts with 0 for dac1 here!
+
+
+
    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
    // note that WriteGosip already contains i2csleep
 
+
    // second: read request from core registers
-   dat=APFEL_DAC_REQUEST_BASE_RD + dac* APFEL_CORE_REQUEST_DAC_OFFSET;
+   dat=APFEL_DAC_REQUEST_BASE_RD + (dac)* APFEL_CORE_REQUEST_DAC_OFFSET;
    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
+
   // third: actually read requested value
   val = ReadGosip (fSFP, fSlave, GOS_I2C_DRR1); // read out the value
   if(val < 0) return val; // error case, propagate it upwards
@@ -2305,28 +2366,40 @@ int ApfelGui::ReadGosip (int sfp, int slave, int address)
 }
 
 
+uint8_t ApfelGui::GetApfelId(int sfp, int slave, uint8_t apfelchip)
+{
+  if(sfp<0 || sfp>= PEX_SFP_NUMBER) return 0xFF;
+  if (slave<0 || slave>=fSFPChains.numslaves[sfp]) return 0xFF;
+  BoardSetup& theSetup=fSetup[sfp].at(slave);
+  return theSetup.GetApfelID(apfelchip);
+}
 
 
-int ApfelGui::WriteDAC_ApfelI2c (uint8_t apfelchip, uint8_t dac, uint8_t value)
+
+int ApfelGui::WriteDAC_ApfelI2c (uint8_t apfelchip, uint8_t dac, uint16_t value)
 {
 
+
+
+  //std::cout << "WriteDAC_ApfelI2c(" << apfelchip <<"," << dac << ") value=" << value << std::endl;
   //(0:  shift to max adc value)
   if(apfelchip>=APFEL_NUMCHIPS){
     AppendTextWindow ("#Error: WriteDAC_ApfelI2c with illegal chip number!");
     return -1;
   }
+  int apfelid=GetApfelId(fSFP, fSlave, apfelchip);
+
 
   // first write value to core register:
   int dat=APFEL_CORE_REQUEST_BASE_WR + dac* APFEL_CORE_REQUEST_DAC_OFFSET;
-  dat+=(value & 0x3FF);
+  dat|=(value & 0x3FF);
   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
+
 
   // then request for data transfer:
-  dat=APFEL_TRANSFER_BASE_WR + (dac+1) * APFEL_TRANSFER_DAC_OFFSET + ((apfelchip+1) & 0xFF);
+  dat=APFEL_TRANSFER_BASE_WR + (dac+1) * APFEL_TRANSFER_DAC_OFFSET + (apfelid & 0xFF);
   // mind that dac index starts with 0 for dac1 here!
   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
-
-
 
   return 0;
 }
@@ -2334,9 +2407,11 @@ int ApfelGui::WriteDAC_ApfelI2c (uint8_t apfelchip, uint8_t dac, uint8_t value)
 
 void ApfelGui::SetGain(uint8_t apfelchip, uint8_t chan, bool useGain16)
 {
+  int apid=GetApfelId(fSFP, fSlave, apfelchip);
+  std::cout << "SetGain DAC(" << (int) apfelchip <<", id:"<<apid << (int) chan << ") gain16=" << useGain16 << std::endl;
   // first set gain to core:
   int mask=0;
-  mask |= (apfelchip+1) & 0xFF;
+  mask |= apid & 0xFF;
   if(chan==0)
   {
     // CH1
@@ -2366,8 +2441,11 @@ void ApfelGui::SetGain(uint8_t apfelchip, uint8_t chan, bool useGain16)
 
 void ApfelGui::SetTestPulse(uint8_t apfelchip, bool on, bool chan1, bool chan2, bool positive)
 {
+  int apid=GetApfelId(fSFP, fSlave, apfelchip);
+  std::cout << "SetTestPulse(" << (int) apfelchip <<", id:"<<apid<<"): on=" << on << ", ch1="<<chan1<<", ch2="<<chan2 << std::endl;
+
   int dat=0;
-  int apfelid = (apfelchip+1) & 0xFF;
+  int apfelid = apid & 0xFF;
   if(!on)
   {
     dat=APFEL_TESTPULSE_FLAG_WR | apfelid;
@@ -2390,7 +2468,7 @@ void ApfelGui::SetTestPulse(uint8_t apfelchip, bool on, bool chan1, bool chan2, 
   }
 
   // transfer to apfel chip: TODO: needed here?
-   dat=APFEL_TRANSFER_BASE_WR + ((apfelchip+1) & 0xFF);
+   dat=APFEL_TRANSFER_BASE_WR | apfelid;
    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 
 }
@@ -2398,16 +2476,18 @@ void ApfelGui::SetTestPulse(uint8_t apfelchip, bool on, bool chan1, bool chan2, 
 
 void ApfelGui::DoAutoCalibrate(uint8_t apfelchip)
 {
-  printm("Doing Autocalibration of apfel chip %d on sfp:%d, board:%d...",apfelchip, fSFP, fSlave);
-  int apfelid = (apfelchip+1) & 0xFF;
+
+  int apid=GetApfelId(fSFP, fSlave, apfelchip);
+  printm("Doing Autocalibration of apfel chip %d (id:%d) on sfp:%d, board:%d...",apfelchip,apid, fSFP, fSlave);
+  int apfelid = apid & 0xFF;
   int dat =APFEL_AUTOCALIBRATE_BASE_WR | apfelid;
   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 
-  // transfer to apfel chip: TODO: needed here?
-   dat=APFEL_TRANSFER_BASE_WR + ((apfelchip+1) & 0xFF);
+  // transfer to apfel chip
+   dat=APFEL_TRANSFER_BASE_WR | apfelid;
    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
   usleep(8000);
-  printm("...done!\n",apfelchip);
+  printm("...done!\n");
   //Note: The auto calibration of the APFELchip takes not more that 8 ms.
 
 }
@@ -2421,14 +2501,14 @@ void ApfelGui::SetSwitches(bool useApfel, bool useHighGain, bool useStretcher)
   int dat=APFEL_IO_CONTROL;
   int mask=0;
   if(!useApfel)         mask |= APFEL_SW_NOINPUT;
-  if(useHighGain)       mask |= APFEL_SW_HIGAIN;
+  if(!useHighGain)       mask |= APFEL_SW_HIGAIN;
   if(useStretcher)      mask |= APFEL_SW_STRETCH;
   dat |= mask;
   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
   dat=APFEL_IO_SET;
   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
   int val=ReadGosip(fSFP, fSlave,GOS_I2C_DRR1);
-  int swmask=((val>>9) & 0x7)
+  int swmask=((val>>9) & 0x7);
   if (((swmask & mask) != mask))
       printm("#Error SetInputSwitch(apfel=%d, high=%d, stretch=0) - read back switch mask is 0x%x",
           useApfel, useHighGain, useStretcher,swmask);
