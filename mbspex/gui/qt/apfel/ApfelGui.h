@@ -410,6 +410,23 @@ public:
 
             }
 
+          int EvaluateADCChannel(int apfel, int dac)
+          {
+             int chan=apfel*APFEL_NUMCHANS;
+             if(fHighGainOutput){
+               if(dac<APFEL_NUMCHANS)
+               chan+= dac;
+               else
+                 chan=-1; // mark dac as invalid for adc
+             }
+             else
+             {
+               if(dac!=2) chan=-1;       // not sufficient! dac2 works on both adc channels...
+             }
+             return chan;
+          }
+
+
      /** get absolute DAC setting from relative baseline slider*/
      int EvaluateDACvalueAbsolute(int permillevalue)
      {
@@ -621,6 +638,12 @@ protected:
   /** update register display*/
   void RefreshView ();
 
+  /** udpate display of dac settings for apfel chip with given index */
+  void RefreshDAC(int apfel);
+
+  /** udpate display of adc settings of channel */
+   void RefreshADC(int channel);
+
 //  /** update febex device index display*/
   void RefreshStatus ();
 
@@ -659,8 +682,15 @@ protected:
   void SetIOSwitch();
 
 
+
+
   /** get register contents to status structure*/
   void GetRegisters ();
+
+  /** get DAC settings of apfel into status structure*/
+  void GetDACs (int apfel);
+
+
 
   /** get registers and write them to config file*/
   void SaveRegisters();

@@ -1886,16 +1886,39 @@ int ApfelGui::AcquireBaselineSample(uint8_t febexchan)
 
 
 
+void ApfelGui::RefreshDAC(int apfel)
+{
+  QString text;
+  QString pre;
+  fNumberBase == 16 ? pre = "0x" : pre = "";
+  BoardSetup& theSetup=fSetup[fSFP].at(fSlave);
+  for (int dac = 0; dac < APFEL_NUMDACS; ++dac)
+  {
+    int value =  theSetup.GetDACValue (apfel, dac);
+    fDACSlider[apfel][dac]->setValue (value);
+    fDACLineEdit[apfel][dac]->setText (pre+text.setNum (value, fNumberBase));
+  }
+}
 
-
-
+  void ApfelGui::RefreshADC(int channel)
+  {
+    QString text;
+    QString pre;
+    fNumberBase == 16 ? pre = "0x" : pre = "";
+     BoardSetup& theSetup=fSetup[fSFP].at(fSlave);
+    int val=theSetup.GetDACValue(channel);
+    int permille=theSetup.EvaluateDACvaluePermille(val);
+    fDACSpinBoxes[channel]->setValue(permille);
+    int adc=AcquireBaselineSample(channel);
+    fADCLineEdit[channel]->setText (pre+text.setNum (adc, fNumberBase));
+  }
 
 void ApfelGui::RefreshView ()
 {
 // display setup structure to gui:
-  QString text;
-  QString pre;
-  fNumberBase == 16 ? pre = "0x" : pre = "";
+//  QString text;
+//  QString pre;
+//  fNumberBase == 16 ? pre = "0x" : pre = "";
   BoardSetup& theSetup=fSetup[fSFP].at(fSlave);
 
 //////////////////////////////////////////////////////
@@ -1929,12 +1952,7 @@ if (theSetup.fHighGainOutput)
 
 for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
    {
-     for (int dac = 0; dac < APFEL_NUMDACS; ++dac)
-     {
-       int value =  theSetup.GetDACValue (apfel, dac);
-       fDACSlider[apfel][dac]->setValue (value);
-       fDACLineEdit[apfel][dac]->setText (pre+text.setNum (value, fNumberBase));
-     }
+      RefreshDAC(apfel);
    }
 
 ///////////////////////////////////////////////////////
@@ -1958,13 +1976,7 @@ for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
 
   for(int channel=0; channel<16;++channel)
      {
-
-          int val=theSetup.GetDACValue(channel);
-          int permille=theSetup.EvaluateDACvaluePermille(val);
-          fDACSpinBoxes[channel]->setValue(permille);
-          int adc=AcquireBaselineSample(channel);
-          fADCLineEdit[channel]->setText (pre+text.setNum (adc, fNumberBase));
-
+          RefreshADC(channel);
      }
 
 
@@ -2167,6 +2179,26 @@ void ApfelGui::SetPulser(uint8_t apf)
 }
 
 
+void ApfelGui::GetDACs (int chip)
+{
+  BoardSetup& theSetup=fSetup[fSFP].at (fSlave);
+
+  for (int dac = 0; dac < APFEL_NUMDACS; ++dac)
+     {
+
+       int val = ReadDAC_ApfelI2c (chip, dac);
+       //std::cout << "GetDACs(" << chip <<"," << dac << ") val=" << val << std::endl;
+
+       if (val < 0)
+       {
+         AppendTextWindow ("GetDacs has error!");
+         return;    // TODO error message
+       }
+       theSetup.SetDACValue (chip, dac, val);
+     }
+}
+
+
 void ApfelGui::GetRegisters ()
 {
 // read register values into structure with gosipcmd
@@ -2177,20 +2209,21 @@ void ApfelGui::GetRegisters ()
   EnableI2C ();
   for (int chip = 0; chip < APFEL_NUMCHIPS; ++chip)
   {
-    for (int dac = 0; dac < APFEL_NUMDACS; ++dac)
-    {
+    GetDACs(chip);
+//    for (int dac = 0; dac < APFEL_NUMDACS; ++dac)
+//    {
+//
+//      int val = ReadDAC_ApfelI2c (chip, dac);
+//      //std::cout << "GetRegisters DAC(" << chip <<"," << dac << ") val=" << val << std::endl;
+//
+//      if (val < 0)
+//      {
+//        AppendTextWindow ("GetRegisters has error!");
+//        return;    // TODO error message
+//      }
+//      fSetup[fSFP].at (fSlave).SetDACValue (chip, dac, val);
 
-      int val = ReadDAC_ApfelI2c (chip, dac);
-      //std::cout << "GetRegisters DAC(" << chip <<"," << dac << ") val=" << val << std::endl;
-
-      if (val < 0)
-      {
-        AppendTextWindow ("GetRegisters has error!");
-        return;    // TODO error message
-      }
-      fSetup[fSFP].at (fSlave).SetDACValue (chip, dac, val);
-
-    }
+//    }
 
     // todo: here read back amplification settings - not possible!
 
@@ -2476,6 +2509,7 @@ void ApfelGui::SetTestPulse(uint8_t apfelchip, bool on, bool chan1, bool chan2, 
 
 void ApfelGui::DoAutoCalibrate(uint8_t apfelchip)
 {
+  QApplication::setOverrideCursor (Qt::WaitCursor);
 
   int apid=GetApfelId(fSFP, fSlave, apfelchip);
   printm("Doing Autocalibration of apfel chip %d (id:%d) on sfp:%d, board:%d...",apfelchip,apid, fSFP, fSlave);
@@ -2490,6 +2524,24 @@ void ApfelGui::DoAutoCalibrate(uint8_t apfelchip)
   printm("...done!\n");
   //Note: The auto calibration of the APFELchip takes not more that 8 ms.
 
+  // here get registers of apfelchip only and refresh
+   EnableI2C ();
+   GetDACs(apfelchip);
+   DisableI2C ();
+   RefreshDAC(apfelchip);
+   BoardSetup& theSetup=fSetup[fSFP].at (fSlave);
+   for(int dac=0; dac<APFEL_NUMDACS; ++dac)
+   {
+     int chan=theSetup.EvaluateADCChannel(apfelchip, dac);
+     //std::cout << "DoAutoCalibrate(" << (int) apfelchip <<"):  dac:"<<dac<<", chan=" << chan<< std::endl;
+     if(chan>=0) {
+       // only refresh adc channels once for active dacs
+       RefreshADC(chan);
+       if(!theSetup.fHighGainOutput)  RefreshADC(chan+1); // kludge to cover both adc channels set by dac2 for gain 1
+     }
+   }
+
+  QApplication::restoreOverrideCursor ();
 }
 
 
