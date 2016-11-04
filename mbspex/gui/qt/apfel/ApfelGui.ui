@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1071</width>
-    <height>788</height>
+    <width>1099</width>
+    <height>781</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,8 +30,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>1049</width>
-        <height>641</height>
+        <width>1077</width>
+        <height>634</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_28">
@@ -285,8 +285,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>1027</width>
-            <height>550</height>
+            <width>1055</width>
+            <height>543</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_29">
@@ -317,7 +317,7 @@
            <item row="1" column="0">
             <widget class="QTabWidget" name="ApfelTabWidget">
              <property name="currentIndex">
-              <number>3</number>
+              <number>0</number>
              </property>
              <widget class="QWidget" name="OutputTab">
               <attribute name="title">
@@ -940,7 +940,7 @@
               <attribute name="title">
                <string>DACs</string>
               </attribute>
-              <layout class="QGridLayout" name="gridLayout_15">
+              <layout class="QGridLayout" name="gridLayout_14">
                <item row="0" column="0">
                 <widget class="QTabWidget" name="ApfelDACTabset">
                  <property name="tabPosition">
@@ -953,7 +953,7 @@
                   <attribute name="title">
                    <string>APFEL 1-4</string>
                   </attribute>
-                  <layout class="QGridLayout" name="gridLayout_14">
+                  <layout class="QGridLayout" name="gridLayout_15">
                    <item row="0" column="0">
                     <widget class="QGroupBox" name="ApfelBox1">
                      <property name="title">
@@ -973,6 +973,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel1_DACSlider_1">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -1001,6 +1007,27 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel1_DAClineEdit_1">
+                            <property name="enabled">
+                             <bool>true</bool>
+                            </property>
+                            <property name="sizePolicy">
+                             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                              <horstretch>0</horstretch>
+                              <verstretch>0</verstretch>
+                             </sizepolicy>
+                            </property>
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
+                            <property name="maximumSize">
+                             <size>
+                              <width>100</width>
+                              <height>16777215</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -1019,6 +1046,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel1_DACSlider_2">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 2 high</string>
                             </property>
@@ -1047,6 +1080,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel1_DAClineEdit_2">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -1065,6 +1104,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel1_DACSlider_3">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1093,6 +1138,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel1_DAClineEdit_3">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1111,6 +1162,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel1_DACSlider_4">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1139,6 +1196,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel1_DAClineEdit_4">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1195,6 +1258,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel2_DACSlider_1">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -1223,6 +1292,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel2_DAClineEdit_1">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -1241,6 +1316,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel2_DACSlider_2">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 2 high</string>
                             </property>
@@ -1269,6 +1350,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel2_DAClineEdit_2">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -1287,6 +1374,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel2_DACSlider_3">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1315,6 +1408,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel2_DAClineEdit_3">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1333,6 +1432,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel2_DACSlider_4">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1361,6 +1466,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel2_DAClineEdit_4">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1417,6 +1528,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel3_DACSlider_1">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -1445,6 +1562,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel3_DAClineEdit_1">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -1463,6 +1586,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel3_DACSlider_2">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 2 high</string>
                             </property>
@@ -1491,6 +1620,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel3_DAClineEdit_2">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -1509,6 +1644,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel3_DACSlider_3">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1537,6 +1678,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel3_DAClineEdit_3">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1555,6 +1702,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel3_DACSlider_4">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1583,6 +1736,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel3_DAClineEdit_4">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1639,6 +1798,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel4_DACSlider_1">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -1667,6 +1832,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel4_DAClineEdit_1">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -1685,6 +1856,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel4_DACSlider_2">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 2 high</string>
                             </property>
@@ -1713,6 +1890,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel4_DAClineEdit_2">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -1731,6 +1914,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel4_DACSlider_3">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1759,6 +1948,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel4_DAClineEdit_3">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1777,6 +1972,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel4_DACSlider_4">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1805,6 +2006,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel4_DAClineEdit_4">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1868,6 +2075,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel5_DACSlider_1">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -1896,6 +2109,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel5_DAClineEdit_1">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -1914,6 +2133,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel5_DACSlider_2">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 2 high</string>
                             </property>
@@ -1942,6 +2167,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel5_DAClineEdit_2">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -1960,6 +2191,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel5_DACSlider_3">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -1988,6 +2225,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel5_DAClineEdit_3">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -2006,6 +2249,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel5_DACSlider_4">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -2034,6 +2283,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel5_DAClineEdit_4">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -2090,6 +2345,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel6_DACSlider_1">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -2118,6 +2379,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel6_DAClineEdit_1">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -2136,6 +2403,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel6_DACSlider_2">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 2 high</string>
                             </property>
@@ -2164,6 +2437,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel6_DAClineEdit_2">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -2182,6 +2461,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel6_DACSlider_3">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -2210,6 +2495,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel6_DAClineEdit_3">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -2228,6 +2519,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel6_DACSlider_4">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -2256,6 +2553,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel6_DAClineEdit_4">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -2312,6 +2615,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel7_DACSlider_1">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -2340,6 +2649,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel7_DAClineEdit_1">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -2358,6 +2673,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel7_DACSlider_2">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 2 high</string>
                             </property>
@@ -2386,6 +2707,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel7_DAClineEdit_2">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -2404,6 +2731,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel7_DACSlider_3">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -2432,6 +2765,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel7_DAClineEdit_3">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -2450,6 +2789,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel7_DACSlider_4">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -2478,6 +2823,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel7_DAClineEdit_4">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -2534,6 +2885,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel8_DACSlider_1">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -2562,6 +2919,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel8_DAClineEdit_1">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -2580,6 +2943,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel8_DACSlider_2">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 2 high</string>
                             </property>
@@ -2608,6 +2977,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel8_DAClineEdit_2">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1 high</string>
                             </property>
@@ -2626,6 +3001,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel8_DACSlider_3">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -2654,6 +3035,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel8_DAClineEdit_3">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -2672,6 +3059,12 @@
                           </item>
                           <item>
                            <widget class="QSlider" name="Apfel8_DACSlider_4">
+                            <property name="minimumSize">
+                             <size>
+                              <width>120</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -2700,6 +3093,12 @@
                           </item>
                           <item>
                            <widget class="QLineEdit" name="Apfel8_DAClineEdit_4">
+                            <property name="minimumSize">
+                             <size>
+                              <width>50</width>
+                              <height>0</height>
+                             </size>
+                            </property>
                             <property name="toolTip">
                              <string>Channel 1+2 low</string>
                             </property>
@@ -2765,6 +3164,16 @@
                     </size>
                    </property>
                   </spacer>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="InverseMappingCheckBox">
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check this button &lt;/p&gt;&lt;p&gt;if APFEL addon cards are mounted in reverse order on board&lt;/p&gt;&lt;p&gt;(APFEL9-12 first, APFEL 1-4 second) &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                   <property name="text">
+                    <string>Revert APFEL PCB  order</string>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </item>
@@ -3366,7 +3775,7 @@
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
-                     <width>188</width>
+                     <width>148</width>
                      <height>20</height>
                     </size>
                    </property>
@@ -3381,6 +3790,26 @@
                     <enum>QFrame::Raised</enum>
                    </property>
                    <layout class="QHBoxLayout" name="horizontalLayout_4">
+                    <item>
+                     <widget class="QPushButton" name="CalibrateADCButton">
+                      <property name="toolTip">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Press this button to calibrate the DAC sliders for selected FEBEX channels&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                      <property name="text">
+                       <string>Calibrate</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="CalibrateResetButton">
+                      <property name="toolTip">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reset DAC slider calibration for selected FEBEX channels to defaults (linear falling over complete range)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                      <property name="text">
+                       <string>Cal.Reset</string>
+                      </property>
+                     </widget>
+                    </item>
                     <item>
                      <widget class="QPushButton" name="AutoAdjustButton">
                       <property name="enabled">
@@ -4517,7 +4946,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>1049</width>
+        <width>1077</width>
         <height>115</height>
        </rect>
       </property>

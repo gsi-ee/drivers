@@ -41,7 +41,6 @@ struct pex_sfp_links{
 #define GOS_I2C_DWR  0x208010  // i2c data write reg.   addr
 #define GOS_I2C_DRR1 0x208020  // i2c data read  reg. 1 addr
 
-
 /** number of apfel chips on each slave board*/
 #define APFEL_NUMCHIPS 8
 
@@ -115,9 +114,17 @@ struct pex_sfp_links{
 /** 10 bit registers for apfeldac settings:*/
 #define APFEL_DAC_MAXVALUE 0x3ff
 
+
+/** Calibration variation of DAC:*/
+#define APFEL_DAC_DELTACALIB 2
+
+
 /** adress to read actual adc value. adc id and channel must be
  * written to this address first*/
 #define APFEL_ADC_PORT  0x20001c
+
+/** 14 bit registers for apfeldac settings:*/
+#define APFEL_ADC_MAXVALUE 0x3fff
 
 /** number of adc units per febex*/
 #define APFEL_ADC_NUMADC 2
@@ -127,14 +134,15 @@ struct pex_sfp_links{
 
 
 /** total number of channels on febex*/
-#define APFEL_CH 16
+#define APFEL_ADC_CHANNELS 16
 
 
 /* number of samples to evaluate average adc baseline value*/
 #define APFEL_ADC_BASELINESAMPLES 3
 
 
-
+/** comment the following if apfel gain 1 dac is not inverted anymore TODO!*/
+#define APFEL_GAIN1_INVERTED 1
 
 
 
@@ -222,13 +230,14 @@ struct pex_sfp_links{
 #define ASSERT_APFEL_VALID(X)   if(X<0 || X>=APFEL_NUMCHIPS) return -1;
 #define ASSERT_DAC_VALID(X)   if(X<0 || X>=APFEL_NUMDACS) return -1;
 #define ASSERT_CHAN_VALID(X)   if(X<0 || X>=APFEL_NUMCHANS) return -1;
+#define ASSERT_FEBCHAN_VALID(X)   if(X<0 || X>=APFEL_ADC_CHANNELS) return -1;
 
 
-/** this is a class (structure) to remember the previous setup read, and the
- * next setup to apply on the currently selected febex device:*/
+/** this is a class (structure) to remember the setup of individual APFEL chip*/
 class ApfelSetup
 {
-public:
+
+private:
 
 
   /** the address id of this apfel chip on the board*/
@@ -247,8 +256,9 @@ public:
   bool fTestPulsPositive;
 
 
-  /** TODO: probably keep the real adc values also here and display them...*/
 
+
+public:
 
   /* all initialization here:*/
   ApfelSetup ():fAddressID(0)
@@ -336,11 +346,95 @@ public:
 
 };
 
+/** this structure contains DAC calibration curve parameters for each febex ADC channel*/
+class GainSetup
+{
+private:
+
+  double fDAC_ADC_Slope;
+  double fDAC_0;
+
+public:
+
+  GainSetup(): fDAC_ADC_Slope(1.0), fDAC_0(0)
+  {
+    ResetCalibration();
+  }
+
+  void ResetCalibration(bool positive=true)
+  {
+    if(positive)
+    {
+      SetSlope(-1.0 * (double) APFEL_DAC_MAXVALUE/ (double) APFEL_ADC_MAXVALUE);
+      SetD0(APFEL_DAC_MAXVALUE );
+    }
+    else
+    {
+      SetSlope((double) APFEL_DAC_MAXVALUE/ (double) APFEL_ADC_MAXVALUE);
+      SetD0(0);
+    }
+    //DumpCalibration();
+  }
+  void DumpCalibration()
+  {
+    printm("dDAC/dADC=%f (DACunit/ADCvalue), DAC0=%f DACunits",fDAC_ADC_Slope,fDAC_0);
+  }
 
 
+  void SetSlope(double val)
+  {
+    fDAC_ADC_Slope=val;
+  }
+
+  void SetD0(double val)
+   {
+     fDAC_0=val;
+   }
+
+  /** function returns dac value to set for relative height of adc baseline in permille*/
+  int GetDACValue(double ADC_permille)
+  {
+    double adctarget=(ADC_permille* ((double) APFEL_ADC_MAXVALUE) / 1000.0);
+    int dacsetting= adctarget * fDAC_ADC_Slope + fDAC_0;
+    //std::cout << "GetDACValue: dacsetting="<<dacsetting<<", adctarget="<<adctarget<<", permille="<<ADC_permille<< std::endl;
+    if(dacsetting<0) dacsetting=0;
+    if(dacsetting>APFEL_DAC_MAXVALUE) dacsetting=APFEL_DAC_MAXVALUE;
+    return dacsetting;
+  }
+
+  int GetADCPermille(double DAC_value)
+   {
+      double adctarget=(DAC_value - fDAC_0)/fDAC_ADC_Slope;
+      if(adctarget<0) adctarget=0;
+      if(adctarget>APFEL_ADC_MAXVALUE) adctarget=APFEL_ADC_MAXVALUE;
+      double adcpermille= 1000.0 * adctarget/APFEL_ADC_MAXVALUE;
+      //std::cout << "GetADCPermille: adctarget="<<adctarget<<", value="<<DAC_value<<", permille="<<adcpermille<< std::endl;
+      return adcpermille;
+   }
+
+
+  /** calculate and set calibration curve for measured variations deltaADC and deltaDAC around
+   * autocalibrated DAC setting valDAC*/
+  void EvaluateCalibration(double deltaDAC, double deltaADC, double valDAC, double valADC)
+  {
+    if(deltaADC==0)deltaADC=1;
+    fDAC_ADC_Slope= deltaDAC/deltaADC;
+    fDAC_0 = valADC * fDAC_ADC_Slope + valDAC;
+    //std::cout << "EvaluateCalibration("<<deltaDAC<<", "<<deltaADC<<", "<<valDAC<<", "<<valADC<<") - "<< std::endl;
+    printm("EvaluateCalibration(dDAC=%f, dADC=%f, DAC1=%f, ADC1=%f",deltaDAC,deltaADC,valDAC,valADC);
+    DumpCalibration();
+    //std::cout << "   fDAC_ADC_Slope="<<fDAC_ADC_Slope<<", fDAC_0="<<fDAC_0<< std::endl;
+  }
+
+};
+
+
+
+/** the setup of the apfel/febex slave board*/
 class BoardSetup
 {
-public:
+
+private:
 
   /** enable apfel input */
   bool fUseApfel;
@@ -351,20 +445,43 @@ public:
   /** use stretcher in output (true) or not (false)*/
   bool fStretcher;
 
-
-
+ /** property for regular or inverse mounts of apfel addon boards*/
+ bool fRegularMapping;
 
   /** setups of each apfel chip on board*/
   ApfelSetup fApfel[APFEL_NUMCHIPS];
 
+  /** calibration (adc/dac) for gain32*/
+  GainSetup fGain_32[APFEL_ADC_CHANNELS];
 
-  BoardSetup (): fUseApfel(true),fHighGainOutput(true),fStretcher(false)
+  /** calibration (adc/dac) for gain16*/
+   GainSetup fGain_16[APFEL_ADC_CHANNELS];
+
+
+   /** calibration (adc/dac) for gain1*/
+   GainSetup fGain_1[APFEL_ADC_CHANNELS];
+
+public:
+
+  BoardSetup (): fUseApfel(true),fHighGainOutput(true),fStretcher(false),fRegularMapping(true)
    {
       SetApfelMapping(true);
+#ifdef APFEL_GAIN1_INVERTED
+      ResetGain1Calibration();
+#endif
    }
+  bool IsApfelInUse() {return fUseApfel;}
+  void SetApfelInUse(bool on){fUseApfel=on;}
+  bool IsHighGain() {return fHighGainOutput;}
+  void SetHighGain(bool on) {fHighGainOutput=on;}
+  bool IsStretcherInUse() {return fStretcher;}
+  void SetStretcherInUse(bool on) {fStretcher=on;}
+  bool IsRegularMapping() {return fRegularMapping;}
 
   void SetApfelMapping(bool regular=true)
     {
+      //std::cout << "SetApfelMapping("<<regular<<"):"<< std::endl;
+      fRegularMapping=regular;
       for(int i=0; i<APFEL_NUMCHIPS; ++i)
         {
           uint8_t add=0;
@@ -379,9 +496,127 @@ public:
           }
 
           fApfel[i].SetAddressID(add+1); // shift to id number 1...12 already here!
+          //std::cout << "  APFEL["<<i<<"] <- "<<add+1<< std::endl;
         }
+
     }
 
+
+  void ResetGain1Calibration()
+  {
+    // workaround to account inverse polarity of gain 1 dac-adc by default
+    for(int ch=0; ch<APFEL_ADC_CHANNELS; ++ch)
+    {
+      fGain_1[ch].ResetCalibration(false);
+    }
+  }
+
+  int EvaluateCalibration(int gain, int febexchannel, double deltaDAC, double deltaADC, double valDAC, double valADC)
+  {
+    ASSERT_FEBCHAN_VALID(febexchannel);
+    std::cout << "EvaluateCalibration for channel "<<febexchannel<<", gain:"<< gain << std::endl;
+    switch(gain)
+    {
+      case 1:
+        fGain_1[febexchannel].EvaluateCalibration(deltaDAC, deltaADC, valDAC, valADC);
+      break;
+      case 16:
+        fGain_16[febexchannel].EvaluateCalibration(deltaDAC, deltaADC, valDAC, valADC);
+      break;
+      case 32:
+      default:
+        fGain_32[febexchannel].EvaluateCalibration(deltaDAC, deltaADC, valDAC, valADC);
+        break;
+    };
+    return 0;
+  }
+
+  int ResetCalibration(int gain, int febexchannel)
+  {
+    ASSERT_FEBCHAN_VALID(febexchannel);
+       std::cout << "ResetCalibration for channel "<<febexchannel<<", gain:"<< gain << std::endl;
+       switch(gain)
+       {
+         case 1:
+#ifdef APFEL_GAIN1_INVERTED
+           fGain_1[febexchannel].ResetCalibration(false);
+#else
+           fGain_1[febexchannel].ResetCalibration();
+#endif
+         break;
+         case 16:
+           fGain_16[febexchannel].ResetCalibration();
+         break;
+         case 32:
+         default:
+           fGain_32[febexchannel].ResetCalibration();
+           break;
+       };
+       return 0;
+  }
+
+  int DumpCalibration(int gain, int febexchannel)
+    {
+      ASSERT_FEBCHAN_VALID(febexchannel);
+         printm("DumpCalibration for channel %d gain %d:\t",febexchannel,gain);
+         switch(gain)
+         {
+           case 1:
+             fGain_1[febexchannel].DumpCalibration();
+           break;
+           case 16:
+             fGain_16[febexchannel].DumpCalibration();
+           break;
+           case 32:
+           default:
+             fGain_32[febexchannel].DumpCalibration();
+             break;
+         };
+         return 0;
+    }
+
+
+  int GetDACValue (int gain, int febexchannel, double ADC_permille)
+  {
+    ASSERT_FEBCHAN_VALID(febexchannel);
+    int rev = 0;
+    switch (gain)
+    {
+      case 1:
+        rev = fGain_1[febexchannel].GetDACValue (ADC_permille);
+        break;
+      case 16:
+        rev = fGain_16[febexchannel].GetDACValue (ADC_permille);
+        break;
+      case 32:
+      default:
+        rev = fGain_32[febexchannel].GetDACValue (ADC_permille);
+        break;
+    };
+    return rev;
+
+  }
+
+  int GetADCPermille (int gain, int febexchannel, double DAC_value)
+   {
+     ASSERT_FEBCHAN_VALID(febexchannel);
+     int rev = 0;
+     switch (gain)
+     {
+       case 1:
+         rev = fGain_1[febexchannel].GetADCPermille(DAC_value);
+         break;
+       case 16:
+         rev = fGain_16[febexchannel].GetADCPermille(DAC_value);
+         break;
+       case 32:
+       default:
+         rev = fGain_32[febexchannel].GetADCPermille(DAC_value);
+         break;
+     };
+     return rev;
+
+   }
 
   /** convert febex channel to DAC indices*/
           void EvaluateDACIndices(int febexchannel, int& apfel, int& dac)
@@ -428,22 +663,30 @@ public:
 
 
      /** get absolute DAC setting from relative baseline slider*/
-     int EvaluateDACvalueAbsolute(int permillevalue)
+     int EvaluateDACvalueAbsolute(int permillevalue, int febexchannel=-1, int gain=1)
      {
-         // TODO: here put calibration curve ADC->DACfor each channel
-
-
-         int value=0x3FF-round((permillevalue* ((double) 0x3FF) / 1000.0));
-         //int value=round((permillevalue* ((double) 0x3FF) / 1000.0));
+         int value=APFEL_DAC_MAXVALUE-round((permillevalue* ((double) APFEL_DAC_MAXVALUE) / 1000.0));
+         // default: linear interpolation of DAC for complete slider range, note inverted DAC polarity effect on baseline
+         if(febexchannel>=0)
+         {
+           // if channel specified, use calibration from measurements:
+           value=GetDACValue(gain, febexchannel, permillevalue);
+         }
          return value;
      }
 
-     int EvaluateDACvaluePermille(int value)
+     /** get relative ADC slider value from given dac setting*/
+     int EvaluateADCvaluePermille(int value, int febexchannel=-1, int gain=1)
      {
-        // TODO: inverse DAC to ADC calibration
 
-       //int permille= round (1000.0 * ((double)value/ (double) 0x3FF));
-       int permille= 1000 - round (1000.0 * ((double)value/ (double) 0x3FF));
+       int permille= 1000 - round (1000.0 * ((double)value/ (double) APFEL_DAC_MAXVALUE));
+       // default: linear interpolation of DAC for complete slider range, note inverted DAC polarity effect on baseline
+       if(febexchannel>=0)
+           {
+                  // if channel specified, use calibration from measurements:
+             permille=GetADCPermille(gain, febexchannel, value);
+
+           }
        return permille;
      }
 
@@ -523,8 +766,23 @@ public:
 
     }
 
-
-
+    /** evaluate gain factor from setup. returns 1, 16 or 32*/
+    int GetGain(int apfel, int dac)
+    {
+    int gain=0;
+     if(!IsHighGain())
+     {
+       gain=1;
+     }
+     else
+     {
+       if(GetLowGain(apfel, dac)) // for high gain, apfel channel index is same as dac index
+         gain=16;
+       else
+         gain=32;
+     }
+    return gain;
+    }
 
 };
 
@@ -641,8 +899,13 @@ protected:
   /** udpate display of dac settings for apfel chip with given index */
   void RefreshDAC(int apfel);
 
-  /** udpate display of adc settings of channel */
-   void RefreshADC(int channel);
+  /** udpate display of adc value of channel. specify gain to set relative dac slider from calibration */
+   void RefreshADC_channel(int channel, int gain);
+
+   /** udpate display of adc  that currently belongs to apfel and dac indices*/
+   void RefreshADC_Apfel(int apfel, int dac);
+
+
 
 //  /** update febex device index display*/
   void RefreshStatus ();
@@ -682,6 +945,9 @@ protected:
   void SetIOSwitch();
 
 
+  /** set apfel addon boards to inverted mount mode
+   * (apfel9-12 first, apfel1-4 second) */
+  void SetInverseMapping(int on);
 
 
   /** get register contents to status structure*/
@@ -772,6 +1038,10 @@ protected:
   /** dump current ADC values of currently set APFEL*/
   void DumpADCs();
 
+
+  /** *dump dac2 channel calibrations */
+  void DumpCalibrations();
+
   /** open configuration file for writing*/
   int OpenConfigFile(const QString& fname);
 
@@ -844,6 +1114,24 @@ protected:
   /** Adjust baselines of the currently selected febex device.*/
   void AutoAdjust();
 
+
+  /** Automatic calibration of DAC->ADC relation for febex channel.
+   * Will AutoCalibrate corresponding apfel first*/
+    int CalibrateADC(int channel);
+
+    /** Calibrate DAC->ADC for ADC channels with set checkbox checked.*/
+    void CalibrateSelectedADCs();
+
+    /** Reset calibration of DAC->ADC relation for febex channel.
+      * Default is linear falling curve betwen adc and dac*/
+    int CalibrateResetADC(int channel);
+
+    /** Reset Calibration  DAC->ADC for ADC channels with set checkbox checked.*/
+    void CalibrateResetSelectedADCs();
+
+
+
+
   void DebugTextWindow (const char*txt)
   {
       AppendTextWindow (txt);
@@ -873,6 +1161,8 @@ public slots:
   virtual void ConfigBtn_clicked ();
   virtual void SaveConfigBtn_clicked ();
   virtual void AutoAdjustBtn_clicked ();
+  virtual void CalibrateADCBtn_clicked();
+  virtual void CalibrateResetBtn_clicked();
   virtual void DebugBox_changed (int on);
   virtual void HexBox_changed(int on);
   virtual void Slave_changed(int val);
@@ -1002,7 +1292,7 @@ public slots:
 
   virtual void SwitchChanged();
 
-
+  virtual void InverseMapping_changed (int on);
 };
 
 #endif
