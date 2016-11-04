@@ -445,7 +445,14 @@ int goscmd_configure (struct gosip_cmd* com)
     theConfig.param[numconfs].value = com->value;
     theConfig.numpars = ++numconfs;
     if (numconfs >= PEX_MAXCONFIG_VALS)
-      break;
+    {
+        // JAM 2016: workaround for configurations above 60 entries:
+        // need to send it in separate chunks
+        rev = mbspex_slave_config (com->fd_pex, &theConfig);
+        if(rev) break;
+        numconfs = 0; // fill next config bundle
+      // break;
+    }
 #else
     if ((com->command == GOSIP_SETBIT) || (com->command == GOSIP_CLEARBIT))
     {
@@ -664,7 +671,7 @@ void goscmd_usage (const char *progname)
   printf ("***************************************************************************\n");
 
   printf (" %s for mbspex library  \n", progname);
-  printf (" v0.42 13-Jun-2014 by JAM (j.adamczewski@gsi.de)\n");
+  printf (" v0.4242 4-Nov-2016 by JAM (j.adamczewski@gsi.de)\n");
   printf ("***************************************************************************\n");
   printf (
       "  usage: %s [-h|-z] [[-i|-r|-w|-s|-u] [-b] | [-c|-v FILE] [-n DEVICE |-d|-x] sfp slave [address [value [words]|[words]]]] \n",
