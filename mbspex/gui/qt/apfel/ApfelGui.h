@@ -100,7 +100,10 @@ struct pex_sfp_links{
  * [1] - 0: gain 1, 1: gain16/32/
  * [2] - 0: no stretcher, 1: stretcher
  * */
-#define APFEL_IO_CONTROL 0x1b000000
+#define APFEL_IO_CONTROL_WR 0x1b000000
+
+/** read back control register bits here:*/
+#define APFEL_IO_CONTROL_RD 0x95000000
 
 
 #define APFEL_SW_NOINPUT  (1<<0)

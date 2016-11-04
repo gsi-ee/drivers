@@ -1105,7 +1105,7 @@ void ApfelGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "ApfelGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.866 of 4-November-2016 by JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.867 of 4-November-2016 by JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -2700,7 +2700,7 @@ void ApfelGui::DoAutoCalibrate(uint8_t apfelchip)
 
 void ApfelGui::SetSwitches(bool useApfel, bool useHighGain, bool useStretcher)
 {
-  int dat=APFEL_IO_CONTROL;
+  int dat=APFEL_IO_CONTROL_WR;
   int mask=0;
   if(!useApfel)         mask |= APFEL_SW_NOINPUT;
   if(!useHighGain)       mask |= APFEL_SW_HIGAIN;
@@ -2710,14 +2710,14 @@ void ApfelGui::SetSwitches(bool useApfel, bool useHighGain, bool useStretcher)
   dat=APFEL_IO_SET;
   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 
-// for the moment disable check, read back mask is inconsistent although gain switching works?
-  usleep(1000);
+  // read back switches
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, APFEL_IO_CONTROL_RD);
   int val=ReadGosip(fSFP, fSlave,GOS_I2C_DRR1);
-  int swmask=((val>>9) & 0x7);
-  printm("SetInputSwitch mask=0x%x, read back switch mask=0x%x", mask, swmask);
-//  if (((swmask & mask) != mask))
-//      printm("#Error SetInputSwitch(apfel=%d, high=%d, stretch=%d) - read back switch mask is 0x%x",
-//          useApfel, useHighGain, useStretcher,swmask);
+  int swmask=((val>>12) & 0x7);
+  //printm("SetInputSwitch mask=0x%x, read back switch mask=0x%x", mask, swmask);
+  if (((swmask & mask) != mask))
+      printm("#Error SetInputSwitch(apfel=%d, high=%d, stretch=%d) - read back switch mask is 0x%x",
+          useApfel, useHighGain, useStretcher,swmask);
   // todo: advanced error handling?
 
 }
