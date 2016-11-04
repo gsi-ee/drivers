@@ -480,7 +480,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
   show ();
 
 
-  // start with preffered situation:
+  // start with preferred situation:
   ShowBtn_clicked();
   checkBox_AA->setChecked (true);
 
@@ -979,7 +979,7 @@ int ApfelGui::CalibrateADC(int channel)
   // shift back to middle of calibration:
   WriteDAC_ApfelI2c (apfel, dac, valDAC);
   DisableI2C ();
-  printm("--- Calibrated DAC->ADC slider for sfp:%d board:%d channel:%d apfel:%d dac:%d -",fSFP, fSlave,channel, apfel, dac);
+  printm("--- Calibrated DAC->ADC slider for sfp:%d board:%d channel:%d apfel:%d dac:%d -",fSFP, fSlave, channel, apfel, dac);
   theSetup.EvaluateCalibration(gain, channel, deltaDAC, deltaADC, valDAC, valADC);
 
   // finally, refresh display of currently calibrated adc channel:
@@ -989,12 +989,13 @@ int ApfelGui::CalibrateADC(int channel)
   valADC=  AcquireBaselineSample(channel);
   fADCLineEdit[channel]->setText (pre + text.setNum (valADC, fNumberBase));
   RefreshStatus ();
+  return 0;
 }
 
 
 void ApfelGui::CalibrateResetBtn_clicked()
 {
-  std::cout <<"CalibrateADCBtn_clicked"<< std::endl;
+    //std::cout <<"CalibrateResetBtn_clicked"<< std::endl;
     EvaluateSlave ();
     QApplication::setOverrideCursor (Qt::WaitCursor);
     APFEL_BROADCAST_ACTION(CalibrateResetSelectedADCs());
@@ -1016,7 +1017,6 @@ void ApfelGui::CalibrateResetSelectedADCs()
     }
 }
 
-
 int ApfelGui::CalibrateResetADC(int channel)
 {
   BoardSetup& theSetup=fSetup[fSFP].at (fSlave);
@@ -1025,8 +1025,8 @@ int ApfelGui::CalibrateResetADC(int channel)
  theSetup.EvaluateDACIndices(channel, apfel, dac);
  int gain=theSetup.GetGain(apfel,dac);
  theSetup.ResetCalibration(gain,channel);
- printm("--- Reset Calibration of DAC->ADC slider for sfp:%d board:%d channel:%d apfel:%d dac:%d",fSFP, fSlave,channel);
-
+ printm("--- Reset Calibration of DAC->ADC slider for sfp:%d board:%d channel:%d apfel:%d dac:%d",fSFP, fSlave, channel, apfel, dac);
+ return 0;
 
 }
 
@@ -1105,7 +1105,7 @@ void ApfelGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "ApfelGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.867 of 4-November-2016 by JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.900 of 4-November-2016 by JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -2631,7 +2631,7 @@ void ApfelGui::SetGain(uint8_t apfelchip, uint8_t chan, bool useGain16)
 void ApfelGui::SetTestPulse(uint8_t apfelchip, bool on, bool chan1, bool chan2, bool positive)
 {
   int apid=GetApfelId(fSFP, fSlave, apfelchip);
-  std::cout << "SetTestPulse(" << (int) apfelchip <<", id:"<<apid<<"): on=" << on << ", ch1="<<chan1<<", ch2="<<chan2 << std::endl;
+  //std::cout << "SetTestPulse(" << (int) apfelchip <<", id:"<<apid<<"): on=" << on << ", ch1="<<chan1<<", ch2="<<chan2 << std::endl;
 
   int dat=0;
   int apfelid = apid & 0xFF;

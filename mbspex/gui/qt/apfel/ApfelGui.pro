@@ -7,7 +7,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 
 CONFIG += debug qt warn_off thread
 
-SOURCES += main.cpp ApfelGui.cpp 
+SOURCES += main.cpp ApfelGui.cpp ApfelSetup.cpp
 
 HEADERS += ApfelGui.h 
 
