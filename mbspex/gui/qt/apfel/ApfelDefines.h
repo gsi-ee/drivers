@@ -6,7 +6,8 @@
 #define APFEL_NEED_ENABLEI2C 1
 
 /** uncomment this to initialize apfel frontends with some example config:*/
-//#define DO_APFEL_INIT 1
+#define DO_APFEL_INIT 1
+
 #define GOS_I2C_DWR  0x208010  // i2c data write reg.   addr
 #define GOS_I2C_DRR1 0x208020  // i2c data read  reg. 1 addr
 /** number of apfel chips on each slave board*/
@@ -77,7 +78,21 @@
 #define APFEL_DAC_MAXVALUE 0x3ff
 
 /** Calibration variation of DAC:*/
+//#define APFEL_DAC_DELTACALIB 2
+
+/** enable this define to make local variation around calib point*/
+//#define APFEL_DAC_LOCALCALIB 1
+
+
 #define APFEL_DAC_DELTACALIB 2
+
+#define APFEL_DAC_DELTASTEP 1
+
+/** ADC saturation value (end of linear calibration range)*/
+#define APFEL_ADC_MAXSATURATION 15500
+
+#define APFEL_ADC_SATURATIONDELTA 100
+
 
 /** adress to read actual adc value. adc id and channel must be
  * written to this address first*/
@@ -100,6 +115,10 @@
 
 /** comment the following if apfel gain 1 dac is not inverted anymore TODO!*/
 #define APFEL_GAIN1_INVERTED 1
+
+
+/** number of samples read out for each channel*/
+#define APFEL_ADC_SAMPLEVALUES 200
 
 //////////////////////////////////////////////////////////////////////7
 

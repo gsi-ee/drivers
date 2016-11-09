@@ -56,8 +56,22 @@ protected:
   /** auxiliary references to spinbox for baseline adjustment view*/
   QSpinBox* fDACSpinBoxes[16];
 
+
+
   /** auxiliary references to adc baseline display for refresh view*/
   QLineEdit* fADCLineEdit[16];
+
+
+  /** auxiliary references to checkboxes for adc samples */
+  QCheckBox* fSamplingBoxes[16];
+
+  /** auxiliary references to adc sample mean display */
+  QLineEdit* fSamplingMeanLineEdit[16];
+
+   /** auxiliary references to adc sample sigma display */
+   QLineEdit* fSamplingSigmaLineEdit[16];
+
+
 
 
   /** auxiliary references to dac value display for refresh view*/
@@ -75,6 +89,9 @@ protected:
 
 
   QComboBox* fApfelGainCombo[APFEL_NUMCHIPS][APFEL_NUMCHANS];
+
+
+  KPlotWidget* fPlotWidget[16];
 
 
 
@@ -127,6 +144,10 @@ protected:
 
    /** udpate display of adc  that currently belongs to apfel and dac indices*/
    void RefreshADC_Apfel(int apfel, int dac);
+
+
+   /** udpate display of most recent adc  sample from chanmnel*/
+   void RefreshLastADCSample(int febexchannel);
 
 
 
@@ -221,8 +242,10 @@ protected:
     int ReadADC_Apfel (uint8_t adc, uint8_t chan);
 
     /** sample adc baseline of global channel febexchan
-     *  by avering over several readouts of ADC. Baseline value is returned.*/
-    int AcquireBaselineSample(uint8_t febexchan);
+     *  by avering over several readouts of ADC.
+     *  numsamples may specify how many samples to average. default is APFEL_ADC_BASELINESAMPLES=3
+     *  Baseline value is returned.*/
+    int AcquireBaselineSample(uint8_t febexchan, int numsamples=-1);
 
 
     /** set gain factor for each apfel channel on board. High gain switch must be enabled for board.
@@ -353,6 +376,24 @@ protected:
     void CalibrateResetSelectedADCs();
 
 
+    /** get a sample from febex readout buffer for specified channel.*/
+    int AcquireSample(int channel);
+
+    /** get sample from fegex readout buffer for ADC channels with acquire checkbox checked.*/
+    void AcquireSelectedSamples();
+
+
+    /** dump most recent acquired adc sample for specified channel */
+    int ShowSample(int channel);
+
+    /** dump most recent acquired adc sample for ADC channels with acquire checkbox checked.*/
+    void ShowSelectedSamples();
+
+    /** zoom into sampled plot*/
+    void ZoomSample(int channel);
+
+    /** show full range of sample plot*/
+    void UnzoomSample(int channel);
 
 
   void DebugTextWindow (const char*txt)
@@ -386,6 +427,16 @@ public slots:
   virtual void AutoAdjustBtn_clicked ();
   virtual void CalibrateADCBtn_clicked();
   virtual void CalibrateResetBtn_clicked();
+
+  virtual void AcquireSamplesBtn_clicked();
+  virtual void DumpSamplesBtn_clicked();
+
+  virtual void ZoomSampleBtn_clicked();
+  virtual void UnzoomSampleBtn_clicked();
+  virtual void RefreshSampleBtn_clicked();
+
+
+
   virtual void DebugBox_changed (int on);
   virtual void HexBox_changed(int on);
   virtual void Slave_changed(int val);
@@ -495,6 +546,7 @@ public slots:
   virtual void PulserChanged_5();
   virtual void PulserChanged_6();
   virtual void PulserChanged_7();
+
 
   virtual void GainChanged_0();
   virtual void GainChanged_1();

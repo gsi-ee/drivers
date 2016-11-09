@@ -82,8 +82,22 @@ class GainSetup
 {
 private:
 
+  /** slope of linear part of calibration*/
   double fDAC_ADC_Slope;
+
+  /** pseudo axis section of linear part of calibration*/
   double fDAC_0;
+
+  /** minimum reasonable DAC value (corresponds to ADC saturation value ~15000)*/
+  double fDAC_min;
+
+  /** maximum reasonable linear DAC value (corresponds to ADC lower offset value fADC_min)*/
+  double fDAC_max;
+
+  /** minimum achievable ADC value (corresponds to DAC maximum value 1024)*/
+  double fADC_min;
+
+
 
 public:
 
@@ -95,17 +109,83 @@ public:
   void SetSlope (double val);
   void SetD0 (double val);
 
+  void SetDACmin (double val);
+  void SetDACmax (double val);
+  void SetADCmin (double val);
+
   /** function returns dac value to set for relative height of adc baseline in permille*/
-  int GetDACValue (double ADC_permille);
+  int CalculateDACValue (double ADC_permille);
 
   /** function returns relative adc baseline in permille for given dac value */
-  int GetADCPermille (double DAC_value);
+  int CalculateADCPermille (double DAC_value);
 
   /** calculate and set calibration curve for measured variations deltaADC and deltaDAC around
    * autocalibrated DAC setting valDAC*/
   void EvaluateCalibration (double deltaDAC, double deltaADC, double valDAC, double valADC);
 
 };
+
+
+/** this structure keeps the most recent baseline sample for a single ADC channel*/
+class AdcSample
+{
+private:
+
+  uint16_t fSample[APFEL_ADC_SAMPLEVALUES];
+
+  /** keep minimum value of current sample set*/
+  uint16_t fMinValue;
+
+  /** keep minimum value of current sample set*/
+  uint16_t fMaxValue;
+
+public:
+
+  AdcSample();
+
+
+  void Reset();
+
+  void SetSample(int index, uint16_t value)
+  {
+    if(index<0 || index>=APFEL_ADC_SAMPLEVALUES) return;
+    fSample[index]=value;
+    if(fMinValue==0 || value<fMinValue) fMinValue=value;
+    if(value>fMaxValue) fMaxValue=value;
+  }
+
+  uint16_t GetSample(int index)
+   {
+     if(index<0 || index>=APFEL_ADC_SAMPLEVALUES) return 0;
+     return (fSample[index]);
+   }
+
+  /** evaluate mean value of sample*/
+  double GetMean();
+
+  /** evaluate sigma value of sample*/
+  double GetSigma();
+
+  uint16_t GetMinimum()
+  {
+    return fMinValue;
+  }
+
+  uint16_t GetMaximum()
+   {
+     return fMaxValue;
+   }
+
+  /** show mean and sigma values. label can be used to specify channel number*/
+  void DumpParameters(int label);
+
+  /** display or dump current sample.  label can be used to specify channel number*/
+  void ShowSample(int label);
+
+
+};
+
+
 
 /** the setup of the apfel/febex slave board*/
 class BoardSetup
@@ -136,6 +216,9 @@ private:
 
   /** calibration (adc/dac) for gain1*/
   GainSetup fGain_1[APFEL_ADC_CHANNELS];
+
+  AdcSample fLastSample[APFEL_ADC_CHANNELS];
+
 
 public:
 
@@ -172,7 +255,15 @@ public:
 
   void SetApfelMapping (bool regular = true);
 
+  /** following functions belong to gain related DAC/ADC calilbration:*/
+
   void ResetGain1Calibration ();
+
+  int SetDACmin (int gain, int febexchannel, double val);
+
+  int SetDACmax (int gain, int febexchannel, double val);
+
+  int SetADCmin (int gain, int febexchannel,double val);
 
   int EvaluateCalibration (int gain, int febexchannel, double deltaDAC, double deltaADC, double valDAC, double valADC);
 
@@ -180,9 +271,11 @@ public:
 
   int DumpCalibration (int gain, int febexchannel);
 
-  int GetDACValue (int gain, int febexchannel, double ADC_permille);
+  /** return calibrated DAC value to set to achieve ADC_permille baseline*/
+  int CalculateDACValue (int gain, int febexchannel, double ADC_permille);
 
-  int GetADCPermille (int gain, int febexchannel, double DAC_value);
+  /** return calibrated ADC_permille baseline from DAC_value set*/
+  int CalculateADCPermille (int gain, int febexchannel, double DAC_value);
 
   /** convert febex channel to apfel and DAC indices*/
   void EvaluateDACIndices (int febexchannel, int& apfel, int& dac);
@@ -224,6 +317,35 @@ public:
 
   /** evaluate gain factor from setup. returns 1, 16 or 32*/
   int GetGain (int apfel, int dac);
+
+  /** clear values and statistics of ADC sample for single febexchannel*/
+  int ResetADCSample(int febexchannel);
+
+  /** set sampled ADC point for single febexchannel. */
+  int SetADCSample(int febexchannel, int index, uint16_t value);
+
+  /** get most recent sampled ADC point for single febexchannel. */
+  uint16_t GetADCSample(int febexchannel, int index);
+
+  /** evaluate mean value of most recent ADC sample for febexchannel*/
+  double GetADCMean(int febexchannel);
+
+  /** evaluate sigma value of most recent ADC sample for febexchannel*/
+  double GetADCSigma(int febexchannel);
+
+  /** get minimum value of most recent ADC sample for febexchannel*/
+   double GetADCMiminum(int febexchannel);
+
+   /** get maximum value of most recent ADC sample for febexchannel*/
+   double GetADCMaximum(int febexchannel);
+
+
+  /** display mean and sigma values on text box*/
+  int DumpADCSamplePars(int febexchannel);
+
+  /** display most recent sample values or curve on text box*/
+  int ShowADCSample(int febexchannel);
+
 
 };
 

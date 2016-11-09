@@ -93,7 +93,7 @@ uint8_t ApfelSetup::GetAddressID ()
 //////// the gain setup and calibration properties:
 
 
-GainSetup::GainSetup(): fDAC_ADC_Slope(1.0), fDAC_0(0)
+GainSetup::GainSetup(): fDAC_ADC_Slope(1.0), fDAC_0(0), fDAC_min(0), fADC_min(0)
  {
    ResetCalibration();
  }
@@ -104,17 +104,24 @@ GainSetup::GainSetup(): fDAC_ADC_Slope(1.0), fDAC_0(0)
    {
      SetSlope(-1.0 * (double) APFEL_DAC_MAXVALUE/ (double) APFEL_ADC_MAXVALUE);
      SetD0(APFEL_DAC_MAXVALUE );
+     SetDACmin(0);
+     SetDACmax(APFEL_DAC_MAXVALUE);
+     SetADCmin(0);
    }
    else
    {
      SetSlope((double) APFEL_DAC_MAXVALUE/ (double) APFEL_ADC_MAXVALUE);
      SetD0(0);
+     SetDACmin(APFEL_DAC_MAXVALUE);
+     SetDACmax(0);
+     SetADCmin(0);
    }
    //DumpCalibration();
  }
  void GainSetup::DumpCalibration()
  {
-   printm("dDAC/dADC=%f (DACunit/ADCvalue), DAC0=%f DACunits",fDAC_ADC_Slope,fDAC_0);
+   printm("dDAC/dADC=%f (DACunit/ADCvalue), DAC0=%f DACunits, DAC_min=%f DACunits, DAC_max=%f DACunits, ADC_min=%f",
+       fDAC_ADC_Slope,fDAC_0,fDAC_min, fDAC_max, fADC_min);
  }
 
 
@@ -128,25 +135,69 @@ GainSetup::GainSetup(): fDAC_ADC_Slope(1.0), fDAC_0(0)
     fDAC_0=val;
   }
 
- /** function returns dac value to set for relative height of adc baseline in permille*/
- int GainSetup::GetDACValue(double ADC_permille)
+
+ void GainSetup::SetDACmin (double val)
  {
-   double adctarget=(ADC_permille* ((double) APFEL_ADC_MAXVALUE) / 1000.0);
-   int dacsetting= adctarget * fDAC_ADC_Slope + fDAC_0;
-   //std::cout << "GetDACValue: dacsetting="<<dacsetting<<", adctarget="<<adctarget<<", permille="<<ADC_permille<< std::endl;
-   if(dacsetting<0) dacsetting=0;
-   if(dacsetting>APFEL_DAC_MAXVALUE) dacsetting=APFEL_DAC_MAXVALUE;
-   return dacsetting;
+   fDAC_min=val;
+ }
+ void GainSetup::SetDACmax (double val)
+  {
+    fDAC_max=val;
+  }
+
+ void GainSetup::SetADCmin (double val)
+ {
+   fADC_min=val;
  }
 
- int GainSetup::GetADCPermille(double DAC_value)
+
+
+ /** function returns dac value to set for relative height of adc baseline in permille*/
+ int GainSetup::CalculateDACValue(double ADC_permille)
+ {
+   double adctarget=(ADC_permille* ((double) APFEL_ADC_MAXVALUE) / 1000.0);// + fADC_min;
+   // take into account fADC_min for permille range?
+   double dacsetting=0;
+
+   if(adctarget<fADC_min)
+      dacsetting=fDAC_max;
+   else
+     dacsetting= adctarget * fDAC_ADC_Slope + fDAC_0;
+
+   if(dacsetting<fDAC_min) dacsetting=fDAC_min;
+
+   if(dacsetting>APFEL_DAC_MAXVALUE) dacsetting=APFEL_DAC_MAXVALUE;
+   //std::cout << "CalculateDACValue: dacsetting="<<dacsetting<<", adctarget="<<adctarget<<", permille="<<ADC_permille<< std::endl;
+
+   return (int) dacsetting;
+ }
+
+ int GainSetup::CalculateADCPermille(double DAC_value)
   {
-     double adctarget=(DAC_value - fDAC_0)/fDAC_ADC_Slope;
+     double adctarget;
+     if(DAC_value<fDAC_min)
+         adctarget=APFEL_ADC_MAXSATURATION;
+     //else if(DAC_value>=APFEL_DAC_MAXVALUE)
+     else if(DAC_value>=fDAC_max)
+       adctarget=fADC_min;
+     else
+       adctarget=(DAC_value -fDAC_0)/fDAC_ADC_Slope;
+
+
      if(adctarget<0) adctarget=0;
      if(adctarget>APFEL_ADC_MAXVALUE) adctarget=APFEL_ADC_MAXVALUE;
+
+
      double adcpermille= 1000.0 * adctarget/APFEL_ADC_MAXVALUE;
-     //std::cout << "GetADCPermille: adctarget="<<adctarget<<", value="<<DAC_value<<", permille="<<adcpermille<< std::endl;
+
+
+
+     // shift ADC_min to zero of slider:
+     //double adcpermille= 1000.0 * (adctarget-fADC_min)/APFEL_ADC_MAXVALUE;
+
+     //std::cout << "CalculateADCPermille: adctarget="<<adctarget<<", value="<<DAC_value<<", permille="<<adcpermille<< std::endl;
      return adcpermille;
+
   }
 
 
@@ -162,6 +213,70 @@ GainSetup::GainSetup(): fDAC_ADC_Slope(1.0), fDAC_0(0)
    DumpCalibration();
    //std::cout << "   fDAC_ADC_Slope="<<fDAC_ADC_Slope<<", fDAC_0="<<fDAC_0<< std::endl;
  }
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+////// container for single channel sample:
+//////////////////////////////////////////
+
+AdcSample::AdcSample()
+ {
+    Reset();
+ }
+
+void AdcSample::Reset()
+{
+  fMinValue=0;
+  fMaxValue=0;
+  for(int i=0;i<APFEL_ADC_SAMPLEVALUES;++i)
+      fSample[i]=0;
+
+}
+
+double AdcSample::GetMean()
+  {
+    double val=0;
+    for(int i=0;i<APFEL_ADC_SAMPLEVALUES;++i)
+    {
+      val+=fSample[i];
+    }
+    val /=APFEL_ADC_SAMPLEVALUES;
+    return val;
+  }
+
+  double AdcSample::GetSigma()
+  {
+    double val=0, sum=0;
+    double mean=GetMean();
+    for(int i=0;i<APFEL_ADC_SAMPLEVALUES;++i)
+        {
+            sum += pow((fSample[i] - mean),2);
+        }
+    val=sqrt(sum/APFEL_ADC_SAMPLEVALUES);
+    return val;
+  }
+
+  void AdcSample::DumpParameters(int label)
+  {
+    printm("AdcSample %d: Mean=%f, Sigma=%f, Minimum=%d, Maximum=%d",label,GetMean(), GetSigma(), GetMinimum(), GetMaximum());
+  }
+
+  void AdcSample::ShowSample(int label)
+  {
+    printm("Show Sample %d:");
+    for(int i=0;i<APFEL_ADC_SAMPLEVALUES;++i)
+        {
+          /* todo: ascii graphics of histogram display?*/
+          printm("i:%d val:%d",i,fSample[i]);
+        }
+
+  }
+
+
+
+
+
+
 
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -209,6 +324,70 @@ GainSetup::GainSetup(): fDAC_ADC_Slope(1.0), fDAC_0(0)
       fGain_1[ch].ResetCalibration(false);
     }
   }
+
+
+int BoardSetup::SetDACmin (int gain, int febexchannel, double val)
+    {
+    ASSERT_FEBCHAN_VALID(febexchannel);
+     switch(gain)
+     {
+       case 1:
+         fGain_1[febexchannel].SetDACmin(val);
+       break;
+       case 16:
+         fGain_16[febexchannel].SetDACmin(val);
+       break;
+       case 32:
+       default:
+         fGain_32[febexchannel].SetDACmin(val);
+         break;
+     };
+     return 0;
+
+    }
+
+int BoardSetup::SetDACmax (int gain, int febexchannel, double val)
+    {
+    ASSERT_FEBCHAN_VALID(febexchannel);
+     switch(gain)
+     {
+       case 1:
+         fGain_1[febexchannel].SetDACmax(val);
+       break;
+       case 16:
+         fGain_16[febexchannel].SetDACmax(val);
+       break;
+       case 32:
+       default:
+         fGain_32[febexchannel].SetDACmax(val);
+         break;
+     };
+     return 0;
+
+    }
+
+
+int BoardSetup::SetADCmin (int gain, int febexchannel,double val)
+    {
+  ASSERT_FEBCHAN_VALID(febexchannel);
+     //std::cout << "EvaluateCalibration for channel "<<febexchannel<<", gain:"<< gain << std::endl;
+     switch(gain)
+     {
+       case 1:
+         fGain_1[febexchannel].SetADCmin(val);
+       break;
+       case 16:
+         fGain_16[febexchannel].SetADCmin(val);
+       break;
+       case 32:
+       default:
+         fGain_32[febexchannel].SetADCmin(val);
+       break;
+     };
+     return 0;
+
+    }
+
 
   int BoardSetup::EvaluateCalibration(int gain, int febexchannel, double deltaDAC, double deltaADC, double valDAC, double valADC)
   {
@@ -275,42 +454,43 @@ GainSetup::GainSetup(): fDAC_ADC_Slope(1.0), fDAC_0(0)
     }
 
 
-  int BoardSetup::GetDACValue (int gain, int febexchannel, double ADC_permille)
+  int BoardSetup::CalculateDACValue (int gain, int febexchannel, double ADC_permille)
   {
     ASSERT_FEBCHAN_VALID(febexchannel);
+    //std::cout << "BoardSetup::GetDACValue for gain:"<<gain<<", channel:"<<febexchannel<<std::endl;
     int rev = 0;
     switch (gain)
     {
       case 1:
-        rev = fGain_1[febexchannel].GetDACValue (ADC_permille);
+        rev = fGain_1[febexchannel].CalculateDACValue(ADC_permille);
         break;
       case 16:
-        rev = fGain_16[febexchannel].GetDACValue (ADC_permille);
+        rev = fGain_16[febexchannel].CalculateDACValue(ADC_permille);
         break;
       case 32:
       default:
-        rev = fGain_32[febexchannel].GetDACValue (ADC_permille);
+        rev = fGain_32[febexchannel].CalculateDACValue(ADC_permille);
         break;
     };
     return rev;
 
   }
 
-  int BoardSetup::GetADCPermille (int gain, int febexchannel, double DAC_value)
+  int BoardSetup::CalculateADCPermille (int gain, int febexchannel, double DAC_value)
    {
      ASSERT_FEBCHAN_VALID(febexchannel);
      int rev = 0;
      switch (gain)
      {
        case 1:
-         rev = fGain_1[febexchannel].GetADCPermille(DAC_value);
+         rev = fGain_1[febexchannel].CalculateADCPermille(DAC_value);
          break;
        case 16:
-         rev = fGain_16[febexchannel].GetADCPermille(DAC_value);
+         rev = fGain_16[febexchannel].CalculateADCPermille(DAC_value);
          break;
        case 32:
        default:
-         rev = fGain_32[febexchannel].GetADCPermille(DAC_value);
+         rev = fGain_32[febexchannel].CalculateADCPermille(DAC_value);
          break;
      };
      return rev;
@@ -318,7 +498,7 @@ GainSetup::GainSetup(): fDAC_ADC_Slope(1.0), fDAC_0(0)
    }
 
   /** convert febex channel to DAC indices*/
-          void BoardSetup::EvaluateDACIndices(int febexchannel, int& apfel, int& dac)
+  void BoardSetup::EvaluateDACIndices(int febexchannel, int& apfel, int& dac)
             {
                 // this function is used for automatic baseline adjustments
                 // not so straighforward to use:
@@ -364,12 +544,13 @@ GainSetup::GainSetup(): fDAC_ADC_Slope(1.0), fDAC_0(0)
      /** get absolute DAC setting from relative baseline slider*/
      int BoardSetup::EvaluateDACvalueAbsolute(int permillevalue, int febexchannel, int gain)
      {
+         //std::cout<<"EvaluateDACvalueAbsolute for gain:"<<gain<<", channel:"<<febexchannel << std::endl;
          int value=APFEL_DAC_MAXVALUE-round((permillevalue* ((double) APFEL_DAC_MAXVALUE) / 1000.0));
          // default: linear interpolation of DAC for complete slider range, note inverted DAC polarity effect on baseline
          if(febexchannel>=0)
          {
            // if channel specified, use calibration from measurements:
-           value=GetDACValue(gain, febexchannel, permillevalue);
+           value=CalculateDACValue(gain, febexchannel, permillevalue);
          }
          return value;
      }
@@ -383,7 +564,7 @@ GainSetup::GainSetup(): fDAC_ADC_Slope(1.0), fDAC_0(0)
        if(febexchannel>=0)
            {
                   // if channel specified, use calibration from measurements:
-             permille=GetADCPermille(gain, febexchannel, value);
+             permille=CalculateADCPermille(gain, febexchannel, value);
 
            }
        return permille;
@@ -482,4 +663,67 @@ GainSetup::GainSetup(): fDAC_ADC_Slope(1.0), fDAC_0(0)
      }
     return gain;
     }
+
+
+int BoardSetup::ResetADCSample(int febexchannel)
+    {
+      ASSERT_FEBCHAN_VALID(febexchannel);
+      fLastSample[febexchannel].Reset();
+      return 0;
+    }
+
+
+int BoardSetup::SetADCSample (int febexchannel, int index, uint16_t value)
+{
+  ASSERT_FEBCHAN_VALID(febexchannel);
+  fLastSample[febexchannel].SetSample(index,value);
+  return 0;
+}
+
+ uint16_t BoardSetup::GetADCSample(int febexchannel, int index)
+ {
+   ASSERT_FEBCHAN_VALID(febexchannel);
+     return fLastSample[febexchannel].GetSample(index);
+ }
+
+
+double BoardSetup::GetADCMean (int febexchannel)
+{
+  ASSERT_FEBCHAN_VALID(febexchannel);
+  return fLastSample[febexchannel].GetMean();
+}
+
+double BoardSetup::GetADCSigma (int febexchannel)
+{
+  ASSERT_FEBCHAN_VALID(febexchannel);
+  return fLastSample[febexchannel].GetSigma();
+}
+
+double BoardSetup::GetADCMiminum(int febexchannel)
+{
+  ASSERT_FEBCHAN_VALID(febexchannel);
+  return fLastSample[febexchannel].GetMinimum();
+}
+
+ double BoardSetup::GetADCMaximum(int febexchannel)
+ {
+   ASSERT_FEBCHAN_VALID(febexchannel);
+   return fLastSample[febexchannel].GetMaximum();
+ }
+
+
+int BoardSetup::DumpADCSamplePars (int febexchannel)
+{
+  ASSERT_FEBCHAN_VALID(febexchannel);
+  fLastSample[febexchannel].DumpParameters(febexchannel);
+  return 0;
+}
+
+int BoardSetup::ShowADCSample (int febexchannel)
+{
+  ASSERT_FEBCHAN_VALID(febexchannel);
+  fLastSample[febexchannel].ShowSample(febexchannel);
+  return 0;
+}
+
 

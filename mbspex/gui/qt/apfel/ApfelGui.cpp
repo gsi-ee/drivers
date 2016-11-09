@@ -14,6 +14,11 @@
 #include <QDateTime>
 #include <QTimer>
 
+#include <kplotobject.h>
+#include <kplotwidget.h>
+#include <kplotaxis.h>
+
+
 #include <sstream>
 #include <string.h>
 #include <errno.h>
@@ -302,6 +307,15 @@ ApfelGui::ApfelGui (QWidget* parent) :
 
   QObject::connect (InverseMappingCheckBox, SIGNAL(stateChanged(int)), this, SLOT (InverseMapping_changed(int)));
 
+
+  QObject::connect (DoSampleButton, SIGNAL (clicked ()), this, SLOT (AcquireSamplesBtn_clicked ()));
+  QObject::connect (DumpSampleButton, SIGNAL (clicked ()), this, SLOT (DumpSamplesBtn_clicked ()));
+
+
+  QObject::connect (ZoomButton, SIGNAL (clicked ()), this, SLOT (ZoomSampleBtn_clicked ()));
+  QObject::connect (UnzoomButton, SIGNAL (clicked ()), this, SLOT (UnzoomSampleBtn_clicked ()));
+  QObject::connect (RefreshSampleButton, SIGNAL (clicked ()), this, SLOT (RefreshSampleBtn_clicked ()));
+
   /** JAM put references to designer checkboxes into array to be handled later easily: */
   fBaselineBoxes[0]=Baseline_Box_00;
   fBaselineBoxes[1]=Baseline_Box_01;
@@ -465,6 +479,85 @@ ApfelGui::ApfelGui (QWidget* parent) :
   fApfelGainCombo[7][1] = gainCombo_15;
 
 
+  fSamplingBoxes[0]=Sampling_Box_0;
+  fSamplingBoxes[1]=Sampling_Box_1;
+  fSamplingBoxes[2]=Sampling_Box_2;
+  fSamplingBoxes[3]=Sampling_Box_3;
+  fSamplingBoxes[4]=Sampling_Box_4;
+  fSamplingBoxes[5]=Sampling_Box_5;
+  fSamplingBoxes[6]=Sampling_Box_6;
+  fSamplingBoxes[7]=Sampling_Box_7;
+  fSamplingBoxes[8]=Sampling_Box_8;
+  fSamplingBoxes[9]=Sampling_Box_9;
+  fSamplingBoxes[10]=Sampling_Box_10;
+  fSamplingBoxes[11]=Sampling_Box_11;
+  fSamplingBoxes[12]=Sampling_Box_12;
+  fSamplingBoxes[13]=Sampling_Box_13;
+  fSamplingBoxes[14]=Sampling_Box_14;
+  fSamplingBoxes[15]=Sampling_Box_15;
+
+
+  fSamplingMeanLineEdit[0]=ADC_SampleMean_0;
+  fSamplingMeanLineEdit[1]=ADC_SampleMean_1;
+  fSamplingMeanLineEdit[2]=ADC_SampleMean_2;
+  fSamplingMeanLineEdit[3]=ADC_SampleMean_3;
+  fSamplingMeanLineEdit[4]=ADC_SampleMean_4;
+  fSamplingMeanLineEdit[5]=ADC_SampleMean_5;
+  fSamplingMeanLineEdit[6]=ADC_SampleMean_6;
+  fSamplingMeanLineEdit[7]=ADC_SampleMean_7;
+  fSamplingMeanLineEdit[8]=ADC_SampleMean_8;
+  fSamplingMeanLineEdit[9]=ADC_SampleMean_9;
+  fSamplingMeanLineEdit[10]=ADC_SampleMean_10;
+  fSamplingMeanLineEdit[11]=ADC_SampleMean_11;
+  fSamplingMeanLineEdit[12]=ADC_SampleMean_12;
+  fSamplingMeanLineEdit[13]=ADC_SampleMean_13;
+  fSamplingMeanLineEdit[14]=ADC_SampleMean_14;
+  fSamplingMeanLineEdit[15]=ADC_SampleMean_15;
+
+
+  fSamplingSigmaLineEdit[0]=ADC_SampleSigma_0;
+  fSamplingSigmaLineEdit[1]=ADC_SampleSigma_1;
+  fSamplingSigmaLineEdit[2]=ADC_SampleSigma_2;
+  fSamplingSigmaLineEdit[3]=ADC_SampleSigma_3;
+  fSamplingSigmaLineEdit[4]=ADC_SampleSigma_4;
+  fSamplingSigmaLineEdit[5]=ADC_SampleSigma_5;
+  fSamplingSigmaLineEdit[6]=ADC_SampleSigma_6;
+  fSamplingSigmaLineEdit[7]=ADC_SampleSigma_7;
+  fSamplingSigmaLineEdit[8]=ADC_SampleSigma_8;
+  fSamplingSigmaLineEdit[9]=ADC_SampleSigma_9;
+  fSamplingSigmaLineEdit[10]=ADC_SampleSigma_10;
+  fSamplingSigmaLineEdit[11]=ADC_SampleSigma_11;
+  fSamplingSigmaLineEdit[12]=ADC_SampleSigma_12;
+  fSamplingSigmaLineEdit[13]=ADC_SampleSigma_13;
+  fSamplingSigmaLineEdit[14]=ADC_SampleSigma_14;
+  fSamplingSigmaLineEdit[15]=ADC_SampleSigma_15;
+
+  fPlotWidget[0] = PlotWidget_0;
+  fPlotWidget[1] = PlotWidget_1;
+  fPlotWidget[2] = PlotWidget_2;
+  fPlotWidget[3] = PlotWidget_3;
+  fPlotWidget[4] = PlotWidget_4;
+  fPlotWidget[5] = PlotWidget_5;
+  fPlotWidget[6] = PlotWidget_6;
+  fPlotWidget[7] = PlotWidget_7;
+  fPlotWidget[8] = PlotWidget_8;
+  fPlotWidget[9] = PlotWidget_9;
+  fPlotWidget[10] = PlotWidget_10;
+  fPlotWidget[11] = PlotWidget_11;
+  fPlotWidget[12] = PlotWidget_12;
+  fPlotWidget[13] = PlotWidget_13;
+  fPlotWidget[14] = PlotWidget_14;
+  fPlotWidget[15] = PlotWidget_15;
+
+
+
+
+  // labels for plot area:
+  for(int i=0; i<16;++i)
+  {
+    fPlotWidget[i]->axis( KPlotWidget::BottomAxis )->setLabel("Time (#samples)");
+    fPlotWidget[i]->axis( KPlotWidget::LeftAxis )->setLabel("ADC value ");
+  }
 
 
 #ifdef USE_MBSPEX_LIB
@@ -939,9 +1032,6 @@ void ApfelGui::CalibrateADCBtn_clicked()
 void ApfelGui::CalibrateSelectedADCs()
 {
   if(!AssertChainConfigured()) return;
-   QString targetstring=ADCAdjustValue->text ();
-   unsigned targetvalue =targetstring.toUInt (0, fNumberBase);
-   //std::cout <<"string="<<targetstring.toLatin1 ().constData ()<< ", targetvalue="<< targetvalue<< std::endl;
    for(int channel=0; channel<16;++channel)
      {
        if(fBaselineBoxes[channel]->isChecked())
@@ -965,22 +1055,93 @@ int ApfelGui::CalibrateADC(int channel)
 
   // measure slope of DAC kennlinie by differential variation:
   int gain=theSetup.GetGain(apfel,dac);
-  int deltaDAC=APFEL_DAC_DELTACALIB;
   int valDAC=theSetup.GetDACValue(apfel, dac); // current value after automatic DAC calibration
   int valADC=  AcquireBaselineSample(channel); // fetch a sample
+
+  EnableI2C ();
+#ifdef  APFEL_DAC_LOCALCALIB
+  int deltaDAC=APFEL_DAC_DELTACALIB;
+
   int valDAC_upper=valDAC+deltaDAC;
 
   // now do variation and measure new adc value:
-  EnableI2C ();
+
   WriteDAC_ApfelI2c (apfel, dac, valDAC_upper);
   int valADC_upper=AcquireBaselineSample(channel);
   int deltaADC=valADC_upper-valADC;
+#endif
+  // evaluate range boundaries:
+  // get minimum ADC value by setting DAC to max:
+  WriteDAC_ApfelI2c (apfel, dac, APFEL_DAC_MAXVALUE);
+  int valADC_min=AcquireBaselineSample(channel);
+
+  int valDAC_max=APFEL_DAC_MAXVALUE;
+  int valADC_sample;
+  int valADC_deltasaturation=APFEL_ADC_SATURATIONDELTA;
+
+  // shift DAC down until ADCmin changes significantly. this gives effective DAC max
+  for(valDAC_max=APFEL_DAC_MAXVALUE; valDAC_max>0; valDAC_max -=APFEL_DAC_DELTASTEP)
+    {
+        WriteDAC_ApfelI2c (apfel, dac, valDAC_max);
+        int samp=AcquireBaselineSample(channel);
+        if(samp - valADC_min > valADC_deltasaturation) break;
+        valADC_sample=samp;
+        //std::cout <<"Searching effective maximum  DAC:"<<valDAC_max<<", ADC:"<<valADC_sample<< std::endl;
+    }
+  valDAC_max+=APFEL_DAC_DELTASTEP; // rewind to point that is still in pedestal region
+
+
+  //shift DAC farther downwards until we find ADC saturation:
+  int valDAC_min=0;
+  int valADC_step=0;
+  for(valDAC_min=valDAC_max; valDAC_min>0; valDAC_min -=APFEL_DAC_DELTASTEP)
+  {
+      WriteDAC_ApfelI2c (apfel, dac, valDAC_min);
+      valADC_step=AcquireBaselineSample(channel);
+      if(valADC_step>=APFEL_ADC_MAXSATURATION) break;
+      //std::cout <<"Searching ADC saturation: DAC:"<<valDAC_min<<", ADC:"<<valADC_step<< std::endl;
+
+  }
+  printm("found ADC_min=%d, DAC_min=%d, DAC_max=%d", valADC_min, valDAC_min, valDAC_max);
+  theSetup.SetDACmin(gain,channel,valDAC_min);
+  theSetup.SetDACmax(gain,channel,valDAC_max);
+  theSetup.SetADCmin(gain,channel,valADC_min);
+
 
   // shift back to middle of calibration:
   WriteDAC_ApfelI2c (apfel, dac, valDAC);
   DisableI2C ();
   printm("--- Calibrated DAC->ADC slider for sfp:%d board:%d channel:%d apfel:%d dac:%d -",fSFP, fSlave, channel, apfel, dac);
+
+#ifdef  APFEL_DAC_LOCALCALIB
   theSetup.EvaluateCalibration(gain, channel, deltaDAC, deltaADC, valDAC, valADC);
+#else
+
+// trial and error of slider calibration in the following:
+//
+// in this mode, we make linearcalibration over full range
+//  int deltaDAC=APFEL_DAC_MAXVALUE-valDAC_min;
+//       int deltaADC=valADC_min - APFEL_ADC_MAXSATURATION;
+//       theSetup.EvaluateCalibration(gain, channel, deltaDAC, deltaADC, APFEL_DAC_MAXVALUE, valADC_min);
+
+// linear calibration only in non saturated ADC range:
+      int deltaDAC=valDAC_max-valDAC_min;
+      int deltaADC=valADC_min - APFEL_ADC_MAXSATURATION;
+      theSetup.EvaluateCalibration(gain, channel, deltaDAC, deltaADC, valDAC_max, valADC_sample);
+
+// test: semi-range linear calibration
+//     int deltaDAC=APFEL_DAC_MAXVALUE-valDAC;
+//      int deltaADC=valADC_min - valADC;
+//      theSetup.EvaluateCalibration(gain, channel, deltaDAC, deltaADC, valDAC, valADC);
+///////////
+//      int deltaDAC=valDAC-valDAC_min;
+//      int deltaADC=APFEL_ADC_MAXSATURATION - valADC;
+//      theSetup.EvaluateCalibration(gain, channel, deltaDAC, deltaADC, valDAC, valADC);
+
+
+
+#endif
+
 
   // finally, refresh display of currently calibrated adc channel:
   QString text;
@@ -1005,9 +1166,6 @@ void ApfelGui::CalibrateResetBtn_clicked()
 void ApfelGui::CalibrateResetSelectedADCs()
 {
   if(!AssertChainConfigured()) return;
-   QString targetstring=ADCAdjustValue->text ();
-   unsigned targetvalue =targetstring.toUInt (0, fNumberBase);
-   //std::cout <<"string="<<targetstring.toLatin1 ().constData ()<< ", targetvalue="<< targetvalue<< std::endl;
    for(int channel=0; channel<16;++channel)
      {
        if(fBaselineBoxes[channel]->isChecked())
@@ -1029,6 +1187,271 @@ int ApfelGui::CalibrateResetADC(int channel)
  return 0;
 
 }
+
+
+
+
+
+  int ApfelGui::AcquireSample (int channel)
+{
+  printm("AcquiringSample from ADC channel %d",channel);
+  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  bool usemonitorport = MonitorRadioButton->isChecked ();
+  double val = 0;
+  theSetup.ResetADCSample(channel);
+  for (int i = 0; i < APFEL_ADC_SAMPLEVALUES; ++i)
+  {
+    if (usemonitorport)
+    {
+      // evaluate  a single sample from ADC monitor port (no averaging like in baseline setup!)
+      val = AcquireBaselineSample (channel,1);
+    }
+    else
+    {
+      // read out MBS buffer TODO:
+    }
+    theSetup.SetADCSample (channel, i, val);
+  }
+
+  RefreshLastADCSample(channel);
+  return 0;
+}
+
+  void ApfelGui::AcquireSelectedSamples()
+  {
+    if(!AssertChainConfigured()) return;
+    bool changed=false;
+       for(int channel=0; channel<16;++channel)
+         {
+           if(fSamplingBoxes[channel]->isChecked())
+           {
+             changed=true;
+             AcquireSample(channel);
+           }
+        }
+    if(changed) RefreshStatus();
+  }
+
+
+  void ApfelGui::AcquireSamplesBtn_clicked()
+  {
+     //std::cout <<"AcquireSamplesBtn_clicked"<< std::endl;
+     EvaluateSlave ();
+     QApplication::setOverrideCursor (Qt::WaitCursor);
+     APFEL_BROADCAST_ACTION(AcquireSelectedSamples());
+     QApplication::restoreOverrideCursor ();
+  }
+
+
+
+  int ApfelGui::ShowSample(int channel)
+  {
+    //std::cout <<"ShowSample for channel:"<<channel<< std::endl;
+    BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+    //theSetup.ShowADCSample(channel); // todo: dump sample on different knob
+
+    // first fill plotobject with samplepoints
+    QColor col;
+    KPlotObject::PointStyle pstyle= KPlotObject::Circle;
+    switch(channel)
+    {
+      case 0:
+      case 8:
+      default:
+          col=Qt::red;
+          pstyle=KPlotObject::Circle;
+        break;
+      case 1:
+      case 9:
+        col=Qt::green;
+        pstyle=KPlotObject::Letter;
+        break;
+      case 2:
+      case 10:
+        col=Qt::blue;
+        pstyle=KPlotObject::Triangle;
+        break;
+      case 3:
+      case 11:
+        col=Qt::cyan;
+        pstyle=KPlotObject::Square;
+        break;
+
+      case 4:
+      case 12:
+        col=Qt::magenta;
+        pstyle=KPlotObject::Pentagon;
+        break;
+      case 5:
+      case 13:
+        col=Qt::yellow;
+        pstyle=KPlotObject::Hexagon;
+        break;
+      case 6:
+      case 14:
+        col=Qt::gray;
+        pstyle=KPlotObject::Asterisk;
+        break;
+      case 7:
+      case 15:
+        col=Qt::darkGreen;
+        pstyle=KPlotObject::Star;
+        break;
+
+
+
+
+//        Letter = 2, Triangle = 3,
+//         Square = 4, Pentagon = 5, Hexagon = 6, Asterisk = 7,
+//         Star = 8
+
+    };
+
+    // TODO: put this in special functions
+    fPlotWidget[channel]->resetPlot();
+        // labels for plot area:
+    fPlotWidget[channel]->setAntialiasing( true );
+
+
+
+    fPlotWidget[channel]->axis( KPlotWidget::BottomAxis )->setLabel("Time (#samples)");
+    fPlotWidget[channel]->axis( KPlotWidget::LeftAxis )->setLabel("ADC value ");
+
+
+    //KPlotObject *sampleplot = new KPlotObject(col, KPlotObject::Points, 1, pstyle);
+    KPlotObject *sampleplot = new KPlotObject(col, KPlotObject::Lines, 2);
+    QString label = QString("channel:%1").arg(channel);
+    sampleplot->addPoint (0, theSetup.GetADCSample(channel,0), label);
+    for(int i=1; i<APFEL_ADC_SAMPLEVALUES; ++i)
+    {
+      sampleplot->addPoint (i, theSetup.GetADCSample(channel,i));
+    }
+   // add it to the plot area
+    fPlotWidget[channel]->addPlotObject( sampleplot);
+
+    UnzoomSample(channel);
+
+
+    //fPlotWidget[channel]->update();
+
+
+    return 0;
+  }
+
+  void ApfelGui::ShowSelectedSamples()
+  {
+    if(!AssertChainConfigured()) return;
+//    PlotWidget_0->resetPlot();
+//    // labels for plot area:
+//    PlotWidget_0->setAntialiasing( true );
+//
+//    // Set the boundaries of the plot to display the full extent of the sine curve:
+//    PlotWidget_0->setLimits(0, APFEL_ADC_SAMPLEVALUES, 0.0, 17000);
+//
+//    PlotWidget_0->axis( KPlotWidget::BottomAxis )->setLabel("Time (#samples)");
+//    PlotWidget_0->axis( KPlotWidget::LeftAxis )->setLabel("ADC value ");
+
+
+    int lastchecked=0;
+    for(int channel=0; channel<16;++channel)
+             {
+               if(fSamplingBoxes[channel]->isChecked())
+               {
+                 ShowSample(channel);
+                 lastchecked=channel;
+               }
+            }
+
+
+     ApfelTabWidget->setCurrentIndex(5);
+     PlotTabWidget->setCurrentIndex(lastchecked);
+  }
+
+
+
+
+
+  void ApfelGui::DumpSamplesBtn_clicked()
+    {
+    //std::cout <<"DumpSamplesBtn_clicked"<< std::endl;
+    EvaluateSlave ();
+    QApplication::setOverrideCursor (Qt::WaitCursor);
+    APFEL_BROADCAST_ACTION(ShowSelectedSamples());
+    QApplication::restoreOverrideCursor ();
+    }
+
+  void ApfelGui::ZoomSample(int channel)
+  {
+    //std::cout <<"ZoomSample for channel"<< channel<< std::endl;
+    // evaluate minimum and maximum value of current sample:
+    BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+    double minimum=theSetup.GetADCMiminum(channel);
+    double maximum=theSetup.GetADCMaximum(channel);
+    //std::cout <<"Got minimum:"<< minimum<<", maximum:"<<maximum<< std::endl;
+    fPlotWidget[channel]->setLimits(0, APFEL_ADC_SAMPLEVALUES, minimum, maximum);
+    fPlotWidget[channel]->update();
+  }
+
+void ApfelGui::UnzoomSample(int channel)
+{
+   //std::cout <<"UnzoomSample for channel"<< channel<< std::endl;
+    fPlotWidget[channel]->setLimits(0, APFEL_ADC_SAMPLEVALUES, 0.0, 17000);
+    fPlotWidget[channel]->update();
+}
+
+void ApfelGui::ZoomSampleBtn_clicked()
+  {
+  //std::cout <<"ZoomSampleBtn_clicked"<< std::endl;
+  int channel=PlotTabWidget->currentIndex();
+  ZoomSample(channel);
+  }
+
+void ApfelGui::UnzoomSampleBtn_clicked()
+{
+  //std::cout <<"UnzoomSampleBtn_clicked"<< std::endl;
+  int channel=PlotTabWidget->currentIndex();
+  UnzoomSample(channel);
+}
+
+void ApfelGui::RefreshSampleBtn_clicked()
+{
+  //std::cout <<"RefreshSampleBtn_clicked"<< std::endl;
+  int channel=PlotTabWidget->currentIndex();
+  //std::cout <<"Got current index"<<channel<< std::endl;
+  AcquireSample (channel);
+  ShowSample(channel);
+  RefreshStatus();
+}
+
+
+
+void ApfelGui::RefreshLastADCSample(int febexchannel)
+  {
+    QString text;
+    BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+    double mean=theSetup.GetADCMean(febexchannel);
+    double sigma=theSetup.GetADCSigma(febexchannel);
+    if(fNumberBase == 16)
+    {
+      QString pre="0x";
+      fSamplingMeanLineEdit[febexchannel]->setText (pre+text.setNum ((int) mean, fNumberBase));
+      fSamplingSigmaLineEdit[febexchannel]->setText (pre+text.setNum ((int) sigma, fNumberBase));
+    }
+    else
+    {
+
+      fSamplingMeanLineEdit[febexchannel]->setText (text.setNum (mean,'f',1));
+      fSamplingSigmaLineEdit[febexchannel]->setText(text.setNum (sigma,'f',3));
+    }
+
+  }
+
+
+
+
+
+
+
 
 
 void ApfelGui::BroadcastBtn_clicked (bool checked)
@@ -1105,7 +1528,7 @@ void ApfelGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "ApfelGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.900 of 4-November-2016 by JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.911 of 9-November-2016 by JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -1856,7 +2279,7 @@ void ApfelGui::AutoCalibrate_all()
 
  void ApfelGui::DAC_spinBox_all_changed(int val)
 {
-  std::cout << "ApfelGui::DAC_spinBox_all_changed, val="<<val << std::endl;
+  //std::cout << "ApfelGui::DAC_spinBox_all_changed, val="<<val << std::endl;
    for(int chan=0;chan<16;++chan)
      fDACSpinBoxes[chan]->setValue (val);
   
@@ -1984,6 +2407,8 @@ int ApfelGui::autoApply(int channel, int permillevalue)
    EnableI2C ();  
    WriteDAC_ApfelI2c (apfel, dac, theSetup.GetDACValue(apfel, dac));
    DisableI2C ();
+
+   RefreshDAC(apfel); //  immediately update DAC sliders when shifting baseline!
    if (!AssertNoBroadcast ())
       return -1;
    int Adc=AcquireBaselineSample(channel);
@@ -1994,17 +2419,18 @@ int ApfelGui::autoApply(int channel, int permillevalue)
 }
 
 
-int ApfelGui::AcquireBaselineSample(uint8_t febexchan)
+int ApfelGui::AcquireBaselineSample(uint8_t febexchan, int numsamples)
 {
   if(febexchan >= APFEL_ADC_NUMADC*APFEL_ADC_NUMCHAN) return -1;
   int adcchip= febexchan/APFEL_ADC_NUMCHAN;
   int adcchannel= febexchan-adcchip * APFEL_ADC_NUMCHAN ;
   int Adc=0;
-  for(int t=0; t<APFEL_ADC_BASELINESAMPLES;++t)
+  if (numsamples<=0) numsamples=APFEL_ADC_BASELINESAMPLES;
+  for(int t=0; t<numsamples;++t)
     {
       Adc+=ReadADC_Apfel(adcchip,adcchannel);
     }
-  Adc=Adc/APFEL_ADC_BASELINESAMPLES;
+  Adc=Adc/numsamples;
   return Adc;
 }
 
@@ -2122,8 +2548,10 @@ for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
           theSetup.EvaluateDACIndices(channel, apfel, dac);
           int gain=theSetup.GetGain(apfel,dac);
           RefreshADC_channel(channel, gain);
-     }
 
+          // also put most recent sample parameters to display:
+          RefreshLastADCSample(channel);
+     }
 
   RefreshChains();
   RefreshStatus();
@@ -2214,7 +2642,7 @@ void ApfelGui::EvaluateView ()
 {
   // here the current gui display is just copied to setup structure in local memory
 BoardSetup& theSetup= fSetup[fSFP].at(fSlave);
-
+//std::cout<<"ApfelGui::EvaluateView ()" << std::endl;
 
 theSetup.SetApfelMapping(!InverseMappingCheckBox->isChecked());
 
@@ -2240,7 +2668,7 @@ if(ApfelTabWidget->currentIndex()==3)
      {
           int permille=fDACSpinBoxes[channel]->value();
           int value=theSetup.EvaluateDACvalueAbsolute(permille);
-          std::cout<<"EvaluateView for channel:"<<channel<<", permille:"<<permille<<" - val="<<value<< std::endl;
+          //std::cout<<"EvaluateView for channel:"<<channel<<", permille:"<<permille<<" - val="<<value<< std::endl;
           theSetup.SetDACValue(channel, value);
      }
 }
@@ -2252,7 +2680,7 @@ else
       for (int dac = 0; dac < APFEL_NUMDACS; ++dac)
       {
         int value = fDACSlider[apfel][dac]->value () & 0x3FF;
-        std::cout<<"EvaluateView for apfel:"<<apfel<<", dac:"<<dac<<" - val="<<value<< std::endl;
+        //std::cout<<"EvaluateView for apfel:"<<apfel<<", dac:"<<dac<<" - val="<<value<< std::endl;
         theSetup.SetDACValue (apfel, dac, value);
       }
 
