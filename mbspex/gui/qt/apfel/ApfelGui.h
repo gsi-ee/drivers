@@ -6,6 +6,7 @@
 
 #include <QProcess>
 #include <QString>
+#include <QTimer>
 
 
 #include "ApfelSetup.h"
@@ -50,6 +51,13 @@ protected:
   struct pex_sfp_links fSFPChains;
 
 
+
+  /** timer for periodic test pulsing*/
+  QTimer* fPulserTimer;
+
+  /** timer to display status of test pulsing*/
+  QTimer* fDisplayTimer;
+
   /** auxiliary references to checkboxes for baseline adjustments*/
   QCheckBox* fBaselineBoxes[16];
 
@@ -87,6 +95,9 @@ protected:
   /** auxiliary references to pulser display for refresh view*/
   QCheckBox* fApfelPulseEnabledCheckbox[APFEL_NUMCHIPS][APFEL_NUMCHANS];
 
+  /** auxiliary references to pulser display for refresh view*/
+  QSpinBox* fApfelPulseAmplitudeSpin[APFEL_NUMCHIPS][APFEL_NUMCHANS];
+
 
   QComboBox* fApfelGainCombo[APFEL_NUMCHIPS][APFEL_NUMCHANS];
 
@@ -94,6 +105,8 @@ protected:
   KPlotWidget* fPlotWidget[16];
 
 
+
+  unsigned fPulserProgressCounter;
 
   /** text debug mode*/
   bool fDebug;
@@ -172,6 +185,9 @@ protected:
 
   /** put test pulser settings for apfel chip from gui into setup structure*/
   void EvaluatePulser(int apfel);
+
+  /** decode pulser interval from frequency box index*/
+  int EvaluatePulserInterval(int index);
 
 
   /** put gain settings for apfel chip and channel from gui into setup structure*/
@@ -255,10 +271,10 @@ protected:
 
     /** set test pulser properties for each apfel channel on board.
          *  flag on=true switches pulser on
-         *  chan1 and chan2 specify which channel to activate, both must be set with a single call
+         *  amp1 and amp2 specify channel amplitudes to activate, both must be set with a single call
          *  flag positive=true: positive polarity, =false: negative pulse
          * */
-    void SetTestPulse(uint8_t apfelchip, bool on, bool chan1, bool chan2, bool positive);
+    void SetTestPulse(uint8_t apfelchip, bool on, uint8_t amp1, uint8_t amp2, bool positive);
 
 
     /* Perform automatic calibration of specified apfel chip*/
@@ -568,6 +584,14 @@ public slots:
   virtual void SwitchChanged();
 
   virtual void InverseMapping_changed (int on);
+
+
+  virtual void PulseTimer_changed(int on);
+  virtual void PulseFrequencyChanged(int);
+
+  virtual void PulserTimeout();
+  virtual void PulserDisplayTimeout();
+
 };
 
 #endif

@@ -46,6 +46,9 @@ private:
   /** Enabled test pulser for channel*/
   bool fTestPulsEnable[APFEL_NUMCHANS];
 
+  /** amplitude value for test pulse (0-F)*/
+  uint8_t fTestPulseAmplitude[APFEL_NUMCHANS];
+
   /** True if test pulser with positive polarity. False for negative*/
   bool fTestPulsPositive;
 
@@ -66,6 +69,11 @@ public:
   int SetTestPulseEnable (int chan, bool on = true);
 
   int GetTestPulseEnable (int chan);
+
+  int SetTestPulseAmplitude (int chan, uint8_t amp);
+
+  uint8_t GetTestPulseAmplitude (int chan);
+
 
   int SetTestPulsePostive (bool pos = true);
 
@@ -136,7 +144,7 @@ private:
   /** keep minimum value of current sample set*/
   uint16_t fMinValue;
 
-  /** keep minimum value of current sample set*/
+  /** keep maximum value of current sample set*/
   uint16_t fMaxValue;
 
 public:
@@ -308,6 +316,10 @@ public:
   int SetTestPulseEnable (int apfel, int chan, bool on = true);
 
   int GetTestPulseEnable (int apfel, int chan);
+
+  int SetTestPulseAmplitude (int apfel, int chan, uint8_t val);
+
+  int GetTestPulseAmplitude (int apfel, int chan);
 
   int SetTestPulsePostive (int apfel, bool pos = true);
 

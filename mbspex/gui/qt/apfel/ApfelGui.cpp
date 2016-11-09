@@ -114,7 +114,7 @@ void ApfelGui::I2c_sleep ()
  *  name 'name'.'
  */
 ApfelGui::ApfelGui (QWidget* parent) :
-    QWidget (parent), fDebug (false), fSaveConfig (false), fBroadcasting(false), fSFP (0), fSlave (0), fSFPSave (0), fSlaveSave (0),
+    QWidget (parent), fPulserProgressCounter(0), fDebug (false), fSaveConfig (false), fBroadcasting(false), fSFP (0), fSlave (0), fSFPSave (0), fSlaveSave (0),
         fConfigFile (0)
 {
   setupUi (this);
@@ -258,27 +258,51 @@ ApfelGui::ApfelGui (QWidget* parent) :
 
   QObject::connect (PulserCheckBox_0, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_0()));
   QObject::connect (PulserCheckBox_1, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_0()));
+  QObject::connect (PulserAmpSpinBox_0, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_0()));
+  QObject::connect (PulserAmpSpinBox_1, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_0()));
   QObject::connect (ApfelTestPolarityBox_0, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_0()));
+
   QObject::connect (PulserCheckBox_2, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_1()));
   QObject::connect (PulserCheckBox_3, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_1()));
+  QObject::connect (PulserAmpSpinBox_2, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_1()));
+  QObject::connect (PulserAmpSpinBox_3, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_1()));
   QObject::connect (ApfelTestPolarityBox_1, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_1()));
+
   QObject::connect (PulserCheckBox_4, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_2()));
   QObject::connect (PulserCheckBox_5, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_2()));
+  QObject::connect (PulserAmpSpinBox_4, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_2()));
+  QObject::connect (PulserAmpSpinBox_5, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_2()));
   QObject::connect (ApfelTestPolarityBox_2, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_2()));
+
   QObject::connect (PulserCheckBox_6, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_3()));
   QObject::connect (PulserCheckBox_7, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_3()));
+  QObject::connect (PulserAmpSpinBox_6, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_3()));
+  QObject::connect (PulserAmpSpinBox_7, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_3()));
   QObject::connect (ApfelTestPolarityBox_3, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_3()));
+
   QObject::connect (PulserCheckBox_8, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_4()));
   QObject::connect (PulserCheckBox_9, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_4()));
+  QObject::connect (PulserAmpSpinBox_8, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_4()));
+  QObject::connect (PulserAmpSpinBox_9, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_4()));
   QObject::connect (ApfelTestPolarityBox_4, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_4()));
+
   QObject::connect (PulserCheckBox_10, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_5()));
   QObject::connect (PulserCheckBox_11, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_5()));
+  QObject::connect (PulserAmpSpinBox_10, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_5()));
+  QObject::connect (PulserAmpSpinBox_11, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_5()));
   QObject::connect (ApfelTestPolarityBox_5, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_5()));
+
   QObject::connect (PulserCheckBox_12, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_6()));
   QObject::connect (PulserCheckBox_13, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_6()));
+  QObject::connect (PulserAmpSpinBox_12, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_6()));
+  QObject::connect (PulserAmpSpinBox_13, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_6()));
   QObject::connect (ApfelTestPolarityBox_6, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_6()));
+
   QObject::connect (PulserCheckBox_14, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_7()));
   QObject::connect (PulserCheckBox_15, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_7()));
+  QObject::connect (PulserAmpSpinBox_14, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_7()));
+  QObject::connect (PulserAmpSpinBox_15, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_7()));
+
   QObject::connect (ApfelTestPolarityBox_7, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_7()));
 
 
@@ -315,6 +339,12 @@ ApfelGui::ApfelGui (QWidget* parent) :
   QObject::connect (ZoomButton, SIGNAL (clicked ()), this, SLOT (ZoomSampleBtn_clicked ()));
   QObject::connect (UnzoomButton, SIGNAL (clicked ()), this, SLOT (UnzoomSampleBtn_clicked ()));
   QObject::connect (RefreshSampleButton, SIGNAL (clicked ()), this, SLOT (RefreshSampleBtn_clicked ()));
+
+
+  QObject::connect (PulseTimerCheckBox, SIGNAL(stateChanged(int)), this, SLOT(PulseTimer_changed(int)));
+  QObject::connect (FrequencyComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT (PulseFrequencyChanged(int)));
+
+
 
   /** JAM put references to designer checkboxes into array to be handled later easily: */
   fBaselineBoxes[0]=Baseline_Box_00;
@@ -461,6 +491,26 @@ ApfelGui::ApfelGui (QWidget* parent) :
   fApfelPulseEnabledCheckbox[7][0] = PulserCheckBox_14;
   fApfelPulseEnabledCheckbox[7][1] = PulserCheckBox_15;
 
+  fApfelPulseAmplitudeSpin[0][0] = PulserAmpSpinBox_0;
+  fApfelPulseAmplitudeSpin[0][1] = PulserAmpSpinBox_1;
+  fApfelPulseAmplitudeSpin[1][0] = PulserAmpSpinBox_2;
+  fApfelPulseAmplitudeSpin[1][1] = PulserAmpSpinBox_3;
+  fApfelPulseAmplitudeSpin[2][0] = PulserAmpSpinBox_4;
+  fApfelPulseAmplitudeSpin[2][1] = PulserAmpSpinBox_5;
+  fApfelPulseAmplitudeSpin[3][0] = PulserAmpSpinBox_6;
+  fApfelPulseAmplitudeSpin[3][1] = PulserAmpSpinBox_7;
+  fApfelPulseAmplitudeSpin[4][0] = PulserAmpSpinBox_8;
+  fApfelPulseAmplitudeSpin[4][1] = PulserAmpSpinBox_9;
+  fApfelPulseAmplitudeSpin[5][0] = PulserAmpSpinBox_10;
+  fApfelPulseAmplitudeSpin[5][1] = PulserAmpSpinBox_11;
+  fApfelPulseAmplitudeSpin[6][0] = PulserAmpSpinBox_12;
+  fApfelPulseAmplitudeSpin[6][1] = PulserAmpSpinBox_13;
+  fApfelPulseAmplitudeSpin[7][0] = PulserAmpSpinBox_14;
+  fApfelPulseAmplitudeSpin[7][1] = PulserAmpSpinBox_15;
+
+
+
+
   fApfelGainCombo[0][0] = gainCombo_0;
   fApfelGainCombo[0][1] = gainCombo_1;
   fApfelGainCombo[1][0] = gainCombo_2;
@@ -560,6 +610,17 @@ ApfelGui::ApfelGui (QWidget* parent) :
   }
 
 
+  // timers for frequent test pulse:
+  fPulserTimer = new QTimer(this);
+  QObject::connect(fPulserTimer, SIGNAL(timeout()), this, SLOT(PulserTimeout()));
+
+  fDisplayTimer= new QTimer(this);
+  fDisplayTimer->setInterval(500);
+  QObject::connect(fDisplayTimer, SIGNAL(timeout()), this, SLOT(PulserDisplayTimeout()));
+
+
+
+
 #ifdef USE_MBSPEX_LIB
 // open handle to driver file:
   fPexFD = mbspex_open (0);    // we restrict to board number 0 here
@@ -571,6 +632,15 @@ ApfelGui::ApfelGui (QWidget* parent) :
 #endif
   fInstance = this;
   show ();
+
+
+
+
+
+
+
+
+
 
 
   // start with preferred situation:
@@ -1528,7 +1598,7 @@ void ApfelGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "ApfelGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.911 of 9-November-2016 by JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.928 of 9-November-2016 by JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -1642,6 +1712,28 @@ void ApfelGui::AutoApplySwitch()
     EvaluateSlave ();
     APFEL_BROADCAST_ACTION(AutoApplySwitch());
   }
+}
+
+
+void ApfelGui::PulserTimeout()
+{
+  //std::cout << "ApfelGui::PulserTimeout" << std::endl;
+  for (uint8_t apf = 0; apf < APFEL_NUMCHIPS; ++apf)
+   {
+      SetPulser(apf);
+   }
+  fPulserProgressCounter++;
+
+}
+
+void ApfelGui::PulserDisplayTimeout()
+{
+  //std::cout << "ApfelGui::PulserdisplayTimeout" << std::endl;
+
+  double progress=(fPulserProgressCounter % 100);
+
+  PulserProgressBar->setValue(progress); // let the progress bar flicker from 0 to 100%
+  //std::cout << "Set Progress to"<<progress << std::endl;
 }
 
 
@@ -2617,6 +2709,8 @@ void ApfelGui::EvaluatePulser (int apfel)
   {
     bool on = fApfelPulseEnabledCheckbox[apfel][chan]->isChecked ();
     theSetup.SetTestPulseEnable (apfel, chan, on);
+    int amplitude=fApfelPulseAmplitudeSpin[apfel][chan]->value();
+    theSetup.SetTestPulseAmplitude(apfel,chan, amplitude);
   }
 }
 
@@ -2748,10 +2842,14 @@ void ApfelGui::SetPulser(uint8_t apf)
 {
   BoardSetup& theSetup=fSetup[fSFP].at(fSlave);
    // here set test pulser properties. we must use both channels simultaneously:
+  uint8_t amp1=0, amp2=0;
   bool on_1=theSetup.GetTestPulseEnable(apf,0);
   bool on_2=theSetup.GetTestPulseEnable(apf,1);
   bool on_any= on_1 || on_2;
-  SetTestPulse(apf,on_any,on_1,on_2,theSetup.GetTestPulsePositive(apf));
+
+  if(on_1) amp1=theSetup.GetTestPulseAmplitude(apf,0);
+  if(on_2) amp2=theSetup.GetTestPulseAmplitude(apf,1);
+  SetTestPulse(apf, on_any, amp1, amp2, theSetup.GetTestPulsePositive(apf));
 }
 
 
@@ -3049,17 +3147,12 @@ void ApfelGui::SetGain(uint8_t apfelchip, uint8_t chan, bool useGain16)
   int dat=APFEL_GAIN_BASE_WR | mask;
   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 
-  // transfer to apfel chip: not required here!
-//  dat=APFEL_TRANSFER_BASE_WR + ((apfelchip+1) & 0xFF);
-//  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
-
-
 }
 
-void ApfelGui::SetTestPulse(uint8_t apfelchip, bool on, bool chan1, bool chan2, bool positive)
+void ApfelGui::SetTestPulse(uint8_t apfelchip, bool on, uint8_t amp1, uint8_t amp2, bool positive)
 {
   int apid=GetApfelId(fSFP, fSlave, apfelchip);
-  //std::cout << "SetTestPulse(" << (int) apfelchip <<", id:"<<apid<<"): on=" << on << ", ch1="<<chan1<<", ch2="<<chan2 << std::endl;
+  //std::cout << "SetTestPulse(" << (int) apfelchip <<", id:"<<apid<<"): on=" << on << ", ch1="<<(int) amp1<<", ch2="<< (int) amp2 << std::endl;
 
   int dat=0;
   int apfelid = apid & 0xFF;
@@ -3071,10 +3164,10 @@ void ApfelGui::SetTestPulse(uint8_t apfelchip, bool on, bool chan1, bool chan2, 
   }
   else
   {
-  // first set channel mask for ch1 and ch2:
+  // first set channel amplitudes for ch1 and ch2:
      dat=APFEL_TESTPULSE_CHAN_WR | apfelid;
-     if(chan1) dat |= (1 << 8);
-     if(chan2) dat |= (1 << 12);
+     if(amp1) dat |= ((amp1 & 0xF) << 8);
+     if(amp2) dat |= ((amp2 & 0xF) << 12);
      WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 
   // activate correct polarity:
@@ -3083,10 +3176,6 @@ void ApfelGui::SetTestPulse(uint8_t apfelchip, bool on, bool chan1, bool chan2, 
      else dat |= 0x300;
      WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
   }
-
-  // transfer to apfel chip: TODO: needed here?
-//   dat=APFEL_TRANSFER_BASE_WR | apfelid;
-//   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 
 }
 
@@ -3169,6 +3258,67 @@ void ApfelGui::InverseMapping_changed (int on)
   }
 
 }
+
+int ApfelGui::EvaluatePulserInterval(int findex)
+{
+  int period=1000;
+  switch(findex)
+     {
+       case 0:
+       default:
+         period = 1000;
+       break;
+       case 1:
+         period = 500;
+         break;
+       case 2:
+         period = 200;
+         break;
+       case 3:
+         period = 100;
+         break;
+       case 4:
+         period = 20;
+         break;
+     };
+  //std::cout << "EvaluatePulserInterval gives ms period:" <<  period << std::endl;
+  return period;
+}
+
+void ApfelGui::PulseTimer_changed(int on)
+{
+  //std::cout << "PulseTimer_changed to" <<  on << std::endl;
+
+  if(on)
+  {
+    int period=EvaluatePulserInterval(FrequencyComboBox->currentIndex());
+    printm("Pulser Timer has been started with %d ms period.",period);
+    //std::cout << "PulseTimer starts with ms period" <<  period << std::endl;
+    fPulserTimer->setInterval(period);
+    fPulserTimer->start();
+    fDisplayTimer->start();
+  }
+  else
+  {
+    fPulserTimer->stop();
+    fDisplayTimer->stop();
+    PulserProgressBar->reset();
+    printm("Pulser Timer has been stopped.");
+    //std::cout << "PulseTimer has been stopped. " << std::endl;
+  }
+
+  fPulserProgressCounter=0;
+
+}
+
+void ApfelGui::PulseFrequencyChanged(int index)
+{
+  //std::cout << "PulseFrequencyChanged  to" <<  index << std::endl;
+  int period=EvaluatePulserInterval(index);
+  fPulserTimer->setInterval(period);
+  printm("Pulser Period has been changed to %d ms.",period);
+}
+
 
 
 

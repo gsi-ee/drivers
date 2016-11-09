@@ -64,6 +64,22 @@ int ApfelSetup::GetTestPulseEnable (int chan)
   return (fTestPulsEnable[chan] ? 1 : 0);
 }
 
+
+int ApfelSetup::SetTestPulseAmplitude (int chan, uint8_t amp)
+{
+    ASSERT_CHAN_VALID(chan);
+    fTestPulseAmplitude[chan] = (amp & 0xF);
+    return 0;
+}
+
+uint8_t ApfelSetup::GetTestPulseAmplitude (int chan)
+    {
+     ASSERT_CHAN_VALID(chan);
+     return fTestPulseAmplitude[chan];
+    }
+
+
+
 int ApfelSetup::SetTestPulsePostive (bool pos)
 {
   fTestPulsPositive = pos;
@@ -637,6 +653,21 @@ int BoardSetup::SetADCmin (int gain, int febexchannel,double val)
         ASSERT_APFEL_VALID(apfel);
         return fApfel[apfel].GetTestPulsePositive();
     }
+
+
+    int BoardSetup::SetTestPulseAmplitude (int apfel, int chan, uint8_t val)
+    {
+      ASSERT_APFEL_VALID(apfel);
+      return fApfel[apfel].SetTestPulseAmplitude(chan,val);
+
+    }
+
+    int BoardSetup::GetTestPulseAmplitude (int apfel, int chan)
+    {
+      ASSERT_APFEL_VALID(apfel);
+      return fApfel[apfel].GetTestPulseAmplitude(chan);
+    }
+
 
 
     int BoardSetup::GetApfelID(int apfel)
