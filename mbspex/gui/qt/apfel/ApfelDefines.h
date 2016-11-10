@@ -120,6 +120,18 @@
 /** number of samples read out for each channel*/
 #define APFEL_ADC_SAMPLEVALUES 200
 
+
+/** core read request write address to fetch ADC DAQBUFFER*/
+#define APFEL_ADC_DAQBUFFER_REQ_PORT 0x2080c0
+
+
+/** base address for DAQ buffer in MBS readout mode.
+ * actual address is this times ADC index (1...16)*/
+#define APFEL_ADC_DAQBUFFER_BASE 0x8000
+
+/** maximum length of 16bit word buffer for mbs trace sample*/
+#define APFEL_MBS_TRACELEN 8000
+
 //////////////////////////////////////////////////////////////////////7
 
 /* The following is taken from mbs code for initialization of febex after startup:*/

@@ -344,6 +344,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
   QObject::connect (PulseTimerCheckBox, SIGNAL(stateChanged(int)), this, SLOT(PulseTimer_changed(int)));
   QObject::connect (FrequencyComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT (PulseFrequencyChanged(int)));
 
+  QObject::connect (PulseBroadcastCheckBox, SIGNAL(stateChanged(int)), this, SLOT(PulseBroadcast_changed(int)));
 
 
   /** JAM put references to designer checkboxes into array to be handled later easily: */
@@ -507,6 +508,16 @@ ApfelGui::ApfelGui (QWidget* parent) :
   fApfelPulseAmplitudeSpin[6][1] = PulserAmpSpinBox_13;
   fApfelPulseAmplitudeSpin[7][0] = PulserAmpSpinBox_14;
   fApfelPulseAmplitudeSpin[7][1] = PulserAmpSpinBox_15;
+
+
+  fApfelPulseGroup[0] = ApfelPulseBox_1;
+  fApfelPulseGroup[1] = ApfelPulseBox_2;
+  fApfelPulseGroup[2] = ApfelPulseBox_3;
+  fApfelPulseGroup[3] = ApfelPulseBox_4;
+  fApfelPulseGroup[4] = ApfelPulseBox_5;
+  fApfelPulseGroup[5] = ApfelPulseBox_6;
+  fApfelPulseGroup[6] = ApfelPulseBox_7;
+  fApfelPulseGroup[7] = ApfelPulseBox_8;
 
 
 
@@ -1264,26 +1275,60 @@ int ApfelGui::CalibrateResetADC(int channel)
 
   int ApfelGui::AcquireSample (int channel)
 {
-  printm("AcquiringSample from ADC channel %d",channel);
+
   BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
   bool usemonitorport = MonitorRadioButton->isChecked ();
   double val = 0;
   theSetup.ResetADCSample(channel);
-  for (int i = 0; i < APFEL_ADC_SAMPLEVALUES; ++i)
-  {
+
     if (usemonitorport)
     {
-      // evaluate  a single sample from ADC monitor port (no averaging like in baseline setup!)
-      val = AcquireBaselineSample (channel,1);
+      printm("AcquiringSample of ADC channel %d from monitoring port.",channel);
+      for (int i = 0; i < APFEL_ADC_SAMPLEVALUES; ++i)
+       {
+        // evaluate  a single sample from ADC monitor port (no averaging like in baseline setup!)
+        val = AcquireBaselineSample (channel,1);
+        theSetup.SetADCSample (channel, i, val);
+       }
     }
     else
     {
-      // read out MBS buffer TODO:
-    }
-    theSetup.SetADCSample (channel, i, val);
-  }
+      // read out MBS buffer
+      printm("AcquiringSample of ADC channel %d from MBS buffer.",channel);
+      //first read complete DAQ buffer of channel into memory // single operation
+      AcquireMbsSample(channel);
 
-  RefreshLastADCSample(channel);
+      // then skip optional header words
+      int cursor=0;
+      while((fData[cursor] & 0xAA00) == 0xAA00)
+      {
+        //std::cout << "skip header word #"<< cursor<<"of mbs buffer:"<< std::hex << fData[cursor]<< std::dec<< std::endl;
+        if((cursor+=2) >=APFEL_MBS_TRACELEN) break;
+      }
+      // put first APFEL_ADC_SAMPLEVALUES into the setup buffer, or use only every 40th of the full 8000 trace?
+      int sampledelta=APFEL_MBS_TRACELEN/APFEL_ADC_SAMPLEVALUES;
+      int i=0;
+      for (i = 0; i < APFEL_ADC_SAMPLEVALUES; ++i)
+      {
+        // lets do an average over the intermediate mbs values (aka rebin of trace):
+        double sum=0;
+        int s=0;
+        for(s=0; s < sampledelta; ++s)
+        {
+            if(cursor >=APFEL_MBS_TRACELEN) break;
+            sum+= (fData[cursor] & 0x3FFF); // here take into account 14 bit (necessary?)
+            cursor++;
+        }
+        double value=0;
+        if(s>0)  value= sum/ (double) s; // should be sampledelta if everything works nice, or less at end of buffer...
+
+        //std::cout <<"got value"<<value<< "at position "<< i <<", cursor="<<cursor<<", sum="<<sum << std::endl;
+        theSetup.SetADCSample (channel, i, value);
+      }
+      //std::cout << "Filled "<<i<< "adc samples from mbs trace up to position #"<< cursor<<", sampledelta="<<sampledelta<< std::endl;
+    }
+
+    RefreshLastADCSample(channel);
   return 0;
 }
 
@@ -1598,7 +1643,7 @@ void ApfelGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "ApfelGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.928 of 9-November-2016 by JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.944 of 10-November-2016 by JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -1718,10 +1763,20 @@ void ApfelGui::AutoApplySwitch()
 void ApfelGui::PulserTimeout()
 {
   //std::cout << "ApfelGui::PulserTimeout" << std::endl;
-  for (uint8_t apf = 0; apf < APFEL_NUMCHIPS; ++apf)
-   {
-      SetPulser(apf);
-   }
+
+
+  if (PulseBroadcastCheckBox->isChecked () && !fBroadcasting)
+  {
+      SetBroadcastPulser();
+  }
+  else
+  {
+    for (uint8_t apf = 0; apf < APFEL_NUMCHIPS; ++apf)
+    {
+      SetPulser (apf);
+    }
+
+  }
   fPulserProgressCounter++;
 
 }
@@ -2352,10 +2407,10 @@ void ApfelGui::AutoCalibrate_all()
    if (!fBroadcasting)
      {
        EvaluateSlave ();
-       // TODO: later use calibrate broadcast command of board
+       APFEL_BROADCAST_ACTION(DoAutoCalibrateAll());
        for(int apfel=0; apfel<APFEL_NUMCHIPS; ++apfel)
        {
-         APFEL_BROADCAST_ACTION(DoAutoCalibrate(apfel));
+         APFEL_BROADCAST_ACTION(UpdateAfterAutoCalibrate(apfel));
        }
      }
 }
@@ -2526,6 +2581,26 @@ int ApfelGui::AcquireBaselineSample(uint8_t febexchan, int numsamples)
   return Adc;
 }
 
+
+int ApfelGui::AcquireMbsSample(uint8_t febexchan)
+{
+      if(febexchan >= APFEL_ADC_NUMADC*APFEL_ADC_NUMCHAN) return -1;
+      // issue read request:
+      EnableI2C ();
+      WriteGosip (fSFP, fSlave, APFEL_ADC_DAQBUFFER_REQ_PORT, 0x80);
+      int readaddress= APFEL_ADC_DAQBUFFER_BASE * (febexchan+1);
+      for(int cursor=0; cursor<APFEL_MBS_TRACELEN; cursor+=2)
+      {
+          int value= ReadGosip (fSFP, fSlave, readaddress);
+          fData[cursor]= (value  >> 16) & 0xFFFF;
+          fData[cursor+1]= (value & 0xFFFF); // check the order here?
+//          if(cursor<10 || APFEL_MBS_TRACELEN -cursor < 10)
+//            printf("AcquireMbsSample val=0x%x dat[%d]=0x%x dat[%d]=0x%x\n",value,cursor,fData[cursor],cursor+1, fData[cursor+1]);
+          readaddress+=4;
+      }
+      DisableI2C ();
+      return 0;
+}
 
 
 void ApfelGui::RefreshDAC(int apfel)
@@ -2811,7 +2886,7 @@ void ApfelGui::SetRegisters ()
     {
       int val= theSetup.GetDACValue (apf, dac);
       WriteDAC_ApfelI2c (apf, dac, val);
-      std::cout << "SetRegisters DAC(" << apf <<"," << dac << ") val=" <<  val << std::endl;
+      //std::cout << "SetRegisters DAC(" << apf <<"," << dac << ") val=" <<  val << std::endl;
     }
 
     for (uint8_t ch = 0; ch < APFEL_NUMCHANS; ++ch)
@@ -2820,7 +2895,9 @@ void ApfelGui::SetRegisters ()
       SetGain (apf, ch, theSetup.GetLowGain (apf, ch));
 
     }
-    SetPulser(apf);
+
+    // no use to apply pulser here, since it will start a single pulse
+    //SetPulser(apf);
   }
 
   DisableI2C ();
@@ -2850,6 +2927,16 @@ void ApfelGui::SetPulser(uint8_t apf)
   if(on_1) amp1=theSetup.GetTestPulseAmplitude(apf,0);
   if(on_2) amp2=theSetup.GetTestPulseAmplitude(apf,1);
   SetTestPulse(apf, on_any, amp1, amp2, theSetup.GetTestPulsePositive(apf));
+}
+
+
+void ApfelGui::SetBroadcastPulser()
+{
+  bool on=PulserCheckBox_all->isChecked();
+  uint8_t amp=PulserAmpSpinBox_all->value();
+  bool positive = (ApfelTestPolarityBox_all->currentIndex () == 0);
+  SetTestPulse(0xFF, on, amp, amp, positive);
+
 }
 
 
@@ -3158,8 +3245,9 @@ void ApfelGui::SetTestPulse(uint8_t apfelchip, bool on, uint8_t amp1, uint8_t am
   int apfelid = apid & 0xFF;
   if(!on)
   {
-    dat=APFEL_TESTPULSE_FLAG_WR | apfelid;
-    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
+    // test pulse is not continuous, so we never need to reset it?
+    //dat=APFEL_TESTPULSE_FLAG_WR | apfelid;
+    //WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 
   }
   else
@@ -3196,23 +3284,36 @@ void ApfelGui::DoAutoCalibrate(uint8_t apfelchip)
   usleep(8000);
   printm("...done!\n");
   //Note: The auto calibration of the APFELchip takes not more that 8 ms.
+  UpdateAfterAutoCalibrate(apfelchip);
 
-  // here get registers of apfelchip only and refresh
-   EnableI2C ();
-   GetDACs(apfelchip);
-   DisableI2C ();
-   RefreshDAC(apfelchip);
-   BoardSetup& theSetup=fSetup[fSFP].at (fSlave);
-   for(int dac=0; dac<APFEL_NUMDACS; ++dac)
-   {
-     RefreshADC_Apfel(apfelchip, dac);
-   }
+  QApplication::restoreOverrideCursor ();
+}
 
+void ApfelGui::DoAutoCalibrateAll()
+{
+  QApplication::setOverrideCursor (Qt::WaitCursor);
+  printm("Doing Broadcast Autocalibration of apfel chips on sfp:%d, board:%d...", fSFP, fSlave);
+  int apfelid = 0xFF;
+  int dat =APFEL_AUTOCALIBRATE_BASE_WR | apfelid;
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
+  usleep(8000);
   QApplication::restoreOverrideCursor ();
 }
 
 
 
+void ApfelGui::UpdateAfterAutoCalibrate(uint8_t apfelchip)
+{
+  // here get registers of apfelchip only and refresh
+    EnableI2C ();
+    GetDACs(apfelchip);
+    DisableI2C ();
+    RefreshDAC(apfelchip);
+    for(int dac=0; dac<APFEL_NUMDACS; ++dac)
+    {
+      RefreshADC_Apfel(apfelchip, dac);
+    }
+}
 
 
 void ApfelGui::SetSwitches(bool useApfel, bool useHighGain, bool useStretcher)
@@ -3258,6 +3359,30 @@ void ApfelGui::InverseMapping_changed (int on)
   }
 
 }
+
+void ApfelGui::PulseBroadcast_changed(int on)
+{
+  //std::cout << "PulseBroadcast_changed to" <<  on << std::endl;
+  for(int ap=0; ap<8; ++ap)
+  {
+    fApfelPulseGroup[ap]->setEnabled(!on);
+  }
+
+  if(on)
+  {
+
+    if (checkBox_AA->isChecked () && !fBroadcasting)
+      {
+        EvaluateSlave ();
+        APFEL_BROADCAST_ACTION(SetBroadcastPulser());
+      }
+
+  }
+
+
+}
+
+
 
 int ApfelGui::EvaluatePulserInterval(int findex)
 {

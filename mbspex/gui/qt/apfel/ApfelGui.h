@@ -101,6 +101,8 @@ protected:
 
   QComboBox* fApfelGainCombo[APFEL_NUMCHIPS][APFEL_NUMCHANS];
 
+  QGroupBox* fApfelPulseGroup[APFEL_NUMCHIPS];
+
 
   KPlotWidget* fPlotWidget[16];
 
@@ -133,6 +135,11 @@ protected:
 
   /** configuration output file handle*/
   FILE* fConfigFile;
+
+
+
+  /** temporary data field for mbs readout buffer samples*/
+  uint16_t fData[APFEL_MBS_TRACELEN];
 
 #ifdef USE_MBSPEX_LIB
 
@@ -186,6 +193,8 @@ protected:
   /** put test pulser settings for apfel chip from gui into setup structure*/
   void EvaluatePulser(int apfel);
 
+
+
   /** decode pulser interval from frequency box index*/
   int EvaluatePulserInterval(int index);
 
@@ -200,6 +209,8 @@ protected:
   /** apply test pulser settings for apfel chip from setup structure to device*/
   void SetPulser(uint8_t apfel);
 
+  /** apply test pulser broadcast settings to all apfel chips*/
+  void SetBroadcastPulser();
 
   /** set io switch from setup structures to device */
   void SetIOSwitch();
@@ -264,6 +275,9 @@ protected:
     int AcquireBaselineSample(uint8_t febexchan, int numsamples=-1);
 
 
+    /** read a trace from the mbs buffer of febexchan into the fData field*/
+    int AcquireMbsSample(uint8_t febexchan);
+
     /** set gain factor for each apfel channel on board. High gain switch must be enabled for board.
      *  gain is 16 if useGain16=true, or 32 if useGain16=false (default)
      * */
@@ -277,8 +291,14 @@ protected:
     void SetTestPulse(uint8_t apfelchip, bool on, uint8_t amp1, uint8_t amp2, bool positive);
 
 
-    /* Perform automatic calibration of specified apfel chip*/
+    /** Perform automatic calibration of specified apfel chip*/
     void DoAutoCalibrate(uint8_t apfelchip);
+
+    /** Send autocalibration broadcast to current board*/
+    void DoAutoCalibrateAll();
+
+    /** Fetch DAC and ADC values related to apfelchip after autocalibratio*/
+    void UpdateAfterAutoCalibrate(uint8_t apfelchip);
 
 
     /** set switch register of currently selected slave (apfel input on/off), gain 1 or 16/32, stretcher on/off)*/
@@ -287,7 +307,7 @@ protected:
 
 
 
-   /* Initialize febex after power up*/
+   /** Initialize febex after power up*/
    void InitApfel();
 
 
@@ -329,6 +349,9 @@ protected:
    * * This function is capable of usage in APFEL_BROADCAST_ACTION macro*/
   void AutoApplySwitch();
 
+
+  /** send general pulser settings to all apfel channels*/
+  void BroadcastPulser();
 
 
   /** apply pulser settings directly
@@ -587,7 +610,8 @@ public slots:
 
 
   virtual void PulseTimer_changed(int on);
-  virtual void PulseFrequencyChanged(int);
+  virtual void PulseFrequencyChanged(int period);
+  virtual void PulseBroadcast_changed(int on);
 
   virtual void PulserTimeout();
   virtual void PulserDisplayTimeout();
