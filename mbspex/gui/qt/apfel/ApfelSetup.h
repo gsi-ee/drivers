@@ -5,6 +5,10 @@
 #include <stdint.h>
 #include <math.h>
 
+#include <queue>
+
+#include <QString>
+
 
 /** this define will switch between direct call of mbspex lib or external shell call of gosipcmd*
  * note: we need to call "make nombspex" if we disable this define here!
@@ -121,6 +125,13 @@ public:
   void SetDACmax (double val);
   void SetADCmin (double val);
 
+  double GetSlope ();
+  double GetD0 ();
+  double GetDACmin ();
+  double GetDACmax ();
+  double GetADCmin ();
+
+
   /** function returns dac value to set for relative height of adc baseline in permille*/
   int CalculateDACValue (double ADC_permille);
 
@@ -194,6 +205,214 @@ public:
 };
 
 
+class ApfelTestResults
+{
+private:
+
+  /** the address id of this apfel chip on the board*/
+   uint8_t fAddressID;
+
+   /** the absolute values of the APFEL dacs after autocalibration*/
+   uint16_t fDACValueCalibrate[APFEL_NUMDACS];
+
+
+   /** keep results of DAC-ADC calibration mapped to apfel channels*/
+   GainSetup fDAC_ADC_Gain[APFEL_NUMDACS];
+
+   /** mean value of measured baseline after autocalibration*/
+   double fMean[APFEL_NUMDACS];
+
+   /** sigma value of measured baseline after autocalibration*/
+   double fSigma[APFEL_NUMDACS];
+
+   /** keep minimum value of baseline sample set*/
+    uint16_t fMinValue[APFEL_NUMDACS];;
+
+    /** keep maximum value of baseline sample set*/
+    uint16_t fMaxValue[APFEL_NUMDACS];;
+
+
+
+public:
+
+
+  ApfelTestResults(uint8_t address=0)
+  {
+    Reset();
+  }
+
+  void Reset()
+  {
+    fAddressID=0;
+    for(int dac=0; dac<APFEL_NUMDACS; ++dac)
+        {
+          fDACValueCalibrate[dac]=0;
+          fMean[dac]=0;
+          fSigma[dac]=0;
+          fMinValue[dac]=0;
+          fMaxValue[dac]=0;
+          fDAC_ADC_Gain[dac].ResetCalibration();
+        }
+  }
+
+  void SetAddressId(uint8_t ad)
+  {
+    fAddressID=ad;
+  }
+
+  uint8_t GetAddressId()
+  {
+     return fAddressID;
+   }
+
+  int SetDACValueCalibrate(int dac, uint16_t val)
+  {
+    ASSERT_DAC_VALID(dac);
+    fDACValueCalibrate[dac]=val;
+    return 0;
+  }
+
+  uint16_t GetDACValueCalibrate(int dac)
+  {
+    ASSERT_DAC_VALID(dac)
+    return fDACValueCalibrate[dac];
+  }
+
+  int SetDACSampleMean(int dac, double val)
+  {
+    ASSERT_DAC_VALID(dac);
+    fMean[dac]=val;
+    return 0;
+  }
+
+  double GetDACSampleMean(int dac)
+   {
+     ASSERT_DAC_VALID(dac);
+     return fMean[dac];
+   }
+  int SetDACSampleSigma(int dac, double val)
+  {
+    ASSERT_DAC_VALID(dac);
+    fSigma[dac]=val;
+    return 0;
+  }
+
+  double GetDACSampleSigma(int dac)
+   {
+     ASSERT_DAC_VALID(dac);
+     return fSigma[dac];
+   }
+
+
+  int SetDACSampleMinimum(int dac, uint16_t val)
+    {
+      ASSERT_DAC_VALID(dac);
+      fMinValue[dac]=val;
+      return 0;
+    }
+
+  uint16_t GetDACSampleMinimum(int dac)
+     {
+    ASSERT_DAC_VALID(dac);
+    return fMinValue[dac];
+     }
+
+
+  int SetDACSampleMaxium(int dac, uint16_t val)
+     {
+       ASSERT_DAC_VALID(dac);
+       fMaxValue[dac]=val;
+       return 0;
+     }
+
+   uint16_t GetDACSampleMaximum(int dac)
+      {
+     ASSERT_DAC_VALID(dac);
+     return fMaxValue[dac];
+      }
+
+int SetGainParameter(int dac, GainSetup structure)
+{
+  ASSERT_DAC_VALID(dac);
+  fDAC_ADC_Gain[dac]=structure; // hope for default assignment operator!
+  return 0;
+}
+
+double GetSlope (int dac)
+{
+  ASSERT_DAC_VALID(dac);
+  return fDAC_ADC_Gain[dac].GetSlope();
+}
+
+ double GetD0 (int dac)
+ {
+   ASSERT_DAC_VALID(dac);
+   return fDAC_ADC_Gain[dac].GetD0();
+ }
+
+ double GetDACmin (int dac)
+ {
+   ASSERT_DAC_VALID(dac);
+      return fDAC_ADC_Gain[dac].GetDACmin();
+
+ }
+ double GetDACmax (int dac)
+ {
+   ASSERT_DAC_VALID(dac);
+   return fDAC_ADC_Gain[dac].GetDACmax();
+
+ }
+
+ double GetADCmin (int dac)
+ {
+   ASSERT_DAC_VALID(dac);
+   return fDAC_ADC_Gain[dac].GetADCmin();
+
+ }
+
+
+
+};
+
+
+
+
+/** command action id to be put into the test sequencer list*/
+
+enum SequencerAction
+  {
+    SEQ_NONE,
+    SEQ_GAIN_1,
+    SEQ_GAIN_16,
+    SEQ_GAIN_32,
+    SEQ_AUTOCALIB,
+    SEQ_NOISESAMPLE,
+    SEQ_BASELINE,
+    SEQ_CURVE
+  };
+
+
+/** command token to be put into the test sequencer list*/
+class SequencerCommand
+{
+private:
+
+  /** action command id to be executed*/
+  SequencerAction fAction;
+
+  /** optional channel number. used to explictely execute loops with low command granularity in timer*/
+  int fChannel;
+
+public:
+
+  SequencerCommand(SequencerAction actionid, int channel=0): fAction(actionid), fChannel(channel){;}
+
+  SequencerAction GetAction(){return fAction;}
+  int GetChannel(){return fChannel;}
+};
+
+
+
 
 /** the setup of the apfel/febex slave board*/
 class BoardSetup
@@ -227,10 +446,32 @@ private:
 
   AdcSample fLastSample[APFEL_ADC_CHANNELS];
 
+  std::queue <SequencerCommand> fTestSequence;
+
+  ApfelTestResults fTest_32[APFEL_NUMCHIPS];
+  ApfelTestResults fTest_16[APFEL_NUMCHIPS];
+  ApfelTestResults fTest_1[APFEL_NUMCHIPS];
+
+
+  /** Initial number of sequencer commands*/
+  int fTestLength;
+
+  QString fApfelID;
+
+  QString fApfelTag;
+
 
 public:
 
   BoardSetup ();
+
+
+  void setApfelID(const QString& val){fApfelID=val;}
+  void setApfelTag(const QString& val){fApfelTag=val;}
+
+  const QString& getApfelID(){return fApfelID;}
+  const QString& getApfelTag(){return fApfelTag;}
+
 
   bool IsApfelInUse ()
   {
@@ -262,6 +503,14 @@ public:
   }
 
   void SetApfelMapping (bool regular = true);
+
+  /** access to test result structure for gain and apfel id.
+   * Todo: separate setters and getters?*/
+  ApfelTestResults& AccessTestResults(int gain, int apfel);
+
+  /** fetch full gain structure to copy it into the test results*/
+  GainSetup& AccessGainSetup(int gain, int febexchannel);
+
 
   /** following functions belong to gain related DAC/ADC calilbration:*/
 
@@ -357,6 +606,22 @@ public:
 
   /** display most recent sample values or curve on text box*/
   int ShowADCSample(int febexchannel);
+
+
+  /** put a command for the test sequence to the list*/
+  void AddSequencerCommand(SequencerCommand com);
+
+  /** get next command from sequencer list and remove it*/
+  SequencerCommand NextSequencerCommand();
+
+  /** Mark Sequencer list as complete*/
+  void FinalizeSequencerList();
+
+  /** clear all entries for sequencer*/
+  void ResetSequencerList();
+
+  /** returns percentage of sequencer commands already done.*/
+  int GetSequencerProgress();
 
 
 };

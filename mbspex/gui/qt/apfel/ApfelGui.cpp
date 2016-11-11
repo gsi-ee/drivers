@@ -115,7 +115,7 @@ void ApfelGui::I2c_sleep ()
  */
 ApfelGui::ApfelGui (QWidget* parent) :
     QWidget (parent), fPulserProgressCounter(0), fDebug (false), fSaveConfig (false), fBroadcasting(false), fSFP (0), fSlave (0), fSFPSave (0), fSlaveSave (0),
-        fConfigFile (0)
+        fConfigFile (0), fTestFile (0)
 {
   setupUi (this);
 #if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
@@ -345,6 +345,13 @@ ApfelGui::ApfelGui (QWidget* parent) :
   QObject::connect (FrequencyComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT (PulseFrequencyChanged(int)));
 
   QObject::connect (PulseBroadcastCheckBox, SIGNAL(stateChanged(int)), this, SLOT(PulseBroadcast_changed(int)));
+
+
+
+//  QObject::connect (BenchmarkButtonBox, SIGNAL(accepted()), this, SLOT(StartBenchmarkPressed()));
+//  QObject::connect (BenchmarkButtonBox, SIGNAL(rejected()), this, SLOT(CancelBenchmarkPressed()));
+
+  QObject::connect (BenchmarkButtonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(BenchmarkPressed(QAbstractButton*)));
 
 
   /** JAM put references to designer checkboxes into array to be handled later easily: */
@@ -629,8 +636,12 @@ ApfelGui::ApfelGui (QWidget* parent) :
   fDisplayTimer->setInterval(500);
   QObject::connect(fDisplayTimer, SIGNAL(timeout()), this, SLOT(PulserDisplayTimeout()));
 
+  // benchmark testing procedure related:
+  BenchmarkButtonBox->button(QDialogButtonBox::Apply)->setDefault(true);
 
-
+  fSequencerTimer= new QTimer(this);
+  fSequencerTimer->setInterval(20);
+  QObject::connect(fSequencerTimer, SIGNAL(timeout()), this, SLOT(BenchmarkTimerCallback()));
 
 #ifdef USE_MBSPEX_LIB
 // open handle to driver file:
@@ -718,8 +729,9 @@ void ApfelGui::SaveConfigBtn_clicked ()
 
   static char buffer[1024];
   QString gos_filter ("gosipcmd file (*.gos)");
+  QString apf_filter ("apfel characterization file (*.apf)");
   QStringList filters;
-  filters << gos_filter;
+  filters << gos_filter << apf_filter;
 
   QFileDialog fd (this, "Write Apfel configuration file");
 
@@ -739,35 +751,39 @@ void ApfelGui::SaveConfigBtn_clicked ()
   {
     if (!fileName.endsWith (".gos"))
       fileName.append (".gos");
-  }
-  else
-  {
-    std::cout << "ApfelGui::SaveConfigBtn_clicked( - NEVER COME HERE!!!!)" << std::endl;
-  }
 
-  // open file
-  if (OpenConfigFile (fileName) != 0)
-    return;
+    // open file
+    if (OpenConfigFile (fileName) != 0)
+        return;
 
-  if (fileName.endsWith (".gos"))
-  {
     WriteConfigFile (QString ("#Format *.gos"));
     WriteConfigFile (QString ("#usage: gosipcmd -x -c file.gos \n"));
     WriteConfigFile (QString ("#                                         \n"));
     WriteConfigFile (QString ("#sfp slave address value\n"));
     APFEL_BROADCAST_ACTION(SaveRegisters()); // refresh actual setup from hardware and write it to open file
+    CloseConfigFile ();
+    snprintf (buffer, 1024, "Saved current slave configuration to file '%s' .\n", fileName.toLatin1 ().constData ());
+    AppendTextWindow (buffer);
   }
+  else if (fd.selectedNameFilter () == apf_filter)
+   {
+     if (!fileName.endsWith (".apf"))
+       fileName.append (".apf");
 
+      OpenTestFile(fileName);
+      APFEL_BROADCAST_ACTION(SaveTestResults()); // dump figures of merit of current slave, or of all slaves
+      CloseTestFile ();
+      snprintf (buffer, 1024, "Saved test result to file '%s' .\n", fileName.toLatin1 ().constData ());
+      AppendTextWindow (buffer);
+   }
 
   else
   {
-    std::cout << "ApfelGui::SaveConfigBtn_clicked( -  unknown file type, NEVER COME HERE!!!!)" << std::endl;
+    std::cout << "ApfelGui::SaveConfigBtn_clicked( - NEVER COME HERE!!!!)" << std::endl;
   }
 
-  // close file
-  CloseConfigFile ();
-  snprintf (buffer, 1024, "Saved current slave configuration to file '%s' .\n", fileName.toLatin1 ().constData ());
-  AppendTextWindow (buffer);
+
+
 }
 
 int ApfelGui::OpenConfigFile (const QString& fname)
@@ -810,6 +826,50 @@ int ApfelGui::WriteConfigFile (const QString& text)
     return -2;
   return 0;
 }
+
+
+
+int ApfelGui::OpenTestFile (const QString& fname)
+{
+  fTestFile = fopen (fname.toLatin1 ().constData (), "w");
+  if (fTestFile == NULL)
+  {
+    char buffer[1024];
+    snprintf (buffer, 1024, " Error opening Characterization result File '%s': %s\n", fname.toLatin1 ().constData (),
+        strerror (errno));
+    AppendTextWindow (buffer);
+    return -1;
+  }
+  QString timestring = QDateTime::currentDateTime ().toString ("ddd dd.MM.yyyy hh:mm:ss");
+  WriteConfigFile (QString ("# Apfel characterization test file saved on ") + timestring + QString ("\n"));
+  return 0;
+}
+
+int ApfelGui::CloseTestFile ()
+{
+  int rev = 0;
+  if (fTestFile == NULL)
+    return 0;
+  if (fclose (fTestFile) != 0)
+  {
+    char buffer[1024];
+    snprintf (buffer, 1024, " Error closing characterization test file! (%s)\n", strerror (errno));
+    AppendTextWindow (buffer);
+    rev = -1;
+  }
+  fTestFile = NULL;    // must not use handle again even if close fails
+  return rev;
+}
+
+int ApfelGui::WriteTestFile (const QString& text)
+{
+  if (fTestFile == NULL)
+    return -1;
+  if (fprintf (fTestFile, text.toLatin1 ().constData ()) < 0)
+    return -2;
+  return 0;
+}
+
 
 
 void ApfelGui::InitChainBtn_clicked ()
@@ -1336,7 +1396,7 @@ int ApfelGui::CalibrateResetADC(int channel)
   {
     if(!AssertChainConfigured()) return;
     bool changed=false;
-       for(int channel=0; channel<16;++channel)
+    for(int channel=0; channel<16;++channel)
          {
            if(fSamplingBoxes[channel]->isChecked())
            {
@@ -1359,12 +1419,14 @@ int ApfelGui::CalibrateResetADC(int channel)
 
 
 
-  int ApfelGui::ShowSample(int channel)
+  int ApfelGui::ShowSample(int channel, bool benchmarkdisplay)
   {
     //std::cout <<"ShowSample for channel:"<<channel<< std::endl;
     BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
     //theSetup.ShowADCSample(channel); // todo: dump sample on different knob
 
+    KPlotWidget* canvas=fPlotWidget[channel];
+    if(benchmarkdisplay) canvas=BenchmarkPlotwidget;
     // first fill plotobject with samplepoints
     QColor col;
     KPlotObject::PointStyle pstyle= KPlotObject::Circle;
@@ -1423,14 +1485,14 @@ int ApfelGui::CalibrateResetADC(int channel)
     };
 
     // TODO: put this in special functions
-    fPlotWidget[channel]->resetPlot();
+    canvas->resetPlot();
         // labels for plot area:
-    fPlotWidget[channel]->setAntialiasing( true );
+    canvas->setAntialiasing( true );
 
 
 
-    fPlotWidget[channel]->axis( KPlotWidget::BottomAxis )->setLabel("Time (#samples)");
-    fPlotWidget[channel]->axis( KPlotWidget::LeftAxis )->setLabel("ADC value ");
+    canvas->axis( KPlotWidget::BottomAxis )->setLabel("Time (#samples)");
+    canvas->axis( KPlotWidget::LeftAxis )->setLabel("ADC value ");
 
 
     //KPlotObject *sampleplot = new KPlotObject(col, KPlotObject::Points, 1, pstyle);
@@ -1441,14 +1503,19 @@ int ApfelGui::CalibrateResetADC(int channel)
     {
       sampleplot->addPoint (i, theSetup.GetADCSample(channel,i));
     }
+
    // add it to the plot area
-    fPlotWidget[channel]->addPlotObject( sampleplot);
+    canvas->addPlotObject( sampleplot);
 
-    UnzoomSample(channel);
-
-
-    //fPlotWidget[channel]->update();
-
+    if(benchmarkdisplay)
+    {
+      canvas->setLimits(0, APFEL_ADC_SAMPLEVALUES, 0.0, 17000);
+      canvas->update();
+    }
+    else
+    {
+      UnzoomSample(channel);
+    }
 
     return 0;
   }
@@ -1643,7 +1710,7 @@ void ApfelGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "ApfelGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.944 of 10-November-2016 by JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.951 of 11-November-2016 by JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -1856,7 +1923,7 @@ void ApfelGui::AutoApplyGain(int apfel, int channel)
  {
     BoardSetup& theSetup= fSetup[fSFP].at(fSlave);
     EvaluateGain(apfel, channel);
-    //std::cout << "AutoApplyGain apfel="<<apfel<<", channel="<<channel<<", lowgain:"<< theSetup.GetLowGain (apfel, channel)<<std::endl;
+    std::cout << "AutoApplyGain apfel="<<apfel<<", channel="<<channel<<", lowgain:"<< theSetup.GetLowGain (apfel, channel)<<std::endl;
     SetGain (apfel, channel, theSetup.GetLowGain (apfel, channel));
  }
 
@@ -3443,6 +3510,355 @@ void ApfelGui::PulseFrequencyChanged(int index)
   fPulserTimer->setInterval(period);
   printm("Pulser Period has been changed to %d ms.",period);
 }
+
+
+void ApfelGui::BenchmarkTimerCallback()
+{
+  // this one does the actual benchmarking procedure:
+  static int sequencergain=0;
+  // each time we come here, the next thing on the todo list is handled:
+
+  // TODO: later we need all this as BROADCAST_ACTION function? or prevent broadcasting mode for characterization
+  if(!AssertNoBroadcast()) {
+    printm("Benchmark is not allowed in slave broadcast mode! stopping test.");
+    fSequencerTimer->stop();
+    return;
+  }
+
+  BoardSetup& theSetup=fSetup[fSFP].at(fSlave);
+
+  int progress=theSetup.GetSequencerProgress();
+  BenchmarkProgressBar->setValue(progress);
+
+
+  SequencerCommand com=theSetup.NextSequencerCommand();
+  int febexchannel=com.GetChannel();
+  switch(com.GetAction())
+  {
+    case SEQ_NONE:
+
+      printm("Benchmark Timer has reached end of sequencer list!");
+      fSequencerTimer->stop();
+      break;
+    case SEQ_GAIN_1:
+      printm("Benchmark Timer Sets to gain 1.");
+      // always keep setup consistent with the applied values:
+      theSetup.SetHighGain(false); // apply gain 1 by this.
+      //LoGainRadioButton->setChecked(!theSetup.IsHighGain());
+      //HiGainRadioButton->setChecked(theSetup.IsHighGain());
+      // note that we do not change other switches for the moment.
+      SetSwitches(theSetup.IsApfelInUse(), theSetup.IsHighGain(), theSetup.IsStretcherInUse());
+      sequencergain=1;
+      break;
+    case SEQ_GAIN_16:
+       printm("Benchmark Timer Sets to gain 16.");
+       // always keep setup consistent with the applied values:
+       theSetup.SetHighGain(true); // apply gain 1 by this.
+       //LoGainRadioButton->setChecked(!theSetup.IsHighGain());
+       //HiGainRadioButton->setChecked(theSetup.IsHighGain());
+       // note that we do not change other switches for the moment.
+       SetSwitches(theSetup.IsApfelInUse(), theSetup.IsHighGain(), theSetup.IsStretcherInUse());
+       // now need to change channel gains:
+       //gainCombo_all->setCurrentIndex (0); // does this make an auto apply?
+
+       for(int apfel=0; apfel<APFEL_NUMCHIPS; ++apfel)
+       {
+           for(int channel=0; channel<APFEL_NUMCHANS;++channel)
+           {
+             theSetup.SetLowGain (apfel, channel, true);
+             //fApfelGainCombo[apfel][channel]->setCurrentIndex (0);
+             SetGain(apfel, channel, true);
+           }
+
+       }
+       sequencergain=16;
+       break;
+
+    case SEQ_GAIN_32:
+           printm("Benchmark Timer Sets to gain 32.");
+           // always keep setup consistent with the applied values:
+           theSetup.SetHighGain(true); // apply gain 1 by this.
+           //LoGainRadioButton->setChecked(!theSetup.IsHighGain());
+           //HiGainRadioButton->setChecked(theSetup.IsHighGain());
+           // note that we do not change other switches for the moment.
+           SetSwitches(theSetup.IsApfelInUse(), theSetup.IsHighGain(), theSetup.IsStretcherInUse());
+           // now need to change channel gains:
+           //gainCombo_all->setCurrentIndex (1);
+
+           for(int apfel=0; apfel<APFEL_NUMCHIPS; ++apfel)
+           {
+               for(int channel=0; channel<APFEL_NUMCHANS;++channel)
+               {
+                 theSetup.SetLowGain (apfel, channel, false);
+                 //fApfelGainCombo[apfel][channel]->setCurrentIndex (1);
+                 SetGain(apfel, channel, false);
+               }
+
+           }
+           sequencergain=32;
+           break;
+    case  SEQ_AUTOCALIB:
+      printm("Benchmark Timer is doing DAC Autocalibration.");
+      AutoCalibrate_all();
+
+      // now save DAC settings to structure:
+      for(int apfel=0; apfel<APFEL_NUMCHIPS; ++apfel)
+      {
+        ApfelTestResults& theResults=theSetup.AccessTestResults(sequencergain, apfel);
+        for(int dac=0; dac<APFEL_NUMDACS; ++dac)
+          {
+            theResults.SetDACValueCalibrate(dac, theSetup.GetDACValue(apfel,dac));
+          }
+
+      }
+
+      break;
+
+    case  SEQ_NOISESAMPLE:
+      printm("Benchmark Timer is measuring Baseline noise samples of channel %d",febexchannel);
+      {
+      AcquireSample(febexchannel);
+      ShowSample(febexchannel,true);
+      double mean=theSetup.GetADCMean(febexchannel);
+      double sigma=theSetup.GetADCSigma(febexchannel);
+      double minimum=theSetup.GetADCMiminum(febexchannel);
+      double maximum=theSetup.GetADCMaximum(febexchannel);
+      // print here channelwise. TODO: evaluate mean and sigma only once, not for every refresh
+      int apfel=0, dac=0;
+      theSetup.EvaluateDACIndices(febexchannel,apfel,dac);
+      ApfelTestResults& theResults=theSetup.AccessTestResults(sequencergain, apfel);
+      theResults.SetDACSampleMean(dac,mean);
+      theResults.SetDACSampleSigma(dac,sigma);
+      theResults.SetDACSampleMinimum(dac,minimum);
+      theResults.SetDACSampleMinimum(dac,maximum);
+      printm("\tChannel %d : mean=%f sigma=%f minimum=%f maximum=%f", febexchannel, mean,sigma,minimum,maximum);
+      }
+      break;
+
+    case  SEQ_BASELINE:
+      printm("Benchmark Timer is doing baseline calibration of channel %d", febexchannel);
+      {
+        CalibrateADC(febexchannel);
+        int apfel=0, dac=0;
+        theSetup.EvaluateDACIndices(febexchannel,apfel,dac);
+        ApfelTestResults& theResults=theSetup.AccessTestResults(sequencergain, apfel);
+        GainSetup gainSetup=theSetup.AccessGainSetup(sequencergain,febexchannel);
+        theResults.SetGainParameter(dac, gainSetup);
+      }
+      break;
+
+    case SEQ_CURVE:
+      // to do
+
+    default:
+      printm("Benchmark Timer will execute command %d for channel %d",com.GetAction(), com.GetChannel());
+      break;
+  };
+
+  APFEL_BROADCAST_ACTION(RefreshView ());
+  // instead of changing gui elements during measurement, we update view completely after each command. avoid unwanted effects by widget signals with auto apply!
+  // the APFEL_BROADCAST_ACTION is just use to supress further signal slot executions
+}
+
+
+
+void ApfelGui::StartBenchmarkPressed()
+{
+  BoardSetup& theSetup=fSetup[fSFP].at(fSlave);
+  printm("Benchmark Timer has been started!");
+  QString apfelid=ApfelID_lineEdit->text();
+  QString tag=TagID_lineEdit->text();
+     if(apfelid.isEmpty() || tag.isEmpty())
+     {
+       printm("Please specify full id information!");
+       return;
+     }
+  theSetup.setApfelID(apfelid);
+  theSetup.setApfelTag(tag);
+
+    printm("Benchmark has been started for sfp %d slave %d",fSFP, fSlave);
+    printm("Apfelid:%s Boardid:%s ",apfelid.toLatin1().constData(), tag.toLatin1().constData());
+
+
+    // here we evaluate a to do list that the timer should process:
+
+    theSetup.ResetSequencerList();
+
+
+  if (Gain1groupBox->isChecked ())
+  {
+
+    theSetup.AddSequencerCommand(SequencerCommand (SEQ_GAIN_1));
+
+
+    if (Gain1TestAutocalCheckBox->isChecked ())
+    {
+      theSetup.AddSequencerCommand(SequencerCommand (SEQ_AUTOCALIB));
+    }
+    if (Gain1TestSigmaCheckBox->isChecked ())
+    {
+      for(int channel=0; channel<APFEL_ADC_CHANNELS;++channel)
+        theSetup.AddSequencerCommand(SequencerCommand (SEQ_NOISESAMPLE, channel));
+
+
+    }
+    if (Gain1TestBaselineCheckBox->isChecked ())
+    {
+      for(int channel=0; channel<APFEL_ADC_CHANNELS;++channel)
+        theSetup.AddSequencerCommand(SequencerCommand (SEQ_BASELINE, channel));
+
+    }
+    if (Gain1TestCurveCheckBox->isChecked ())
+    {
+      for(int channel=0; channel<APFEL_ADC_CHANNELS;++channel)
+        theSetup.AddSequencerCommand(SequencerCommand (SEQ_CURVE, channel));
+    }
+  }
+
+  if (Gain16groupBox->isChecked ())
+    {
+
+      theSetup.AddSequencerCommand(SequencerCommand (SEQ_GAIN_16));
+
+      if (Gain16TestAutocalCheckBox->isChecked ())
+      {
+        theSetup.AddSequencerCommand(SequencerCommand (SEQ_AUTOCALIB));
+      }
+      if (Gain16TestSigmaCheckBox->isChecked ())
+      {
+        for(int channel=0; channel<APFEL_ADC_CHANNELS;++channel)
+          theSetup.AddSequencerCommand(SequencerCommand (SEQ_NOISESAMPLE, channel));
+      }
+      if (Gain16TestBaselineCheckBox->isChecked ())
+      {
+        for(int channel=0; channel<APFEL_ADC_CHANNELS;++channel)
+          theSetup.AddSequencerCommand(SequencerCommand (SEQ_BASELINE, channel));
+      }
+      if (Gain16TestCurveCheckBox->isChecked ())
+      {
+        for(int channel=0; channel<APFEL_ADC_CHANNELS;++channel)
+          theSetup.AddSequencerCommand(SequencerCommand (SEQ_CURVE,channel));
+      }
+    }
+  if (Gain32groupBox->isChecked ())
+     {
+
+      theSetup.AddSequencerCommand(SequencerCommand (SEQ_GAIN_32));
+
+
+       if (Gain32TestAutocalCheckBox->isChecked ())
+       {
+         theSetup.AddSequencerCommand(SequencerCommand (SEQ_AUTOCALIB));
+       }
+       if (Gain32TestSigmaCheckBox->isChecked ())
+       {
+         for(int channel=0; channel<APFEL_ADC_CHANNELS;++channel)
+           theSetup.AddSequencerCommand(SequencerCommand (SEQ_NOISESAMPLE,channel));
+       }
+       if (Gain32TestBaselineCheckBox->isChecked ())
+       {
+         for(int channel=0; channel<APFEL_ADC_CHANNELS;++channel)
+           theSetup.AddSequencerCommand(SequencerCommand (SEQ_BASELINE,channel));
+       }
+       if (Gain32TestCurveCheckBox->isChecked ())
+       {
+         for(int channel=0; channel<APFEL_ADC_CHANNELS;++channel)
+           theSetup.AddSequencerCommand(SequencerCommand (SEQ_CURVE,channel));
+       }
+     }
+
+  theSetup.FinalizeSequencerList();
+  fSequencerTimer->start();
+
+
+
+}
+
+
+void ApfelGui::CancelBenchmarkPressed()
+{
+  printm("Benchmark has been canceled .");
+  fSequencerTimer->stop();
+}
+
+
+
+void ApfelGui::SaveBenchmarkPressed()
+{
+  SaveConfigBtn_clicked ();
+}
+
+
+
+
+
+void ApfelGui::BenchmarkPressed(QAbstractButton* but)
+{
+  if(but==BenchmarkButtonBox->button(QDialogButtonBox::Apply))
+  {
+    StartBenchmarkPressed();
+  }
+  else if(but==BenchmarkButtonBox->button(QDialogButtonBox::Save))
+  {
+
+    SaveBenchmarkPressed();
+  }
+  else if(but==BenchmarkButtonBox->button(QDialogButtonBox::Cancel))
+  {
+    //printm("Benchmark will be canceled.");
+    CancelBenchmarkPressed();
+  }
+}
+
+
+void ApfelGui::SaveTestResults()
+{
+
+  printm("Saving test results of sfp:%d slave%d.",fSFP, fSlave);
+  BoardSetup& theSetup=fSetup[fSFP].at(fSlave);
+
+  QString apfid=theSetup.getApfelID();
+  QString tag=theSetup.getApfelTag();
+  if(apfid.isEmpty() || tag.isEmpty())
+  {
+    printm("Can not save test results: full id information was not given! Please rerun test.");
+    return;
+  }
+  QString header=QString("# apfelid:").append(apfid).append(", tag:").append(tag).append("\n");
+  WriteTestFile (header);
+    // format
+  WriteTestFile (QString ("#Gain \tAPFEL \tDAC \tCalibSet \tBaseline \tSigma  \tdDAC/dADC \tDAC0 \tDACmin \tDACmax \tADCmin\n"));
+
+    // loopp over gain:
+  for (int gain = 1; gain < 40; gain += 15)
+  {
+    if (gain == 31)
+      gain = 32;    // :)
+    for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
+    {
+      ApfelTestResults& gain1results = theSetup.AccessTestResults (gain, apfel);
+      for (int dac = 0; dac < APFEL_NUMDACS; ++dac)
+      {
+        int dacval = gain1results.GetDACValueCalibrate (dac);
+        int baseline = gain1results.GetDACSampleMean (dac);
+        int sigma = gain1results.GetDACSampleSigma (dac);
+        double slope = gain1results.GetSlope (dac);
+        double dac0 = gain1results.GetD0 (dac);
+        double dacmin = gain1results.GetDACmin (dac);
+        double dacmax = gain1results.GetDACmax (dac);
+        double adcmin = gain1results.GetADCmin (dac);
+
+        QString line = QString ("%1 \t\t%2 \t\t%3 \t\t%4 \t\t%5 \t\t%6 \t\t%7 \t\t%8 \t\t%9").arg (gain).arg (apfel).arg (dac).arg (
+            dacval).arg (baseline).arg (sigma).arg (slope).arg (dac0).arg (dacmin);
+        line.append (QString ("\t\t%1 \t\t%2 \n").arg (dacmax).arg (adcmin));
+        WriteTestFile (line);
+      }
+
+    }
+  }
+
+}
+
 
 
 

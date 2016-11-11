@@ -58,6 +58,10 @@ protected:
   /** timer to display status of test pulsing*/
   QTimer* fDisplayTimer;
 
+  /** timer to perform the automatic benchmark testing in the background.*/
+  QTimer* fSequencerTimer;
+
+
   /** auxiliary references to checkboxes for baseline adjustments*/
   QCheckBox* fBaselineBoxes[16];
 
@@ -136,7 +140,8 @@ protected:
   /** configuration output file handle*/
   FILE* fConfigFile;
 
-
+  /** test data output file handle*/
+  FILE* fTestFile;
 
   /** temporary data field for mbs readout buffer samples*/
   uint16_t fData[APFEL_MBS_TRACELEN];
@@ -231,6 +236,10 @@ protected:
 
   /** get registers and write them to config file*/
   void SaveRegisters();
+
+
+  /** save results of benchmark tests*/
+  void SaveTestResults();
 
 
   /** retrieve slave configuration from driver*/
@@ -333,6 +342,18 @@ protected:
   /** append text to currently open config file*/
   int WriteConfigFile(const QString& text);
 
+
+  /** open test characteristics file for writing*/
+   int OpenTestFile(const QString& fname);
+
+   /** guess what...*/
+   int CloseTestFile();
+
+   /** append text to currently open test file*/
+   int WriteTestFile(const QString& text);
+
+
+
   /** Set relativ DAC value permille to APFELchannel, returns ADC value*/
   int autoApply(int channel, int permille);
 
@@ -418,12 +439,13 @@ protected:
     /** get a sample from febex readout buffer for specified channel.*/
     int AcquireSample(int channel);
 
-    /** get sample from fegex readout buffer for ADC channels with acquire checkbox checked.*/
+    /** get sample from febex  for ADC channels with acquire checkbox checked.*/
     void AcquireSelectedSamples();
 
 
-    /** dump most recent acquired adc sample for specified channel */
-    int ShowSample(int channel);
+    /** dump most recent acquired adc sample for specified channel.
+     * if benchmarkdisplay is set, plot to general benchmark pad */
+    int ShowSample(int channel, bool benchmarkdisplay=false);
 
     /** dump most recent acquired adc sample for ADC channels with acquire checkbox checked.*/
     void ShowSelectedSamples();
@@ -615,6 +637,14 @@ public slots:
 
   virtual void PulserTimeout();
   virtual void PulserDisplayTimeout();
+
+
+  virtual void StartBenchmarkPressed();
+  virtual void CancelBenchmarkPressed();
+  virtual void SaveBenchmarkPressed();
+  virtual void BenchmarkPressed(QAbstractButton* but);
+
+  virtual void BenchmarkTimerCallback();
 
 };
 

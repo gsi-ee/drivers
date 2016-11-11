@@ -128,8 +128,8 @@ GainSetup::GainSetup(): fDAC_ADC_Slope(1.0), fDAC_0(0), fDAC_min(0), fADC_min(0)
    {
      SetSlope((double) APFEL_DAC_MAXVALUE/ (double) APFEL_ADC_MAXVALUE);
      SetD0(0);
-     SetDACmin(APFEL_DAC_MAXVALUE);
-     SetDACmax(0);
+     SetDACmin(0);
+     SetDACmax(APFEL_DAC_MAXVALUE);
      SetADCmin(0);
    }
    //DumpCalibration();
@@ -166,6 +166,32 @@ GainSetup::GainSetup(): fDAC_ADC_Slope(1.0), fDAC_0(0), fDAC_min(0), fADC_min(0)
    fADC_min=val;
  }
 
+
+ double GainSetup::GetSlope()
+  {
+    return fDAC_ADC_Slope;
+  }
+
+  double GainSetup::GetD0()
+   {
+     return fDAC_0;
+   }
+
+
+  double GainSetup::GetDACmin ()
+  {
+    return fDAC_min;
+  }
+
+  double  GainSetup::GetDACmax ()
+   {
+     return fDAC_max;
+   }
+
+  double GainSetup::GetADCmin ()
+  {
+    return fADC_min;
+  }
 
 
  /** function returns dac value to set for relative height of adc baseline in permille*/
@@ -300,7 +326,7 @@ double AdcSample::GetMean()
  ////////////////////////////////////////////////
  //////// the whole slave board setup:
 
- BoardSetup::BoardSetup (): fUseApfel(true),fHighGainOutput(true),fStretcher(false),fRegularMapping(true)
+ BoardSetup::BoardSetup (): fUseApfel(true),fHighGainOutput(true),fStretcher(false),fRegularMapping(true),fTestLength(0), fApfelID(""), fApfelTag("")
    {
       SetApfelMapping(true);
 #ifdef APFEL_GAIN1_INVERTED
@@ -331,6 +357,43 @@ double AdcSample::GetMean()
 
     }
 
+
+
+  ApfelTestResults& BoardSetup::AccessTestResults(int gain, int apfel)
+  {
+
+    switch(gain)
+         {
+           case 1:
+             return fTest_1[apfel];
+           break;
+           case 16:
+             return fTest_16[apfel];
+           break;
+           case 32:
+           default:
+             return fTest_32[apfel];
+             break;
+         };
+  }
+
+
+  GainSetup& BoardSetup::AccessGainSetup(int gain, int febexchannel)
+  {
+    switch(gain)
+             {
+               case 1:
+                 return fGain_1[febexchannel];
+               break;
+               case 16:
+                 return fGain_16[febexchannel];
+               break;
+               case 32:
+               default:
+                 return fGain_32[febexchannel];
+                 break;
+             };
+  }
 
   void BoardSetup::ResetGain1Calibration()
   {
@@ -756,5 +819,47 @@ int BoardSetup::ShowADCSample (int febexchannel)
   fLastSample[febexchannel].ShowSample(febexchannel);
   return 0;
 }
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+
+void BoardSetup::ResetSequencerList()
+{
+  //fTestSequence.clear(); // remove old list
+
+  while(!fTestSequence.empty()) fTestSequence.pop();
+
+}
+
+
+
+
+
+void BoardSetup::AddSequencerCommand(SequencerCommand com)
+{
+  fTestSequence.push(com);
+}
+
+
+
+SequencerCommand BoardSetup::NextSequencerCommand()
+{
+  if(fTestSequence.empty()) return SEQ_NONE;
+  SequencerCommand com=fTestSequence.front();
+  fTestSequence.pop();
+  return com;
+}
+
+void BoardSetup::FinalizeSequencerList()
+{
+  fTestLength=fTestSequence.size();
+}
+
+int BoardSetup::GetSequencerProgress()
+  {
+     double prozent= 100.0 * (double)(fTestLength -fTestSequence.size())/ (double)fTestLength;
+     return prozent;
+  }
 
 
