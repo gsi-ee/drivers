@@ -204,6 +204,68 @@ public:
 
 };
 
+/** a single sample of DAC-ADC*/
+class DacSample
+{
+protected:
+  /** DAC setting for a scan*/
+  uint16_t fDacSetting;
+
+  /** measured ADC value corresponding to DAC setting*/
+  uint16_t fAdcValue;
+
+public:
+
+  DacSample(uint16_t dac, uint16_t adc):fDacSetting(dac), fAdcValue(adc) {}
+
+  void SetSample(uint16_t dac, uint16_t adc)
+  {
+    fDacSetting=dac;
+    fAdcValue=adc;
+  }
+
+  uint16_t GetDACValue(){return fDacSetting;}
+
+  uint16_t GetADCValue(){return fAdcValue;}
+
+};
+
+
+/** this object contains a scan of the work curve for a single DAC*/
+class DacWorkCurve
+{
+private:
+
+  /** Contains the scanned points of the work curve*/
+  std::vector<DacSample> fPoints;
+
+
+public:
+
+  DacWorkCurve(){Reset();}
+
+  void Reset(){fPoints.clear();}
+
+  void AddSample(uint16_t dac, uint16_t adc)
+  {
+    fPoints.push_back(DacSample(dac,adc));
+  }
+
+  DacSample& GetSample(int ix)
+  {
+    return fPoints[ix];
+  }
+
+  int NumSamples(){return fPoints.size();}
+
+
+
+
+
+};
+
+
+
 
 class ApfelTestResults
 {
@@ -218,6 +280,9 @@ private:
 
    /** keep results of DAC-ADC calibration mapped to apfel channels*/
    GainSetup fDAC_ADC_Gain[APFEL_NUMDACS];
+
+   /** keep measured work curve*/
+   DacWorkCurve fDAC_Curve[APFEL_NUMDACS];
 
    /** mean value of measured baseline after autocalibration*/
    double fMean[APFEL_NUMDACS];
@@ -252,6 +317,7 @@ public:
           fMinValue[dac]=0;
           fMaxValue[dac]=0;
           fDAC_ADC_Gain[dac].ResetCalibration();
+          fDAC_Curve[dac].Reset();
         }
   }
 
@@ -371,6 +437,28 @@ double GetSlope (int dac)
  }
 
 
+ int AddDacSample(int dac, uint16_t valdac, uint16_t valadc)
+  {
+     ASSERT_DAC_VALID(dac);
+     fDAC_Curve[dac].AddSample(valdac, valadc);
+     return 0;
+  }
+
+ int AccessDacSample(DacSample& samp, int dac, int ix)
+ {
+   ASSERT_DAC_VALID(dac);
+   if(ix>=fDAC_Curve[dac].NumSamples()) return -2;
+   samp=fDAC_Curve[dac].GetSample(ix);
+   return 0;
+ }
+
+ int ResetDacSample(int dac)
+ {
+   ASSERT_DAC_VALID(dac);
+   fDAC_Curve[dac].Reset();
+   return 0;
+
+ }
 
 };
 
@@ -456,21 +544,24 @@ private:
   /** Initial number of sequencer commands*/
   int fTestLength;
 
-  QString fApfelID;
+  /** board id tag*/
+  QString fBoardID[2];
 
-  QString fApfelTag;
-
+  /** current in mA for DUT*/
+  double fCurrent;
 
 public:
 
   BoardSetup ();
 
 
-  void setApfelID(const QString& val){fApfelID=val;}
-  void setApfelTag(const QString& val){fApfelTag=val;}
+  void SetBoardID(int ix, const QString& val){fBoardID[ix]=val;}
 
-  const QString& getApfelID(){return fApfelID;}
-  const QString& getApfelTag(){return fApfelTag;}
+  const QString& GetBoardID(int ix){return fBoardID[ix];}
+
+  void SetCurrent(double val){fCurrent=val;}
+
+  double GetCurrent(){return fCurrent;}
 
 
   bool IsApfelInUse ()

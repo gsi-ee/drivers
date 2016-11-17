@@ -47,6 +47,17 @@ protected:
   std::vector<BoardSetup> fSetup[4];
 
 
+  /** This structure just contains the gain1 sollwerte for comparison*/
+  ApfelTestResults fReference_1;
+
+  /** This structure just contains the gain16 sollwerte for comparison*/
+  ApfelTestResults fReference_16;
+
+  /** This structure just contains the gain16 sollwerte for comparison*/
+  ApfelTestResults fReference_32;
+
+
+
   /** contains currently configured slaves at the chains.*/
   struct pex_sfp_links fSFPChains;
 
@@ -421,6 +432,11 @@ protected:
   void AutoAdjust();
 
 
+  /** perform a scan of the DAC-ADC curve of gain and channel.
+   * gain:1,16,32 */
+  int ScanDACCurve(int gain, int channel);
+
+
   /** Automatic calibration of DAC->ADC relation for febex channel.
    * Will AutoCalibrate corresponding apfel first*/
     int CalibrateADC(int channel);
@@ -443,6 +459,16 @@ protected:
     void AcquireSelectedSamples();
 
 
+    /** Clear display of benchmark DAC curve*/
+    void ResetBenchmarkCurve();
+
+    /* show DAC curve in benchmark display for allowed range*/
+    void ShowLimitsCurve(int gain, int apfel, int dac);
+
+    /* show DAC curve in benchmark display for gain, chip and dacl*/
+    void ShowBenchmarkCurve(int gain, int apfel, int dac);
+
+
     /** dump most recent acquired adc sample for specified channel.
      * if benchmarkdisplay is set, plot to general benchmark pad */
     int ShowSample(int channel, bool benchmarkdisplay=false);
@@ -455,6 +481,11 @@ protected:
 
     /** show full range of sample plot*/
     void UnzoomSample(int channel);
+
+
+
+    /** set reference values for test results. Either from memory or database*/
+    void InitReferenceValues();
 
 
   void DebugTextWindow (const char*txt)
@@ -484,7 +515,7 @@ public slots:
   virtual void DumpBtn_clicked ();
   virtual void ClearOutputBtn_clicked ();
   virtual void ConfigBtn_clicked ();
-  virtual void SaveConfigBtn_clicked ();
+  virtual void SaveConfigBtn_clicked (const char* selectfile=0);
   virtual void AutoAdjustBtn_clicked ();
   virtual void CalibrateADCBtn_clicked();
   virtual void CalibrateResetBtn_clicked();

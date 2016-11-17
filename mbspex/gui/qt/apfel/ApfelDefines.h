@@ -89,7 +89,10 @@
 #define APFEL_DAC_DELTASTEP 1
 
 /** ADC saturation value (end of linear calibration range)*/
-#define APFEL_ADC_MAXSATURATION 15500
+#define APFEL_ADC_MAXSATURATION 15000
+
+/** ADC gain 1 saturation value (end of linear calibration range)*/
+#define APFEL_ADC_MINSATURATION 3000
 
 #define APFEL_ADC_SATURATIONDELTA 100
 
@@ -131,6 +134,12 @@
 
 /** maximum length of 16bit word buffer for mbs trace sample*/
 #define APFEL_MBS_TRACELEN 8000
+
+/** number of points on DAC curve*/
+#define APFEL_DAC_CURVEPOINTS 24
+
+
+
 
 //////////////////////////////////////////////////////////////////////7
 

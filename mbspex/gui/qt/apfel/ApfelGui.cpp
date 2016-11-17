@@ -643,6 +643,9 @@ ApfelGui::ApfelGui (QWidget* parent) :
   fSequencerTimer->setInterval(20);
   QObject::connect(fSequencerTimer, SIGNAL(timeout()), this, SLOT(BenchmarkTimerCallback()));
 
+  InitReferenceValues();
+
+
 #ifdef USE_MBSPEX_LIB
 // open handle to driver file:
   fPexFD = mbspex_open (0);    // we restrict to board number 0 here
@@ -677,6 +680,72 @@ ApfelGui::~ApfelGui ()
   mbspex_close (fPexFD);
 #endif
 }
+
+
+
+void ApfelGui::InitReferenceValues()
+{
+
+
+  // gain 1, dac2
+  //559   2790    575     2833    591     2823    607     2835    623     2873    639     2826    655     2804    671     3381    687     4459    703     5547    719     9407    735     7824    751     8950    767     10102   783     10493   799     12311   815     13345   831     14311   847     14970   863     15215   879     15231   895     15243   911     15247   927     15258
+
+  int valDAC_1[APFEL_DAC_CURVEPOINTS]=
+  {559, 575, 591, 607, 623, 639, 655, 671, 687, 703, 719, 735, 751, 767, 783, 799, 815, 831, 847, 863, 879, 895, 911, 927};
+  int valADC_1[APFEL_DAC_CURVEPOINTS]=
+  {2790, 2833, 2823, 2835, 2873, 2826, 2804, 3381,4459, 5547, 6407, 7824, 8950, 10102, 10493, 12311, 13345, 14311, 14970, 15215, 15231,15243,15247,15258   };
+
+  for(int i=0; i<APFEL_DAC_CURVEPOINTS; ++i)
+  {
+    fReference_1.AddDacSample(2, valDAC_1[i], valADC_1[i]);
+    //std::cout<< "InitReferenceValues for gain1: i:"<<i<<" ("<<valDAC_1[i]<<","<<valADC_1[i]<<"="<< std::endl;
+  }
+
+
+
+
+  // gain 16, dac0 and dac1
+  //780   12222   782     13743   784     11987   786     11142   788     9712    790     9606    792     8817    794     7959    796     7179    798     7119    800     4409    802     3606    804     2909    806     2464    808     1615    810     1379    812     974 814     781 816     680 818     669 820     678 822     673 824     665 826     701
+  int valDAC_16[APFEL_DAC_CURVEPOINTS]=
+    {780, 782, 784, 786, 788, 790, 792, 794, 796, 798, 800, 802, 804, 806, 808, 810, 812, 814, 816, 818, 820, 822, 824, 826};
+
+  int valADC_16[APFEL_DAC_CURVEPOINTS]=
+  {12222,13743,11987,11142,9712,9606,8817,7959,7179,7119,4409,3606,2909,2464,1615,1379,974,781,680,669,678,673,665,701};
+
+
+
+
+  for(int i=0; i<APFEL_DAC_CURVEPOINTS; ++i)
+    {
+      fReference_16.AddDacSample(0, valDAC_16[i], valADC_16[i]);
+      fReference_16.AddDacSample(1, valDAC_16[i], valADC_16[i]);
+      //std::cout<< "InitReferenceValues for gain16: i:"<<i<<" ("<<valDAC_16[i]<<","<<valADC_16[i]<<"="<< std::endl;
+    }
+
+  // gain 32, dac0 and dac1
+  //821   7626    822     6724    823     6152    824     5507    825     4819    826     3966    827     7243    828     2811    829     4279    830     3663    831     1400    832     766 833     735 834     718 835     749 836     784 837     656 838     741 839     611 840     710 841     766 842     709 843     707 844     722
+
+
+  int valDAC_32[APFEL_DAC_CURVEPOINTS]=
+  { 821,822,823,824,825,826,827,828,829,830,831,832,833,834,835,836,837,838,839,840,841,842,843,844};
+
+  int valADC_32[APFEL_DAC_CURVEPOINTS]=
+  {
+     7626,6724,6152,5507,4819,3966,7243,2811,4279,3663,1400,766,735,718,749,784,656,741,611,710,766,709,707,722
+  };
+
+  for(int i=0; i<APFEL_DAC_CURVEPOINTS; ++i)
+      {
+        fReference_32.AddDacSample(0, valDAC_32[i], valADC_32[i]);
+        fReference_32.AddDacSample(1, valDAC_32[i], valADC_32[i]);
+        //std::cout<< "InitReferenceValues for gain32: i:"<<i<<" ("<<valDAC_32[i]<<","<<valADC_32[i]<<"="<< std::endl;
+      }
+
+
+}
+
+
+
 
 void ApfelGui::ShowBtn_clicked ()
 {
@@ -723,7 +792,7 @@ void ApfelGui::ApplyGUISettings()
   SetRegisters(); // from memory to device
 }
 
-void ApfelGui::SaveConfigBtn_clicked ()
+void ApfelGui::SaveConfigBtn_clicked (const char* selectfile)
 {
 //std::cout << "ApfelGui::SaveConfigBtn_clicked()"<< std::endl;
 
@@ -737,8 +806,14 @@ void ApfelGui::SaveConfigBtn_clicked ()
 
   // ".", "nyxor setup file (*.txt);;gosipcmd file (*.gos);;context dump file (*.dmp)");
   fd.setNameFilters (filters);
+  fd.selectNameFilter(apf_filter);
   fd.setFileMode (QFileDialog::AnyFile);
   fd.setAcceptMode (QFileDialog::AcceptSave);
+
+  if(selectfile)
+  {
+    fd.selectFile(QString(selectfile));
+  }
   if (fd.exec () != QDialog::Accepted)
     return;
   QStringList flst = fd.selectedFiles ();
@@ -1211,13 +1286,62 @@ int ApfelGui::CalibrateADC(int channel)
   int valADC_upper=AcquireBaselineSample(channel);
   int deltaADC=valADC_upper-valADC;
 #endif
+
+
+int valADC_max=0, valADC_min=0, valDAC_min=0,  valDAC_max=0, valADC_sample=0;
+
+if(gain==1)
+{
+  // special situation for gain 1: slope is inverted, need to do different procedure:
+
+  // get minimum ADC value by setting DAC to min:
+    WriteDAC_ApfelI2c (apfel, dac, 0);
+    valADC_min=AcquireBaselineSample(channel);
+
+    int valDAC_min=0;
+    int valADC_deltasaturation=APFEL_ADC_SATURATIONDELTA;
+
+    // shift DAC up ADCmax changes significantly. this gives effective DAC min
+      for(valDAC_min=0; valDAC_min<APFEL_DAC_MAXVALUE; valDAC_min +=APFEL_DAC_DELTASTEP)
+        {
+            WriteDAC_ApfelI2c (apfel, dac, valDAC_min);
+            int samp=AcquireBaselineSample(channel);
+            if(samp - valADC_min > valADC_deltasaturation) break;
+            valADC_sample=samp;
+            //std::cout <<"Searching effective maximum  DAC:"<<valDAC_max<<", ADC:"<<valADC_sample<< std::endl;
+        }
+      valDAC_min-=APFEL_DAC_DELTASTEP; // rewind to point that is still in pedestal region
+
+      //shift DAC farther upwards until we find ADC saturation:
+       valDAC_max=0;
+       int valADC_step=0;
+       for(valDAC_max=valDAC_min; valDAC_max<APFEL_DAC_MAXVALUE; valDAC_max +=APFEL_DAC_DELTASTEP)
+       {
+           WriteDAC_ApfelI2c (apfel, dac, valDAC_max);
+           valADC_step=AcquireBaselineSample(channel);
+           if(valADC_step>=APFEL_ADC_MAXSATURATION) break;
+           //std::cout <<"Searching ADC saturation: DAC:"<<valDAC_max<<", ADC:"<<valADC_step<< std::endl;
+
+       }
+       printm("found ADC_min=%d, DAC_min=%d, DAC_max=%d", valADC_min, valDAC_min, valDAC_max);
+       theSetup.SetDACmin(gain,channel,valDAC_min);
+       theSetup.SetDACmax(gain,channel,valDAC_max);
+       theSetup.SetADCmin(gain,channel,valADC_min);
+
+       // linear calibration only in non saturated ADC range:
+       int deltaDAC=valDAC_max-valDAC_min;
+       int deltaADC=APFEL_ADC_MAXSATURATION - valADC_min;
+       theSetup.EvaluateCalibration(gain, channel, deltaDAC, deltaADC, valDAC_min, valADC_sample);
+}
+else
+{
   // evaluate range boundaries:
   // get minimum ADC value by setting DAC to max:
   WriteDAC_ApfelI2c (apfel, dac, APFEL_DAC_MAXVALUE);
   int valADC_min=AcquireBaselineSample(channel);
 
-  int valDAC_max=APFEL_DAC_MAXVALUE;
-  int valADC_sample;
+  valDAC_max=APFEL_DAC_MAXVALUE;
+  //int valADC_sample;
   int valADC_deltasaturation=APFEL_ADC_SATURATIONDELTA;
 
   // shift DAC down until ADCmin changes significantly. this gives effective DAC max
@@ -1233,7 +1357,7 @@ int ApfelGui::CalibrateADC(int channel)
 
 
   //shift DAC farther downwards until we find ADC saturation:
-  int valDAC_min=0;
+  valDAC_min=0;
   int valADC_step=0;
   for(valDAC_min=valDAC_max; valDAC_min>0; valDAC_min -=APFEL_DAC_DELTASTEP)
   {
@@ -1248,6 +1372,12 @@ int ApfelGui::CalibrateADC(int channel)
   theSetup.SetDACmax(gain,channel,valDAC_max);
   theSetup.SetADCmin(gain,channel,valADC_min);
 
+  // linear calibration only in non saturated ADC range:
+  int deltaDAC=valDAC_max-valDAC_min;
+  int deltaADC=valADC_min - APFEL_ADC_MAXSATURATION;
+  theSetup.EvaluateCalibration(gain, channel, deltaDAC, deltaADC, valDAC_max, valADC_sample);
+
+}
 
   // shift back to middle of calibration:
   WriteDAC_ApfelI2c (apfel, dac, valDAC);
@@ -1266,9 +1396,9 @@ int ApfelGui::CalibrateADC(int channel)
 //       theSetup.EvaluateCalibration(gain, channel, deltaDAC, deltaADC, APFEL_DAC_MAXVALUE, valADC_min);
 
 // linear calibration only in non saturated ADC range:
-      int deltaDAC=valDAC_max-valDAC_min;
-      int deltaADC=valADC_min - APFEL_ADC_MAXSATURATION;
-      theSetup.EvaluateCalibration(gain, channel, deltaDAC, deltaADC, valDAC_max, valADC_sample);
+//      int deltaDAC=valDAC_max-valDAC_min;
+//      int deltaADC=valADC_min - APFEL_ADC_MAXSATURATION;
+//      theSetup.EvaluateCalibration(gain, channel, deltaDAC, deltaADC, valDAC_max, valADC_sample);
 
 // test: semi-range linear calibration
 //     int deltaDAC=APFEL_DAC_MAXVALUE-valDAC;
@@ -1552,6 +1682,154 @@ int ApfelGui::CalibrateResetADC(int channel)
 
 
 
+  /** Clear display of benchmark DAC curve*/
+void ApfelGui::ResetBenchmarkCurve ()
+{
+  KPlotWidget* canvas = BenchmarkPlotwidget;
+  canvas->resetPlot ();
+  // labels for plot area:
+  canvas->setAntialiasing (true);
+  canvas->axis (KPlotWidget::BottomAxis)->setLabel ("DAC value");
+  canvas->axis (KPlotWidget::LeftAxis)->setLabel ("ADC value ");
+  canvas->setLimits (0, APFEL_DAC_MAXVALUE, 0, APFEL_ADC_MAXVALUE);
+  canvas->update ();
+
+}
+
+void ApfelGui::ShowLimitsCurve (int gain, int apfel, int dac)
+{
+  QColor col=Qt::red;
+  KPlotObject *upper = new KPlotObject(col, KPlotObject::Lines, 3);
+  KPlotObject *lower = new KPlotObject(col, KPlotObject::Lines, 3);
+  //std::cout<<"ShowLimitsCurve: gain:"<<gain<<", apfel:"<<apfel<<", dac:"<<dac << std::endl;
+  // TODO: later use std::map between gain and objects
+  ApfelTestResults& reference = fReference_1;
+  switch(gain)
+  {
+    default:
+    case 1:
+    reference= fReference_1;
+    break;
+
+    case 16:
+      reference=fReference_16;
+      break;
+
+    case 32:
+      reference=fReference_32;
+      break;
+  };
+
+
+  for(int i=0; i<APFEL_DAC_CURVEPOINTS; ++i)
+      {
+        DacSample point(0,0);
+        reference.AccessDacSample(point,dac,i); // if this fails, point is just not touched -> default 0 values are saved
+        uint16_t dval=point.GetDACValue();
+        uint16_t aval=point.GetADCValue();
+        double adcup=aval*1.1;
+        double adclow=aval*0.9; // TODO: adjustable tolerance
+        upper->addPoint (dval, adcup);
+        lower->addPoint (dval, adclow);
+        //std::cout<<"ShowLimitsCurve: i:"<<i<<", dacval:"<<dval<<"up:"<<adcup<<", lo:"<<adclow << std::endl;
+
+      }
+  BenchmarkPlotwidget->addPlotObject(upper);
+  BenchmarkPlotwidget->addPlotObject(lower);
+
+  BenchmarkPlotwidget->update();
+}
+
+void ApfelGui::ShowBenchmarkCurve (int gain, int apfel, int dac)
+{
+  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+
+  QColor col;
+    KPlotObject::PointStyle pstyle= KPlotObject::Circle;
+    switch(apfel)
+    {
+      case 0:
+      case 8:
+      default:
+          col=Qt::red;
+        break;
+      case 1:
+      case 9:
+        col=Qt::green;
+        break;
+      case 2:
+      case 10:
+        col=Qt::blue;
+        break;
+      case 3:
+      case 11:
+        col=Qt::cyan;
+        break;
+
+      case 4:
+      case 12:
+        col=Qt::magenta;
+        break;
+      case 5:
+      case 13:
+        col=Qt::yellow;
+        break;
+      case 6:
+      case 14:
+        col=Qt::gray;
+        break;
+      case 7:
+      case 15:
+        col=Qt::darkGreen;
+        break;
+
+
+
+
+//        Letter = 2, Triangle = 3,
+//         Square = 4, Pentagon = 5, Hexagon = 6, Asterisk = 7,
+//         Star = 8
+
+    };
+
+    KPlotObject *curveplot = new KPlotObject(col, KPlotObject::Points, 3, pstyle);
+    ApfelTestResults& theResults=theSetup.AccessTestResults(gain, apfel);
+
+    QString label = QString("gain:%1 apfel:%2 dac:%3").arg(gain).arg(apfel).arg(dac);
+    uint16_t mindac=0, maxdac=APFEL_DAC_MAXVALUE, minadc=0, maxadc=APFEL_ADC_MAXVALUE;
+    for(int i=0; i<APFEL_DAC_CURVEPOINTS; ++i)
+    {
+      DacSample point(0,0);
+      theResults.AccessDacSample(point,dac,i); // if this fails, point is just not touched -> default 0 values are saved
+      uint16_t dval=point.GetDACValue();
+      uint16_t aval=point.GetADCValue();
+      // this is for zooming:
+      if(mindac==0 ||  dval<mindac) mindac=dval;
+      if(maxdac==APFEL_DAC_MAXVALUE ||  dval>maxdac) maxdac=dval;
+      if(minadc==0 ||  aval<minadc) minadc=aval;
+      if(maxadc==APFEL_DAC_MAXVALUE ||  aval>maxadc) maxadc=aval;
+
+      if(i==APFEL_DAC_CURVEPOINTS/2)
+        curveplot->addPoint (dval, aval,label);
+      else
+        curveplot->addPoint (dval, aval);
+    }
+
+    // add it to the plot area
+    BenchmarkPlotwidget->addPlotObject( curveplot);
+
+    if(gain!=1)
+      BenchmarkPlotwidget->setLimits (mindac, maxdac, minadc, maxadc);
+    else
+      BenchmarkPlotwidget->setLimits (0, APFEL_DAC_MAXVALUE, 0, APFEL_ADC_MAXVALUE);
+
+    BenchmarkPlotwidget->update();
+
+}
+
+
+
+
 
   void ApfelGui::DumpSamplesBtn_clicked()
     {
@@ -1710,7 +1988,7 @@ void ApfelGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "ApfelGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.951 of 11-November-2016 by JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.966 of 17-November-2016 by JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -3369,6 +3647,63 @@ void ApfelGui::DoAutoCalibrateAll()
 
 
 
+ int ApfelGui::ScanDACCurve(int gain, int channel)
+ {
+   QApplication::setOverrideCursor (Qt::WaitCursor);
+   BoardSetup& theSetup=fSetup[fSFP].at(fSlave);
+   int apfel=0, dac=0;
+   theSetup.EvaluateDACIndices(channel,apfel,dac);
+   ApfelTestResults& theResults=theSetup.AccessTestResults(gain, apfel);
+   theResults.ResetDacSample(dac);
+   int points=APFEL_DAC_CURVEPOINTS;
+   // depending on gain, we have different stepsizes
+   int step=0;
+   switch(gain)
+   {
+     case 1:
+       step=16;
+       dac=2;
+       break;
+     case 16:
+       step=2;
+       break;
+     case 32:
+       step=1;
+       break;
+   }
+
+   // we start in the middle of the autocalibration point:
+   uint16_t dac_mid = theResults.GetDACValueCalibrate (dac);
+   if(dac_mid==0)
+   {
+     // no calibration done yet, do it now
+     DoAutoCalibrate(apfel);
+     dac_mid=theSetup.GetDACValue(apfel,dac);
+   }
+   //std::cout<<"ScanDACCurve for gain:"<<gain<<", step:"<<step<<", channel:"<<channel<<" - DAC middle point is "<<dac_mid << std::endl;
+   EnableI2C ();
+   uint16_t d0=dac_mid- step* points/2;
+   for(int p=0; p<points; ++p)
+   {
+     uint16_t dacval=d0 + p*step;
+     theSetup.SetDACValue(apfel,dac,dacval);
+     WriteDAC_ApfelI2c (apfel, dac, theSetup.GetDACValue (apfel, dac));
+     int adcval=AcquireBaselineSample(channel);
+     //std::cout<<"   ScanDACCurve got d:"<<dacval<<", adc:"<<adcval << std::endl;
+     theResults.AddDacSample(dac, dacval, adcval);
+   }
+   DisableI2C();
+   ResetBenchmarkCurve();
+   ShowLimitsCurve (gain, apfel, dac);
+   ShowBenchmarkCurve(gain, apfel,dac);
+
+   QApplication::restoreOverrideCursor ();
+ }
+
+
+
+
+
 void ApfelGui::UpdateAfterAutoCalibrate(uint8_t apfelchip)
 {
   // here get registers of apfelchip only and refresh
@@ -3649,7 +3984,9 @@ void ApfelGui::BenchmarkTimerCallback()
 
     case SEQ_CURVE:
       // to do
-
+      printm("Benchmark Timer is evaluating DAC curve of channel %d", febexchannel);
+      ScanDACCurve(sequencergain, febexchannel);
+      break;
     default:
       printm("Benchmark Timer will execute command %d for channel %d",com.GetAction(), com.GetChannel());
       break;
@@ -3666,18 +4003,23 @@ void ApfelGui::StartBenchmarkPressed()
 {
   BoardSetup& theSetup=fSetup[fSFP].at(fSlave);
   printm("Benchmark Timer has been started!");
-  QString apfelid=ApfelID_lineEdit->text();
-  QString tag=TagID_lineEdit->text();
-     if(apfelid.isEmpty() || tag.isEmpty())
+  QString apfel1=ApfelID1_lineEdit->text();
+  QString apfel2=ApfelID2_lineEdit->text();
+     if(apfel1.isEmpty() || apfel2.isEmpty())
      {
        printm("Please specify full id information!");
        return;
      }
-  theSetup.setApfelID(apfelid);
-  theSetup.setApfelTag(tag);
+  theSetup.SetBoardID(0,apfel1);
+  theSetup.SetBoardID(1,apfel2);
+  double current=CurrentDoubleSpinBox->value();
+  theSetup.SetCurrent(current);
+
+
+
 
     printm("Benchmark has been started for sfp %d slave %d",fSFP, fSlave);
-    printm("Apfelid:%s Boardid:%s ",apfelid.toLatin1().constData(), tag.toLatin1().constData());
+    printm("Board 1:%s Board2:%s Current=%f mA",apfel1.toLatin1().constData(), apfel2.toLatin1().constData(),current);
 
 
     // here we evaluate a to do list that the timer should process:
@@ -3785,7 +4127,10 @@ void ApfelGui::CancelBenchmarkPressed()
 
 void ApfelGui::SaveBenchmarkPressed()
 {
-  SaveConfigBtn_clicked ();
+  QString apfel1=ApfelID1_lineEdit->text();
+  QString apfel2=ApfelID2_lineEdit->text();
+  QString filename=apfel1.append("_").append(apfel2).append(".apf");
+  SaveConfigBtn_clicked (filename.toLatin1().constData());
 }
 
 
@@ -3817,18 +4162,25 @@ void ApfelGui::SaveTestResults()
   printm("Saving test results of sfp:%d slave%d.",fSFP, fSlave);
   BoardSetup& theSetup=fSetup[fSFP].at(fSlave);
 
-  QString apfid=theSetup.getApfelID();
-  QString tag=theSetup.getApfelTag();
-  if(apfid.isEmpty() || tag.isEmpty())
+  QString apf1=theSetup.GetBoardID(0);
+  QString apf2=theSetup.GetBoardID(1);
+  if(apf1.isEmpty() || apf2.isEmpty())
   {
     printm("Can not save test results: full id information was not given! Please rerun test.");
     return;
   }
-  QString header=QString("# apfelid:").append(apfid).append(", tag:").append(tag).append("\n");
+  double current=theSetup.GetCurrent();
+  QString header=QString("# apfel1:").append(apf1).append(", apfel2:").append(apf2);
+  header.append(QString(" Current:%1 mA").arg(current));
+  header.append("\n");
   WriteTestFile (header);
     // format
-  WriteTestFile (QString ("#Gain \tAPFEL \tDAC \tCalibSet \tBaseline \tSigma  \tdDAC/dADC \tDAC0 \tDACmin \tDACmax \tADCmin\n"));
-
+  WriteTestFile (QString ("#Gain \tAPFEL \tDAC \tCalibSet \tBaseline \tSigma  \tdDAC/dADC \tDAC0 \tDACmin \tDACmax \tADCmin"));
+  for(int i=0; i<APFEL_DAC_CURVEPOINTS; ++i)
+  {
+    WriteTestFile (QString ("\tDAC_%1 \tADC_%2").arg(i).arg(i));
+  }
+  WriteTestFile (QString ("\n"));
     // loopp over gain:
   for (int gain = 1; gain < 40; gain += 15)
   {
@@ -3836,6 +4188,7 @@ void ApfelGui::SaveTestResults()
       gain = 32;    // :)
     for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
     {
+      int apfeladdress=theSetup.GetApfelID(apfel); // index to address id, depends on setup!
       ApfelTestResults& gain1results = theSetup.AccessTestResults (gain, apfel);
       for (int dac = 0; dac < APFEL_NUMDACS; ++dac)
       {
@@ -3848,9 +4201,21 @@ void ApfelGui::SaveTestResults()
         double dacmax = gain1results.GetDACmax (dac);
         double adcmin = gain1results.GetADCmin (dac);
 
-        QString line = QString ("%1 \t\t%2 \t\t%3 \t\t%4 \t\t%5 \t\t%6 \t\t%7 \t\t%8 \t\t%9").arg (gain).arg (apfel).arg (dac).arg (
+        QString line = QString ("%1 \t\t%2 \t\t%3 \t\t%4 \t\t%5 \t\t%6 \t\t%7 \t\t%8 \t\t%9").arg (gain).arg (apfeladdress).arg (dac).arg (
             dacval).arg (baseline).arg (sigma).arg (slope).arg (dac0).arg (dacmin);
-        line.append (QString ("\t\t%1 \t\t%2 \n").arg (dacmax).arg (adcmin));
+        line.append (QString ("\t\t%1 \t\t%2").arg (dacmax).arg (adcmin));
+
+          // add the results of the curve to the line:
+        for(int i=0; i<APFEL_DAC_CURVEPOINTS; ++i)
+         {
+               DacSample point(0,0);
+               gain1results.AccessDacSample(point,dac,i); // if this fails, point is just not touched -> default 0 values are saved
+               uint16_t dval=point.GetDACValue();
+               uint16_t aval=point.GetADCValue();
+               //std::cout<<"saving curve point"<<i<<", dac="<<(int) dval<<", adc="<<(int) aval << std::endl;
+               line.append(QString ("\t%1 \t%2").arg(dval).arg(aval));
+         }
+        line.append("\n");
         WriteTestFile (line);
       }
 

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1277</width>
+    <width>1405</width>
     <height>843</height>
    </rect>
   </property>
@@ -30,7 +30,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>1255</width>
+        <width>1383</width>
         <height>696</height>
        </rect>
       </property>
@@ -285,7 +285,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>1233</width>
+            <width>1361</width>
             <height>605</height>
            </rect>
           </property>
@@ -317,7 +317,7 @@
            <item row="1" column="0">
             <widget class="QTabWidget" name="ApfelTabWidget">
              <property name="currentIndex">
-              <number>6</number>
+              <number>0</number>
              </property>
              <widget class="QWidget" name="OutputTab">
               <attribute name="title">
@@ -4226,7 +4226,7 @@
                  </property>
                  <property name="sizeHint" stdset="0">
                   <size>
-                   <width>149</width>
+                   <width>362</width>
                    <height>20</height>
                   </size>
                  </property>
@@ -6341,7 +6341,7 @@
                   <enum>QTabWidget::South</enum>
                  </property>
                  <property name="currentIndex">
-                  <number>15</number>
+                  <number>0</number>
                  </property>
                  <property name="documentMode">
                   <bool>false</bool>
@@ -6624,57 +6624,80 @@
               <attribute name="title">
                <string>Characterization</string>
               </attribute>
-              <layout class="QGridLayout" name="gridLayout_74">
+              <layout class="QGridLayout" name="gridLayout_75">
                <item row="0" column="0">
-                <widget class="QGroupBox" name="IDgroupBox">
-                 <property name="title">
-                  <string>Board IDs</string>
-                 </property>
-                 <layout class="QGridLayout" name="gridLayout_72">
-                  <item row="0" column="0">
-                   <layout class="QVBoxLayout" name="verticalLayout_17">
-                    <item>
-                     <widget class="QLabel" name="ApfelIDLabel">
-                      <property name="text">
-                       <string>APFEL ID</string>
-                      </property>
-                     </widget>
+                <layout class="QVBoxLayout" name="verticalLayout_23">
+                 <item>
+                  <widget class="QGroupBox" name="IDgroupBox">
+                   <property name="title">
+                    <string>Board IDs</string>
+                   </property>
+                   <layout class="QGridLayout" name="gridLayout_72">
+                    <item row="0" column="1">
+                     <layout class="QVBoxLayout" name="verticalLayout_16">
+                      <item>
+                       <widget class="QLineEdit" name="ApfelID1_lineEdit">
+                        <property name="toolTip">
+                         <string>Please type primary Apfel id of selected device</string>
+                        </property>
+                        <property name="readOnly">
+                         <bool>false</bool>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLineEdit" name="ApfelID2_lineEdit">
+                        <property name="toolTip">
+                         <string>Please type secondary id</string>
+                        </property>
+                        <property name="readOnly">
+                         <bool>false</bool>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
                     </item>
-                    <item>
-                     <widget class="QLabel" name="ApfelIDLabel_2">
-                      <property name="text">
-                       <string>Board</string>
+                    <item row="0" column="0">
+                     <layout class="QVBoxLayout" name="verticalLayout_17">
+                      <item>
+                       <widget class="QLabel" name="ApfelIDLabel">
+                        <property name="text">
+                         <string>APFEL ID 1</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLabel" name="ApfelIDLabel_2">
+                        <property name="text">
+                         <string>APFEL ID 2</string>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QGroupBox" name="CurrentGroupBox">
+                   <property name="title">
+                    <string>Current</string>
+                   </property>
+                   <layout class="QGridLayout" name="gridLayout_74">
+                    <item row="0" column="0">
+                     <widget class="QDoubleSpinBox" name="CurrentDoubleSpinBox">
+                      <property name="suffix">
+                       <string> mA</string>
+                      </property>
+                      <property name="maximum">
+                       <double>1000.000000000000000</double>
                       </property>
                      </widget>
                     </item>
                    </layout>
-                  </item>
-                  <item row="0" column="1">
-                   <layout class="QVBoxLayout" name="verticalLayout_16">
-                    <item>
-                     <widget class="QLineEdit" name="ApfelID_lineEdit">
-                      <property name="toolTip">
-                       <string>Please type primary Apfel id of selected device</string>
-                      </property>
-                      <property name="readOnly">
-                       <bool>false</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QLineEdit" name="TagID_lineEdit">
-                      <property name="toolTip">
-                       <string>Please type secondary id</string>
-                      </property>
-                      <property name="readOnly">
-                       <bool>false</bool>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                 </layout>
-                </widget>
+                  </widget>
+                 </item>
+                </layout>
                </item>
                <item row="0" column="1">
                 <widget class="QGroupBox" name="BenchmarkControlgroupBox">
@@ -7071,7 +7094,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>1255</width>
+        <width>1383</width>
         <height>115</height>
        </rect>
       </property>
