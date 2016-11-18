@@ -2,6 +2,13 @@
 #define APFELDEFINES_H
 
 
+#include <stdio.h>
+#include <stdint.h>
+#include <math.h>
+#include <iostream>
+
+
+
 /** uncomment this if we need to explicitely enable i2c before settings apfel registers*/
 #define APFEL_NEED_ENABLEI2C 1
 
@@ -214,6 +221,29 @@
 #define ASSERT_DAC_VALID(X)   if(X<0 || X>=APFEL_NUMDACS) return -1;
 #define ASSERT_CHAN_VALID(X)   if(X<0 || X>=APFEL_NUMCHANS) return -1;
 #define ASSERT_FEBCHAN_VALID(X)   if(X<0 || X>=APFEL_ADC_CHANNELS) return -1;
+
+
+/** this define will switch between direct call of mbspex lib or external shell call of gosipcmd*
+ * note: we need to call "make nombspex" if we disable this define here!
+ * note2: this define is enabled from top Makefile when building regular "make all"*/
+//#define USE_MBSPEX_LIB 1
+#ifdef USE_MBSPEX_LIB
+extern "C"
+{
+#include "mbspex/libmbspex.h"
+}
+#else
+// provide dummy structure although never filled by driver:
+#define PEX_SFP_NUMBER 4
+struct pex_sfp_links
+{
+  int numslaves[PEX_SFP_NUMBER]; /**< contains configured number of slaves at each sfp chain. */
+};
+
+#endif
+
+
+
 
 
 #endif

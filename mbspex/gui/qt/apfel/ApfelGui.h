@@ -7,14 +7,20 @@
 #include <QProcess>
 #include <QString>
 #include <QTimer>
+#include <QTime>
 
 
-#include "ApfelSetup.h"
+#include "BoardSetup.h"
+#include "ApfelTest.h"
+#include "ApfelTestResults.h"
 
 
 
 class ApfelGui: public QWidget, public Ui::ApfelGui
 {
+  friend class ApfelTest;
+
+
   Q_OBJECT
 
 public:
@@ -46,22 +52,11 @@ protected:
    * array index is sfp, vector index is febex in chain*/
   std::vector<BoardSetup> fSetup[4];
 
-
-  /** This structure just contains the gain1 sollwerte for comparison*/
-  ApfelTestResults fReference_1;
-
-  /** This structure just contains the gain16 sollwerte for comparison*/
-  ApfelTestResults fReference_16;
-
-  /** This structure just contains the gain16 sollwerte for comparison*/
-  ApfelTestResults fReference_32;
-
-
+  /** aggregate with all testing/sequencing functionality*/
+  ApfelTest fBenchmark;
 
   /** contains currently configured slaves at the chains.*/
   struct pex_sfp_links fSFPChains;
-
-
 
   /** timer for periodic test pulsing*/
   QTimer* fPulserTimer;
@@ -72,6 +67,9 @@ protected:
   /** timer to perform the automatic benchmark testing in the background.*/
   QTimer* fSequencerTimer;
 
+
+  /** measures the time since begin of the benchmark test*/
+  QTime  fSequencerStopwatch;
 
   /** auxiliary references to checkboxes for baseline adjustments*/
   QCheckBox* fBaselineBoxes[16];
@@ -496,12 +494,6 @@ protected:
     /** show full range of sample plot*/
     void UnzoomSample(int channel);
 
-
-
-    /** set reference values for test results. Either from memory or database*/
-    void InitReferenceValues();
-
-
   void DebugTextWindow (const char*txt)
   {
       AppendTextWindow (txt);
@@ -686,7 +678,9 @@ public slots:
 
   virtual void StartBenchmarkPressed();
   virtual void CancelBenchmarkPressed();
+  virtual void ContinueBenchmarkPressed();
   virtual void SaveBenchmarkPressed();
+
   virtual void BenchmarkPressed(QAbstractButton* but);
 
   virtual void BenchmarkTimerCallback();

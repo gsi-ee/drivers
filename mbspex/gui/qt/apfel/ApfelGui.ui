@@ -5499,7 +5499,7 @@
                  <property name="sizeHint" stdset="0">
                   <size>
                    <width>20</width>
-                   <height>52</height>
+                   <height>126</height>
                   </size>
                  </property>
                 </spacer>
@@ -6677,7 +6677,7 @@
               <attribute name="title">
                <string>Characterization</string>
               </attribute>
-              <layout class="QGridLayout" name="gridLayout_75">
+              <layout class="QGridLayout" name="gridLayout_77">
                <item row="0" column="0">
                 <layout class="QVBoxLayout" name="verticalLayout_23">
                  <item>
@@ -6753,50 +6753,125 @@
                 </layout>
                </item>
                <item row="0" column="1">
-                <widget class="QGroupBox" name="BenchmarkControlgroupBox">
-                 <property name="title">
-                  <string>Control</string>
-                 </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_22">
-                  <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_89">
-                    <item>
-                     <widget class="QDialogButtonBox" name="BenchmarkButtonBox">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="standardButtons">
-                       <set>QDialogButtonBox::Apply|QDialogButtonBox::Cancel|QDialogButtonBox::Save</set>
-                      </property>
-                      <property name="centerButtons">
-                       <bool>false</bool>
+                <layout class="QVBoxLayout" name="verticalLayout_22">
+                 <item>
+                  <widget class="QGroupBox" name="BenchmarkControlgroupBox">
+                   <property name="title">
+                    <string>Control</string>
+                   </property>
+                   <layout class="QGridLayout" name="gridLayout_75">
+                    <item row="0" column="0">
+                     <layout class="QHBoxLayout" name="horizontalLayout_89">
+                      <item>
+                       <widget class="QDialogButtonBox" name="BenchmarkButtonBox">
+                        <property name="orientation">
+                         <enum>Qt::Horizontal</enum>
+                        </property>
+                        <property name="standardButtons">
+                         <set>QDialogButtonBox::Apply|QDialogButtonBox::Cancel|QDialogButtonBox::Retry|QDialogButtonBox::Save</set>
+                        </property>
+                        <property name="centerButtons">
+                         <bool>false</bool>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <spacer name="horizontalSpacer_16">
+                        <property name="orientation">
+                         <enum>Qt::Horizontal</enum>
+                        </property>
+                        <property name="sizeHint" stdset="0">
+                         <size>
+                          <width>40</width>
+                          <height>20</height>
+                         </size>
+                        </property>
+                       </spacer>
+                      </item>
+                     </layout>
+                    </item>
+                    <item row="1" column="0">
+                     <widget class="QProgressBar" name="BenchmarkProgressBar">
+                      <property name="value">
+                       <number>0</number>
                       </property>
                      </widget>
                     </item>
-                    <item>
-                     <spacer name="horizontalSpacer_16">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>40</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
+                    <item row="2" column="0">
+                     <layout class="QHBoxLayout" name="horizontalLayout_91">
+                      <item>
+                       <widget class="QLCDNumber" name="TimeNumber">
+                        <property name="minimumSize">
+                         <size>
+                          <width>0</width>
+                          <height>10</height>
+                         </size>
+                        </property>
+                        <property name="baseSize">
+                         <size>
+                          <width>0</width>
+                          <height>10</height>
+                         </size>
+                        </property>
+                        <property name="toolTip">
+                         <string>Number of seconds since starting the benchmark</string>
+                        </property>
+                        <property name="autoFillBackground">
+                         <bool>true</bool>
+                        </property>
+                        <property name="frameShape">
+                         <enum>QFrame::Box</enum>
+                        </property>
+                        <property name="frameShadow">
+                         <enum>QFrame::Sunken</enum>
+                        </property>
+                        <property name="lineWidth">
+                         <number>1</number>
+                        </property>
+                        <property name="segmentStyle">
+                         <enum>QLCDNumber::Flat</enum>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLabel" name="Secondslabel">
+                        <property name="text">
+                         <string>s</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <spacer name="horizontalSpacer_17">
+                        <property name="orientation">
+                         <enum>Qt::Horizontal</enum>
+                        </property>
+                        <property name="sizeHint" stdset="0">
+                         <size>
+                          <width>40</width>
+                          <height>20</height>
+                         </size>
+                        </property>
+                       </spacer>
+                      </item>
+                     </layout>
                     </item>
                    </layout>
-                  </item>
-                  <item>
-                   <widget class="QProgressBar" name="BenchmarkProgressBar">
-                    <property name="value">
-                     <number>0</number>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </widget>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_5">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
                </item>
                <item row="0" column="2" rowspan="2">
                 <widget class="KPlotWidget" name="BenchmarkPlotwidget">
@@ -7110,6 +7185,51 @@
                        </item>
                       </layout>
                      </widget>
+                    </item>
+                   </layout>
+                  </item>
+                  <item row="1" column="0" colspan="2">
+                   <layout class="QHBoxLayout" name="horizontalLayout_92">
+                    <item>
+                     <widget class="QDoubleSpinBox" name="ToleranceSpinBox">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>130</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="prefix">
+                       <string>Tolerance:  </string>
+                      </property>
+                      <property name="suffix">
+                       <string> %   </string>
+                      </property>
+                      <property name="decimals">
+                       <number>1</number>
+                      </property>
+                      <property name="value">
+                       <double>10.000000000000000</double>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <spacer name="horizontalSpacer_18">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>40</width>
+                        <height>20</height>
+                       </size>
+                      </property>
+                     </spacer>
                     </item>
                    </layout>
                   </item>
