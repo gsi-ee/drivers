@@ -157,6 +157,20 @@ protected:
   /** temporary data field for mbs readout buffer samples*/
   uint16_t fData[APFEL_MBS_TRACELEN];
 
+
+  /** keeps range of current benchmark plot window*/
+  uint16_t fPlotMinDac;
+
+  /** keeps range of current benchmark plot window*/
+  uint16_t fPlotMaxDac;
+
+  /** keeps range of current benchmark plot window*/
+  uint16_t fPlotMinAdc;
+
+  /** keeps range of current benchmark plot window*/
+  uint16_t fPlotMaxAdc;
+
+
 #ifdef USE_MBSPEX_LIB
 
 

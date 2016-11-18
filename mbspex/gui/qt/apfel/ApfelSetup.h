@@ -10,6 +10,8 @@
 #include <QString>
 
 
+#include <iostream>
+
 /** this define will switch between direct call of mbspex lib or external shell call of gosipcmd*
  * note: we need to call "make nombspex" if we disable this define here!
  * note2: this define is enabled from top Makefile when building regular "make all"*/
@@ -242,7 +244,9 @@ private:
 
 public:
 
-  DacWorkCurve(){Reset();}
+  DacWorkCurve(){
+    Reset();
+  }
 
   void Reset(){fPoints.clear();}
 
@@ -272,7 +276,7 @@ class ApfelTestResults
 private:
 
   /** the address id of this apfel chip on the board*/
-   uint8_t fAddressID;
+   //uint8_t fAddressID;
 
    /** the absolute values of the APFEL dacs after autocalibration*/
    uint16_t fDACValueCalibrate[APFEL_NUMDACS];
@@ -301,14 +305,14 @@ private:
 public:
 
 
-  ApfelTestResults(uint8_t address=0)
+  ApfelTestResults()
   {
     Reset();
   }
 
   void Reset()
   {
-    fAddressID=0;
+    //fAddressID=0;
     for(int dac=0; dac<APFEL_NUMDACS; ++dac)
         {
           fDACValueCalibrate[dac]=0;
@@ -320,16 +324,16 @@ public:
           fDAC_Curve[dac].Reset();
         }
   }
-
-  void SetAddressId(uint8_t ad)
-  {
-    fAddressID=ad;
-  }
-
-  uint8_t GetAddressId()
-  {
-     return fAddressID;
-   }
+//
+//  void SetAddressId(uint8_t ad)
+//  {
+//    fAddressID=ad;
+//  }
+//
+//  uint8_t GetAddressId()
+//  {
+//     return fAddressID;
+//   }
 
   int SetDACValueCalibrate(int dac, uint16_t val)
   {

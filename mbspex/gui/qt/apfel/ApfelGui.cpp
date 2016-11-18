@@ -115,7 +115,7 @@ void ApfelGui::I2c_sleep ()
  */
 ApfelGui::ApfelGui (QWidget* parent) :
     QWidget (parent), fPulserProgressCounter(0), fDebug (false), fSaveConfig (false), fBroadcasting(false), fSFP (0), fSlave (0), fSFPSave (0), fSlaveSave (0),
-        fConfigFile (0), fTestFile (0)
+        fConfigFile (0), fTestFile (0), fPlotMinDac(0), fPlotMaxDac(APFEL_DAC_MAXVALUE), fPlotMinAdc(0),fPlotMaxAdc(APFEL_ADC_MAXVALUE)
 {
   setupUi (this);
 #if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
@@ -1685,6 +1685,11 @@ int ApfelGui::CalibrateResetADC(int channel)
   /** Clear display of benchmark DAC curve*/
 void ApfelGui::ResetBenchmarkCurve ()
 {
+  fPlotMinDac=0;
+  fPlotMaxDac=APFEL_DAC_MAXVALUE;
+  fPlotMinAdc=0;
+  fPlotMaxAdc=APFEL_ADC_MAXVALUE;
+
   KPlotWidget* canvas = BenchmarkPlotwidget;
   canvas->resetPlot ();
   // labels for plot area:
@@ -1703,7 +1708,8 @@ void ApfelGui::ShowLimitsCurve (int gain, int apfel, int dac)
   KPlotObject *lower = new KPlotObject(col, KPlotObject::Lines, 3);
   //std::cout<<"ShowLimitsCurve: gain:"<<gain<<", apfel:"<<apfel<<", dac:"<<dac << std::endl;
   // TODO: later use std::map between gain and objects
-  ApfelTestResults& reference = fReference_1;
+  ApfelTestResults dummy;
+  ApfelTestResults& reference = dummy;
   switch(gain)
   {
     default:
@@ -1731,12 +1737,20 @@ void ApfelGui::ShowLimitsCurve (int gain, int apfel, int dac)
         double adclow=aval*0.9; // TODO: adjustable tolerance
         upper->addPoint (dval, adcup);
         lower->addPoint (dval, adclow);
+
+        // evaluate zoom range
+        if(fPlotMinDac==0 ||  dval<fPlotMinDac) fPlotMinDac=dval;
+        if(fPlotMaxDac==APFEL_DAC_MAXVALUE ||  dval>fPlotMaxDac) fPlotMaxDac=dval;
+        if(fPlotMinAdc==0 ||  adclow<fPlotMinAdc) fPlotMinAdc=adclow;
+        if(fPlotMaxAdc==APFEL_DAC_MAXVALUE ||  adcup>fPlotMaxAdc) fPlotMaxAdc=adcup;
+
+
         //std::cout<<"ShowLimitsCurve: i:"<<i<<", dacval:"<<dval<<"up:"<<adcup<<", lo:"<<adclow << std::endl;
 
       }
   BenchmarkPlotwidget->addPlotObject(upper);
   BenchmarkPlotwidget->addPlotObject(lower);
-
+  BenchmarkPlotwidget->setLimits (fPlotMinDac, fPlotMaxDac, fPlotMinAdc, fPlotMaxAdc);
   BenchmarkPlotwidget->update();
 }
 
@@ -1796,18 +1810,17 @@ void ApfelGui::ShowBenchmarkCurve (int gain, int apfel, int dac)
     ApfelTestResults& theResults=theSetup.AccessTestResults(gain, apfel);
 
     QString label = QString("gain:%1 apfel:%2 dac:%3").arg(gain).arg(apfel).arg(dac);
-    uint16_t mindac=0, maxdac=APFEL_DAC_MAXVALUE, minadc=0, maxadc=APFEL_ADC_MAXVALUE;
-    for(int i=0; i<APFEL_DAC_CURVEPOINTS; ++i)
+     for(int i=0; i<APFEL_DAC_CURVEPOINTS; ++i)
     {
       DacSample point(0,0);
       theResults.AccessDacSample(point,dac,i); // if this fails, point is just not touched -> default 0 values are saved
       uint16_t dval=point.GetDACValue();
       uint16_t aval=point.GetADCValue();
       // this is for zooming:
-      if(mindac==0 ||  dval<mindac) mindac=dval;
-      if(maxdac==APFEL_DAC_MAXVALUE ||  dval>maxdac) maxdac=dval;
-      if(minadc==0 ||  aval<minadc) minadc=aval;
-      if(maxadc==APFEL_DAC_MAXVALUE ||  aval>maxadc) maxadc=aval;
+      if(fPlotMinDac==0 ||  dval<fPlotMinDac) fPlotMinDac=dval;
+      if(fPlotMaxDac==APFEL_DAC_MAXVALUE ||  dval>fPlotMaxDac) fPlotMaxDac=dval;
+      if(fPlotMinAdc==0 ||  aval<fPlotMinAdc) fPlotMinAdc=aval;
+      if(fPlotMaxAdc==APFEL_DAC_MAXVALUE ||  aval>fPlotMaxAdc) fPlotMaxAdc=aval;
 
       if(i==APFEL_DAC_CURVEPOINTS/2)
         curveplot->addPoint (dval, aval,label);
@@ -1818,10 +1831,10 @@ void ApfelGui::ShowBenchmarkCurve (int gain, int apfel, int dac)
     // add it to the plot area
     BenchmarkPlotwidget->addPlotObject( curveplot);
 
-    if(gain!=1)
-      BenchmarkPlotwidget->setLimits (mindac, maxdac, minadc, maxadc);
-    else
-      BenchmarkPlotwidget->setLimits (0, APFEL_DAC_MAXVALUE, 0, APFEL_ADC_MAXVALUE);
+    //if(gain!=1)
+      BenchmarkPlotwidget->setLimits (fPlotMinDac, fPlotMaxDac, fPlotMinAdc, fPlotMaxAdc);
+    //else
+    //  BenchmarkPlotwidget->setLimits (0, APFEL_DAC_MAXVALUE, 0, APFEL_ADC_MAXVALUE);
 
     BenchmarkPlotwidget->update();
 
@@ -1988,7 +2001,7 @@ void ApfelGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "ApfelGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.966 of 17-November-2016 by JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.967 of 18-November-2016 by JAM (j.adamczewski@gsi.de)\n");
 
 }
 
