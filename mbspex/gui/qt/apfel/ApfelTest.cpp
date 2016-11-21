@@ -3,6 +3,9 @@
 #include "ApfelGui.h"
 #include "ApfelSetup.h"
 
+#include "errno.h"
+#include <stdio.h>
+
 ApfelTest::ApfelTest () :
     fOwner (0), fCurrentSetup (0), fTestLength (0), fCurrentGain(0)
 {
@@ -19,7 +22,7 @@ ApfelTest::ApfelTest () :
 void ApfelTest::InitReferenceValues()
 {
 
-
+  fReferenceValues[1].Reset();
   // gain 1, dac2
   //559   2790    575     2833    591     2823    607     2835    623     2873    639     2826    655     2804    671     3381    687     4459    703     5547    719     9407    735     7824    751     8950    767     10102   783     10493   799     12311   815     13345   831     14311   847     14970   863     15215   879     15231   895     15243   911     15247   927     15258
 
@@ -35,7 +38,7 @@ void ApfelTest::InitReferenceValues()
   }
 
 
-
+  fReferenceValues[16].Reset();
 
   // gain 16, dac0 and dac1
   //780   12222   782     13743   784     11987   786     11142   788     9712    790     9606    792     8817    794     7959    796     7179    798     7119    800     4409    802     3606    804     2909    806     2464    808     1615    810     1379    812     974 814     781 816     680 818     669 820     678 822     673 824     665 826     701
@@ -44,8 +47,6 @@ void ApfelTest::InitReferenceValues()
 
   int valADC_16[APFEL_DAC_CURVEPOINTS]=
   {14222,13743,11987,11142,9712,9606,8817,7959,7179,7119,4409,3606,2909,2464,1615,1379,974,781,680,669,678,673,665,701};
-
-
 
 
   for(int i=0; i<APFEL_DAC_CURVEPOINTS; ++i)
@@ -58,6 +59,8 @@ void ApfelTest::InitReferenceValues()
   // gain 32, dac0 and dac1
   //821   7626    822     6724    823     6152    824     5507    825     4819    826     3966    827     7243    828     2811    829     4279    830     3663    831     1400    832     766 833     735 834     718 835     749 836     784 837     656 838     741 839     611 840     710 841     766 842     709 843     707 844     722
 
+
+  fReferenceValues[32].Reset();
 
   int valDAC_32[APFEL_DAC_CURVEPOINTS]=
   { 821,822,823,824,825,826,827,828,829,830,831,832,833,834,835,836,837,838,839,840,841,842,843,844};
@@ -78,9 +81,131 @@ void ApfelTest::InitReferenceValues()
 }
 
 
-void ApfelTest::LoadReferenceValues(const QString& file)
+void ApfelTest::LoadReferenceValues(const QString& fname)
 {
-  printm("Loading reference values from file %s not implemented yet.",file.toLatin1().constData());
+  size_t nbuf=32768;
+  char* buffer= (char*) malloc(32768);
+  char** lineptr = &buffer;
+  printm("Loading reference values from file %s ...",fname.toLatin1().constData());
+  FILE* referencefile = fopen (fname.toLatin1 ().constData (), "r");
+  if (referencefile == NULL)
+    {
+      printm("Error opening Characterization Reference File '%s': %s\n", fname.toLatin1 ().constData (),
+          strerror (errno));
+       return;
+    }
+
+  bool done_1=false, done_16=false, done_32=false;
+  int gain=0, apfel=0, dacindex=0;
+  float dummy[8]={0};
+  int dac[24]={0};
+  int adc[24]={0};
+
+  int counter=0;
+  while(true)
+  {
+    //std::cout<< "getline of "<< counter++ << std::endl;
+    if(getline(lineptr,&nbuf,referencefile)<0)
+    {
+      printm("Error reading a line!");
+      free(*lineptr);
+      return;
+    }
+    buffer=*lineptr;
+    if(strstr(buffer,"#")) continue;// skip all comments
+    //std::cout<< "reading line: "<< buffer << std::endl;
+    sscanf(buffer,"%d %d %d", &gain, &apfel, &dacindex);
+    if(!done_1)
+    {
+        if(gain==1 && apfel==1 && dacindex==2)
+        {
+          // take first channel that matches specs
+          printm("Gain:%d: Reading references of apfel:%d, dac:%d",gain,apfel,dacindex);
+          sscanf(buffer,"%d %d %d %f %f %f %f %f %f %f %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
+              &gain, &apfel, &dac, &dummy[0], &dummy[1],&dummy[2], &dummy[3],&dummy[4], &dummy[5],&dummy[6], &dummy[7],
+              &dac[0], &adc[0],  &dac[1], &adc[1], &dac[2], &adc[2],  &dac[3], &adc[3],
+              &dac[4], &adc[4],  &dac[5], &adc[5], &dac[6], &adc[6],  &dac[7], &adc[7],
+              &dac[8], &adc[8],  &dac[9], &adc[9], &dac[10], &adc[10],  &dac[11], &adc[11],
+              &dac[12], &adc[12],  &dac[13], &adc[13], &dac[14], &adc[14],  &dac[15], &adc[15],
+              &dac[16], &adc[16],  &dac[17], &adc[17], &dac[18], &adc[18],  &dac[19], &adc[19],
+              &dac[20], &adc[20],  &dac[21], &adc[21], &dac[22], &adc[22],  &dac[23], &adc[23]
+          );
+
+          // DEBUG:
+
+//          for(int i=0; i<8; ++i)
+//          {
+//            std::cout<< "Dummies for gain1: i:"<<i<<" :"<<dummy[i]<< std::endl;
+//          }
+//          for(int i=0; i<24; ++i)
+//          {
+//            std::cout<< "gain1: i:"<<i<<" dac:"<<dac[i]<<", adc:"<<adc[i]<< std::endl;
+//          }
+
+          //
+
+
+          for(int i=0; i<APFEL_DAC_CURVEPOINTS; ++i)
+           {
+             fReferenceValues[1].AddDacSample(2, (uint16_t) dac[i], (uint16_t) adc[i]);
+             //std::cout<< "LoadReferenceValues for gain1: i:"<<i<<" ("<<dac[i]<<","<<adc[i]<<"="<< std::endl;
+           }
+          done_1=true;
+        } // if(gain==1 && apfel==0 && dacindex==2)
+    } // gain1
+
+    if(!done_16)
+       {
+           if(gain==16 && apfel==1 && dacindex==0)
+           {
+             // take first channel that matches specs
+             printm("Gain:%d: Reading references of apfel:%d, dac:%d",gain,apfel,dacindex);
+             sscanf(buffer,"%d %d %d %f %f %f %f %f %f %f %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
+                 &gain, &apfel, &dac, &dummy[0], &dummy[1],&dummy[2], &dummy[3],&dummy[4], &dummy[5],&dummy[6], &dummy[7],
+                 &dac[0], &adc[0],  &dac[1], &adc[1], &dac[2], &adc[2],  &dac[3], &adc[3],
+                 &dac[4], &adc[4],  &dac[5], &adc[5], &dac[6], &adc[6],  &dac[7], &adc[7],
+                 &dac[8], &adc[8],  &dac[9], &adc[9], &dac[10], &adc[10],  &dac[11], &adc[11],
+                 &dac[12], &adc[12],  &dac[13], &adc[13], &dac[14], &adc[14],  &dac[15], &adc[15],
+                 &dac[16], &adc[16],  &dac[17], &adc[17], &dac[18], &adc[18],  &dac[19], &adc[19],
+                 &dac[20], &adc[20],  &dac[21], &adc[21], &dac[22], &adc[22],  &dac[23], &adc[23]
+             );
+             for(int i=0; i<APFEL_DAC_CURVEPOINTS; ++i)
+              {
+                fReferenceValues[16].AddDacSample(0, (uint16_t) dac[i], (uint16_t) adc[i]);
+                fReferenceValues[16].AddDacSample(1, (uint16_t) dac[i], (uint16_t) adc[i]);
+                //std::cout<< "LoadReferenceValues for gain16: i:"<<i<<" ("<<dac[i]<<","<<adc[i]<<"="<< std::endl;
+              }
+             done_16=true;
+           } // if(gain==1 && apfel==0 && dacindex==2)
+       } // gain16
+
+    if(!done_32)
+          {
+              if(gain==32 && apfel==1 && dacindex==0)
+              {
+                // take first channel that matches specs
+                printm("Gain:%d: Reading references of apfel:%d, dac:%d",gain,apfel,dacindex);
+                sscanf(buffer,"%d %d %d %f %f %f %f %f %f %f %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
+                    &gain, &apfel, &dac, &dummy[0], &dummy[1],&dummy[2], &dummy[3],&dummy[4], &dummy[5],&dummy[6], &dummy[7],
+                    &dac[0], &adc[0],  &dac[1], &adc[1], &dac[2], &adc[2],  &dac[3], &adc[3],
+                    &dac[4], &adc[4],  &dac[5], &adc[5], &dac[6], &adc[6],  &dac[7], &adc[7],
+                    &dac[8], &adc[8],  &dac[9], &adc[9], &dac[10], &adc[10],  &dac[11], &adc[11],
+                    &dac[12], &adc[12],  &dac[13], &adc[13], &dac[14], &adc[14],  &dac[15], &adc[15],
+                    &dac[16], &adc[16],  &dac[17], &adc[17], &dac[18], &adc[18],  &dac[19], &adc[19],
+                    &dac[20], &adc[20],  &dac[21], &adc[21], &dac[22], &adc[22],  &dac[23], &adc[23]
+                );
+                for(int i=0; i<APFEL_DAC_CURVEPOINTS; ++i)
+                 {
+                   fReferenceValues[32].AddDacSample(0, (uint16_t) dac[i], (uint16_t) adc[i]);
+                   fReferenceValues[32].AddDacSample(1, (uint16_t) dac[i], (uint16_t) adc[i]);
+                   //std::cout<< "LoadReferenceValues for gain32: i:"<<i<<" ("<<dac[i]<<","<<adc[i]<<")"<< std::endl;
+                 }
+                done_32=true;
+              } // if(gain==1 && apfel==0 && dacindex==2)
+          } // gain16
+    if(done_1 && done_16 && done_32) break;
+  } // while
+  free(*lineptr);
 }
 
 

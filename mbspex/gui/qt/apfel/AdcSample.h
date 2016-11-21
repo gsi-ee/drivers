@@ -3,6 +3,25 @@
 
 #include "ApfelDefines.h"
 
+#include <vector>
+
+/** one peak found in the sample */
+class AdcPeak
+{
+public:
+
+  /** adc value at peak centroid*/
+  uint16_t fHeight;
+
+  /** position index in sample*/
+  int fPosition;
+
+  AdcPeak(int pos, uint16_t height):fPosition(pos),fHeight(height){}
+
+};
+
+
+
 /** this structure keeps the most recent baseline sample for a single ADC channel*/
 class AdcSample
 {
@@ -15,6 +34,10 @@ private:
 
   /** keep maximum value of current sample set*/
   uint16_t fMaxValue;
+
+  /** heighs of the first n maxima peaks in sample*/
+  std::vector<AdcPeak> fPeaks;
+
 
 public:
 
@@ -55,6 +78,21 @@ public:
   {
     return fMaxValue;
   }
+
+
+  /** find the first n absolute maxima within the current sample*/
+  void FindPeaks();
+
+  /* add found peak (position, height) to the list*/
+  void AddPeak(int pos, uint16_t height);
+
+  uint16_t GetPeakHeight(int num);
+
+  int GetPeakPosition(int num);
+
+  int GetNumPeaks();
+
+
 
   /** show mean and sigma values. label can be used to specify channel number*/
   void DumpParameters (int label);

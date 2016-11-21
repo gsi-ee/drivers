@@ -342,6 +342,35 @@ uint16_t BoardSetup::GetADCSample (int febexchannel, int index)
   return fLastSample[febexchannel].GetSample (index);
 }
 
+int BoardSetup::EvaluatePeaks(int febexchannel)
+{
+  ASSERT_FEBCHAN_VALID(febexchannel);
+  fLastSample[febexchannel].FindPeaks();
+  return 0;
+}
+
+
+uint16_t BoardSetup::GetSamplePeakHeight (int febexchannel, int num)
+{
+  ASSERT_FEBCHAN_VALID(febexchannel);
+  return fLastSample[febexchannel].GetPeakHeight (num);
+}
+
+int BoardSetup::GetSamplePeakPosition (int febexchannel, int num)
+{
+  ASSERT_FEBCHAN_VALID(febexchannel);
+  return fLastSample[febexchannel].GetPeakPosition (num);
+}
+
+int BoardSetup::NumSamplePeaks (int febexchannel)
+{
+  ASSERT_FEBCHAN_VALID(febexchannel);
+  return fLastSample[febexchannel].GetNumPeaks ();
+}
+
+
+
+
 double BoardSetup::GetADCMean (int febexchannel)
 {
   ASSERT_FEBCHAN_VALID(febexchannel);

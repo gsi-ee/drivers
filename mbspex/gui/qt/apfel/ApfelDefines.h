@@ -131,6 +131,9 @@
 #define APFEL_ADC_SAMPLEVALUES 200
 
 
+#define APFEL_ADC_NUMMAXIMA 5
+
+
 /** core read request write address to fetch ADC DAQBUFFER*/
 #define APFEL_ADC_DAQBUFFER_REQ_PORT 0x2080c0
 

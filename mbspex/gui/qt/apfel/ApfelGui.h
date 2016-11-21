@@ -157,16 +157,16 @@ protected:
 
 
   /** keeps range of current benchmark plot window*/
-  uint16_t fPlotMinDac;
+  int fPlotMinDac;
 
   /** keeps range of current benchmark plot window*/
-  uint16_t fPlotMaxDac;
+  int fPlotMaxDac;
 
   /** keeps range of current benchmark plot window*/
-  uint16_t fPlotMinAdc;
+  int fPlotMinAdc;
 
   /** keeps range of current benchmark plot window*/
-  uint16_t fPlotMaxAdc;
+  int fPlotMaxAdc;
 
 
 #ifdef USE_MBSPEX_LIB
@@ -197,6 +197,10 @@ protected:
    /** udpate display of most recent adc  sample from chanmnel*/
    void RefreshLastADCSample(int febexchannel);
 
+
+
+   /** show the sample maxima for febexchannel in table*/
+   void RefreshSampleMaxima(int febexchannel);
 
 
 //  /** update febex device index display*/
@@ -480,6 +484,8 @@ protected:
     /* show DAC curve in benchmark display for gain, chip and dacl*/
     void ShowBenchmarkCurve(int gain, int apfel, int dac);
 
+    /** request for file to load reference data*/
+    void LoadBenchmarkReferences();
 
     /** dump most recent acquired adc sample for specified channel.
      * if benchmarkdisplay is set, plot to general benchmark pad */
@@ -493,6 +499,11 @@ protected:
 
     /** show full range of sample plot*/
     void UnzoomSample(int channel);
+
+
+
+    /** read voltage and current via serial connection from toellner power supply*/
+    void ReadToellnerPower(double& u, double& i);
 
   void DebugTextWindow (const char*txt)
   {
@@ -682,6 +693,7 @@ public slots:
   virtual void SaveBenchmarkPressed();
 
   virtual void BenchmarkPressed(QAbstractButton* but);
+  virtual void ChangeReferenceDataPressed(QAbstractButton*);
 
   virtual void BenchmarkTimerCallback();
 

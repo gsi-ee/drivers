@@ -47,8 +47,11 @@ private:
   /** board id tag*/
   QString fBoardID[2];
 
-  /** current in mA for DUT*/
+  /** current in A for DUT*/
   double fCurrent;
+
+  /** voltage in V for DUT*/
+  double fVoltage;
 
 public:
 
@@ -73,7 +76,15 @@ public:
   {
     return fCurrent;
   }
+  void SetVoltage (double val)
+   {
+     fVoltage = val;
+   }
 
+   double GetVoltage ()
+   {
+     return fVoltage;
+   }
   bool IsApfelInUse ()
   {
     return fUseApfel;
@@ -187,6 +198,19 @@ public:
 
   /** get most recent sampled ADC point for single febexchannel. */
   uint16_t GetADCSample (int febexchannel, int index);
+
+  /** Find peaks in sample of channel*/
+  int EvaluatePeaks(int febexchannel);
+
+  /** Height of peak number num in sample*/
+  uint16_t GetSamplePeakHeight(int febexchannel, int num);
+
+  /** Position of peak number num in sample*/
+  int  GetSamplePeakPosition(int febexchannel, int num);
+
+  /** number of peaks in sample of channel*/
+  int NumSamplePeaks(int febexchanne);
+
 
   /** evaluate mean value of most recent ADC sample for febexchannel*/
   double GetADCMean (int febexchannel);

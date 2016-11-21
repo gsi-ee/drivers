@@ -21,6 +21,7 @@
 #include <sstream>
 #include <string.h>
 #include <errno.h>
+#include <QTableWidget>
 
 // *********************************************************
 
@@ -329,6 +330,9 @@ ApfelGui::ApfelGui (QWidget* parent) :
 
   QObject::connect (BenchmarkButtonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(BenchmarkPressed(QAbstractButton*)));
 
+  QObject::connect (ReferenceLoadButtonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(ChangeReferenceDataPressed(QAbstractButton*)));
+
+
   /** JAM put references to designer checkboxes into array to be handled later easily: */
   fBaselineBoxes[0] = Baseline_Box_00;
   fBaselineBoxes[1] = Baseline_Box_01;
@@ -618,7 +622,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
   fInstance = this;
 
   fBenchmark.SetOwner (this);
-  fBenchmark.LoadReferenceValues (QString ("default.apf"));
+  //fBenchmark.LoadReferenceValues (QString ("default.apf"));
 
   show ();
 
@@ -1446,6 +1450,12 @@ int ApfelGui::AcquireSample (int channel)
     //std::cout << "Filled "<<i<< "adc samples from mbs trace up to position #"<< cursor<<", sampledelta="<<sampledelta<< std::endl;
   }
 
+
+  // TODO: here evaluation of peaks:
+
+  theSetup.EvaluatePeaks(channel);
+
+
   RefreshLastADCSample (channel);
   return 0;
 }
@@ -1475,6 +1485,33 @@ void ApfelGui::AcquireSamplesBtn_clicked ()
   APFEL_BROADCAST_ACTION(AcquireSelectedSamples());
   QApplication::restoreOverrideCursor ();
 }
+
+
+
+
+void ApfelGui::RefreshSampleMaxima(int febexchannel)
+{
+  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  QString text;
+  QString pre;
+  fNumberBase == 16 ? pre = "0x" : pre = "";
+  int numpeaks=theSetup.NumSamplePeaks(febexchannel);
+  for(int i=0; i<numpeaks; ++i)
+  {
+    uint16_t height=theSetup.GetSamplePeakHeight(febexchannel,i);
+    int pos=theSetup.GetSamplePeakPosition(febexchannel,i);
+    QTableWidgetItem *   pitem=MaximaTableWidget->item(i,0);
+    QTableWidgetItem *   hitem=MaximaTableWidget->item(i,1);
+    pitem->setText(pre+text.setNum (pos, fNumberBase));
+    hitem->setText(pre+text.setNum (height, fNumberBase));
+  }
+
+
+}
+
+
+
+
 
 int ApfelGui::ShowSample (int channel, bool benchmarkdisplay)
 {
@@ -1558,7 +1595,8 @@ int ApfelGui::ShowSample (int channel, bool benchmarkdisplay)
   // add it to the plot area
   canvas->addPlotObject (sampleplot);
 
-  if (benchmarkdisplay)
+
+   if (benchmarkdisplay)
   {
     canvas->setLimits (0, APFEL_ADC_SAMPLEVALUES, 0.0, 17000);
     canvas->update ();
@@ -1566,10 +1604,13 @@ int ApfelGui::ShowSample (int channel, bool benchmarkdisplay)
   else
   {
     UnzoomSample (channel);
+    RefreshSampleMaxima(channel);
   }
 
   return 0;
 }
+
+
 
 void ApfelGui::ShowSelectedSamples ()
 {
@@ -1607,6 +1648,9 @@ void ApfelGui::ResetBenchmarkCurve ()
 
 }
 
+
+
+
 void ApfelGui::ShowLimitsCurve (int gain, int apfel, int dac)
 {
   QColor col = Qt::red;
@@ -1619,24 +1663,30 @@ void ApfelGui::ShowLimitsCurve (int gain, int apfel, int dac)
   ApfelTestResults& reference = fBenchmark.GetReferenceValues (gain);
 
   double tolerance = ToleranceSpinBox->value () / 100.0;
+  bool relativeMode=RelativeComparisonBox->isChecked();
+  int ashift=0, dshift=0;
+  if(relativeMode)
+  {
+      // get coordinates of sample and shift reference onto autocalibration centre:
+      int autoix = (APFEL_DAC_CURVEPOINTS/2 -1); // should be 11 from 24
+      DacSample middleSample (0, 0);
+      theResults.AccessDacSample (middleSample, dac, autoix);
+      DacSample middleReference (0, 0);
+      reference.AccessDacSample (middleReference, dac, autoix);
+      ashift= (int) middleSample.GetADCValue () - (int) middleReference.GetADCValue ();
+      dshift= (int) middleSample.GetDACValue() - (int) middleReference.GetDACValue();
+      //std::cout<<"ShowLimitsCurve for apfel:"<<apfel<<", dac:"<<dac<<" has adc shift:"<<(int) ashift<<", dac shift:"<< (int) dshift << std::endl;
+  }
 
   for (int i = 0; i < APFEL_DAC_CURVEPOINTS; ++i)
   {
     DacSample point (0, 0);
     reference.AccessDacSample (point, dac, i);    // if this fails, point is just not touched -> default 0 values are saved
+    int dval=point.GetDACValue() + dshift;
+    int aval = point.GetADCValue () + ashift;
 
-    // old: plot reference curve as is.
-    //uint16_t dval=point.GetDACValue();
-
-    // new: for dac values, use exact location of current samples
-    // this means we shift reference curve with respect to the autocalibrated centre point!
-    DacSample sampledPoint (0, 0);
-    theResults.AccessDacSample (sampledPoint, dac, i);    // if this fails, point is just not touched -> default 0 values are saved
-    uint16_t dval = sampledPoint.GetDACValue ();
-
-    uint16_t aval = point.GetADCValue ();
     double adcup = aval * (1.0 + tolerance);
-    double adclow = aval * (1.0 - tolerance);    // TODO: adjustable tolerance
+    double adclow = aval * (1.0 - tolerance);
     upper->addPoint (dval, adcup);
     lower->addPoint (dval, adclow);
 
@@ -1896,7 +1946,7 @@ void ApfelGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "ApfelGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.970 of 18-November-2016 by JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.975 of 21-November-2016 by JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -3645,6 +3695,26 @@ void ApfelGui::PulseFrequencyChanged (int index)
   printm ("Pulser Period has been changed to %d ms.", period);
 }
 
+
+void ApfelGui::LoadBenchmarkReferences()
+{
+  QFileDialog fd (this, "Select Benchmark reference data file", ".", "apfel characterization file (*.apf)");
+  fd.setFileMode (QFileDialog::ExistingFile);
+  if (fd.exec () != QDialog::Accepted)
+    return;
+  QStringList flst = fd.selectedFiles ();
+  if (flst.isEmpty ())
+    return;
+  QString filename = flst[0];
+  fBenchmark.LoadReferenceValues(filename);
+  ReferenceLineEdit->setText(filename);
+}
+
+
+
+
+
+
 void ApfelGui::BenchmarkTimerCallback ()
 {
   // this one does the actual benchmarking procedure:
@@ -3690,12 +3760,32 @@ void ApfelGui::StartBenchmarkPressed ()
   }
   theSetup.SetBoardID (0, apfel1);
   theSetup.SetBoardID (1, apfel2);
-  double current = CurrentDoubleSpinBox->value ();
+
+  double current=0, voltage=0;
+  // here put automatic evaluation of power supply via serial connection:
+  if(AutoPowerscanCheckBox->isChecked())
+  {
+    printm ("Reading power supply settings via serial line...");
+
+    ReadToellnerPower(voltage,current);
+    CurrentDoubleSpinBox->setValue(current*1000.0);
+    VoltageDoubleSpinBox->setValue(voltage);
+  }
+  else
+  {
+     current = CurrentDoubleSpinBox->value () / 1000.0;
+     voltage = VoltageDoubleSpinBox->value ();
+  }
+
+
+
+
   theSetup.SetCurrent (current);
+  theSetup.SetVoltage(voltage);
 
   printm ("Benchmark has been started for sfp %d slave %d", fSFP, fSlave);
-  printm ("Board 1:%s Board2:%s Current=%f mA", apfel1.toLatin1 ().constData (), apfel2.toLatin1 ().constData (),
-      current);
+  printm ("Board 1:%s Board2:%s Current=%f A Voltage=%f V", apfel1.toLatin1 ().constData (), apfel2.toLatin1 ().constData (),
+      current, voltage);
 
   // here we evaluate a to do list that the timer should process:
   fBenchmark.SetSetup (&theSetup);
@@ -3828,6 +3918,27 @@ void ApfelGui::BenchmarkPressed (QAbstractButton* but)
 
 }
 
+
+void ApfelGui::ChangeReferenceDataPressed(QAbstractButton* but)
+{
+
+  //std::cout << "ChangeReferenceDataPressed" << std::endl;
+
+  if (but == ReferenceLoadButtonBox->button (QDialogButtonBox::Open))
+    {
+      LoadBenchmarkReferences();
+    }
+  else if (but == ReferenceLoadButtonBox->button (QDialogButtonBox::RestoreDefaults))
+   {
+      ReferenceLineEdit->setText("buildin defaults");
+      fBenchmark.InitReferenceValues();
+   }
+
+
+}
+
+
+
 void ApfelGui::SaveTestResults ()
 {
 
@@ -3842,8 +3953,9 @@ void ApfelGui::SaveTestResults ()
     return;
   }
   double current = theSetup.GetCurrent ();
+  double voltage = theSetup.GetVoltage();
   QString header = QString ("# apfel1:").append (apf1).append (", apfel2:").append (apf2);
-  header.append (QString (" Current:%1 mA").arg (current));
+  header.append (QString (" Current:%1 A Voltage:%1 A").arg (current).arg (voltage));
   header.append ("\n");
   WriteTestFile (header);
   // format
@@ -3896,6 +4008,29 @@ void ApfelGui::SaveTestResults ()
   }
 
 }
+
+
+
+void ApfelGui::ReadToellnerPower(double& u, double& i)
+{
+  // we just use Peters skripts for the moment
+  // TODO: communicate with /dev/ttyS0 directly
+   QString ucom ("measure_serial.sh V");
+   QString uresult = ExecuteGosipCmd (ucom, 10000);
+   u=uresult.toDouble();
+   printm("Read Toellner Voltage=%f V",u);
+
+   sleep(1);
+   QString icom ("measure_serial.sh I");
+   QString iresult = ExecuteGosipCmd (icom, 10000);
+   i=iresult.toDouble();
+   printm("Read Toellner Current=%f A",i);
+}
+
+
+
+
+
 
 int ApfelGui::SaveGosip (int sfp, int slave, int address, int value)
 {
