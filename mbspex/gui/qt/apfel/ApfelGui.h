@@ -495,10 +495,10 @@ protected:
     void ShowSelectedSamples();
 
     /** zoom into sampled plot*/
-    void ZoomSample(int channel);
+    void ZoomSample(int channel, double xscale=1.0);
 
     /** show full range of sample plot*/
-    void UnzoomSample(int channel);
+    void UnzoomSample(int channel, double xscale=1.0);
 
 
 

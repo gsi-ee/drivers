@@ -1443,6 +1443,7 @@ int ApfelGui::AcquireSample (int channel)
       double value = 0;
       if (s > 0)
         value = sum / (double) s;    // should be sampledelta if everything works nice, or less at end of buffer...
+      //value=sum;  // just keep integral value
 
       //std::cout <<"got value"<<value<< "at position "<< i <<", cursor="<<cursor<<", sum="<<sum << std::endl;
       theSetup.SetADCSample (channel, i, value);
@@ -1496,10 +1497,16 @@ void ApfelGui::RefreshSampleMaxima(int febexchannel)
   QString pre;
   fNumberBase == 16 ? pre = "0x" : pre = "";
   int numpeaks=theSetup.NumSamplePeaks(febexchannel);
+  double scale=1.0;
+  if(ReadoutRadioButton->isChecked()) // TODO: this proberty belongs into sample data
+  {
+    // MBS readout mode: scale full range to real trace length 8000:
+    scale= APFEL_MBS_TRACELEN / APFEL_ADC_SAMPLEVALUES;
+  }
   for(int i=0; i<numpeaks; ++i)
   {
     uint16_t height=theSetup.GetSamplePeakHeight(febexchannel,i);
-    int pos=theSetup.GetSamplePeakPosition(febexchannel,i);
+    int pos= scale*theSetup.GetSamplePeakPosition(febexchannel,i);
     QTableWidgetItem *   pitem=MaximaTableWidget->item(i,0);
     QTableWidgetItem *   hitem=MaximaTableWidget->item(i,1);
     pitem->setText(pre+text.setNum (pos, fNumberBase));
@@ -1587,9 +1594,16 @@ int ApfelGui::ShowSample (int channel, bool benchmarkdisplay)
   KPlotObject *sampleplot = new KPlotObject (col, KPlotObject::Lines, 2);
   QString label = QString ("channel:%1").arg (channel);
   sampleplot->addPoint (0, theSetup.GetADCSample (channel, 0), label);
+  double scale=1.0;
+  if(ReadoutRadioButton->isChecked()) // TODO: this proberty belongs into sample data
+  {
+    // MBS readout mode: scale full range to real trace length 8000:
+    scale= APFEL_MBS_TRACELEN / APFEL_ADC_SAMPLEVALUES;
+  }
   for (int i = 1; i < APFEL_ADC_SAMPLEVALUES; ++i)
   {
-    sampleplot->addPoint (i, theSetup.GetADCSample (channel, i));
+    double x=i*scale;
+    sampleplot->addPoint (x, theSetup.GetADCSample (channel, i));
   }
 
   // add it to the plot area
@@ -1598,12 +1612,12 @@ int ApfelGui::ShowSample (int channel, bool benchmarkdisplay)
 
    if (benchmarkdisplay)
   {
-    canvas->setLimits (0, APFEL_ADC_SAMPLEVALUES, 0.0, 17000);
+    canvas->setLimits (0, scale*APFEL_ADC_SAMPLEVALUES, 0.0, 17000);
     canvas->update ();
   }
   else
   {
-    UnzoomSample (channel);
+    UnzoomSample (channel,scale);
     RefreshSampleMaxima(channel);
   }
 
@@ -1805,7 +1819,7 @@ void ApfelGui::DumpSamplesBtn_clicked ()
   QApplication::restoreOverrideCursor ();
 }
 
-void ApfelGui::ZoomSample (int channel)
+void ApfelGui::ZoomSample (int channel, double xscale)
 {
   //std::cout <<"ZoomSample for channel"<< channel<< std::endl;
   // evaluate minimum and maximum value of current sample:
@@ -1813,14 +1827,14 @@ void ApfelGui::ZoomSample (int channel)
   double minimum = theSetup.GetADCMiminum (channel);
   double maximum = theSetup.GetADCMaximum (channel);
   //std::cout <<"Got minimum:"<< minimum<<", maximum:"<<maximum<< std::endl;
-  fPlotWidget[channel]->setLimits (0, APFEL_ADC_SAMPLEVALUES, minimum, maximum);
+  fPlotWidget[channel]->setLimits (0, xscale*APFEL_ADC_SAMPLEVALUES, minimum, maximum);
   fPlotWidget[channel]->update ();
 }
 
-void ApfelGui::UnzoomSample (int channel)
+void ApfelGui::UnzoomSample (int channel, double xscale)
 {
   //std::cout <<"UnzoomSample for channel"<< channel<< std::endl;
-  fPlotWidget[channel]->setLimits (0, APFEL_ADC_SAMPLEVALUES, 0.0, 17000);
+  fPlotWidget[channel]->setLimits (0, xscale*APFEL_ADC_SAMPLEVALUES, 0.0, 17000);
   fPlotWidget[channel]->update ();
 }
 
@@ -1828,14 +1842,26 @@ void ApfelGui::ZoomSampleBtn_clicked ()
 {
   //std::cout <<"ZoomSampleBtn_clicked"<< std::endl;
   int channel = PlotTabWidget->currentIndex ();
-  ZoomSample (channel);
+  double scale=1.0;
+  if(ReadoutRadioButton->isChecked()) // TODO: this proberty belongs into sample data
+   {
+     // MBS readout mode: scale full range to real trace length 8000:
+     scale= APFEL_MBS_TRACELEN / APFEL_ADC_SAMPLEVALUES;
+   }
+  ZoomSample (channel, scale);
 }
 
 void ApfelGui::UnzoomSampleBtn_clicked ()
 {
   //std::cout <<"UnzoomSampleBtn_clicked"<< std::endl;
   int channel = PlotTabWidget->currentIndex ();
-  UnzoomSample (channel);
+  double scale=1.0;
+  if(ReadoutRadioButton->isChecked()) // TODO: this proberty belongs into sample data
+  {
+    // MBS readout mode: scale full range to real trace length 8000:
+    scale= APFEL_MBS_TRACELEN / APFEL_ADC_SAMPLEVALUES;
+  }
+  UnzoomSample (channel,scale);
 }
 
 void ApfelGui::RefreshSampleBtn_clicked ()
@@ -1946,7 +1972,7 @@ void ApfelGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "ApfelGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.975 of 21-November-2016 by JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.976 of 21-November-2016 by JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -4021,7 +4047,7 @@ void ApfelGui::ReadToellnerPower(double& u, double& i)
    printm("Read Toellner Voltage=%f V",u);
 
    sleep(1);
-   QString icom ("measure_serial.sh I");
+   QString icom ("measure_serial.sh C");
    QString iresult = ExecuteGosipCmd (icom, 10000);
    i=iresult.toDouble();
    printm("Read Toellner Current=%f A",i);
