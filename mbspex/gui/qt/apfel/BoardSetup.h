@@ -199,8 +199,11 @@ public:
   /** get most recent sampled ADC point for single febexchannel. */
   uint16_t GetADCSample (int febexchannel, int index);
 
+  /** number of sampled points for febexchannel. Depends on mode (mbs or monitoring port)*/
+  int GetADCSampleLength (int febexchannel);
+
   /** Find peaks in sample of channel*/
-  int EvaluatePeaks(int febexchannel);
+  int EvaluatePeaks(int febexchannel, double deltaratio=0.025, double falldistance=1000, bool negative=false);
 
   /** Height of peak number num in sample*/
   uint16_t GetSamplePeakHeight(int febexchannel, int num);
@@ -210,6 +213,16 @@ public:
 
   /** number of peaks in sample of channel*/
   int NumSamplePeaks(int febexchanne);
+
+  /** true if peakfinder was applied for negative peaks*/
+  bool IsSamplePeaksNegative(int febexchannel);
+
+  /** delta height used for last found peaks*/
+  double GetSamplePeaksHeightDelta(int febexchannel);
+
+  /** delta position used for last found peaks*/
+  double GetSamplePeaksPositionDelta(int febexchannel);
+
 
 
   /** evaluate mean value of most recent ADC sample for febexchannel*/

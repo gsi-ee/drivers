@@ -495,12 +495,16 @@ protected:
     void ShowSelectedSamples();
 
     /** zoom into sampled plot*/
-    void ZoomSample(int channel, double xscale=1.0);
+    void ZoomSample(int channel);
 
     /** show full range of sample plot*/
-    void UnzoomSample(int channel, double xscale=1.0);
+    void UnzoomSample(int channel);
 
+    /** zoom display of sample for channel to the vicinity of peak number peak*/
+    void ZoomSampleToPeak(int channel, int peak);
 
+    /** do peak finding on current sample*/
+    void FindPeaks(int channel);
 
     /** read voltage and current via serial connection from toellner power supply*/
     void ReadToellnerPower(double& u, double& i);
@@ -544,6 +548,7 @@ public slots:
   virtual void UnzoomSampleBtn_clicked();
   virtual void RefreshSampleBtn_clicked();
 
+  virtual void PeakFinderBtn_clicked();
 
 
   virtual void DebugBox_changed (int on);
@@ -678,6 +683,7 @@ public slots:
 
   virtual void InverseMapping_changed (int on);
 
+  virtual void PlotTabChanged (int num);
 
   virtual void PulseTimer_changed(int on);
   virtual void PulseFrequencyChanged(int period);
@@ -696,6 +702,8 @@ public slots:
   virtual void ChangeReferenceDataPressed(QAbstractButton*);
 
   virtual void BenchmarkTimerCallback();
+
+  virtual void MaximaCellDoubleClicked(int row, int column);
 
 };
 

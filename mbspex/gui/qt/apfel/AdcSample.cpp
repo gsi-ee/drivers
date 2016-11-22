@@ -1,5 +1,7 @@
 #include "AdcSample.h"
 
+#include <algorithm>
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ////// container for single channel sample:
 //////////////////////////////////////////
@@ -13,20 +15,27 @@ void AdcSample::Reset ()
 {
   fMinValue = 0;
   fMaxValue = 0;
-  for (int i = 0; i < APFEL_ADC_SAMPLEVALUES; ++i)
-    fSample[i] = 0;
+  fSample.clear();
+  fSample.resize(APFEL_ADC_SAMPLEVALUES);
+//  for (int i = 0; i < APFEL_ADC_SAMPLEVALUES; ++i)
+//    fSample.push_back(0);
   fPeaks.clear();
+  fPeakDelta=0;
+  fHeightDelta=0;
+  fNegative=false;
 
 }
 
 double AdcSample::GetMean ()
 {
   double val = 0;
-  for (int i = 0; i < APFEL_ADC_SAMPLEVALUES; ++i)
+  double num=fSample.size();
+  for (int i = 0; i < num; ++i)
   {
     val += fSample[i];
   }
-  val /= APFEL_ADC_SAMPLEVALUES;
+  if(num)
+    val /= num;
   return val;
 }
 
@@ -34,11 +43,13 @@ double AdcSample::GetSigma ()
 {
   double val = 0, sum = 0;
   double mean = GetMean ();
-  for (int i = 0; i < APFEL_ADC_SAMPLEVALUES; ++i)
+  double num=fSample.size();
+  for (int i = 0; i < num; ++i)
   {
     sum += pow ((fSample[i] - mean), 2);
   }
-  val = sqrt (sum / APFEL_ADC_SAMPLEVALUES);
+  if(num)
+    val = sqrt (sum / num);
   return val;
 }
 
@@ -74,12 +85,21 @@ uint16_t  AdcSample::GetPeakHeight(int num)
  }
 
 
-void AdcSample::FindPeaks()
+
+
+void AdcSample::FindPeaks(double deltaratio, double falldistance, bool negative)
  {
-    uint16_t peak[APFEL_ADC_NUMMAXIMA];
+    int peak[APFEL_ADC_NUMMAXIMA];
     int pos[APFEL_ADC_NUMMAXIMA];
-    int deltanextpeak=5; // minimum distance to next peak
-    int falldelta=500; // stop peak finding if we decrease down such number of counts
+    //int deltanextpeak=fSample.size()/ 40;   //=5; // minimum distance to next peak. scaled by sample size(200 or 8000)
+
+    int deltanextpeak=fSample.size()*deltaratio;
+    int falldelta=falldistance;
+
+    //int falldelta=500; // stop peak finding if we decrease down such number of counts
+
+    //std::cout<< "FindPeaks has deltaratio:"<<deltaratio<<", fall:"<<falldistance<<", deltanext:"<<deltanextpeak<<", fallabs:"<<falldelta<< std::endl;
+
     int startpos=0;
     fPeaks.clear();
 
@@ -87,21 +107,39 @@ void AdcSample::FindPeaks()
   {
     pos[p]=0;
     peak[p]=0;
-  for (int i = startpos; i < APFEL_ADC_SAMPLEVALUES; ++i)
+    if(negative) peak[p]=-APFEL_ADC_MAXVALUE;
+
+  for (int i = startpos; i < fSample.size(); ++i)
   {
-      if(fSample[i]>peak[p]) {
-         peak[p]=fSample[i];
+      int val=fSample[i];
+      if(negative) val*=-1.0; // just flip curve down
+      if(val>peak[p]) {
+         peak[p]=val;
          pos[p]=i;
        }
-      if(fSample[i]< peak[p] - falldelta) break; // stop peak search if we are on falling edge.
+      if(val< peak[p] - falldelta) break; // stop peak search if we are on falling edge.
+
   } // for i
   //if(pos[p]==0) break;
+
+  if(negative) peak[p]*=-1.0; // flip back to original value
   AddPeak(pos[p], peak[p]); // add in order of appereance. sort later
   //std::cout<<"FindPeaks added peak"<<pos[p]<<", "<<peak[p] << std::endl;
   startpos=pos[p] + deltanextpeak; // next peak search a bit right from last peak
+  //std::cout<<"startpos="<<startpos << std::endl;
+
   }// for p
 
-  // TODO: vector sort here, later
+  // vector sort here, order depends on polarity:
+  if(negative)
+   std::sort(fPeaks.begin(), fPeaks.end());
+  else
+   std::sort(fPeaks.begin(), fPeaks.end(), std::greater<AdcPeak>());
+
+  fPeakDelta=deltanextpeak;
+  fHeightDelta=falldistance;
+  fNegative=negative;
+
 
 }
 

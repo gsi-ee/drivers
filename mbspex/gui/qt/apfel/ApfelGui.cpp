@@ -320,6 +320,8 @@ ApfelGui::ApfelGui (QWidget* parent) :
   QObject::connect (UnzoomButton, SIGNAL (clicked ()), this, SLOT (UnzoomSampleBtn_clicked ()));
   QObject::connect (RefreshSampleButton, SIGNAL (clicked ()), this, SLOT (RefreshSampleBtn_clicked ()));
 
+  QObject::connect (PeakFinderButton, SIGNAL (clicked ()), this, SLOT (PeakFinderBtn_clicked ()));
+
   QObject::connect (PulseTimerCheckBox, SIGNAL(stateChanged(int)), this, SLOT(PulseTimer_changed(int)));
   QObject::connect (FrequencyComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT (PulseFrequencyChanged(int)));
 
@@ -332,6 +334,10 @@ ApfelGui::ApfelGui (QWidget* parent) :
 
   QObject::connect (ReferenceLoadButtonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(ChangeReferenceDataPressed(QAbstractButton*)));
 
+
+  QObject::connect (PlotTabWidget, SIGNAL(currentChanged(int)), this, SLOT (PlotTabChanged(int)));
+
+  QObject::connect (MaximaTableWidget, SIGNAL(cellDoubleClicked(int, int )), this, SLOT (MaximaCellDoubleClicked(int,int)));
 
   /** JAM put references to designer checkboxes into array to be handled later easily: */
   fBaselineBoxes[0] = Baseline_Box_00;
@@ -1425,41 +1431,47 @@ int ApfelGui::AcquireSample (int channel)
       if ((cursor += 2) >= APFEL_MBS_TRACELEN)
         break;
     }
-    // put first APFEL_ADC_SAMPLEVALUES into the setup buffer, or use only every 40th of the full 8000 trace?
-    int sampledelta = APFEL_MBS_TRACELEN / APFEL_ADC_SAMPLEVALUES;
-    int i = 0;
-    for (i = 0; i < APFEL_ADC_SAMPLEVALUES; ++i)
-    {
-      // lets do an average over the intermediate mbs values (aka rebin of trace):
-      double sum = 0;
-      int s = 0;
-      for (s = 0; s < sampledelta; ++s)
-      {
-        if (cursor >= APFEL_MBS_TRACELEN)
-          break;
-        sum += (fData[cursor] & 0x3FFF);    // here take into account 14 bit (necessary?)
-        cursor++;
-      }
-      double value = 0;
-      if (s > 0)
-        value = sum / (double) s;    // should be sampledelta if everything works nice, or less at end of buffer...
-      //value=sum;  // just keep integral value
-
-      //std::cout <<"got value"<<value<< "at position "<< i <<", cursor="<<cursor<<", sum="<<sum << std::endl;
-      theSetup.SetADCSample (channel, i, value);
-    }
-    //std::cout << "Filled "<<i<< "adc samples from mbs trace up to position #"<< cursor<<", sampledelta="<<sampledelta<< std::endl;
+       int i = 0;
+       for (i = 0; i < APFEL_MBS_TRACELEN; ++i)
+       {
+         double value = (fData[cursor] & 0x3FFF);
+         cursor++;
+         //std::cout <<"got value"<<value<< "at position "<< i <<", cursor="<<cursor<<", sum="<<sum << std::endl;
+         theSetup.SetADCSample (channel, i, value);
+       }
+    //std::cout << "Filled "<<i<< "adc samples from mbs trace up to position #"<< cursor<< std::endl;
   }
 
-
-  // TODO: here evaluation of peaks:
-
-  theSetup.EvaluatePeaks(channel);
-
-
+  FindPeaks(channel);
   RefreshLastADCSample (channel);
   return 0;
 }
+
+
+void ApfelGui::FindPeaks(int channel)
+{
+  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  double deltaratio= PeakDeltaDoubleSpinBox->value()/100.0;
+  double fall=PeakFallDoubleSpinBox->value();
+  bool negative=PeakNegaitveCheckBox->isChecked();
+  theSetup.EvaluatePeaks(channel,deltaratio,fall,negative);
+
+
+}
+
+
+void ApfelGui::PeakFinderBtn_clicked()
+{
+  //std::cout <<"PeakFinderBtn_clicked"<< std::endl;
+  int channel = PlotTabWidget->currentIndex ();
+  FindPeaks(channel);
+  RefreshSampleMaxima(channel);
+}
+
+
+
+
+
 
 void ApfelGui::AcquireSelectedSamples ()
 {
@@ -1487,32 +1499,53 @@ void ApfelGui::AcquireSamplesBtn_clicked ()
   QApplication::restoreOverrideCursor ();
 }
 
+void ApfelGui::MaximaCellDoubleClicked(int row, int column)
+{
+  //std::cout <<"MaximaCellDoubleClicked("<<row<<","<<column<<")"<< std::endl;
+  int channel = PlotTabWidget->currentIndex ();
+  ZoomSampleToPeak(channel,row);
+}
 
 
+void ApfelGui::ZoomSampleToPeak(int channel, int peak)
+{
+  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  double nmax=theSetup.GetSamplePeakHeight(channel,peak);
+  double pos=theSetup.GetSamplePeakPosition(channel,peak);
+  double window=theSetup.GetSamplePeaksPositionDelta(channel);
+  double headroom=theSetup.GetSamplePeaksHeightDelta(channel);
+  //bool negative=theSetup.IsSamplePeaksNegative(channel);
+  double xmin=pos-window;
+  double xmax=pos+window;
+  double ymin=nmax-headroom*0.8;
+  double ymax=nmax+headroom*0.8;
+  fPlotWidget[channel]->setLimits (xmin, xmax, ymin, ymax);
+  fPlotWidget[channel]->update ();
 
-void ApfelGui::RefreshSampleMaxima(int febexchannel)
+}
+
+
+void ApfelGui::RefreshSampleMaxima (int febexchannel)
 {
   BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
   QString text;
   QString pre;
   fNumberBase == 16 ? pre = "0x" : pre = "";
-  int numpeaks=theSetup.NumSamplePeaks(febexchannel);
-  double scale=1.0;
-  if(ReadoutRadioButton->isChecked()) // TODO: this proberty belongs into sample data
+  int numpeaks = theSetup.NumSamplePeaks (febexchannel);
+  for (int i = 0; i < APFEL_ADC_NUMMAXIMA; ++i)
   {
-    // MBS readout mode: scale full range to real trace length 8000:
-    scale= APFEL_MBS_TRACELEN / APFEL_ADC_SAMPLEVALUES;
+    uint16_t height = 0;
+    int pos = 0;
+    if (i < numpeaks)
+    {
+      height = theSetup.GetSamplePeakHeight (febexchannel, i);
+      pos = theSetup.GetSamplePeakPosition (febexchannel, i);
+    }
+    QTableWidgetItem * pitem = MaximaTableWidget->item (i, 0);
+    QTableWidgetItem * hitem = MaximaTableWidget->item (i, 1);
+    if(pitem) pitem->setText (pre + text.setNum (pos, fNumberBase));
+    if(hitem )hitem->setText (pre + text.setNum (height, fNumberBase));
   }
-  for(int i=0; i<numpeaks; ++i)
-  {
-    uint16_t height=theSetup.GetSamplePeakHeight(febexchannel,i);
-    int pos= scale*theSetup.GetSamplePeakPosition(febexchannel,i);
-    QTableWidgetItem *   pitem=MaximaTableWidget->item(i,0);
-    QTableWidgetItem *   hitem=MaximaTableWidget->item(i,1);
-    pitem->setText(pre+text.setNum (pos, fNumberBase));
-    hitem->setText(pre+text.setNum (height, fNumberBase));
-  }
-
 
 }
 
@@ -1594,16 +1627,13 @@ int ApfelGui::ShowSample (int channel, bool benchmarkdisplay)
   KPlotObject *sampleplot = new KPlotObject (col, KPlotObject::Lines, 2);
   QString label = QString ("channel:%1").arg (channel);
   sampleplot->addPoint (0, theSetup.GetADCSample (channel, 0), label);
-  double scale=1.0;
-  if(ReadoutRadioButton->isChecked()) // TODO: this proberty belongs into sample data
+
+
+
+  int samplength=theSetup.GetADCSampleLength(channel);
+  for (int i = 1; i < samplength; ++i)
   {
-    // MBS readout mode: scale full range to real trace length 8000:
-    scale= APFEL_MBS_TRACELEN / APFEL_ADC_SAMPLEVALUES;
-  }
-  for (int i = 1; i < APFEL_ADC_SAMPLEVALUES; ++i)
-  {
-    double x=i*scale;
-    sampleplot->addPoint (x, theSetup.GetADCSample (channel, i));
+    sampleplot->addPoint (i, theSetup.GetADCSample (channel, i));
   }
 
   // add it to the plot area
@@ -1612,12 +1642,12 @@ int ApfelGui::ShowSample (int channel, bool benchmarkdisplay)
 
    if (benchmarkdisplay)
   {
-    canvas->setLimits (0, scale*APFEL_ADC_SAMPLEVALUES, 0.0, 17000);
+    canvas->setLimits (0, samplength, 0.0, 17000);
     canvas->update ();
   }
   else
   {
-    UnzoomSample (channel,scale);
+    UnzoomSample (channel);
     RefreshSampleMaxima(channel);
   }
 
@@ -1819,22 +1849,24 @@ void ApfelGui::DumpSamplesBtn_clicked ()
   QApplication::restoreOverrideCursor ();
 }
 
-void ApfelGui::ZoomSample (int channel, double xscale)
+void ApfelGui::ZoomSample (int channel)
 {
   //std::cout <<"ZoomSample for channel"<< channel<< std::endl;
   // evaluate minimum and maximum value of current sample:
   BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
   double minimum = theSetup.GetADCMiminum (channel);
   double maximum = theSetup.GetADCMaximum (channel);
-  //std::cout <<"Got minimum:"<< minimum<<", maximum:"<<maximum<< std::endl;
-  fPlotWidget[channel]->setLimits (0, xscale*APFEL_ADC_SAMPLEVALUES, minimum, maximum);
+  double xmax=theSetup.GetADCSampleLength(channel);
+  fPlotWidget[channel]->setLimits (0, xmax, minimum, maximum);
   fPlotWidget[channel]->update ();
 }
 
-void ApfelGui::UnzoomSample (int channel, double xscale)
+void ApfelGui::UnzoomSample (int channel)
 {
   //std::cout <<"UnzoomSample for channel"<< channel<< std::endl;
-  fPlotWidget[channel]->setLimits (0, xscale*APFEL_ADC_SAMPLEVALUES, 0.0, 17000);
+  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  double xmax=theSetup.GetADCSampleLength(channel);
+  fPlotWidget[channel]->setLimits (0, xmax, 0.0, 17000);
   fPlotWidget[channel]->update ();
 }
 
@@ -1842,26 +1874,14 @@ void ApfelGui::ZoomSampleBtn_clicked ()
 {
   //std::cout <<"ZoomSampleBtn_clicked"<< std::endl;
   int channel = PlotTabWidget->currentIndex ();
-  double scale=1.0;
-  if(ReadoutRadioButton->isChecked()) // TODO: this proberty belongs into sample data
-   {
-     // MBS readout mode: scale full range to real trace length 8000:
-     scale= APFEL_MBS_TRACELEN / APFEL_ADC_SAMPLEVALUES;
-   }
-  ZoomSample (channel, scale);
+  ZoomSample (channel);
 }
 
 void ApfelGui::UnzoomSampleBtn_clicked ()
 {
   //std::cout <<"UnzoomSampleBtn_clicked"<< std::endl;
   int channel = PlotTabWidget->currentIndex ();
-  double scale=1.0;
-  if(ReadoutRadioButton->isChecked()) // TODO: this proberty belongs into sample data
-  {
-    // MBS readout mode: scale full range to real trace length 8000:
-    scale= APFEL_MBS_TRACELEN / APFEL_ADC_SAMPLEVALUES;
-  }
-  UnzoomSample (channel,scale);
+  UnzoomSample (channel);
 }
 
 void ApfelGui::RefreshSampleBtn_clicked ()
@@ -1869,9 +1889,11 @@ void ApfelGui::RefreshSampleBtn_clicked ()
   //std::cout <<"RefreshSampleBtn_clicked"<< std::endl;
   int channel = PlotTabWidget->currentIndex ();
   //std::cout <<"Got current index"<<channel<< std::endl;
+  QApplication::setOverrideCursor (Qt::WaitCursor);
   AcquireSample (channel);
   ShowSample (channel);
   RefreshStatus ();
+  QApplication::restoreOverrideCursor ();
 }
 
 void ApfelGui::RefreshLastADCSample (int febexchannel)
@@ -1972,7 +1994,7 @@ void ApfelGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "ApfelGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.976 of 21-November-2016 by JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.977 of 22-November-2016 by JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -2055,7 +2077,6 @@ void ApfelGui::Slave_changed (int)
   RefreshButton->setEnabled (refreshable);
 
   RefreshChains ();
-  //if(checkBox_AA->isChecked() && refreshable)
   if (refreshable)
   {
     // JAM note that we had a problem of prelling spinbox here (arrow buttons only, keyboard arrows are ok)
@@ -2064,7 +2085,6 @@ void ApfelGui::Slave_changed (int)
     //std::cout << "Timer started" << std::endl;
     QTimer::singleShot (10, this, SLOT (ShowBtn_clicked ()));
     //std::cout << "Timer end" << std::endl;
-    //ShowBtn_clicked() ;
   }
 }
 
@@ -2176,8 +2196,8 @@ void ApfelGui::AutoApplyGain (int apfel, int channel)
 {
   BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
   EvaluateGain (apfel, channel);
-  std::cout << "AutoApplyGain apfel=" << apfel << ", channel=" << channel << ", lowgain:"
-      << theSetup.GetLowGain (apfel, channel) << std::endl;
+  //std::cout << "AutoApplyGain apfel=" << apfel << ", channel=" << channel << ", lowgain:"
+  //    << theSetup.GetLowGain (apfel, channel) << std::endl;
   SetGain (apfel, channel, theSetup.GetLowGain (apfel, channel));
 }
 
@@ -3964,6 +3984,12 @@ void ApfelGui::ChangeReferenceDataPressed(QAbstractButton* but)
 }
 
 
+void ApfelGui::PlotTabChanged (int num)
+{
+  //std::cout << "PlotTabChanged to "<<num << std::endl;
+  RefreshSampleMaxima(num);
+
+}
 
 void ApfelGui::SaveTestResults ()
 {

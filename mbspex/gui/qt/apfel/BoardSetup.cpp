@@ -342,10 +342,16 @@ uint16_t BoardSetup::GetADCSample (int febexchannel, int index)
   return fLastSample[febexchannel].GetSample (index);
 }
 
-int BoardSetup::EvaluatePeaks(int febexchannel)
+int BoardSetup::GetADCSampleLength (int febexchannel)
 {
   ASSERT_FEBCHAN_VALID(febexchannel);
-  fLastSample[febexchannel].FindPeaks();
+  return fLastSample[febexchannel].GetNumSamples();
+}
+
+int BoardSetup::EvaluatePeaks(int febexchannel, double deltaratio, double falldistance, bool negative)
+{
+  ASSERT_FEBCHAN_VALID(febexchannel);
+  fLastSample[febexchannel].FindPeaks(deltaratio, falldistance, negative);
   return 0;
 }
 
@@ -368,6 +374,23 @@ int BoardSetup::NumSamplePeaks (int febexchannel)
   return fLastSample[febexchannel].GetNumPeaks ();
 }
 
+ bool  BoardSetup::IsSamplePeaksNegative(int febexchannel)
+ {
+   ASSERT_FEBCHAN_VALID(febexchannel);
+   return fLastSample[febexchannel].IsNegativePeaks();
+ }
+
+ double  BoardSetup::GetSamplePeaksHeightDelta(int febexchannel)
+ {
+   ASSERT_FEBCHAN_VALID(febexchannel);
+   return fLastSample[febexchannel].GetHeightDelta();
+ }
+
+ double  BoardSetup::GetSamplePeaksPositionDelta(int febexchannel)
+ {
+   ASSERT_FEBCHAN_VALID(febexchannel);
+   return fLastSample[febexchannel].GetPosDelta();
+ }
 
 
 

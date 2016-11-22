@@ -18,6 +18,22 @@ public:
 
   AdcPeak(int pos, uint16_t height):fPosition(pos),fHeight(height){}
 
+
+  /** define less than operator for vector sort*/
+  bool operator < (const AdcPeak& other) const
+      {
+          return (fHeight < other.fHeight);
+      }
+
+  /** define greater than operator for vector sort*/
+   bool operator > (const AdcPeak& other) const
+       {
+           return (fHeight > other.fHeight);
+       }
+
+
+
+
 };
 
 
@@ -27,7 +43,8 @@ class AdcSample
 {
 private:
 
-  uint16_t fSample[APFEL_ADC_SAMPLEVALUES];
+  //uint16_t fSample[APFEL_ADC_SAMPLEVALUES];
+  std::vector<uint16_t> fSample;
 
   /** keep minimum value of current sample set*/
   uint16_t fMinValue;
@@ -38,6 +55,15 @@ private:
   /** heighs of the first n maxima peaks in sample*/
   std::vector<AdcPeak> fPeaks;
 
+  /** property indicates that peaks are negative*/
+  bool fNegative;
+
+  /** absolute window size used to find the peaks*/
+  double fPeakDelta;
+
+  /** absolute peak fall distance used to find the peaks*/
+  double fHeightDelta;
+
 
 public:
 
@@ -47,8 +73,9 @@ public:
 
   void SetSample (int index, uint16_t value)
   {
-    if (index < 0 || index >= APFEL_ADC_SAMPLEVALUES)
-      return;
+    //if (index < 0 || index >= APFEL_ADC_SAMPLEVALUES)
+    //  return;
+    if(index>=fSample.size()) fSample.resize(index+APFEL_ADC_SAMPLEVALUES); // dynamically resize in 200 steps
     fSample[index] = value;
     if (fMinValue == 0 || value < fMinValue)
       fMinValue = value;
@@ -58,10 +85,13 @@ public:
 
   uint16_t GetSample (int index)
   {
-    if (index < 0 || index >= APFEL_ADC_SAMPLEVALUES)
+    if (index < 0 || index >= fSample.size())
       return 0;
+
     return (fSample[index]);
   }
+
+  int GetNumSamples(){ return fSample.size();}
 
   /** evaluate mean value of sample*/
   double GetMean ();
@@ -80,8 +110,9 @@ public:
   }
 
 
-  /** find the first n absolute maxima within the current sample*/
-  void FindPeaks();
+  /** find the first n absolute maxima within the current sample.
+   * Arguments may specify parameters for peakfinding*/
+  void FindPeaks(double deltaratio, double falldistance, bool negative=false);
 
   /* add found peak (position, height) to the list*/
   void AddPeak(int pos, uint16_t height);
@@ -93,6 +124,20 @@ public:
   int GetNumPeaks();
 
 
+double GetPosDelta()
+{
+  return fPeakDelta;
+}
+
+double GetHeightDelta()
+{
+  return fHeightDelta;
+}
+
+bool IsNegativePeaks()
+{
+  return fNegative;
+}
 
   /** show mean and sigma values. label can be used to specify channel number*/
   void DumpParameters (int label);

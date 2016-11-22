@@ -131,7 +131,7 @@
 #define APFEL_ADC_SAMPLEVALUES 200
 
 
-#define APFEL_ADC_NUMMAXIMA 5
+#define APFEL_ADC_NUMMAXIMA 7
 
 
 /** core read request write address to fetch ADC DAQBUFFER*/
