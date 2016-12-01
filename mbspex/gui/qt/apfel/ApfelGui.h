@@ -717,4 +717,53 @@ public slots:
 
 };
 
+
+/** JAM The following nice define handles all explicit broadcast actions depending on the currently set slave*/
+#define APFEL_BROADCAST_ACTION(X) \
+fBroadcasting=true;  \
+int oldslave = fSlave; \
+int oldchan = fSFP; \
+if (AssertNoBroadcast (false)) \
+ { \
+   X; \
+ } \
+ else if (fSFP < 0) \
+ { \
+   for (int sfp = 0; sfp < 4; ++sfp) \
+   {\
+     if (fSFPChains.numslaves[sfp] == 0) \
+       continue; \
+     fSFP = sfp; \
+     if (fSlave < 0) \
+     { \
+       for (int feb = 0; feb < fSFPChains.numslaves[sfp]; ++feb) \
+       { \
+         fSlave = feb; \
+         X; \
+       } \
+     } \
+     else \
+     { \
+       X;\
+     }\
+   }\
+ } \
+ else if (fSlave< 0) \
+ { \
+   for (int feb = 0; feb < fSFPChains.numslaves[fSFP]; ++feb) \
+       { \
+         fSlave = feb; \
+         X; \
+       } \
+ } \
+ else \
+ { \
+   AppendTextWindow ("--- NEVER COME HERE: undefined broadcast mode ---:"); \
+ } \
+fSlave= oldslave;\
+fSFP= oldchan; \
+fBroadcasting=false;
+
+
+
 #endif
