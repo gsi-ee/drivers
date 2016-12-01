@@ -3,6 +3,8 @@
 #include "ApfelGui.h"
 #include "ApfelSetup.h"
 
+#include <QString>
+
 #include "errno.h"
 #include <stdio.h>
 
@@ -97,9 +99,10 @@ void ApfelTest::LoadReferenceValues(const QString& fname)
 
   bool done_1=false, done_16=false, done_32=false;
   int gain=0, apfel=0, dacindex=0;
-  float dummy[8]={0};
+  float dummy[10]={0};
   int dac[24]={0};
   int adc[24]={0};
+  char boardid[1024];
 
   int counter=0;
   while(true)
@@ -114,15 +117,15 @@ void ApfelTest::LoadReferenceValues(const QString& fname)
     buffer=*lineptr;
     if(strstr(buffer,"#")) continue;// skip all comments
     //std::cout<< "reading line: "<< buffer << std::endl;
-    sscanf(buffer,"%d %d %d", &gain, &apfel, &dacindex);
+    sscanf(buffer,"%s %d %d %d",  boardid, &gain, &apfel, &dacindex);
     if(!done_1)
     {
         if(gain==1 && apfel==1 && dacindex==2)
         {
           // take first channel that matches specs
           printm("Gain:%d: Reading references of apfel:%d, dac:%d",gain,apfel,dacindex);
-          sscanf(buffer,"%d %d %d %f %f %f %f %f %f %f %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
-              &gain, &apfel, &dac, &dummy[0], &dummy[1],&dummy[2], &dummy[3],&dummy[4], &dummy[5],&dummy[6], &dummy[7],
+          sscanf(buffer,"%s %d %d %d %f %f %f %f %f %f %f %f %f %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
+              boardid, &gain, &apfel, &dac, &dummy[0], &dummy[1],&dummy[2], &dummy[3],&dummy[4], &dummy[5],&dummy[6], &dummy[7], &dummy[8], &dummy[9],
               &dac[0], &adc[0],  &dac[1], &adc[1], &dac[2], &adc[2],  &dac[3], &adc[3],
               &dac[4], &adc[4],  &dac[5], &adc[5], &dac[6], &adc[6],  &dac[7], &adc[7],
               &dac[8], &adc[8],  &dac[9], &adc[9], &dac[10], &adc[10],  &dac[11], &adc[11],
@@ -131,9 +134,8 @@ void ApfelTest::LoadReferenceValues(const QString& fname)
               &dac[20], &adc[20],  &dac[21], &adc[21], &dac[22], &adc[22],  &dac[23], &adc[23]
           );
 
-          // DEBUG:
-
-//          for(int i=0; i<8; ++i)
+// DEBUG:
+//          for(int i=0; i<10; ++i)
 //          {
 //            std::cout<< "Dummies for gain1: i:"<<i<<" :"<<dummy[i]<< std::endl;
 //          }
@@ -141,8 +143,7 @@ void ApfelTest::LoadReferenceValues(const QString& fname)
 //          {
 //            std::cout<< "gain1: i:"<<i<<" dac:"<<dac[i]<<", adc:"<<adc[i]<< std::endl;
 //          }
-
-          //
+////////////////////////////////////////////////////////////////////////
 
 
           for(int i=0; i<APFEL_DAC_CURVEPOINTS; ++i)
@@ -160,8 +161,8 @@ void ApfelTest::LoadReferenceValues(const QString& fname)
            {
              // take first channel that matches specs
              printm("Gain:%d: Reading references of apfel:%d, dac:%d",gain,apfel,dacindex);
-             sscanf(buffer,"%d %d %d %f %f %f %f %f %f %f %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
-                 &gain, &apfel, &dac, &dummy[0], &dummy[1],&dummy[2], &dummy[3],&dummy[4], &dummy[5],&dummy[6], &dummy[7],
+             sscanf(buffer,"%s %d %d %d %f %f %f %f %f %f %f %f %f %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
+                 boardid, &gain, &apfel, &dac, &dummy[0], &dummy[1],&dummy[2], &dummy[3],&dummy[4], &dummy[5],&dummy[6], &dummy[7],&dummy[8], &dummy[9],
                  &dac[0], &adc[0],  &dac[1], &adc[1], &dac[2], &adc[2],  &dac[3], &adc[3],
                  &dac[4], &adc[4],  &dac[5], &adc[5], &dac[6], &adc[6],  &dac[7], &adc[7],
                  &dac[8], &adc[8],  &dac[9], &adc[9], &dac[10], &adc[10],  &dac[11], &adc[11],
@@ -185,8 +186,8 @@ void ApfelTest::LoadReferenceValues(const QString& fname)
               {
                 // take first channel that matches specs
                 printm("Gain:%d: Reading references of apfel:%d, dac:%d",gain,apfel,dacindex);
-                sscanf(buffer,"%d %d %d %f %f %f %f %f %f %f %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
-                    &gain, &apfel, &dac, &dummy[0], &dummy[1],&dummy[2], &dummy[3],&dummy[4], &dummy[5],&dummy[6], &dummy[7],
+                sscanf(buffer,"%s, %d %d %d %f %f %f %f %f %f %f %f %f %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
+                    boardid, &gain, &apfel, &dac, &dummy[0], &dummy[1],&dummy[2], &dummy[3],&dummy[4], &dummy[5],&dummy[6], &dummy[7], &dummy[8], &dummy[9],
                     &dac[0], &adc[0],  &dac[1], &adc[1], &dac[2], &adc[2],  &dac[3], &adc[3],
                     &dac[4], &adc[4],  &dac[5], &adc[5], &dac[6], &adc[6],  &dac[7], &adc[7],
                     &dac[8], &adc[8],  &dac[9], &adc[9], &dac[10], &adc[10],  &dac[11], &adc[11],
@@ -259,9 +260,56 @@ bool ApfelTest::ProcessBenchmark ()
     case SEQ_NONE:
 
       printm("ApfelTest has reached end of sequencer list!");
-      return false;
-      //fSequencerTimer->stop();
+      return false; // will stop timer
       break;
+
+    case   SEQ_INIT:
+      {
+        printm("Resetting result structure for gain %d.",fCurrentGain);
+        // loop over all apfels here:
+        for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
+        {
+          ApfelTestResults& theResults = fCurrentSetup->AccessTestResults (fCurrentGain, apfel);
+          theResults.Begin ();    // make sure that we do not mix up results from 2 different runs!
+
+          // additionally, we save here the appropriate envrionment descriptors:
+          theResults.SetAddressId(fCurrentSetup->GetApfelID(apfel));
+
+          // additionally, we save here the appropriate envrionment descriptors:
+          theResults.SetAddressId (fCurrentSetup->GetApfelID (apfel));
+
+          theResults.SetCurrent (fCurrentSetup->GetCurrent ());
+          theResults.SetVoltage (fCurrentSetup->GetVoltage ());
+          int boardindex;
+          if (fCurrentSetup->IsRegularMapping ())
+          {
+            boardindex = (apfel < 4 ? 0 : 1);
+          }
+          else
+          {
+            boardindex = (apfel < 4 ? 1 : 0);
+          }
+          std::string descriptor = fCurrentSetup->GetBoardID (boardindex).toStdString ();
+          theResults.SetBoardDescriptor (descriptor);
+
+          printm ("Recorded Board id %s - Power supply: U=%f V, I=%fV.", descriptor.c_str (),
+              fCurrentSetup->GetVoltage (), fCurrentSetup->GetCurrent ());
+        }
+      }
+      break;
+    case SEQ_FINALIZE:
+    {
+      int apfel=0, dac=0;
+      fCurrentSetup->EvaluateDACIndices(febexchannel,apfel,dac);
+      for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
+      {
+        ApfelTestResults& theResults=fCurrentSetup->AccessTestResults(fCurrentGain, apfel);
+        theResults.Finish();
+      }
+       printm("Test for gain %d has finished.",fCurrentGain);
+    }
+      break;
+
     case SEQ_GAIN_1:
       printm("ApfelTest Sets to gain 1.");
       // always keep setup consistent with the applied values:
@@ -316,7 +364,7 @@ bool ApfelTest::ProcessBenchmark ()
         ApfelTestResults& theResults=fCurrentSetup->AccessTestResults(fCurrentGain, apfel);
         for(int dac=0; dac<APFEL_NUMDACS; ++dac)
           {
-            theResults.SetDACValueCalibrate(dac, fCurrentSetup->GetDACValue(apfel,dac));
+            theResults.SetDacValueCalibrate(dac, fCurrentSetup->GetDACValue(apfel,dac));
           }
 
       }
@@ -324,24 +372,64 @@ bool ApfelTest::ProcessBenchmark ()
       break;
 
     case  SEQ_NOISESAMPLE:
-      printm("ApfelTest is measuring Baseline noise samples of channel %d",febexchannel);
+      printm("ApfelTest is measuring ADC trace samples of channel %d",febexchannel);
       {
+
+        if(fCurrentGain==1)
+        {
+          fOwner->SetPeakfinderPolarityNegative(true);
+        }
+        else
+        {
+          fOwner->SetPeakfinderPolarityNegative(false);
+        }
+
         fOwner->AcquireSample(febexchannel);
         fOwner->ShowSample(febexchannel,true);
       double mean=fCurrentSetup->GetADCMean(febexchannel);
       double sigma=fCurrentSetup->GetADCSigma(febexchannel);
       double minimum=fCurrentSetup->GetADCMiminum(febexchannel);
       double maximum=fCurrentSetup->GetADCMaximum(febexchannel);
-      // print here channelwise. TODO: evaluate mean and sigma only once, not for every refresh
+      int baselinelow=fCurrentSetup->GetADCBaslineLowerBound(febexchannel);
+      int baselineup=fCurrentSetup->GetADCBaslineUpperBound(febexchannel);
       int apfel=0, dac=0;
       fCurrentSetup->EvaluateDACIndices(febexchannel,apfel,dac);
       ApfelTestResults& theResults=fCurrentSetup->AccessTestResults(fCurrentGain, apfel);
-      theResults.SetDACSampleMean(dac,mean);
-      theResults.SetDACSampleSigma(dac,sigma);
-      theResults.SetDACSampleMinimum(dac,minimum);
-      theResults.SetDACSampleMinimum(dac,maximum);
-      printm("\tChannel %d : mean=%f sigma=%f minimum=%f maximum=%f", febexchannel, mean,sigma,minimum,maximum);
-      }
+      theResults.SetAdcSampleMean(dac,mean);
+      theResults.SetAdcSampleSigma(dac,sigma);
+      theResults.SetAdcSampleMinimum(dac,minimum);
+      theResults.SetAdcSampleMinimum(dac,maximum);
+      theResults.SetAdcBaselineLowerBound(dac, baselinelow);
+      theResults.SetAdcBaselineUpperBound(dac, baselineup);
+
+
+      printm("\tChannel %d : baseline-(%d...%d), mean=%f sigma=%f minimum=%f maximum=%f", baselinelow, baselineup, febexchannel, mean,sigma,minimum,maximum);
+
+      // insert here the found peak position into the test results:
+      theResults.ResetAdcPeaks(dac);
+      bool peaksnegative=fCurrentSetup->IsSamplePeaksNegative(febexchannel);
+      theResults.SetNegativeAdcPeaks(dac,peaksnegative);
+
+
+      int numpeaks = fCurrentSetup->NumSamplePeaks (febexchannel);
+      printm("\t\tfound %d peaks (polarity:%s) ", numpeaks, (peaksnegative ? "negative":"positive"));
+
+      for (int i = 0; i < APFEL_ADC_NUMMAXIMA; ++i)
+        {
+          uint16_t height = 0;
+          int pos = 0;
+          if (i < numpeaks)
+          {
+            height = fCurrentSetup->GetSamplePeakHeight (febexchannel, i);
+            pos = fCurrentSetup->GetSamplePeakPosition (febexchannel, i);
+            printm("\t\t (pos:%d,ADC;%d)",pos,height);
+            theResults.AddAdcPeak(dac,height,pos);
+          }
+        }
+       }
+
+
+
       break;
 
     case  SEQ_BASELINE:
@@ -360,6 +448,9 @@ bool ApfelTest::ProcessBenchmark ()
       // to do
       printm("Benchmark Timer is evaluating DAC curve of channel %d", febexchannel);
       fOwner->ScanDACCurve(fCurrentGain, febexchannel);
+
+
+
       break;
     default:
       printm("Benchmark Timer will NOT execute unknown command %d for channel %d",com.GetAction(), com.GetChannel());

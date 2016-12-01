@@ -193,8 +193,8 @@ public:
   /** clear values and statistics of ADC sample for single febexchannel*/
   int ResetADCSample (int febexchannel);
 
-  /** set sampled ADC point for single febexchannel. */
-  int SetADCSample (int febexchannel, int index, uint16_t value);
+  /** add next sampled ADC point to the end of the trace for single febexchannel. */
+  int AddADCSample (int febexchannel, uint16_t value);
 
   /** get most recent sampled ADC point for single febexchannel. */
   uint16_t GetADCSample (int febexchannel, int index);
@@ -223,6 +223,19 @@ public:
   /** delta position used for last found peaks*/
   double GetSamplePeaksPositionDelta(int febexchannel);
 
+
+
+  /** Calculate baseline figures of merit mean and sigma for febexchanne.
+   * Region of baseline may be defined by first and last index in sample trace.
+   * This allows to cut out the pulser peaks*/
+  int EvaluateBaseline(int febexchannel, int firstindex=0, int lastindex=0);
+
+
+  /** get baseline region lower bound (firstindex in sample) of last recent mean and sigma calculation for febexchannel*/
+  int GetADCBaslineLowerBound(int febexchannel);
+
+  /** get baseline region upper bound (lastindex in sample) of last recent mean and sigma calculation for febexchannel*/
+  int GetADCBaslineUpperBound(int febexchannel);
 
 
   /** evaluate mean value of most recent ADC sample for febexchannel*/

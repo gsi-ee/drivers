@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1309</width>
-    <height>917</height>
+    <width>1408</width>
+    <height>945</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,8 +30,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>1287</width>
-        <height>770</height>
+        <width>1386</width>
+        <height>798</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_28">
@@ -285,12 +285,12 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>1249</width>
-            <height>683</height>
+            <width>1348</width>
+            <height>710</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_70">
-           <item row="3" column="0">
+           <item row="4" column="0">
             <widget class="QPlainTextEdit" name="TextOutput">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -314,7 +314,7 @@
              </property>
             </widget>
            </item>
-           <item row="2" column="0">
+           <item row="3" column="0">
             <widget class="QTabWidget" name="ApfelTabWidget">
              <property name="currentIndex">
               <number>0</number>
@@ -5510,7 +5510,7 @@
               <attribute name="title">
                <string>Sample</string>
               </attribute>
-              <layout class="QGridLayout" name="gridLayout_51">
+              <layout class="QGridLayout" name="gridLayout_78">
                <item row="0" column="0">
                 <layout class="QVBoxLayout" name="verticalLayout_12">
                  <item>
@@ -6367,6 +6367,101 @@
                   </widget>
                  </item>
                  <item>
+                  <widget class="QGroupBox" name="BaselineLimitBox">
+                   <property name="title">
+                    <string>Baseline Region</string>
+                   </property>
+                   <layout class="QGridLayout" name="gridLayout_51">
+                    <item row="0" column="0">
+                     <layout class="QHBoxLayout" name="horizontalLayout_93">
+                      <item>
+                       <widget class="QLabel" name="BaselineLowlabel">
+                        <property name="text">
+                         <string>lower </string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QSlider" name="BaselineLowerSlider">
+                        <property name="toolTip">
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Lower limit of baseline region in sample.Only this region is used to calculate mean and sigma values. So known pulser peaks may be excluded from noise evaluation.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                        </property>
+                        <property name="maximum">
+                         <number>1000</number>
+                        </property>
+                        <property name="pageStep">
+                         <number>100</number>
+                        </property>
+                        <property name="orientation">
+                         <enum>Qt::Horizontal</enum>
+                        </property>
+                        <property name="tickPosition">
+                         <enum>QSlider::NoTicks</enum>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLineEdit" name="BaselineLowerLineEdit">
+                        <property name="toolTip">
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Lower limit of baseline region in sample.Only this region is used to calculate mean and sigma values. So known pulser peaks may be excluded from noise evaluation.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                        </property>
+                        <property name="text">
+                         <string>0</string>
+                        </property>
+                        <property name="readOnly">
+                         <bool>true</bool>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </item>
+                    <item row="1" column="0">
+                     <layout class="QHBoxLayout" name="horizontalLayout_94">
+                      <item>
+                       <widget class="QLabel" name="BaselineUplabel">
+                        <property name="text">
+                         <string>upper</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QSlider" name="BaselineUpperSlider">
+                        <property name="toolTip">
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Upper limit of baseline region in sample.Only this region is used to calculate mean and sigma values. So known pulser peaks may be excluded from noise evaluation.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                        </property>
+                        <property name="maximum">
+                         <number>1000</number>
+                        </property>
+                        <property name="pageStep">
+                         <number>100</number>
+                        </property>
+                        <property name="value">
+                         <number>1000</number>
+                        </property>
+                        <property name="orientation">
+                         <enum>Qt::Horizontal</enum>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLineEdit" name="BaselineUpperLineEdit">
+                        <property name="toolTip">
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Upper limit of baseline region in sample.Only this region is used to calculate mean and sigma values. So known pulser peaks may be excluded from noise evaluation.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                        </property>
+                        <property name="text">
+                         <string>0</string>
+                        </property>
+                        <property name="readOnly">
+                         <bool>true</bool>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
                   <spacer name="verticalSpacer_2">
                    <property name="orientation">
                     <enum>Qt::Vertical</enum>
@@ -6910,45 +7005,62 @@
                     <string>Board IDs</string>
                    </property>
                    <layout class="QGridLayout" name="gridLayout_72">
-                    <item row="0" column="1">
-                     <layout class="QVBoxLayout" name="verticalLayout_16">
-                      <item>
-                       <widget class="QLineEdit" name="ApfelID1_lineEdit">
-                        <property name="toolTip">
-                         <string>Please type primary Apfel id of selected device</string>
-                        </property>
-                        <property name="readOnly">
-                         <bool>false</bool>
-                        </property>
-                       </widget>
-                      </item>
-                      <item>
-                       <widget class="QLineEdit" name="ApfelID2_lineEdit">
-                        <property name="toolTip">
-                         <string>Please type secondary id</string>
-                        </property>
-                        <property name="readOnly">
-                         <bool>false</bool>
-                        </property>
-                       </widget>
-                      </item>
-                     </layout>
-                    </item>
                     <item row="0" column="0">
-                     <layout class="QVBoxLayout" name="verticalLayout_17">
+                     <widget class="QCheckBox" name="AutoBoardIDScanCheckBox">
+                      <property name="toolTip">
+                       <string>Check to evaluate automatically via serial connection</string>
+                      </property>
+                      <property name="text">
+                       <string>Scan Barcode</string>
+                      </property>
+                      <property name="checked">
+                       <bool>false</bool>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="1" column="0">
+                     <layout class="QHBoxLayout" name="horizontalLayout_95">
                       <item>
-                       <widget class="QLabel" name="ApfelIDLabel">
-                        <property name="text">
-                         <string>APFEL ID 1</string>
-                        </property>
-                       </widget>
+                       <layout class="QVBoxLayout" name="verticalLayout_17">
+                        <item>
+                         <widget class="QLabel" name="ApfelIDLabel">
+                          <property name="text">
+                           <string>APFEL ID 1</string>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QLabel" name="ApfelIDLabel_2">
+                          <property name="text">
+                           <string>APFEL ID 2</string>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
                       </item>
                       <item>
-                       <widget class="QLabel" name="ApfelIDLabel_2">
-                        <property name="text">
-                         <string>APFEL ID 2</string>
-                        </property>
-                       </widget>
+                       <layout class="QVBoxLayout" name="verticalLayout_16">
+                        <item>
+                         <widget class="QLineEdit" name="ApfelID1_lineEdit">
+                          <property name="toolTip">
+                           <string>Please type primary Apfel id of selected device</string>
+                          </property>
+                          <property name="readOnly">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QLineEdit" name="ApfelID2_lineEdit">
+                          <property name="toolTip">
+                           <string>Please type secondary id</string>
+                          </property>
+                          <property name="readOnly">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
                       </item>
                      </layout>
                     </item>
@@ -6964,7 +7076,7 @@
                     <bool>false</bool>
                    </property>
                    <layout class="QGridLayout" name="gridLayout_74">
-                    <item row="2" column="0">
+                    <item row="3" column="0">
                      <widget class="QDoubleSpinBox" name="CurrentDoubleSpinBox">
                       <property name="enabled">
                        <bool>false</bool>
@@ -6980,7 +7092,7 @@
                       </property>
                      </widget>
                     </item>
-                    <item row="1" column="0">
+                    <item row="2" column="0">
                      <widget class="QDoubleSpinBox" name="VoltageDoubleSpinBox">
                       <property name="enabled">
                        <bool>false</bool>
@@ -6993,7 +7105,7 @@
                       </property>
                      </widget>
                     </item>
-                    <item row="0" column="0">
+                    <item row="1" column="0">
                      <widget class="QCheckBox" name="AutoPowerscanCheckBox">
                       <property name="toolTip">
                        <string>Check to evaluate automatically via serial connection</string>
@@ -7205,10 +7317,10 @@
                      <item>
                       <widget class="QCheckBox" name="AllTesttSigmaCheckBox">
                        <property name="toolTip">
-                        <string>Check to measure average value and sigma in the auto calibrated working point</string>
+                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check to take a sample trace from the ADC in the auto calibrated working point. This will evaluate test pulser peaks. The mean and sigma values are calculated for the baseline region as defined by the slider in the sample tab.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                        </property>
                        <property name="text">
-                        <string>Noise Sigma</string>
+                        <string>ADC Samples</string>
                        </property>
                        <property name="checked">
                         <bool>true</bool>
@@ -7271,10 +7383,10 @@
                        <item>
                         <widget class="QCheckBox" name="Gain1TestSigmaCheckBox">
                          <property name="toolTip">
-                          <string>Check to measure average value and sigma in the auto calibrated working point</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check to take a sample trace from the ADC in the auto calibrated working point. This will evaluate test pulser peaks. The mean and sigma values are calculated for the baseline region as defined by the slider in the sample tab.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                          <property name="text">
-                          <string>Noise Sigma</string>
+                          <string>ADC Samples</string>
                          </property>
                          <property name="checked">
                           <bool>true</bool>
@@ -7335,10 +7447,10 @@
                        <item>
                         <widget class="QCheckBox" name="Gain16TestSigmaCheckBox">
                          <property name="toolTip">
-                          <string>Check to measure average value and sigma in the auto calibrated working point</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check to take a sample trace from the ADC in the auto calibrated working point. This will evaluate test pulser peaks. The mean and sigma values are calculated for the baseline region as defined by the slider in the sample tab.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                          <property name="text">
-                          <string>Noise Sigma</string>
+                          <string>ADC Samples</string>
                          </property>
                          <property name="checked">
                           <bool>true</bool>
@@ -7402,10 +7514,10 @@
                        <item>
                         <widget class="QCheckBox" name="Gain32TestSigmaCheckBox">
                          <property name="toolTip">
-                          <string>Check to measure average value and sigma in the auto calibrated working point</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check to take a sample trace from the ADC in the auto calibrated working point. This will evaluate test pulser peaks. The mean and sigma values are calculated for the baseline region as defined by the slider in the sample tab.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                          <property name="text">
-                          <string>Noise Sigma</string>
+                          <string>ADC Samples</string>
                          </property>
                          <property name="checked">
                           <bool>true</bool>
@@ -7552,7 +7664,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>1287</width>
+        <width>1386</width>
         <height>115</height>
        </rect>
       </property>
@@ -7754,8 +7866,8 @@ p, li { white-space: pre-wrap; }
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>77</x>
-     <y>331</y>
+     <x>99</x>
+     <y>354</y>
     </hint>
     <hint type="destinationlabel">
      <x>290</x>
@@ -7774,7 +7886,7 @@ p, li { white-space: pre-wrap; }
      <y>208</y>
     </hint>
     <hint type="destinationlabel">
-     <x>381</x>
+     <x>378</x>
      <y>210</y>
     </hint>
    </hints>
@@ -7786,7 +7898,7 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>381</x>
+     <x>378</x>
      <y>210</y>
     </hint>
     <hint type="destinationlabel">
@@ -7806,7 +7918,7 @@ p, li { white-space: pre-wrap; }
      <y>236</y>
     </hint>
     <hint type="destinationlabel">
-     <x>381</x>
+     <x>378</x>
      <y>238</y>
     </hint>
    </hints>
@@ -7818,7 +7930,7 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>381</x>
+     <x>378</x>
      <y>238</y>
     </hint>
     <hint type="destinationlabel">
@@ -7838,7 +7950,7 @@ p, li { white-space: pre-wrap; }
      <y>264</y>
     </hint>
     <hint type="destinationlabel">
-     <x>381</x>
+     <x>378</x>
      <y>266</y>
     </hint>
    </hints>
@@ -7850,7 +7962,7 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>381</x>
+     <x>378</x>
      <y>266</y>
     </hint>
     <hint type="destinationlabel">
@@ -7870,7 +7982,7 @@ p, li { white-space: pre-wrap; }
      <y>292</y>
     </hint>
     <hint type="destinationlabel">
-     <x>381</x>
+     <x>378</x>
      <y>294</y>
     </hint>
    </hints>
@@ -7882,7 +7994,7 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>381</x>
+     <x>378</x>
      <y>294</y>
     </hint>
     <hint type="destinationlabel">
@@ -7902,7 +8014,7 @@ p, li { white-space: pre-wrap; }
      <y>320</y>
     </hint>
     <hint type="destinationlabel">
-     <x>381</x>
+     <x>378</x>
      <y>322</y>
     </hint>
    </hints>
@@ -7914,7 +8026,7 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>381</x>
+     <x>378</x>
      <y>322</y>
     </hint>
     <hint type="destinationlabel">
@@ -7934,7 +8046,7 @@ p, li { white-space: pre-wrap; }
      <y>348</y>
     </hint>
     <hint type="destinationlabel">
-     <x>381</x>
+     <x>378</x>
      <y>350</y>
     </hint>
    </hints>
@@ -7946,7 +8058,7 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>381</x>
+     <x>378</x>
      <y>350</y>
     </hint>
     <hint type="destinationlabel">
@@ -7966,7 +8078,7 @@ p, li { white-space: pre-wrap; }
      <y>376</y>
     </hint>
     <hint type="destinationlabel">
-     <x>381</x>
+     <x>378</x>
      <y>378</y>
     </hint>
    </hints>
@@ -7978,7 +8090,7 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>381</x>
+     <x>378</x>
      <y>378</y>
     </hint>
     <hint type="destinationlabel">
@@ -7998,7 +8110,7 @@ p, li { white-space: pre-wrap; }
      <y>404</y>
     </hint>
     <hint type="destinationlabel">
-     <x>381</x>
+     <x>378</x>
      <y>406</y>
     </hint>
    </hints>
@@ -8010,7 +8122,7 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>381</x>
+     <x>378</x>
      <y>406</y>
     </hint>
     <hint type="destinationlabel">
@@ -8030,7 +8142,7 @@ p, li { white-space: pre-wrap; }
      <y>208</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1044</x>
+     <x>1034</x>
      <y>210</y>
     </hint>
    </hints>
@@ -8042,7 +8154,7 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1044</x>
+     <x>1034</x>
      <y>210</y>
     </hint>
     <hint type="destinationlabel">
@@ -8062,7 +8174,7 @@ p, li { white-space: pre-wrap; }
      <y>264</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1044</x>
+     <x>1034</x>
      <y>266</y>
     </hint>
    </hints>
@@ -8074,7 +8186,7 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1044</x>
+     <x>1034</x>
      <y>266</y>
     </hint>
     <hint type="destinationlabel">
@@ -8094,7 +8206,7 @@ p, li { white-space: pre-wrap; }
      <y>292</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1044</x>
+     <x>1034</x>
      <y>294</y>
     </hint>
    </hints>
@@ -8106,7 +8218,7 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1044</x>
+     <x>1034</x>
      <y>294</y>
     </hint>
     <hint type="destinationlabel">
@@ -8126,7 +8238,7 @@ p, li { white-space: pre-wrap; }
      <y>320</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1044</x>
+     <x>1034</x>
      <y>322</y>
     </hint>
    </hints>
@@ -8138,7 +8250,7 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1044</x>
+     <x>1034</x>
      <y>322</y>
     </hint>
     <hint type="destinationlabel">
@@ -8158,7 +8270,7 @@ p, li { white-space: pre-wrap; }
      <y>348</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1044</x>
+     <x>1034</x>
      <y>350</y>
     </hint>
    </hints>
@@ -8170,7 +8282,7 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1044</x>
+     <x>1034</x>
      <y>350</y>
     </hint>
     <hint type="destinationlabel">
@@ -8190,7 +8302,7 @@ p, li { white-space: pre-wrap; }
      <y>376</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1044</x>
+     <x>1034</x>
      <y>378</y>
     </hint>
    </hints>
@@ -8202,7 +8314,7 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1044</x>
+     <x>1034</x>
      <y>378</y>
     </hint>
     <hint type="destinationlabel">
@@ -8222,7 +8334,7 @@ p, li { white-space: pre-wrap; }
      <y>404</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1044</x>
+     <x>1034</x>
      <y>406</y>
     </hint>
    </hints>
@@ -8234,7 +8346,7 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1044</x>
+     <x>1034</x>
      <y>406</y>
     </hint>
     <hint type="destinationlabel">
@@ -8314,7 +8426,7 @@ p, li { white-space: pre-wrap; }
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1044</x>
+     <x>1034</x>
      <y>238</y>
     </hint>
     <hint type="destinationlabel">
@@ -8334,7 +8446,7 @@ p, li { white-space: pre-wrap; }
      <y>236</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1044</x>
+     <x>1034</x>
      <y>238</y>
     </hint>
    </hints>
@@ -8346,11 +8458,11 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>165</y>
     </hint>
     <hint type="destinationlabel">
-     <x>697</x>
+     <x>690</x>
      <y>210</y>
     </hint>
    </hints>
@@ -8362,11 +8474,11 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>165</y>
     </hint>
     <hint type="destinationlabel">
-     <x>697</x>
+     <x>690</x>
      <y>238</y>
     </hint>
    </hints>
@@ -8378,11 +8490,11 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>165</y>
     </hint>
     <hint type="destinationlabel">
-     <x>697</x>
+     <x>690</x>
      <y>266</y>
     </hint>
    </hints>
@@ -8394,11 +8506,11 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>165</y>
     </hint>
     <hint type="destinationlabel">
-     <x>697</x>
+     <x>690</x>
      <y>294</y>
     </hint>
    </hints>
@@ -8410,11 +8522,11 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>165</y>
     </hint>
     <hint type="destinationlabel">
-     <x>697</x>
+     <x>690</x>
      <y>322</y>
     </hint>
    </hints>
@@ -8426,11 +8538,11 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>165</y>
     </hint>
     <hint type="destinationlabel">
-     <x>697</x>
+     <x>690</x>
      <y>350</y>
     </hint>
    </hints>
@@ -8442,11 +8554,11 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>165</y>
     </hint>
     <hint type="destinationlabel">
-     <x>697</x>
+     <x>690</x>
      <y>378</y>
     </hint>
    </hints>
@@ -8458,11 +8570,11 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>165</y>
     </hint>
     <hint type="destinationlabel">
-     <x>697</x>
+     <x>690</x>
      <y>406</y>
     </hint>
    </hints>
@@ -8474,11 +8586,11 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>165</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1359</x>
+     <x>1346</x>
      <y>210</y>
     </hint>
    </hints>
@@ -8490,11 +8602,11 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>165</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1359</x>
+     <x>1346</x>
      <y>238</y>
     </hint>
    </hints>
@@ -8506,11 +8618,11 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>165</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1359</x>
+     <x>1346</x>
      <y>266</y>
     </hint>
    </hints>
@@ -8522,11 +8634,11 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>165</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1359</x>
+     <x>1346</x>
      <y>294</y>
     </hint>
    </hints>
@@ -8538,11 +8650,11 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>165</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1359</x>
+     <x>1346</x>
      <y>322</y>
     </hint>
    </hints>
@@ -8554,11 +8666,11 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>165</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1359</x>
+     <x>1346</x>
      <y>350</y>
     </hint>
    </hints>
@@ -8570,11 +8682,11 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>165</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1359</x>
+     <x>1346</x>
      <y>378</y>
     </hint>
    </hints>
@@ -8586,11 +8698,11 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>165</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1359</x>
+     <x>1346</x>
      <y>406</y>
     </hint>
    </hints>
@@ -8602,11 +8714,11 @@ p, li { white-space: pre-wrap; }
    <slot>click()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1268</x>
+     <x>1255</x>
      <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1165</x>
+     <x>1152</x>
      <y>168</y>
     </hint>
    </hints>
@@ -8687,7 +8799,7 @@ p, li { white-space: pre-wrap; }
     </hint>
     <hint type="destinationlabel">
      <x>539</x>
-     <y>334</y>
+     <y>358</y>
     </hint>
    </hints>
   </connection>
@@ -8703,7 +8815,7 @@ p, li { white-space: pre-wrap; }
     </hint>
     <hint type="destinationlabel">
      <x>539</x>
-     <y>384</y>
+     <y>409</y>
     </hint>
    </hints>
   </connection>
@@ -8719,7 +8831,7 @@ p, li { white-space: pre-wrap; }
     </hint>
     <hint type="destinationlabel">
      <x>665</x>
-     <y>334</y>
+     <y>358</y>
     </hint>
    </hints>
   </connection>
@@ -8735,7 +8847,7 @@ p, li { white-space: pre-wrap; }
     </hint>
     <hint type="destinationlabel">
      <x>665</x>
-     <y>384</y>
+     <y>409</y>
     </hint>
    </hints>
   </connection>
@@ -8751,7 +8863,7 @@ p, li { white-space: pre-wrap; }
     </hint>
     <hint type="destinationlabel">
      <x>287</x>
-     <y>475</y>
+     <y>502</y>
     </hint>
    </hints>
   </connection>
@@ -8767,7 +8879,7 @@ p, li { white-space: pre-wrap; }
     </hint>
     <hint type="destinationlabel">
      <x>287</x>
-     <y>525</y>
+     <y>554</y>
     </hint>
    </hints>
   </connection>
@@ -8783,7 +8895,7 @@ p, li { white-space: pre-wrap; }
     </hint>
     <hint type="destinationlabel">
      <x>413</x>
-     <y>475</y>
+     <y>502</y>
     </hint>
    </hints>
   </connection>
@@ -8799,7 +8911,7 @@ p, li { white-space: pre-wrap; }
     </hint>
     <hint type="destinationlabel">
      <x>413</x>
-     <y>525</y>
+     <y>554</y>
     </hint>
    </hints>
   </connection>
@@ -8815,7 +8927,7 @@ p, li { white-space: pre-wrap; }
     </hint>
     <hint type="destinationlabel">
      <x>539</x>
-     <y>475</y>
+     <y>502</y>
     </hint>
    </hints>
   </connection>
@@ -8831,7 +8943,7 @@ p, li { white-space: pre-wrap; }
     </hint>
     <hint type="destinationlabel">
      <x>539</x>
-     <y>525</y>
+     <y>554</y>
     </hint>
    </hints>
   </connection>
@@ -8847,7 +8959,7 @@ p, li { white-space: pre-wrap; }
     </hint>
     <hint type="destinationlabel">
      <x>665</x>
-     <y>475</y>
+     <y>502</y>
     </hint>
    </hints>
   </connection>
@@ -8863,7 +8975,7 @@ p, li { white-space: pre-wrap; }
     </hint>
     <hint type="destinationlabel">
      <x>665</x>
-     <y>525</y>
+     <y>554</y>
     </hint>
    </hints>
   </connection>
@@ -9258,11 +9370,11 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>557</x>
+     <x>471</x>
      <y>166</y>
     </hint>
    </hints>
@@ -9274,12 +9386,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>557</x>
-     <y>222</y>
+     <x>471</x>
+     <y>224</y>
     </hint>
    </hints>
   </connection>
@@ -9290,12 +9402,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>557</x>
-     <y>279</y>
+     <x>471</x>
+     <y>282</y>
     </hint>
    </hints>
   </connection>
@@ -9306,12 +9418,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>557</x>
-     <y>335</y>
+     <x>471</x>
+     <y>340</y>
     </hint>
    </hints>
   </connection>
@@ -9322,12 +9434,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>557</x>
-     <y>392</y>
+     <x>471</x>
+     <y>398</y>
     </hint>
    </hints>
   </connection>
@@ -9338,12 +9450,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>557</x>
-     <y>448</y>
+     <x>471</x>
+     <y>455</y>
     </hint>
    </hints>
   </connection>
@@ -9354,12 +9466,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>557</x>
-     <y>505</y>
+     <x>471</x>
+     <y>513</y>
     </hint>
    </hints>
   </connection>
@@ -9370,12 +9482,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>557</x>
-     <y>561</y>
+     <x>471</x>
+     <y>571</y>
     </hint>
    </hints>
   </connection>
@@ -9386,11 +9498,11 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1081</x>
+     <x>909</x>
      <y>166</y>
     </hint>
    </hints>
@@ -9402,12 +9514,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1081</x>
-     <y>222</y>
+     <x>909</x>
+     <y>224</y>
     </hint>
    </hints>
   </connection>
@@ -9418,12 +9530,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1081</x>
-     <y>279</y>
+     <x>909</x>
+     <y>282</y>
     </hint>
    </hints>
   </connection>
@@ -9434,12 +9546,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1081</x>
-     <y>335</y>
+     <x>909</x>
+     <y>340</y>
     </hint>
    </hints>
   </connection>
@@ -9450,12 +9562,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1081</x>
-     <y>392</y>
+     <x>909</x>
+     <y>398</y>
     </hint>
    </hints>
   </connection>
@@ -9466,12 +9578,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1081</x>
-     <y>448</y>
+     <x>909</x>
+     <y>455</y>
     </hint>
    </hints>
   </connection>
@@ -9482,12 +9594,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1081</x>
-     <y>505</y>
+     <x>909</x>
+     <y>513</y>
     </hint>
    </hints>
   </connection>
@@ -9498,12 +9610,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1350</x>
+     <x>1337</x>
      <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1081</x>
-     <y>561</y>
+     <x>909</x>
+     <y>571</y>
     </hint>
    </hints>
   </connection>
@@ -9534,8 +9646,8 @@ p, li { white-space: pre-wrap; }
      <y>186</y>
     </hint>
     <hint type="destinationlabel">
-     <x>346</x>
-     <y>282</y>
+     <x>395</x>
+     <y>304</y>
     </hint>
    </hints>
   </connection>
@@ -9550,8 +9662,8 @@ p, li { white-space: pre-wrap; }
      <y>186</y>
     </hint>
     <hint type="destinationlabel">
-     <x>540</x>
-     <y>221</y>
+     <x>589</x>
+     <y>241</y>
     </hint>
    </hints>
   </connection>
@@ -9566,8 +9678,8 @@ p, li { white-space: pre-wrap; }
      <y>186</y>
     </hint>
     <hint type="destinationlabel">
-     <x>540</x>
-     <y>282</y>
+     <x>589</x>
+     <y>304</y>
     </hint>
    </hints>
   </connection>
@@ -9582,8 +9694,8 @@ p, li { white-space: pre-wrap; }
      <y>186</y>
     </hint>
     <hint type="destinationlabel">
-     <x>734</x>
-     <y>221</y>
+     <x>783</x>
+     <y>241</y>
     </hint>
    </hints>
   </connection>
@@ -9598,8 +9710,8 @@ p, li { white-space: pre-wrap; }
      <y>186</y>
     </hint>
     <hint type="destinationlabel">
-     <x>734</x>
-     <y>282</y>
+     <x>783</x>
+     <y>304</y>
     </hint>
    </hints>
   </connection>
@@ -9614,8 +9726,8 @@ p, li { white-space: pre-wrap; }
      <y>186</y>
     </hint>
     <hint type="destinationlabel">
-     <x>928</x>
-     <y>221</y>
+     <x>977</x>
+     <y>241</y>
     </hint>
    </hints>
   </connection>
@@ -9630,8 +9742,8 @@ p, li { white-space: pre-wrap; }
      <y>186</y>
     </hint>
     <hint type="destinationlabel">
-     <x>928</x>
-     <y>282</y>
+     <x>977</x>
+     <y>304</y>
     </hint>
    </hints>
   </connection>
@@ -9646,8 +9758,8 @@ p, li { white-space: pre-wrap; }
      <y>186</y>
     </hint>
     <hint type="destinationlabel">
-     <x>346</x>
-     <y>449</y>
+     <x>395</x>
+     <y>474</y>
     </hint>
    </hints>
   </connection>
@@ -9662,8 +9774,8 @@ p, li { white-space: pre-wrap; }
      <y>186</y>
     </hint>
     <hint type="destinationlabel">
-     <x>346</x>
-     <y>510</y>
+     <x>395</x>
+     <y>537</y>
     </hint>
    </hints>
   </connection>
@@ -9678,8 +9790,8 @@ p, li { white-space: pre-wrap; }
      <y>186</y>
     </hint>
     <hint type="destinationlabel">
-     <x>540</x>
-     <y>449</y>
+     <x>589</x>
+     <y>474</y>
     </hint>
    </hints>
   </connection>
@@ -9694,8 +9806,8 @@ p, li { white-space: pre-wrap; }
      <y>186</y>
     </hint>
     <hint type="destinationlabel">
-     <x>540</x>
-     <y>510</y>
+     <x>589</x>
+     <y>537</y>
     </hint>
    </hints>
   </connection>
@@ -9710,8 +9822,8 @@ p, li { white-space: pre-wrap; }
      <y>186</y>
     </hint>
     <hint type="destinationlabel">
-     <x>734</x>
-     <y>449</y>
+     <x>783</x>
+     <y>474</y>
     </hint>
    </hints>
   </connection>
@@ -9726,8 +9838,8 @@ p, li { white-space: pre-wrap; }
      <y>186</y>
     </hint>
     <hint type="destinationlabel">
-     <x>734</x>
-     <y>510</y>
+     <x>783</x>
+     <y>537</y>
     </hint>
    </hints>
   </connection>
@@ -9742,8 +9854,8 @@ p, li { white-space: pre-wrap; }
      <y>186</y>
     </hint>
     <hint type="destinationlabel">
-     <x>928</x>
-     <y>449</y>
+     <x>977</x>
+     <y>474</y>
     </hint>
    </hints>
   </connection>
@@ -9758,8 +9870,8 @@ p, li { white-space: pre-wrap; }
      <y>186</y>
     </hint>
     <hint type="destinationlabel">
-     <x>928</x>
-     <y>510</y>
+     <x>977</x>
+     <y>537</y>
     </hint>
    </hints>
   </connection>
@@ -9770,12 +9882,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>114</x>
-     <y>421</y>
+     <x>147</x>
+     <y>444</y>
     </hint>
     <hint type="destinationlabel">
-     <x>391</x>
-     <y>398</y>
+     <x>494</x>
+     <y>538</y>
     </hint>
    </hints>
   </connection>
@@ -9786,12 +9898,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>186</x>
-     <y>421</y>
+     <x>219</x>
+     <y>444</y>
     </hint>
     <hint type="destinationlabel">
-     <x>580</x>
-     <y>397</y>
+     <x>660</x>
+     <y>538</y>
     </hint>
    </hints>
   </connection>
@@ -9802,8 +9914,8 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>144</x>
-     <y>424</y>
+     <x>177</x>
+     <y>444</y>
     </hint>
     <hint type="destinationlabel">
      <x>730</x>
@@ -9818,8 +9930,8 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>91</x>
-     <y>445</y>
+     <x>124</x>
+     <y>465</y>
     </hint>
     <hint type="destinationlabel">
      <x>402</x>
@@ -9834,12 +9946,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>160</x>
-     <y>444</y>
+     <x>193</x>
+     <y>465</y>
     </hint>
     <hint type="destinationlabel">
-     <x>600</x>
-     <y>429</y>
+     <x>649</x>
+     <y>448</y>
     </hint>
    </hints>
   </connection>
@@ -9850,12 +9962,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>176</x>
-     <y>444</y>
+     <x>209</x>
+     <y>465</y>
     </hint>
     <hint type="destinationlabel">
-     <x>731</x>
-     <y>426</y>
+     <x>815</x>
+     <y>448</y>
     </hint>
    </hints>
   </connection>
@@ -9866,8 +9978,8 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>127</x>
-     <y>466</y>
+     <x>160</x>
+     <y>486</y>
     </hint>
     <hint type="destinationlabel">
      <x>441</x>
@@ -9882,8 +9994,8 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>141</x>
-     <y>467</y>
+     <x>174</x>
+     <y>486</y>
     </hint>
     <hint type="destinationlabel">
      <x>571</x>
@@ -9898,8 +10010,8 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>204</x>
-     <y>467</y>
+     <x>237</x>
+     <y>486</y>
     </hint>
     <hint type="destinationlabel">
      <x>727</x>
@@ -9914,8 +10026,8 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>103</x>
-     <y>487</y>
+     <x>136</x>
+     <y>507</y>
     </hint>
     <hint type="destinationlabel">
      <x>466</x>
@@ -9962,12 +10074,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>216</x>
-     <y>499</y>
+     <x>249</x>
+     <y>528</y>
     </hint>
     <hint type="destinationlabel">
-     <x>431</x>
-     <y>499</y>
+     <x>483</x>
+     <y>520</y>
     </hint>
    </hints>
   </connection>
@@ -9978,12 +10090,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>591</x>
-     <y>499</y>
+     <x>649</x>
+     <y>520</y>
     </hint>
     <hint type="destinationlabel">
-     <x>591</x>
-     <y>499</y>
+     <x>649</x>
+     <y>520</y>
     </hint>
    </hints>
   </connection>
@@ -9994,12 +10106,12 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>148</x>
-     <y>506</y>
+     <x>181</x>
+     <y>528</y>
     </hint>
     <hint type="destinationlabel">
-     <x>717</x>
-     <y>501</y>
+     <x>815</x>
+     <y>520</y>
     </hint>
    </hints>
   </connection>
@@ -10010,8 +10122,8 @@ p, li { white-space: pre-wrap; }
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>99</x>
-     <y>509</y>
+     <x>132</x>
+     <y>528</y>
     </hint>
     <hint type="destinationlabel">
      <x>573</x>
@@ -10026,12 +10138,12 @@ p, li { white-space: pre-wrap; }
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>80</x>
-     <y>279</y>
+     <x>103</x>
+     <y>298</y>
     </hint>
     <hint type="destinationlabel">
-     <x>84</x>
-     <y>304</y>
+     <x>107</x>
+     <y>324</y>
     </hint>
    </hints>
   </connection>
@@ -10042,12 +10154,44 @@ p, li { white-space: pre-wrap; }
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>158</x>
-     <y>278</y>
+     <x>181</x>
+     <y>298</y>
     </hint>
     <hint type="destinationlabel">
      <x>146</x>
      <y>334</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>AutoBoardIDScanCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>ApfelID1_lineEdit</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>92</x>
+     <y>163</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>149</x>
+     <y>194</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>AutoBoardIDScanCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>ApfelID2_lineEdit</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>71</x>
+     <y>163</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>161</x>
+     <y>220</y>
     </hint>
    </hints>
   </connection>

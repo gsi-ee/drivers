@@ -329,10 +329,10 @@ int BoardSetup::ResetADCSample (int febexchannel)
   return 0;
 }
 
-int BoardSetup::SetADCSample (int febexchannel, int index, uint16_t value)
+int BoardSetup::AddADCSample (int febexchannel, uint16_t value)
 {
   ASSERT_FEBCHAN_VALID(febexchannel);
-  fLastSample[febexchannel].SetSample (index, value);
+  fLastSample[febexchannel].AddSample (value);
   return 0;
 }
 
@@ -392,6 +392,29 @@ int BoardSetup::NumSamplePeaks (int febexchannel)
    return fLastSample[febexchannel].GetPosDelta();
  }
 
+
+ int BoardSetup::EvaluateBaseline(int febexchannel, int firstindex, int lastindex)
+  {
+    ASSERT_FEBCHAN_VALID(febexchannel);
+    fLastSample[febexchannel].SetBaselineStartIndex(firstindex);
+    fLastSample[febexchannel].SetBaselineStopIndex(lastindex);
+    fLastSample[febexchannel].CalculateMeanAndSigma();
+    return 0;
+  }
+
+
+
+int BoardSetup::GetADCBaslineLowerBound(int febexchannel)
+{
+   ASSERT_FEBCHAN_VALID(febexchannel);
+   return fLastSample[febexchannel].GetBaselineStartIndex();
+}
+
+int BoardSetup::GetADCBaslineUpperBound(int febexchannel)
+{
+  ASSERT_FEBCHAN_VALID(febexchannel);
+  return fLastSample[febexchannel].GetBaselineStopIndex();
+}
 
 
 double BoardSetup::GetADCMean (int febexchannel)

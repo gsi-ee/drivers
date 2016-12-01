@@ -7,7 +7,16 @@
 
 enum SequencerAction
 {
-  SEQ_NONE, SEQ_GAIN_1, SEQ_GAIN_16, SEQ_GAIN_32, SEQ_AUTOCALIB, SEQ_NOISESAMPLE, SEQ_BASELINE, SEQ_CURVE
+  SEQ_NONE,
+  SEQ_INIT,
+  SEQ_FINALIZE,
+  SEQ_GAIN_1,
+  SEQ_GAIN_16,
+  SEQ_GAIN_32,
+  SEQ_AUTOCALIB,
+  SEQ_NOISESAMPLE,
+  SEQ_BASELINE,
+  SEQ_CURVE
 };
 
 /** command token to be put into the test sequencer list*/

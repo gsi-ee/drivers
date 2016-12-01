@@ -13,12 +13,17 @@ AdcSample::AdcSample ()
 
 void AdcSample::Reset ()
 {
+  fBaselineDone=false;
+  fPeakfindDone=false;
   fMinValue = 0;
   fMaxValue = 0;
   fSample.clear();
-  fSample.resize(APFEL_ADC_SAMPLEVALUES);
-//  for (int i = 0; i < APFEL_ADC_SAMPLEVALUES; ++i)
-//    fSample.push_back(0);
+  //fSample.resize(APFEL_ADC_SAMPLEVALUES);
+
+  fBaselineStart=0;
+  fBaselineStop=APFEL_ADC_SAMPLEVALUES;
+  fMean=APFEL_NOVALUE;
+  fSigma=APFEL_NOVALUE;
   fPeaks.clear();
   fPeakDelta=0;
   fHeightDelta=0;
@@ -26,32 +31,66 @@ void AdcSample::Reset ()
 
 }
 
-double AdcSample::GetMean ()
+bool AdcSample::IsValid()
 {
-  double val = 0;
-  double num=fSample.size();
-  for (int i = 0; i < num; ++i)
-  {
-    val += fSample[i];
-  }
-  if(num)
-    val /= num;
-  return val;
+  return (fSample.size()>0 && fBaselineDone && fPeakfindDone);
 }
 
-double AdcSample::GetSigma ()
-{
-  double val = 0, sum = 0;
-  double mean = GetMean ();
-  double num=fSample.size();
-  for (int i = 0; i < num; ++i)
-  {
-    sum += pow ((fSample[i] - mean), 2);
-  }
-  if(num)
-    val = sqrt (sum / num);
-  return val;
-}
+void AdcSample::AddSample (uint16_t value)
+ {
+   fSample.push_back(value);
+   fBaselineStop=fSample.size(); // use full sample for baseline mean and sigma evaluation by default
+
+   if (fMinValue == 0 || value < fMinValue)
+     fMinValue = value;
+   if (value > fMaxValue)
+     fMaxValue = value;
+
+
+ }
+
+
+
+
+ uint16_t AdcSample::GetSample (int index)
+ {
+   if (index < 0 || index >= fSample.size())
+     return 0;
+
+   return (fSample[index]);
+ }
+
+ void AdcSample::CalculateMeanAndSigma()
+ {
+   fMean = 0.;
+   fSigma=0.;
+   double sum = 0;;
+   double start=fBaselineStart;
+   double stop=fBaselineStop;
+   if(start<0) start=0;
+   if(stop>fSample.size()) stop=fSample.size();
+   double num=stop-start;
+   for (int i = start; i < num; ++i)
+     {
+       fMean += fSample[i];
+     }
+   if(num)
+       fMean /= num;
+
+   for (int i = start; i < num; ++i)
+    {
+      sum += pow ((fSample[i] - fMean), 2);
+    }
+    if(num)
+      fSigma= sqrt (sum / num);
+
+    fBaselineDone=true;
+ }
+
+
+
+
+
 
 
 
@@ -61,10 +100,9 @@ void  AdcSample::AddPeak(int pos, uint16_t height)
   fPeaks.push_back(AdcPeak(pos,height));
 }
 
-uint16_t  AdcSample::GetPeakHeight(int num)
+int  AdcSample::GetPeakHeight(int num)
  {
-
-  if(num >= GetNumPeaks()) return 0; // todo error handling properly
+  if(!IsValid() || num >= GetNumPeaks()) return APFEL_NOVALUE;
   AdcPeak pk=fPeaks[num];
   return pk.fHeight;
  }
@@ -72,7 +110,7 @@ uint16_t  AdcSample::GetPeakHeight(int num)
 
  int  AdcSample::GetPeakPosition(int num)
  {
-   if(num >= GetNumPeaks()) return 0; // todo error handling properly
+   if(!IsValid() || num >= GetNumPeaks()) return APFEL_NOVALUE;
    AdcPeak pk=fPeaks[num];
    return pk.fPosition;
  }
@@ -91,13 +129,9 @@ void AdcSample::FindPeaks(double deltaratio, double falldistance, bool negative)
  {
     int peak[APFEL_ADC_NUMMAXIMA];
     int pos[APFEL_ADC_NUMMAXIMA];
-    //int deltanextpeak=fSample.size()/ 40;   //=5; // minimum distance to next peak. scaled by sample size(200 or 8000)
 
-    int deltanextpeak=fSample.size()*deltaratio;
-    int falldelta=falldistance;
-
-    //int falldelta=500; // stop peak finding if we decrease down such number of counts
-
+    int deltanextpeak=fSample.size()*deltaratio; // minimum distance to next peak. scaled by sample size(200 or 8000)
+    int falldelta=falldistance; // stop peak finding if we decrease down such number of counts
     //std::cout<< "FindPeaks has deltaratio:"<<deltaratio<<", fall:"<<falldistance<<", deltanext:"<<deltanextpeak<<", fallabs:"<<falldelta<< std::endl;
 
     int startpos=0;
@@ -140,7 +174,7 @@ void AdcSample::FindPeaks(double deltaratio, double falldistance, bool negative)
   fHeightDelta=falldistance;
   fNegative=negative;
 
-
+  fPeakfindDone=true;
 }
 
 

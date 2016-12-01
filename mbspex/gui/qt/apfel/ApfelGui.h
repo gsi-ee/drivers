@@ -468,7 +468,7 @@ protected:
     void CalibrateResetSelectedADCs();
 
 
-    /** get a sample from febex readout buffer for specified channel.*/
+    /** get a sample from febex readout buffer for specified channel. */
     int AcquireSample(int channel);
 
     /** get sample from febex  for ADC channels with acquire checkbox checked.*/
@@ -506,8 +506,16 @@ protected:
     /** do peak finding on current sample*/
     void FindPeaks(int channel);
 
+    /** Switch peak finder polarity to negative or positive. */
+    void SetPeakfinderPolarityNegative(bool on);
+
     /** read voltage and current via serial connection from toellner power supply*/
     void ReadToellnerPower(double& u, double& i);
+
+    /** calculate mean and sigma of sampled baseline for channel.
+     * Baseline region may be cut with gui elements*/
+    void EvaluateBaseline(int channel);
+
 
   void DebugTextWindow (const char*txt)
   {
@@ -704,6 +712,8 @@ public slots:
   virtual void BenchmarkTimerCallback();
 
   virtual void MaximaCellDoubleClicked(int row, int column);
+
+  virtual void RefreshBaselines();
 
 };
 

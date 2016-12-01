@@ -149,6 +149,9 @@
 #define APFEL_DAC_CURVEPOINTS 24
 
 
+/** value that is set to table when parameter was not measured or evaluated*/
+#define APFEL_NOVALUE -1
+
 
 
 //////////////////////////////////////////////////////////////////////7
@@ -220,10 +223,15 @@
 
 #endif
 
-#define ASSERT_APFEL_VALID(X)   if(X<0 || X>=APFEL_NUMCHIPS) return -1;
-#define ASSERT_DAC_VALID(X)   if(X<0 || X>=APFEL_NUMDACS) return -1;
-#define ASSERT_CHAN_VALID(X)   if(X<0 || X>=APFEL_NUMCHANS) return -1;
-#define ASSERT_FEBCHAN_VALID(X)   if(X<0 || X>=APFEL_ADC_CHANNELS) return -1;
+#define ASSERT_APFEL_VALID(X)   if(X<0 || X>=APFEL_NUMCHIPS) return APFEL_NOVALUE;
+#define ASSERT_DAC_VALID(X)   if(X<0 || X>=APFEL_NUMDACS) return APFEL_NOVALUE;
+#define ASSERT_CHAN_VALID(X)   if(X<0 || X>=APFEL_NUMCHANS) return APFEL_NOVALUE;
+#define ASSERT_FEBCHAN_VALID(X)   if(X<0 || X>=APFEL_ADC_CHANNELS) return APFEL_NOVALUE;
+
+
+
+#define APFEL_RESULT_TIMEFORMAT "dd.MM.yyyy hh:mm:ss.zzz"
+
 
 
 /** this define will switch between direct call of mbspex lib or external shell call of gosipcmd*

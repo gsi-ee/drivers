@@ -339,6 +339,11 @@ ApfelGui::ApfelGui (QWidget* parent) :
 
   QObject::connect (MaximaTableWidget, SIGNAL(cellDoubleClicked(int, int )), this, SLOT (MaximaCellDoubleClicked(int,int)));
 
+
+  QObject::connect (BaselineLowerSlider, SIGNAL(valueChanged(int)), this, SLOT (RefreshBaselines()));
+  QObject::connect (BaselineUpperSlider, SIGNAL(valueChanged(int)), this, SLOT (RefreshBaselines()));
+  QObject::connect (ReadoutRadioButton, SIGNAL(toggled(bool)), this, SLOT (RefreshBaselines()));
+
   /** JAM put references to designer checkboxes into array to be handled later easily: */
   fBaselineBoxes[0] = Baseline_Box_00;
   fBaselineBoxes[1] = Baseline_Box_01;
@@ -1413,7 +1418,7 @@ int ApfelGui::AcquireSample (int channel)
     {
       // evaluate  a single sample from ADC monitor port (no averaging like in baseline setup!)
       val = AcquireBaselineSample (channel, 1);
-      theSetup.SetADCSample (channel, i, val);
+      theSetup.AddADCSample (channel,val);
     }
   }
   else
@@ -1437,14 +1442,27 @@ int ApfelGui::AcquireSample (int channel)
          double value = (fData[cursor] & 0x3FFF);
          cursor++;
          //std::cout <<"got value"<<value<< "at position "<< i <<", cursor="<<cursor<<", sum="<<sum << std::endl;
-         theSetup.SetADCSample (channel, i, value);
+         theSetup.AddADCSample (channel, value);
        }
     //std::cout << "Filled "<<i<< "adc samples from mbs trace up to position #"<< cursor<< std::endl;
   }
-
+  EvaluateBaseline(channel);
   FindPeaks(channel);
   RefreshLastADCSample (channel);
   return 0;
+}
+
+
+void ApfelGui::EvaluateBaseline(int channel)
+{
+  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  bool ok=false;
+  int startbase=BaselineLowerLineEdit->text().toInt(&ok,fNumberBase);
+  int stopbase=BaselineUpperLineEdit->text().toInt(&ok,fNumberBase);
+
+ //std::cout<< "EvaluateBaseline for channel "<<channel<<" has start:"<<startbase<<", stop="<<stopbase << std::endl;
+
+  theSetup.EvaluateBaseline(channel,startbase, stopbase);
 }
 
 
@@ -1459,6 +1477,11 @@ void ApfelGui::FindPeaks(int channel)
 
 }
 
+void ApfelGui::SetPeakfinderPolarityNegative(bool on)
+{
+  PeakNegaitveCheckBox->setChecked(on);
+
+}
 
 void ApfelGui::PeakFinderBtn_clicked()
 {
@@ -1826,6 +1849,8 @@ void ApfelGui::ShowBenchmarkCurve (int gain, int apfel, int dac)
       curveplot->addPoint (dval, aval, label);
     else
       curveplot->addPoint (dval, aval);
+
+    //std::cout<<"ShowBenchmarkCurve: i:"<<i<<", dacval="<< (int) dval<<", adcval="<< (int) aval << std::endl;
   }
 
   // add it to the plot area
@@ -1835,6 +1860,7 @@ void ApfelGui::ShowBenchmarkCurve (int gain, int apfel, int dac)
   BenchmarkPlotwidget->setLimits (fPlotMinDac, fPlotMaxDac, fPlotMinAdc, fPlotMaxAdc);
   //else
   //  BenchmarkPlotwidget->setLimits (0, APFEL_DAC_MAXVALUE, 0, APFEL_ADC_MAXVALUE);
+  //std::cout<<"ShowBenchmarkCurve limits: dmin:"<<fPlotMinDac<<", dmax:"<<fPlotMaxDac<<", amin:"<< fPlotMinAdc<<", amax:"<<fPlotMaxAdc<< std::endl;
 
   BenchmarkPlotwidget->update ();
 
@@ -1994,7 +2020,7 @@ void ApfelGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "ApfelGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.977 of 22-November-2016 by JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.980 of 01-December-2016 by JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -2996,6 +3022,8 @@ void ApfelGui::RefreshView ()
     }
   }
 
+  RefreshBaselines();
+
 //////////////////////////////////////////////////////////
 // dac relative baseline settings and adc sample:
   int apfel = 0, dac = 0;
@@ -3574,7 +3602,7 @@ int ApfelGui::ScanDACCurve (int gain, int channel)
   }
 
   // we start in the middle of the autocalibration point:
-  uint16_t dac_mid = theResults.GetDACValueCalibrate (dac);
+  uint16_t dac_mid = theResults.GetDacValueCalibrate (dac);
   if (dac_mid == 0)
   {
     // no calibration done yet, do it now
@@ -3590,7 +3618,7 @@ int ApfelGui::ScanDACCurve (int gain, int channel)
     theSetup.SetDACValue (apfel, dac, dacval);
     WriteDAC_ApfelI2c (apfel, dac, theSetup.GetDACValue (apfel, dac));
     int adcval = AcquireBaselineSample (channel);
-    //std::cout<<"   ScanDACCurve got d:"<<dacval<<", adc:"<<adcval << std::endl;
+   // std::cout<<"   ScanDACCurve got d:"<<dacval<<", adc:"<<adcval << std::endl;
     theResults.AddDacSample (dac, dacval, adcval);
   }
   DisableI2C ();
@@ -3742,6 +3770,29 @@ void ApfelGui::PulseFrequencyChanged (int index)
 }
 
 
+
+void ApfelGui::RefreshBaselines()
+{
+  //std::cout << "RefreshBaselines" <<  std::endl;
+  QString text;
+  QString pre;
+  fNumberBase == 16 ? pre = "0x" : pre = "";
+
+  double lowpermil=BaselineLowerSlider->value();
+  double uppermil=BaselineUpperSlider->value();
+  double maxrange=APFEL_ADC_SAMPLEVALUES;
+  if(ReadoutRadioButton->isChecked())
+    maxrange=APFEL_MBS_TRACELEN;
+  int lowvalue= lowpermil*0.001*maxrange;
+  int upvalue= uppermil*0.001*maxrange;
+  BaselineLowerLineEdit->setText(pre + text.setNum (lowvalue, fNumberBase));
+  BaselineUpperLineEdit->setText(pre + text.setNum (upvalue, fNumberBase));
+
+}
+
+
+
+
 void ApfelGui::LoadBenchmarkReferences()
 {
   QFileDialog fd (this, "Select Benchmark reference data file", ".", "apfel characterization file (*.apf)");
@@ -3755,9 +3806,6 @@ void ApfelGui::LoadBenchmarkReferences()
   fBenchmark.LoadReferenceValues(filename);
   ReferenceLineEdit->setText(filename);
 }
-
-
-
 
 
 
@@ -3804,6 +3852,9 @@ void ApfelGui::StartBenchmarkPressed ()
     printm ("Please specify full id information!");
     return;
   }
+
+
+
   theSetup.SetBoardID (0, apfel1);
   theSetup.SetBoardID (1, apfel2);
 
@@ -3835,11 +3886,18 @@ void ApfelGui::StartBenchmarkPressed ()
 
   // here we evaluate a to do list that the timer should process:
   fBenchmark.SetSetup (&theSetup);
+
+
+
+
+
+
   fBenchmark.ResetSequencerList ();
   if (Gain1groupBox->isChecked ())
   {
 
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_1));
+    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_INIT));
 
     if (Gain1TestAutocalCheckBox->isChecked ())
     {
@@ -3862,12 +3920,15 @@ void ApfelGui::StartBenchmarkPressed ()
       for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_CURVE, channel));
     }
+    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_FINALIZE));
   }
 
   if (Gain16groupBox->isChecked ())
   {
 
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_16));
+    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_INIT));
+
 
     if (Gain16TestAutocalCheckBox->isChecked ())
     {
@@ -3888,11 +3949,13 @@ void ApfelGui::StartBenchmarkPressed ()
       for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_CURVE, channel));
     }
+    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_FINALIZE));
   }
   if (Gain32groupBox->isChecked ())
   {
 
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_32));
+    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_INIT));
 
     if (Gain32TestAutocalCheckBox->isChecked ())
     {
@@ -3913,6 +3976,8 @@ void ApfelGui::StartBenchmarkPressed ()
       for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_CURVE, channel));
     }
+    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_FINALIZE));
+
   }
 
   fBenchmark.FinalizeSequencerList ();
@@ -3997,26 +4062,45 @@ void ApfelGui::SaveTestResults ()
   printm ("Saving test results of sfp:%d slave%d.", fSFP, fSlave);
   BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
 
-  QString apf1 = theSetup.GetBoardID (0);
-  QString apf2 = theSetup.GetBoardID (1);
-  if (apf1.isEmpty () || apf2.isEmpty ())
-  {
-    printm ("Can not save test results: full id information was not given! Please rerun test.");
-    return;
-  }
-  double current = theSetup.GetCurrent ();
-  double voltage = theSetup.GetVoltage();
-  QString header = QString ("# apfel1:").append (apf1).append (", apfel2:").append (apf2);
-  header.append (QString (" Current:%1 A Voltage:%1 A").arg (current).arg (voltage));
-  header.append ("\n");
-  WriteTestFile (header);
+// do not refer to current setup entries here, but to saved results.
+//  QString apf1 = theSetup.GetBoardID (0);
+//  QString apf2 = theSetup.GetBoardID (1);
+//  if (apf1.isEmpty () || apf2.isEmpty ())
+//  {
+//    printm ("Can not save test results: full id information was not given! Please rerun test.");
+//    return;
+//  }
+//  double current = theSetup.GetCurrent ();
+//  double voltage = theSetup.GetVoltage();
+//  QString header = QString ("# apfel1:").append (apf1).append (", apfel2:").append (apf2);
+//  header.append (QString (" Current:%1 A Voltage:%1 A").arg (current).arg (voltage));
+//  header.append ("\n");
+//  WriteTestFile (header);
+// information of this header is now part of table
+
+  // header
+  QString tstamp=QDateTime::currentDateTime().toString(APFEL_RESULT_TIMEFORMAT);
+  WriteTestFile(QString("# This is an APFEL Test result file saved with ApfelGui on "));
+  WriteTestFile(tstamp);
+  WriteTestFile(QString("\n"));
+  WriteTestFile(QString("#   developed for FAIR/PASEM project 2016 by JAM (j.adamczewski@gsi.de), GSI Experiment Electronics department \n"));
+  WriteTestFile(QString("#\n"));
+
   // format
   WriteTestFile (
-      QString ("#Gain \tAPFEL \tDAC \tCalibSet \tBaseline \tSigma  \tdDAC/dADC \tDAC0 \tDACmin \tDACmax \tADCmin"));
+      QString ("# BoardID \tGain \tAPFEL \tDAC \tCalibSet \tBaseline \tSigma  \tBaseLow \tBaseUp \tdDAC/dADC \tDAC0 \tDACmin \tDACmax \tADCmin"));
   for (int i = 0; i < APFEL_DAC_CURVEPOINTS; ++i)
   {
     WriteTestFile (QString ("\tDAC_%1 \tADC_%2").arg (i).arg (i));
   }
+
+  WriteTestFile (QString ("\tPeakPolarity"));
+  for (int i = 0; i < APFEL_ADC_NUMMAXIMA; ++i)
+    {
+      WriteTestFile (QString ("\tPeakPos_%1 \tPeakHeight_%2").arg (i).arg (i));
+    }
+
+  WriteTestFile (QString ("\tCurrent(A) \tVoltage(V) \tStartDate \t StartTime \tStopDate \tStopTime"));
   WriteTestFile (QString ("\n"));
   // loopp over gain:
   for (int gain = 1; gain < 40; gain += 15)
@@ -4025,33 +4109,104 @@ void ApfelGui::SaveTestResults ()
       gain = 32;    // :)
     for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
     {
-      int apfeladdress = theSetup.GetApfelID (apfel);    // index to address id, depends on setup!
-      ApfelTestResults& gain1results = theSetup.AccessTestResults (gain, apfel);
+      //int apfeladdress = theSetup.GetApfelID (apfel);    // index to address id, depends on setup!
+      ApfelTestResults& theResult = theSetup.AccessTestResults (gain, apfel);
       for (int dac = 0; dac < APFEL_NUMDACS; ++dac)
       {
-        int dacval = gain1results.GetDACValueCalibrate (dac);
-        int baseline = gain1results.GetDACSampleMean (dac);
-        int sigma = gain1results.GetDACSampleSigma (dac);
-        double slope = gain1results.GetSlope (dac);
-        double dac0 = gain1results.GetD0 (dac);
-        double dacmin = gain1results.GetDACmin (dac);
-        double dacmax = gain1results.GetDACmax (dac);
-        double adcmin = gain1results.GetADCmin (dac);
+        QString boardid=QString(theResult.GetBoardDescriptor().c_str());
+        int apfeladdress=theResult.GetAddressId();
+        int dacval = theResult.GetDacValueCalibrate (dac,true); // when saving, we assure that test was really done
+        int baseline = theResult.GetAdcSampleMean (dac,true);
+        int sigma = theResult.GetAdcSampleSigma (dac,true);
+        int startbase=theResult.GetAdcBaselineLowerBound(dac,true);
+        int stopbase=theResult.GetAdcBaselineUpperBound(dac,true);
+        double slope = theResult.GetSlope (dac,true);
+        double dac0 = theResult.GetD0 (dac,true);
+        double dacmin = theResult.GetDACmin (dac,true);
+        double dacmax = theResult.GetDACmax (dac,true);
+        double adcmin = theResult.GetADCmin (dac,true);
+        double current = theResult.GetCurrent();
+        double voltage = theResult.GetVoltage();
 
-        QString line = QString ("%1 \t\t%2 \t\t%3 \t\t%4 \t\t%5 \t\t%6 \t\t%7 \t\t%8 \t\t%9").arg (gain).arg (
-            apfeladdress).arg (dac).arg (dacval).arg (baseline).arg (sigma).arg (slope).arg (dac0).arg (dacmin);
-        line.append (QString ("\t\t%1 \t\t%2").arg (dacmax).arg (adcmin));
+        // here we should supress/mark as invalid the results that are not meaningful for the selected gain:
+
+        if (gain == 1)
+        {
+          if (dac == 0 || dac == 1 || dac == 3)
+          {
+            baseline = APFEL_NOVALUE;
+            sigma = APFEL_NOVALUE;
+            startbase = APFEL_NOVALUE;
+            stopbase = APFEL_NOVALUE;
+            slope = APFEL_NOVALUE;
+            dac0 = APFEL_NOVALUE;
+            dacmin = APFEL_NOVALUE;
+            dacmax = APFEL_NOVALUE;
+            adcmin = APFEL_NOVALUE;
+            current = APFEL_NOVALUE;
+            voltage = APFEL_NOVALUE;
+          }
+
+        }
+        else if (gain == 16 || gain == 32)
+        {
+          if (dac == 2 || dac == 3)
+          {
+            baseline = APFEL_NOVALUE;
+            sigma = APFEL_NOVALUE;
+            startbase = APFEL_NOVALUE;
+            stopbase = APFEL_NOVALUE;
+            slope = APFEL_NOVALUE;
+            dac0 = APFEL_NOVALUE;
+            dacmin = APFEL_NOVALUE;
+            dacmax = APFEL_NOVALUE;
+            adcmin = APFEL_NOVALUE;
+            current = APFEL_NOVALUE;
+            voltage = APFEL_NOVALUE;
+          }
+
+        }
+
+
+
+
+
+        QString line = "\t";
+        line.append(boardid);
+        line.append(QString ("\t\t%1 \t\t%2 \t\t%3 \t\t%4 \t\t%5 \t\t%6 \t\t%7 \t\t%8 \t\t%9").arg (gain).arg (apfeladdress).arg (dac).arg (dacval).arg (baseline).arg (sigma).arg(startbase).arg(stopbase).arg (slope));
+        line.append (QString ("\t\t%1 \t\t%2 \t\t%3 \t\t%4").arg (dac0).arg (dacmin).arg (dacmax).arg (adcmin));
 
         // add the results of the curve to the line:
         for (int i = 0; i < APFEL_DAC_CURVEPOINTS; ++i)
         {
-          DacSample point (0, 0);
-          gain1results.AccessDacSample (point, dac, i);    // if this fails, point is just not touched -> default 0 values are saved
-          uint16_t dval = point.GetDACValue ();
-          uint16_t aval = point.GetADCValue ();
+          int dval=APFEL_NOVALUE, aval=APFEL_NOVALUE;
+          if(theResult.IsValid())
+          {
+            DacSample point (0, 0);
+            if(theResult.AccessDacSample (point, dac, i)==0) // if this fails, we keep the APFEL_NOVALUE
+            {
+              dval = point.GetDACValue ();
+              aval = point.GetADCValue ();
+            }
+          }
           //std::cout<<"saving curve point"<<i<<", dac="<<(int) dval<<", adc="<<(int) aval << std::endl;
           line.append (QString ("\t%1 \t%2").arg (dval).arg (aval));
         }
+
+        // put here location of peak finder
+        bool isnegative=theResult.HasNegativeAdcPeaks(dac);
+        line.append((isnegative ? QString("\t -1") : QString("\t 1")));
+        for (int i = 0; i < APFEL_ADC_NUMMAXIMA; ++i)
+                {
+                  int pos = theResult.GetAdcPeakPosition(dac,i,true);
+                  int max = theResult.GetAdcPeakHeight(dac,i,true);
+                  line.append (QString ("\t%1 \t%2").arg (pos).arg (max));
+                }
+
+        line.append(QString ("\t%1 \t%2 \t").arg(current).arg(voltage));
+        line.append(theResult.GetStartTime());
+        line.append("\t");
+        line.append(theResult.GetEndTime());
         line.append ("\n");
         WriteTestFile (line);
       }

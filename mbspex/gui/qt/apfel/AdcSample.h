@@ -43,14 +43,33 @@ class AdcSample
 {
 private:
 
-  //uint16_t fSample[APFEL_ADC_SAMPLEVALUES];
+
   std::vector<uint16_t> fSample;
+
+  /** true if baseline mean and sigma have been calculated at least once*/
+  bool fBaselineDone;
+
+  /** true if peak seardch has benn done at least once*/
+  bool fPeakfindDone;
 
   /** keep minimum value of current sample set*/
   uint16_t fMinValue;
 
   /** keep maximum value of current sample set*/
   uint16_t fMaxValue;
+
+
+  /** index in sample where baseline region starts*/
+  int fBaselineStart;
+
+  /** index in sample where baseline region stops. should be before the pulser peaks begin*/
+  int fBaselineStop;
+
+  /** most recently evaluated mean value of baseline region*/
+  double fMean;
+
+  /** most recently evaluated sigma value of baseline region*/
+  double fSigma;
 
   /** heighs of the first n maxima peaks in sample*/
   std::vector<AdcPeak> fPeaks;
@@ -71,41 +90,70 @@ public:
 
   void Reset ();
 
-  void SetSample (int index, uint16_t value)
-  {
-    //if (index < 0 || index >= APFEL_ADC_SAMPLEVALUES)
-    //  return;
-    if(index>=fSample.size()) fSample.resize(index+APFEL_ADC_SAMPLEVALUES); // dynamically resize in 200 steps
-    fSample[index] = value;
-    if (fMinValue == 0 || value < fMinValue)
-      fMinValue = value;
-    if (value > fMaxValue)
-      fMaxValue = value;
-  }
+  /** sample is ready to read out the figures of merit*/
+  bool IsValid();
 
-  uint16_t GetSample (int index)
-  {
-    if (index < 0 || index >= fSample.size())
-      return 0;
+  /** set sample point (index,value)*/
+//  void SetSample (int index, uint16_t value);
 
-    return (fSample[index]);
-  }
+  /** add next sample point value to the trace*/
+  void AddSample(uint16_t value);
+
+  uint16_t GetSample (int index);
 
   int GetNumSamples(){ return fSample.size();}
 
-  /** evaluate mean value of sample*/
-  double GetMean ();
 
-  /** evaluate sigma value of sample*/
-  double GetSigma ();
-
-  uint16_t GetMinimum ()
+  void SetBaselineStartIndex(int index)
   {
+    fBaselineStart=index;
+  }
+
+  int GetBaselineStartIndex()
+  {
+    return fBaselineStart;
+  }
+
+  void SetBaselineStopIndex(int index)
+  {
+    fBaselineStop=index;
+  }
+
+  int GetBaselineStopIndex()
+  {
+    return fBaselineStop;
+  }
+
+  /** evaluate mean value of sample with respect to baseline region as defined*/
+  void CalculateMeanAndSigma();
+
+
+
+  /** get most recent evaluated mean value of sample*/
+  double GetMean ()
+  {
+    //if(!IsValid()) return APFEL_NOVALUE;
+    return fMean;
+  }
+
+  /** get most recent evaluated sigma value of sample*/
+  double GetSigma ()
+  {
+    //if(!IsValid()) return APFEL_NOVALUE;
+    return fSigma;
+  }
+
+
+
+  int GetMinimum ()
+  {
+    //if(!IsValid()) return APFEL_NOVALUE;
     return fMinValue;
   }
 
-  uint16_t GetMaximum ()
+  int GetMaximum ()
   {
+    //if(!IsValid()) return APFEL_NOVALUE;
     return fMaxValue;
   }
 
@@ -117,7 +165,7 @@ public:
   /* add found peak (position, height) to the list*/
   void AddPeak(int pos, uint16_t height);
 
-  uint16_t GetPeakHeight(int num);
+  int GetPeakHeight(int num);
 
   int GetPeakPosition(int num);
 
