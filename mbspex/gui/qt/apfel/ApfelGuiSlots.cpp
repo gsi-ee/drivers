@@ -323,7 +323,7 @@ void ApfelGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "ApfelGui::ClearOutputBtn_clicked()"<< std::endl;
   TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.981 of 01-December-2016 by JAM (j.adamczewski@gsi.de)\n");
+  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.985 of 12-January-2017 by JAM (j.adamczewski@gsi.de)\n");
 
 }
 
@@ -1257,6 +1257,9 @@ void ApfelGui::StartBenchmarkPressed ()
   }
 
 
+
+  // JAM for test of toellner only, we just skip rest of benchmark:
+  //return;
 
 
   theSetup.SetCurrent (current);

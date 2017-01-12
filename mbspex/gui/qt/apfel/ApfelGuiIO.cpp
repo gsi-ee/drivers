@@ -14,8 +14,21 @@
 #include <string.h>
 #include <errno.h>
 
+#include <QTextStream>
+#include <QFile>
+
+// following will use external scripts to read toellner power supply
+//#define TOELLNER_POWER_USE_SCRIPT 1
+
+// following will test access to /dev/ttyS0 with raw posix methods
+//#define TOELLNER_POWER_RAWCALL 1
 
 
+#ifdef TOELLNER_POWER_RAWCALL
+#include <stdio.h>   /* Standard input/output definitions */
+#include <fcntl.h>   /* File control definitions */
+#include <termios.h> /* POSIX terminal control definitions */
+#endif
 
 void ApfelGui::EnableI2C ()
 {
@@ -491,6 +504,8 @@ void ApfelGui::SetSwitches (bool useApfel, bool useHighGain, bool useStretcher)
 
 void ApfelGui::ReadToellnerPower(double& u, double& i)
 {
+
+#ifdef  TOELLNER_POWER_USE_SCRIPT
   // we just use Peters skripts for the moment
   // TODO: communicate with /dev/ttyS0 directly
    QString ucom ("measure_serial.sh V");
@@ -503,6 +518,97 @@ void ApfelGui::ReadToellnerPower(double& u, double& i)
    QString iresult = ExecuteGosipCmd (icom, 10000);
    i=iresult.toDouble();
    printm("Read Toellner Current=%f A",i);
+
+#elif defined(TOELLNER_POWER_RAWCALL)
+   printm ("ReadToellnerPower raw access of /dev/ttyS0...");
+   QString setremote("SYST:REM\n");
+   QString askvoltage("MV?\n");
+   QString askampere("MC?\n");
+
+   // open for write test:
+
+   int fd; /* File descriptor for the port */
+
+   fd = open("/dev/ttyS0", O_RDWR | O_NOCTTY | O_NDELAY);
+   if (fd == -1)
+     {
+      /* Could not open the port. */
+       printm("ReadToellnerPower: Unable to open /dev/ttyS0 - ");
+     }
+     else
+     {
+       //fcntl(fd, F_SETFL, 0);
+        printm("ReadToellnerPower writes %s ", askvoltage.toLatin1 ().constData ());
+       int bytes= askvoltage.size() +1;
+       int n = write(fd, askvoltage.toLatin1 ().constData (), bytes);
+       //int n = write(fd, "MV?\n", 4);
+         printm("ReadToellnerPower wanted to write %d bytes, returned:%d",bytes,n);
+         sleep(1);
+         bytes= askampere.size() +1;
+       printm("ReadToellnerPower writes %s ", askampere.toLatin1 ().constData ());
+       n = write(fd, askampere.toLatin1 ().constData (), bytes);
+       //n = write(fd, "MC?\n", 4);
+       printm("ReadToellnerPower wanted to write %d bytes, returned:%d",bytes,n);
+
+       ::close(fd);
+     }
+
+   // note that this mode was only used for testing command sending. DEBUG by external cat
+
+
+
+#else
+
+
+   printm ("ReadToellnerPower accesses /dev/ttyS0...");
+   QString setremote("SYST:REM\n");
+   QString askvoltage("MV?\n");
+   QString askampere("MC?\n"); // 2017 works with backslash n
+   QFile file("/dev/ttyS0");
+   if (!file.open(QIODevice::WriteOnly))
+   {
+       printm ("ReadToellnerPower error when opening /dev/ttyS0 for writing");
+       return;
+   }
+   QFile infile("/dev/ttyS0");
+      if (!infile.open(QIODevice::ReadOnly))// | QIODevice::Unbuffered ))// | QIODevice::Text))
+      {
+          printm ("ReadToellnerPower error when opening /dev/ttyS0 for reading");
+          return;
+      }
+
+     QTextStream tty(&file);
+     tty << setremote;
+     tty.flush();
+     sleep(1);
+     //usleep(1000);
+     printm ("ReadToellnerPower has send:%s",setremote.toLatin1 ().constData ());
+     tty <<  askvoltage;
+     tty.flush();
+     sleep(1); // need sleep when working without printm, otherwise response is highly crunched
+     printm ("ReadToellnerPower has send:%s",askvoltage.toLatin1 ().constData ());
+     // note that sending works, we can receive response in cat /dev/ttyS0 process!
+
+     QString answer("");
+     answer=infile.readLine();
+     infile.readLine(); // skip blank line after value!
+     u=answer.toDouble();
+     printm("ReadToellnerPower answer was:%s", answer.toLatin1 ().constData ());
+
+     //sleep(1);
+     tty <<  askampere;
+     tty.flush();
+     sleep(1);
+     printm ("ReadToellnerPower has send:%s",askampere.toLatin1 ().constData ());
+     answer="";
+     answer=infile.readLine();
+     infile.readLine(); // skip blank line after value!
+     i=answer.toDouble();
+     printm("ReadToellnerPower answer was %s",answer.toLatin1 ().constData ());
+
+     printm("ReadToellnerPower gets Voltage=%f V, Current=%f A",u, i);
+#endif
+
 }
 
 int ApfelGui::ReadGosip (int sfp, int slave, int address)
