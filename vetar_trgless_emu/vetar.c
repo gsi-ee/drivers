@@ -1077,7 +1077,7 @@ vetar_setup_csr_fa(privdata);
      if (!privdata->registers) {
        vetar_msg(KERN_ERR "** vetar_probe_vme could not ioremap_nocache at physical address 0x%x with length 0x%lx !\n",
            (unsigned int) privdata->regs_phys, privdata->reglen);
-         vetar_cleanup_dev(privdata);
+         vetar_cleanup_dev(privdata, index);
          return -ENOMEM;
       }
      mb();
@@ -1126,7 +1126,7 @@ vetar_setup_csr_fa(privdata);
    if (err)
      {
        vetar_msg( "Vetar couldn't add character device.\n" );
-       vetar_cleanup_dev(privdata);
+       vetar_cleanup_dev(privdata, index);
        return err;
      }
 
@@ -1173,7 +1173,7 @@ vetar_setup_csr_fa(privdata);
    err=wishbone_register(&privdata->wb);
    if (err< 0) {
         vetar_msg(KERN_ERR "Could not register wishbone bus, error %d\n",err);
-        vetar_cleanup_dev(privdata);
+        vetar_cleanup_dev(privdata, index);
         return err;
       }
  privdata->wb_is_registered=1;
