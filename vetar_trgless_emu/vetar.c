@@ -792,18 +792,19 @@ void vetar_setup_csr_fa(struct vetar_privdata *privdata)
 
 
 #ifdef VETAR_MAP_REGISTERS
-
+  am = VME_A32_USER_MBLT; /*0x08*/
+  vetar_dbg(KERN_NOTICE "vetar_setup_csr_fa sets register space address modifier 0x%x\n", am);
     /* do address relocation for FUN0 */
     fa[0] = (privdata->vmebase >> 24) & 0xFF;
     fa[1] = (privdata->vmebase >> 16) & 0xFF;
     fa[2] = (privdata->vmebase >> 8 ) & 0xFF;
-    fa[3] = (XPC_VME_A32_STD_USER & 0x3F) << 2;
+    fa[3] = (am & 0x3F) << 2;
             /* DFSR and XAM are zero */
 
-    vetar_csr_write(fa[0], privdata->cr_csr, FUN0ADER);
-    vetar_csr_write(fa[1], privdata->cr_csr, FUN0ADER + 4);
-    vetar_csr_write(fa[2], privdata->cr_csr, FUN0ADER + 8);
-    vetar_csr_write(fa[3], privdata->cr_csr, FUN0ADER + 12);
+   vetar_csr_write (fa[0], privdata->cr_csr, FUN0ADER);
+   vetar_csr_write (fa[1], privdata->cr_csr, FUN0ADER + 4);
+   vetar_csr_write( fa[2], privdata->cr_csr, FUN0ADER + 8);
+   vetar_csr_write(fa[3], privdata->cr_csr, FUN0ADER + 12);
 #endif
 
 #ifdef VETAR_MAP_CONTROLSPACE
