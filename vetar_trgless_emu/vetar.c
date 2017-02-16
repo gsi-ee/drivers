@@ -1,10 +1,3 @@
-// #include <linux/kernel.h>
-// #include <linux/module.h>
-// #include <linux/fs.h>
-// #include <linux/uaccess.h>
-// #include <linux/io.h>
-//#include <linux/byteorder/little_endian.h>
-
 #include "vetar.h"
 //#include "vetar_ioctl.h"
 
@@ -647,12 +640,31 @@ ssize_t vetar_write(struct file *filp, const char __user *buf, size_t count,
 
 ssize_t vetar_sysfs_codeversion_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-  char vstring[128];
-  ssize_t curs=0;
-  struct pexor_privdata *privdata;
-  privdata= (struct pexor_privdata*) dev_get_drvdata(dev);
-  curs=snprintf(vstring, 128, "*** This is VETAR driver for CES VME Linux, version %s build on %s at %s \n\t", VETARVERSION, __DATE__, __TIME__);
-  return snprintf(buf, PAGE_SIZE, "%s\n", vstring);
+  ssize_t curs = 0;
+  curs += snprintf (buf + curs, PAGE_SIZE, "*** This is %s, version %s build on %s at %s \n",
+      VETARDESC, VETARVERSION, __DATE__, __TIME__);
+  curs += snprintf (buf + curs, PAGE_SIZE, "\tmodule authors: %s \n", VETARAUTHORS);
+  curs += snprintf (buf + curs, PAGE_SIZE, "\tcompiled settings: \n");
+#ifdef VETAR_NEW_XPCLIB
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\tVME windows mapped with new CesXpcBridge lib.\n");
+#else
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\tVME windows mapped with classic xpc lib.\n");
+#endif
+#ifdef VETAR_VTRANS
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\twb data and control windows use VTRANS mapping\n");
+#else
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\twb data and control windows use CesXpcBridge_MasterMap64.\n");
+#endif
+
+#ifdef VETAR_ENABLE_IRQ
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\tVETAR Interrupts are enabled.\n");
+#else
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\tVETAR Interrupts are disabled.\n");
+#endif
+  
+  
+  
+  return curs;
 }
 
 
@@ -748,97 +760,82 @@ void vetar_csr_write(u8 value, void *base, u32 offset)
         value, (unsigned) base, offset);
 }
 
-void vetar_setup_csr_fa(struct vetar_privdata *privdata)
+void vetar_setup_csr_fa (struct vetar_privdata *privdata)
 {
-    int i;
-    u32 offset;
-    u8 fa[4];       /* FUN0 ADER contents */
-    u8 am=0;
-    /* reset the core */
-    vetar_csr_write(RESET_CORE, privdata->cr_csr, BIT_SET_REG);
-    msleep(10);
+  //int i;
+  u8 fa[4]; /* FUN0 ADER contents */
+  u8 am = 0;
+  /* reset the core */
+  vetar_csr_write (RESET_CORE, privdata->cr_csr, BIT_SET_REG);
+  msleep (10);
 
-    /* disable the core */
-    vetar_csr_write(ENABLE_CORE, privdata->cr_csr, BIT_CLR_REG);
+  /* disable the core */
+  vetar_csr_write (ENABLE_CORE, privdata->cr_csr, BIT_CLR_REG);
 
-    /* default to 32bit WB interface */
-    vetar_csr_write(WB32, privdata->cr_csr, WB_32_64);
+  /* default to 32bit WB interface */
+  vetar_csr_write (WB32, privdata->cr_csr, WB_32_64);
 
 #ifdef VETAR_ENABLE_IRQ
-    /* set interrupt vector and level */
-    vetar_csr_write(privdata->vector, privdata->cr_csr, INTVECTOR);
-    vetar_csr_write(privdata->level, privdata->cr_csr, INT_LEVEL);
+  /* set interrupt vector and level */
+  vetar_csr_write (privdata->vector, privdata->cr_csr, INTVECTOR);
+  vetar_csr_write (privdata->level, privdata->cr_csr, INT_LEVEL);
 #endif
 
-
-/* JAM test: do we need to disable all ADERs before defining the mapping?
- * try to initialize it with address mode that will never used by mbs*/
-    //am=0x29;  /* A16=0x29, this will*/
-    am=0;
-    for(i=0;i<8;++i)
-    {
-      offset=FUN0ADER + i* 0x10;
-      vetar_msg(KERN_NOTICE "vetar_setup_csr_fa initializes ADER %d at register 0x%x with AM:0x%x\n",i,offset,am);
-      fa[0] = 0;
-      fa[1] = 0;
-      fa[2] = 0;
-      fa[3] = (am & 0x3F) << 2;
-      vetar_csr_write(fa[0], privdata->cr_csr, offset);
-      vetar_csr_write(fa[1], privdata->cr_csr, offset + 4);
-      vetar_csr_write(fa[2], privdata->cr_csr, offset + 8);
-      vetar_csr_write(fa[3], privdata->cr_csr, offset + 12);
-    }
-
-
+  /* JAM test: do we need to disable all ADERs before defining the mapping?
+   * try to initialize it with address mode that will never used by mbs*/
+  //am=0x29;  /* A16=0x29, this will*/
+  /*  am=0;
+   for(i=0;i<8;++i)
+   {
+   offset=FUN0ADER + i* 0x10;
+   vetar_msg(KERN_NOTICE "vetar_setup_csr_fa initializes ADER %d at register 0x%x with AM:0x%x\n",i,offset,am);
+   fa[0] = 0;
+   fa[1] = 0;
+   fa[2] = 0;
+   fa[3] = (am & 0x3F) << 2;
+   vetar_csr_write(fa[0], privdata->cr_csr, offset);
+   vetar_csr_write(fa[1], privdata->cr_csr, offset + 4);
+   vetar_csr_write(fa[2], privdata->cr_csr, offset + 8);
+   vetar_csr_write(fa[3], privdata->cr_csr, offset + 12);
+   }*/
 
 #ifdef VETAR_MAP_REGISTERS
   am = VME_A32_USER_MBLT; /*0x08*/
   vetar_dbg(KERN_NOTICE "vetar_setup_csr_fa sets register space address modifier 0x%x\n", am);
-    /* do address relocation for FUN0 */
-    fa[0] = (privdata->vmebase >> 24) & 0xFF;
-    fa[1] = (privdata->vmebase >> 16) & 0xFF;
-    fa[2] = (privdata->vmebase >> 8 ) & 0xFF;
-    fa[3] = (am & 0x3F) << 2;
-            /* DFSR and XAM are zero */
+  /* do address relocation for FUN0 */
+  fa[0] = (privdata->vmebase >> 24) & 0xFF;
+  fa[1] = (privdata->vmebase >> 16) & 0xFF;
+  fa[2] = (privdata->vmebase >> 8) & 0xFF;
+  fa[3] = (am & 0x3F) << 2;
+  /* DFSR and XAM are zero */
 
-   vetar_csr_write (fa[0], privdata->cr_csr, FUN0ADER);
-   vetar_csr_write (fa[1], privdata->cr_csr, FUN0ADER + 4);
-   vetar_csr_write( fa[2], privdata->cr_csr, FUN0ADER + 8);
-   vetar_csr_write(fa[3], privdata->cr_csr, FUN0ADER + 12);
+  vetar_csr_write (fa[0], privdata->cr_csr, FUN0ADER);
+  vetar_csr_write (fa[1], privdata->cr_csr, FUN0ADER + 4);
+  vetar_csr_write (fa[2], privdata->cr_csr, FUN0ADER + 8);
+  vetar_csr_write (fa[3], privdata->cr_csr, FUN0ADER + 12);
 #endif
 
 #ifdef VETAR_MAP_CONTROLSPACE
-    /*do address relocation for FUN1, WB control mapping*/
-    //am=0x39; /* JAM This is what we actually see on the vmebus monitor for (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_BLT | XPC_VME_PTYPE_USER)*/
-    am = VME_A24_USER_MBLT; /*0x38*/
-    //am= (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_MBLT | XPC_VME_PTYPE_USER); /* 0x44*/
-    //am= (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_BLT | XPC_VME_PTYPE_USER); /* 0x42*/
-    //am= XPC_VME_A24_STD_USER;
+  /*do address relocation for FUN1, WB control mapping*/
+  //am=0x39; /* JAM This is what we actually see on the vmebus monitor for (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_BLT | XPC_VME_PTYPE_USER)*/
+  am = VME_A24_USER_MBLT; /*0x38*/
+  vetar_dbg(KERN_NOTICE "vetar_setup_csr_fa sets control space address modifier 0x%x\n", am);
 
-    vetar_msg(KERN_NOTICE "vetar_setup_csr_fa sets address modifier 0x%x\n",am);
+  fa[0] = (privdata->ctrl_vmebase >> 24) & 0xFF;
+  fa[1] = (privdata->ctrl_vmebase >> 16) & 0xFF;
+  fa[2] = (privdata->ctrl_vmebase >> 8) & 0xFF;
+  fa[3] = (am & 0x3F) << 2;
 
-     fa[0] = 0x00;
-     fa[1] = 0x00;
-     fa[2] = (privdata->vmebase >> 24 ) & 0xFF;
-     //fa[3] = (am & 0x3F) << 2;
-     fa[3] = am  << 2;
-
-//     fa[0] = (privdata->vmebase >> 24) & 0xFF;
-//     fa[1] = (privdata->vmebase >> 16) & 0xFF;
-//     fa[2] = (privdata->vmebase >> 8 ) & 0xFF;
-//     fa[3] = (am & 0x3F) << 2;
-
-     vetar_csr_write(fa[0], privdata->cr_csr, FUN1ADER);
-     vetar_csr_write(fa[1], privdata->cr_csr, FUN1ADER + 4);
-     vetar_csr_write(fa[2], privdata->cr_csr, FUN1ADER + 8);
-     vetar_csr_write(fa[3], privdata->cr_csr, FUN1ADER + 12);
+  vetar_csr_write (fa[0], privdata->cr_csr, FUN1ADER);
+  vetar_csr_write (fa[1], privdata->cr_csr, FUN1ADER + 4);
+  vetar_csr_write (fa[2], privdata->cr_csr, FUN1ADER + 8);
+  vetar_csr_write (fa[3], privdata->cr_csr, FUN1ADER + 12);
 
 #endif
 
-
-    /* enable module, hence make FUN0/FUN1 available */
-    vetar_csr_write(ENABLE_CORE, privdata->cr_csr, BIT_SET_REG);
-    msleep(100);
+  /* enable module, hence make FUN0/FUN1 available */
+  vetar_csr_write (ENABLE_CORE, privdata->cr_csr, BIT_SET_REG);
+  msleep (100);
 }
 
 
@@ -881,6 +878,14 @@ static int vetar_probe_vme(unsigned int index)
        * it will be translated on accessing the vmebus to the correct CS_CSR modifier 0x2f */
     /*am=VME_CR_CSR; this one will not work for xpc*/
 #ifdef VETAR_NEW_XPCLIB
+
+    vme_bridge = CesXpcBridge_GetByName("VME Bridge");
+    if (!vme_bridge) {
+        vetar_msg(KERN_ERR "** vetar_probe_vme could not access CesXpcBridge!\n");
+        vetar_cleanup_dev(privdata, index);
+        return -ENOSYS;
+    }
+
     privdata->cr_csr_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->configbase, privdata->configlen, am);
     if (privdata->cr_csr_phys == 0xffffffffffffffffULL) {
       vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at configbase 0x%x with length 0x%lx !\n",
@@ -982,6 +987,12 @@ vetar_setup_csr_fa(privdata);
 
     // map register space:
 #ifdef VETAR_NEW_XPCLIB
+
+#ifdef  VETAR_VTRANS
+  // in vtrans case, we have already premapped bus addresses
+  privdata->regs_phys =VETAR_VTRANS_BASE_A32 + privdata->vmebase;
+
+#else
     privdata->regs_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->vmebase, privdata->reglen, XPC_VME_A32_STD_USER);
     if (privdata->regs_phys == 0xffffffffffffffffULL) {
       vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at vmebase 0x%x with length 0x%lx !\n",
@@ -989,6 +1000,7 @@ vetar_setup_csr_fa(privdata);
         vetar_cleanup_dev(privdata);
         return -ENOMEM;
     }
+#endif   // VTRANS
 #else
     privdata->regs_phys = xpc_vme_master_map(privdata->vmebase, 0, privdata->reglen, XPC_VME_A32_STD_USER, 0);
     if (privdata->regs_phys == 0xffffffffULL) {
@@ -1030,13 +1042,21 @@ vetar_setup_csr_fa(privdata);
     vetar_msg(KERN_NOTICE "vetar_probe_vme maps with  controlspace address modifier 0x%x\n",am);
 
  #ifdef VETAR_NEW_XPCLIB
-     privdata->ctrl_regs_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->vmebase, privdata->reglen, am);
-     if (privdata->regs_phys == 0xffffffffffffffffULL) {
-       vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at vmebase 0x%x with length 0x%x !\n",
-                privdata->vmebase, privdata->reglen);
-         vetar_cleanup_dev(privdata);
+#ifdef  VETAR_VTRANS
+  // in vtrans case, we have already premapped bus addresses
+  privdata->ctrl_regs_phys =VETAR_VTRANS_BASE_A24 + privdata->ctrl_vmebase;
+#else
+
+
+  privdata->ctrl_regs_phys = CesXpcBridge_MasterMap64(vme_bridge, privdata->ctrl_vmebase, privdata->ctrl_reglen, am);
+  if (privdata->ctrl_regs_phys == 0xffffffffffffffffULL)
+  {
+    vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at vmebase 0x%x with length 0x%lx !\n",
+        privdata->ctrl_vmebase, privdata->ctrl_reglen);
+    vetar_cleanup_dev(privdata, index);
          return -ENOMEM;
      }
+#endif
  #else
      privdata->ctrl_regs_phys = xpc_vme_master_map(privdata->vmebase, 0, privdata->ctrl_reglen, am , 0);
      if (privdata->ctrl_regs_phys == 0xffffffffULL) {
@@ -1064,7 +1084,20 @@ vetar_setup_csr_fa(privdata);
 
 
 
+#ifdef VETAR_NEW_XPCLIB
+    vetar_msg("VETAR VME windows are mapped with CesXpcBridge lib.\n");
+#else
+    vetar_msg("VETAR VME windows are mapped with classic xpc lib.\n");
 #endif
+
+
+#ifdef VETAR_VTRANS
+    vetar_msg("wb data and control windows use VTRANS mapping\n");
+#else
+    vetar_msg("wb data and control windows use CesXpcBridge_MasterMap64.\n");
+#endif
+
+
 
     /* mutex for read/write access of mapped memory (JAM: redundant!)*/
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 37)
@@ -1254,6 +1287,7 @@ void vetar_exit(void)
 module_init(vetar_init);
 module_exit(vetar_exit);
 
-MODULE_AUTHOR("Cesar Prados, Joern Adamczewski-Musch, GSI");
-MODULE_DESCRIPTION("VETAR2 VME driver for CES xpc Linux");
+MODULE_AUTHOR(VETARAUTHORS);
+MODULE_DESCRIPTION(VETARDESC);
 MODULE_LICENSE("GPL");
+MODULE_VERSION(VETARVERSION);
