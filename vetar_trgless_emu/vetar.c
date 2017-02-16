@@ -251,15 +251,18 @@ struct vetar_privdata* get_privdata(struct file *filp)
  }
 #endif
 
-static void vetar_cleanup_dev(struct vetar_privdata *privdata) {
+static void vetar_cleanup_dev (struct vetar_privdata *privdata, unsigned int index)
+{
 
-  if(privdata==0) return;
-
-
-   wishbone_unregister(&privdata->wb);
-
-   /* disable the core */
-   vetar_csr_write(ENABLE_CORE, privdata->cr_csr, BIT_CLR_REG);
+  if (privdata == 0)
+    return;
+  
+  if(privdata->wb_is_registered!=0)
+	  wishbone_unregister (&privdata->wb);
+  /* disable the core */
+  
+  if(privdata->cr_csr)
+  	vetar_csr_write (ENABLE_CORE, privdata->cr_csr, BIT_CLR_REG);
 
 #ifdef VETAR_MAP_CONTROLSPACE
   if(privdata->ctrl_registers)
@@ -341,6 +344,7 @@ static void vetar_cleanup_dev(struct vetar_privdata *privdata) {
 
 
   kfree(privdata);
+  vetar_devices[index] = 0;
 
 }
 
@@ -856,7 +860,7 @@ static int vetar_probe_vme(unsigned int index)
     privdata = kzalloc(sizeof(struct vetar_privdata), GFP_KERNEL);
     if (privdata == NULL)
       {
-        vetar_cleanup_dev(privdata);
+        vetar_cleanup_dev(privdata, index);
         return -ENOMEM;
       }
   vetar_devices[index]=privdata;
@@ -890,7 +894,7 @@ static int vetar_probe_vme(unsigned int index)
     if (privdata->cr_csr_phys == 0xffffffffffffffffULL) {
       vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at configbase 0x%x with length 0x%lx !\n",
                privdata->configbase, privdata->configlen);
-        vetar_cleanup_dev(privdata);
+        vetar_cleanup_dev(privdata, index);
         return -ENOMEM;
     }
 #else
@@ -899,7 +903,7 @@ static int vetar_probe_vme(unsigned int index)
     if (privdata->cr_csr_phys == 0xffffffffULL) {
       vetar_msg(KERN_ERR "** vetar_probe_vme could not xpc_vme_master_map at configbase 0x%x with length 0x%lx !\n",
           privdata->configbase, privdata->configlen);
-        vetar_cleanup_dev(privdata);
+        vetar_cleanup_dev(privdata, index);
         return -ENOMEM;
     }
 #endif
@@ -910,7 +914,7 @@ static int vetar_probe_vme(unsigned int index)
     if (!privdata->cr_csr) {
       vetar_msg(KERN_ERR "** vetar_probe_vme could not ioremap_nocache at config physical address 0x%x with length 0x%lx !\n",
           (unsigned int) privdata->cr_csr_phys, privdata->configlen);
-        vetar_cleanup_dev(privdata);
+        vetar_cleanup_dev(privdata, index);
         return -ENOMEM;
      }
 
@@ -921,7 +925,7 @@ static int vetar_probe_vme(unsigned int index)
   //  may check for vendor id etc...
 if(!vetar_is_present(privdata))
   {
-    vetar_cleanup_dev(privdata);
+    vetar_cleanup_dev(privdata, index);
     return -EFAULT;
   }
 
@@ -949,7 +953,7 @@ snprintf(privdata->irqname, 64, VETARNAMEFMT,privdata->lun);
         if (privdata->regs_phys == 0xffffffffffffffffULL) {
           vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at vmebase 0x%x with length 0x%x !\n",
                    privdata->vmebase, privdata->reglen);
-            vetar_cleanup_dev(privdata);
+            vetar_cleanup_dev(privdata, index);
             return -ENOMEM;
         }
     #else
@@ -957,7 +961,7 @@ snprintf(privdata->irqname, 64, VETARNAMEFMT,privdata->lun);
         if (privdata->regs_phys == 0xffffffffULL) {
           vetar_msg(KERN_ERR "** vetar_probe_vme could not xpc_vme_master_map at vmebase 0x%x with length 0x%lx !\n",
               privdata->vmebase, privdata->reglen);
-            vetar_cleanup_dev(privdata);
+            vetar_cleanup_dev(privdata, index);
             return -ENOMEM;
         }
     #endif
@@ -968,7 +972,7 @@ snprintf(privdata->irqname, 64, VETARNAMEFMT,privdata->lun);
         if (!privdata->registers) {
           vetar_msg(KERN_ERR "** vetar_probe_vme could not ioremap_nocache at physical address 0x%x with length 0x%lx !\n",
               (unsigned int) privdata->regs_phys, privdata->reglen);
-            vetar_cleanup_dev(privdata);
+            vetar_cleanup_dev(privdata, index);
             return -ENOMEM;
          }
         mb();
@@ -997,7 +1001,7 @@ vetar_setup_csr_fa(privdata);
     if (privdata->regs_phys == 0xffffffffffffffffULL) {
       vetar_msg(KERN_ERR "** vetar_probe_vme could not CesXpcBridge_MasterMap64 at vmebase 0x%x with length 0x%lx !\n",
                privdata->vmebase, privdata->reglen);
-        vetar_cleanup_dev(privdata);
+        vetar_cleanup_dev(privdata, index);
         return -ENOMEM;
     }
 #endif   // VTRANS
@@ -1006,7 +1010,7 @@ vetar_setup_csr_fa(privdata);
     if (privdata->regs_phys == 0xffffffffULL) {
       vetar_msg(KERN_ERR "** vetar_probe_vme could not xpc_vme_master_map at vmebase 0x%x with length 0x%lx !\n",
           privdata->vmebase, privdata->reglen);
-        vetar_cleanup_dev(privdata);
+        vetar_cleanup_dev(privdata, index);
         return -ENOMEM;
     }
 #endif
@@ -1017,7 +1021,7 @@ vetar_setup_csr_fa(privdata);
     if (!privdata->registers) {
       vetar_msg(KERN_ERR "** vetar_probe_vme could not ioremap_nocache at physical address 0x%x with length 0x%lx !\n",
           (unsigned int) privdata->regs_phys, privdata->reglen);
-        vetar_cleanup_dev(privdata);
+        vetar_cleanup_dev(privdata, index);
         return -ENOMEM;
      }
     mb();
@@ -1082,6 +1086,7 @@ vetar_setup_csr_fa(privdata);
 
 
 
+#endif
 
 
 #ifdef VETAR_NEW_XPCLIB
@@ -1171,7 +1176,7 @@ vetar_setup_csr_fa(privdata);
         vetar_cleanup_dev(privdata);
         return err;
       }
-
+ privdata->wb_is_registered=1;
 
 
 
@@ -1269,7 +1274,7 @@ void vetar_exit(void)
   for(i=0;i<VETAR_MAX_DEVICES;++i)
   {
     if(vetar_devices[i]==0) continue;
-    vetar_cleanup_dev(vetar_devices[i]);
+    vetar_cleanup_dev(vetar_devices[i],i);
     vetar_devices[i]=0;
   }
   unregister_chrdev_region(vetar_devt, VETAR_MAX_DEVICES);

@@ -165,10 +165,11 @@ struct vetar_privdata {
     struct cdev cdev; /* char device struct */
     struct wishbone wb; /* wishbone structure*/
     struct mutex    wb_mutex; /* wishbone mutex*/
+    
     unsigned int wb_low_addr; /* wishbone access parameters*/
     unsigned int wb_width;    /* wishbone access parameters*/
     unsigned int wb_shift;    /* wishbone access parameters*/
-
+    unsigned char wb_is_registered; /* mark here if wishbone has been registered*/
     struct semaphore ramsem;      /* protects read/write access to mapped ram */
     uint32_t        configbase; /* base adress in vme address space*/
 	void __iomem *cr_csr;    /* kernel mapped address of board configuration/status space*/
@@ -212,7 +213,7 @@ ssize_t vetar_write(struct file *filp, const char __user * buf, size_t count,
 static int vetar_probe_vme(unsigned int index);
 
 /* cleanup device with private device data*/
-static void vetar_cleanup_dev(struct vetar_privdata *privdata);
+static void vetar_cleanup_dev(struct vetar_privdata *privdata, unsigned int index);
 
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
