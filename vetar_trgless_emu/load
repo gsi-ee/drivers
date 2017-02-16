@@ -5,6 +5,7 @@ modulex="vetar"
 device="vetar"
 wishmodule="wishbone_$KV"
 wishbone="wbm"
+wishboneslave="wbs"
 
 
 /sbin/insmod $wishmodule.ko
