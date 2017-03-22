@@ -199,6 +199,9 @@ QObject::connect (DAClineEdit_30, SIGNAL(returnPressed()),this,SLOT (DAC_changed
 QObject::connect (DAClineEdit_31, SIGNAL(returnPressed()),this,SLOT (DAC_changed()));
 QObject::connect (DAClineEdit_32, SIGNAL(returnPressed()),this,SLOT (DAC_changed()));
 
+QObject::connect (FanDial, SIGNAL(valueChanged(int)),this,SLOT (Fan_changed()));
+
+
 #ifdef USE_MBSPEX_LIB
 // open handle to driver file:
   fPexFD = mbspex_open (0);    // we restrict to board number 0 here
@@ -238,13 +241,15 @@ void PolandGui::ApplyBtn_clicked ()
 {
 //std::cout << "PolandGui::ApplyBtn_clicked()"<< std::endl;
 
-  char buffer[1024];
-  char description[32];
-  (QFW_DAC_tabWidget->currentIndex()==0) ? snprintf (description, 32, "QFW") : snprintf (description, 32, "DAC");
-  EvaluateSlave ();
 
+
+  EvaluateSlave ();
   if (!checkBox_AA->isChecked ())
   {
+    char buffer[1024];
+    char description[32];
+    (QFW_DAC_tabWidget->currentIndex()==0) ? snprintf (description, 32, "QFW") : snprintf (description, 32, "DAC");
+
     snprintf (buffer, 1024, "Really apply %s settings  to SFP %d Device %d?", description, fSFP, fSlave);
     if (QMessageBox::question (this, "Poland GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No,
         QMessageBox::Yes) != QMessageBox::Yes)
@@ -282,7 +287,17 @@ else if (QFW_DAC_tabWidget->currentIndex()==1)
 {
   ApplyDACSettings();
 }
-  
+else if (QFW_DAC_tabWidget->currentIndex()==2)
+{
+  ApplyFanSettings();
+}
+}
+
+
+void PolandGui::ApplyFanSettings()
+{
+  EvaluateFans(); // from gui to memory
+  SetFans ();
 }
 
 
@@ -313,9 +328,23 @@ void PolandGui::DAC_changed ()
   if(!checkBox_AA->isChecked()) return;
   EvaluateSlave ();
   POLAND_BROADCAST_ACTION(ApplyDACSettings());
-
-
 }
+
+void PolandGui::Fan_changed ()
+{
+  //std::cout << "PolandGui::Fan_changed()"<< std::endl;
+  if(!checkBox_AA->isChecked()) return;
+  EvaluateSlave ();
+  POLAND_BROADCAST_ACTION(ApplyFanSettings());
+
+  // for autoapply refresh fan readout immediately:
+  if(AssertNoBroadcast(false))
+  {
+    GetSensors();
+    RefreshSensors();
+  }
+}
+
 
 
 
@@ -536,7 +565,7 @@ void PolandGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "PolandGui::ClearOutputBtn_clicked()"<< std::endl;
 TextOutput->clear ();
-TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.70 of 21-March-2017 by JAM (j.adamczewski@gsi.de)");
+TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.80 of 22-March-2017 by JAM (j.adamczewski@gsi.de)");
 
 }
 
@@ -725,6 +754,8 @@ ErrorCounter8->display ((int) theSetup.fErrorCounter[7]);
 RefreshDACMode();
 RefreshDAC(); // probably this is already triggered by signal
 RefreshTrigger(); // show real trigger register as read back from actual device
+
+RefreshSensors();
 RefreshChains();
 RefreshStatus();
 }
@@ -749,6 +780,14 @@ theSetup.SetStepTime(TS3TimelineEdit->text ().toDouble (),2);
 theSetup.SetTriggerMaster (MasterTriggerBox->isChecked ());
 theSetup.SetFesaMode (FesaModeBox->isChecked ());
 theSetup.SetInternalTrigger (InternalTriggerBox->isChecked ());
+
+}
+
+
+void PolandGui::EvaluateFans()
+{
+  PolandSetup& theSetup = fSetup[fSFP].at (fSlave);
+  theSetup.SetFanSettings(FanDial->value());
 
 }
 
@@ -1105,13 +1144,114 @@ theSetup.fTriggerOn=ReadGosip (fSFP, fSlave, POLAND_REG_TRIG_ON);
 
 fTriggerOn=theSetup.fTriggerOn;
 // for the moment, we only refresh the general trigger flag from current frontend
-// TODO: broadcast read from all frontends and check with error
+
+
+GetSensors();
+
 
 //printf("GetRegisters for sfp:%d slave:%d DUMP \n",fSFP, fSlave);
 //theSetup.Dump();
 
 // TODO: error handling with exceptions?
 }
+
+
+
+  void PolandGui::RefreshSensors()
+  {
+
+    QString text;
+    QString pre;
+    fNumberBase==16? pre="0x" : pre="";
+    PolandSetup& theSetup = fSetup[fSFP].at (fSlave);
+
+    QString idtext=QString("POLAND unit id 0x %1, firmware version 0x%2").arg(qulonglong(theSetup.GetSensorId()),0,16).arg(theSetup.GetVersionId(),0,16);
+
+    IDLabel->setText(idtext);
+
+    TBaseLCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+    TLogicLCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+    TStretchLCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+    TPiggy1LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+    TPiggy2LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+    TPiggy3LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+    TPiggy4LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+
+    Fan1_LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+    Fan2_LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+    Fan3_LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+    Fan4_LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+
+    TBaseLCD->display (theSetup.GetTemp_Base());
+    TLogicLCD->display (theSetup.GetTemp_LogicUnit());
+    TStretchLCD->display (theSetup.GetTemp_Stretcher());
+    TPiggy1LCD->display (theSetup.GetTemp_Piggy_1());
+    TPiggy2LCD->display (theSetup.GetTemp_Piggy_2());
+    TPiggy3LCD->display (theSetup.GetTemp_Piggy_3());
+    TPiggy4LCD->display (theSetup.GetTemp_Piggy_4());
+
+    Fan1_LCD->display (theSetup.GetFanRPM(0));
+    Fan2_LCD->display (theSetup.GetFanRPM(1));
+    Fan3_LCD->display (theSetup.GetFanRPM(2));
+    Fan4_LCD->display (theSetup.GetFanRPM(3));
+
+    FanDial->setValue(theSetup.GetFanSettings());
+
+
+  }
+
+
+void PolandGui::GetSensors ()
+  {
+
+  if (!AssertNoBroadcast ())
+    return;
+
+  PolandSetup& theSetup = fSetup[fSFP].at (fSlave);
+
+  unsigned int version=ReadGosip (fSFP, fSlave, POLAND_REG_FIRMWARE_VERSION);
+  theSetup.SetVersionId(version);
+
+  unsigned long long id_lsb=ReadGosip (fSFP, fSlave, POLAND_REG_ID_LSB);
+  unsigned long long id_msb=ReadGosip (fSFP, fSlave, POLAND_REG_ID_MSB);
+  id_msb= id_msb & 0xFFFFFF; // mask out upper crc word
+  unsigned long long id= (id_msb << 32) + id_lsb;
+  theSetup.SetSensorId(id);
+  unsigned int address=POLAND_REG_TEMP_BASE;
+  for(int t=0; t<POLAND_TEMP_NUM;t+=2)
+  {
+    unsigned int data=ReadGosip (fSFP, fSlave, address);
+    theSetup.SetTempRaw(t, (data & 0xffff));
+    theSetup.SetTempRaw(t+1, (data>>16) & 0xffff);
+    address+=4;
+  }
+
+  address=POLAND_REG_FAN_BASE;
+  for(int t=0; t<POLAND_FAN_NUM;t+=2)
+  {
+    unsigned int data=ReadGosip (fSFP, fSlave, address);
+    theSetup.SetFanRaw(t, (data & 0xffff));
+    theSetup.SetFanRaw(t+1, (data>>16) & 0xffff);
+    address+=4;
+  }
+
+
+ // read back fan setter value:
+  theSetup.fFanSettings=ReadGosip (fSFP, fSlave, POLAND_REG_FAN_SET);
+
+
+
+
+  }
+
+  void PolandGui::SetFans ()
+  {
+    //std::cout << "PolandGui::SetFans()"<< std::endl;
+    PolandSetup& theSetup = fSetup[fSFP].at (fSlave);
+    WriteGosip (fSFP, fSlave, POLAND_REG_FAN_SET, theSetup.fFanSettings);
+
+  }
+
 
 
 

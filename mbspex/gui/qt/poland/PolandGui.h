@@ -62,6 +62,29 @@ struct pex_sfp_links{
 #define POLAND_REG_MASTERMODE           0x200048
 #define POLAND_REG_TRIG_ON              0x20004C
 
+
+#define POLAND_REG_FAN_BASE             0x200208
+#define POLAND_REG_TEMP_BASE             0x200210
+
+#define POLAND_REG_FAN_SET             0x2000dc
+
+// for id we use number of poland base t sensor  (?)
+#define POLAND_REG_ID_MSB 0x200228
+#define POLAND_REG_ID_LSB 0x20022c
+
+#define POLAND_REG_FIRMWARE_VERSION 0x200280
+
+#define POLAND_FAN_NUM              4
+#define POLAND_TEMP_NUM             7
+
+// conversion factor temperature sensors to degrees centigrade:
+#define POLAND_TEMP_TO_C 0.0625
+
+// conversion factor fan speed to rpm:
+#define POLAND_FAN_TO_RPM 30.0
+
+
+
 #define POLAND_ERRCOUNT_NUM             8
 #define POLAND_DAC_NUM                  32
 
@@ -91,6 +114,17 @@ public:
   unsigned int fDACOffset;
   unsigned int fDACDelta;
   unsigned int fDACCalibTime;
+
+  /** Sensor values*/
+
+  unsigned short fTemperature[POLAND_TEMP_NUM]; //< Sensor temperature
+  unsigned short fFanSpeed[POLAND_FAN_NUM]; //< Fan speed value
+  unsigned int fFanSettings; //< setter pwm value for fan motion
+
+
+  unsigned long long fSensorId; //< unique id of the temperature sensors
+  unsigned int fVersionId;      //< fpga software version tag
+
 
   PolandSetup () :
       fInternalTrigger (0), fTriggerMode (0), fQFWMode(0),fTriggerOn(0),fEventCounter (0), fDACMode(1),fDACAllValue(0), fDACStartValue(0),
@@ -175,10 +209,180 @@ public:
    }
 
 
+///////////////////////////////////////////////////////////////////////
+  // following was copied from the working go4 unpacker code JAM2017
+
+
+  /** Temperature sensor getter raw value*/
+         unsigned short GetTempRaw(unsigned int t)
+         {
+           if (t >= POLAND_TEMP_NUM)
+             return 0;
+           return fTemperature[t];
+         }
+
+  /** Temperature sensor setter raw value*/
+   void SetTempRaw(unsigned int t, unsigned short value)
+   {
+     if (t < POLAND_TEMP_NUM)
+       fTemperature[t] = value;
+   }
+
+   /** Temperature sensor temperature in degrees centigrade*/
+   double GetTempCelsius(unsigned int t)
+   {
+     if (t >= POLAND_TEMP_NUM)
+       return -1000.0;
+     unsigned short raw = GetTempRaw(t);
+     double sign = ((raw & 0x800) == 0x800) ? -1.0 : 1.0;
+     double rev = ((raw & 0x7FF) * POLAND_TEMP_TO_C) * sign;
+     return rev;
+   }
+
+   /* mapping of indices to sensor positions is done here: */
+  double GetTemp_Base ()
+  {
+    return GetTempCelsius (1);
+  }
+
+  double GetTemp_LogicUnit ()
+  {
+    return GetTempCelsius (0);
+  }
+
+  double GetTemp_Stretcher ()
+  {
+    return GetTempCelsius (2);
+  }
+
+  double GetTemp_Piggy_1 ()
+  {
+    return GetTempCelsius (3);
+  }
+
+  double GetTemp_Piggy_2 ()
+  {
+    return GetTempCelsius (4);
+  }
+  double GetTemp_Piggy_3 ()
+  {
+    return GetTempCelsius (5);
+  }
+
+  double GetTemp_Piggy_4 ()
+  {
+    return GetTempCelsius (6);
+  }
+  /* end mapping of indices to sensor positions*/
+
+
+
+   /** Temperature sensor getter raw value*/
+   unsigned short GetFanRaw(unsigned int f)
+   {
+     if (f >= POLAND_FAN_NUM)
+       return 0;
+     return fFanSpeed[f];
+   }
+
+   /** Temperature sensor setter raw value*/
+   void SetFanRaw(unsigned int f, unsigned short value)
+   {
+     if (f < POLAND_FAN_NUM)
+       fFanSpeed[f] = value;
+   }
+
+   /** Temperature sensor temperature in degrees centigrade*/
+   double GetFanRPM(unsigned int f)
+   {
+     if (f >= POLAND_FAN_NUM)
+       return -1.0;
+     unsigned short raw = GetFanRaw(f);
+     double rev = double(raw & 0xFFFF) * POLAND_FAN_TO_RPM;
+     return rev;
+   }
+
+
+   /** evaluate pwm on and off words from 16 bit target frequency value*/
+   void SetFanSettings(unsigned short settings)
+   {
+     unsigned short on=0, off=0;
+
+
+     if(settings==0xffff)
+     {
+         on=0;
+         off=0xffff;
+
+     }
+     else if (settings > 0x8000)
+     {
+       on= 2*(0xffff - settings +1);
+       off=0xffff;
+
+     }
+     else if (settings == 0x8000)
+     {
+       on=0xffff;
+       off=0xffff;
+     }
+     else
+     {
+       // below 0x8000
+       on=0xffff;
+       off=2*settings;
+     }
+
+     fFanSettings=on;
+     fFanSettings=(fFanSettings<<16) | off;
+   }
+
+   /** convert existing pwm register setup into a relative rpm setup*/
+   unsigned short GetFanSettings()
+    {
+     unsigned short rev=0;
+
+     unsigned short on=(fFanSettings>>16) & 0xffff;
+     unsigned short off= fFanSettings & 0xffff;
+
+     if(on==0 && off==0xffff)
+       rev=0xffff;
+     else if(on==0xffff && off==0xffff)
+       rev=0x8000;
+     else if (on==0xffff)
+     {
+       rev= off/2;
+     }
+     else if(off==0xffff)
+     {
+      rev = 0xffff - on/2  +1;
+     }
+     return rev;
+    }
+
+   void SetSensorId(unsigned long long id)
+   {
+     fSensorId=id;
+   }
+
+   unsigned long long GetSensorId(){return fSensorId;}
+
+
+   void SetVersionId(unsigned int id)
+         {
+           fVersionId=id;
+         }
+
+   unsigned int GetVersionId(){return fVersionId;}
+
+
+
+
 
   void Dump ()
   {
-    printf ("-----POLAND device status dump:");
+    printf ("-----POLAND device status dump:\n");
+    printf ("-----Unique id %ld , firmware version 0x%x:\n",GetSensorId(), GetVersionId());
     printf ("Trigger Master:%d, FESA:%d, Internal Trigger:%d Trigger Enabled:%d\n", IsTriggerMaster (), IsFesaMode (),
         IsInternalTrigger (), IsTriggerOn());
     printf ("QFW Mode:0x%x", fQFWMode);
@@ -206,6 +410,20 @@ public:
        {
           printf ("DAC[%d]=0x%x\n",k,fDACValue[k]);
        }
+
+
+    for (int k = 0; k < POLAND_TEMP_NUM; ++k)
+           {
+              printf ("Temperature[%d]=%f Celsius\n",k,GetTempCelsius(k));
+           }
+
+    for (int k = 0; k < POLAND_FAN_NUM; ++k)
+               {
+                  printf ("Fan speed [%d]=%f RPM\n",k,GetFanRPM(k));
+               }
+
+
+
 
   }
 
@@ -325,7 +543,12 @@ protected:
    void ApplyQFWSettings();
 
    /** helper function for broadcast: get shown set up and put it immediately to hardware.*/
-     void ApplyDACSettings();
+   void ApplyDACSettings();
+
+
+   /** helper function for broadcast: get shown set up and put it immediately to hardware.*/
+   void ApplyFanSettings();
+
 
   /** helper function for broadcast: rest current poland slave*/
   void ResetPoland ();
@@ -339,11 +562,18 @@ protected:
   /** copy values from gui to internal status object*/
   void EvaluateView ();
 
+  /** copy gui contents of sensors tab to setup structure*/
+   void EvaluateFans();
+
+
   /** copy sfp and slave from gui to variables*/
   void EvaluateSlave ();
 
   /** find out measurement mode from selected combobox entry.*/
   void EvaluateMode();
+
+
+
 
   /** update measurement range in combobox entry*/
     void RefreshMode();
@@ -356,6 +586,20 @@ protected:
 
   /** get register contents to status structure*/
   void GetRegisters ();
+
+
+
+  /** refresh view of temp/fan sensors from status structure*/
+   void RefreshSensors();
+
+
+  /** read temp sensors into status structure*/
+   void GetSensors ();
+
+   /** set fan speed value*/
+   void SetFans ();
+
+
 
 
   /** get registers and write them to config file*/
@@ -432,6 +676,7 @@ public slots:
 
   virtual void QFW_changed ();
   virtual void DAC_changed ();
+  virtual void Fan_changed ();
 
 };
 
