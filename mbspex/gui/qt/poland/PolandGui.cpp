@@ -565,7 +565,7 @@ void PolandGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "PolandGui::ClearOutputBtn_clicked()"<< std::endl;
 TextOutput->clear ();
-TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.80 of 22-March-2017 by JAM (j.adamczewski@gsi.de)");
+TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.81 of 23-March-2017 by JAM (j.adamczewski@gsi.de)");
 
 }
 
@@ -1165,9 +1165,8 @@ GetSensors();
     fNumberBase==16? pre="0x" : pre="";
     PolandSetup& theSetup = fSetup[fSFP].at (fSlave);
 
-    QString idtext=QString("POLAND unit id 0x %1, firmware version 0x%2").arg(qulonglong(theSetup.GetSensorId()),0,16).arg(theSetup.GetVersionId(),0,16);
-
-    IDLabel->setText(idtext);
+    QString idtext=QString("POLAND Firmware version: 0x%1 [YYMMDDVV]").arg(theSetup.GetVersionId(),0,16);
+    FirmwareLabel->setText(idtext);
 
     TBaseLCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
     TLogicLCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
@@ -1189,6 +1188,31 @@ GetSensors();
     TPiggy2LCD->display (theSetup.GetTemp_Piggy_2());
     TPiggy3LCD->display (theSetup.GetTemp_Piggy_3());
     TPiggy4LCD->display (theSetup.GetTemp_Piggy_4());
+
+    QString basetext=QString("0x%1").arg(qulonglong(theSetup.GetSensorId_Base()),0,16);
+    IdBaseLabel->setText(basetext);
+
+    QString logictext=QString("0x%1").arg(qulonglong(theSetup.GetSensorId_LogicUnit()),0,16);
+    IdLogicLabel->setText(logictext);
+
+
+    QString stretchtext=QString("0x%1").arg(qulonglong(theSetup.GetSensorId_Stretcher()),0,16);
+    IdStretchLabel->setText(stretchtext);
+
+    QString piggy1text=QString("0x%1").arg(qulonglong(theSetup.GetSensorId_Piggy_1()),0,16);
+    IdPiggy1Label->setText(piggy1text);
+    QString piggy2text=QString("0x%1").arg(qulonglong(theSetup.GetSensorId_Piggy_2()),0,16);
+    IdPiggy2Label->setText(piggy2text);
+
+    QString piggy3text=QString("0x%1").arg(qulonglong(theSetup.GetSensorId_Piggy_3()),0,16);
+    IdPiggy3Label->setText(piggy3text);
+
+    QString piggy4text=QString("0x%1").arg(qulonglong(theSetup.GetSensorId_Piggy_4()),0,16);
+    IdPiggy4Label->setText(piggy4text);
+
+
+
+
 
     Fan1_LCD->display (theSetup.GetFanRPM(0));
     Fan2_LCD->display (theSetup.GetFanRPM(1));
@@ -1212,11 +1236,14 @@ void PolandGui::GetSensors ()
   unsigned int version=ReadGosip (fSFP, fSlave, POLAND_REG_FIRMWARE_VERSION);
   theSetup.SetVersionId(version);
 
-  unsigned long long id_lsb=ReadGosip (fSFP, fSlave, POLAND_REG_ID_LSB);
-  unsigned long long id_msb=ReadGosip (fSFP, fSlave, POLAND_REG_ID_MSB);
-  id_msb= id_msb & 0xFFFFFF; // mask out upper crc word
-  unsigned long long id= (id_msb << 32) + id_lsb;
-  theSetup.SetSensorId(id);
+//  unsigned long long id_lsb=ReadGosip (fSFP, fSlave, POLAND_REG_ID_LSB);
+//  unsigned long long id_msb=ReadGosip (fSFP, fSlave, POLAND_REG_ID_MSB);
+//  id_msb= id_msb & 0xFFFFFF; // mask out upper crc word
+//  unsigned long long id= (id_msb << 32) + id_lsb;
+//  theSetup.SetSensorId(id);
+
+
+
   unsigned int address=POLAND_REG_TEMP_BASE;
   for(int t=0; t<POLAND_TEMP_NUM;t+=2)
   {
@@ -1225,6 +1252,18 @@ void PolandGui::GetSensors ()
     theSetup.SetTempRaw(t+1, (data>>16) & 0xffff);
     address+=4;
   }
+  address=POLAND_REG_ID_BASE;
+  for(int t=0; t<POLAND_TEMP_NUM;++t)
+  {
+    unsigned long long id_msb=ReadGosip (fSFP, fSlave, address);
+    unsigned long long id_lsb=ReadGosip (fSFP, fSlave, address+4);
+    id_msb= id_msb & 0xFFFFFF; // mask out upper crc word
+    unsigned long long id= (id_msb << 32) + id_lsb;
+    theSetup.SetSensorId(t,id);
+    address+=8;
+  }
+
+
 
   address=POLAND_REG_FAN_BASE;
   for(int t=0; t<POLAND_FAN_NUM;t+=2)
@@ -1234,6 +1273,8 @@ void PolandGui::GetSensors ()
     theSetup.SetFanRaw(t+1, (data>>16) & 0xffff);
     address+=4;
   }
+
+
 
 
  // read back fan setter value:

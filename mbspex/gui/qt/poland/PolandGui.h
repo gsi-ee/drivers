@@ -68,9 +68,10 @@ struct pex_sfp_links{
 
 #define POLAND_REG_FAN_SET             0x2000dc
 
-// for id we use number of poland base t sensor  (?)
-#define POLAND_REG_ID_MSB 0x200228
-#define POLAND_REG_ID_LSB 0x20022c
+#define POLAND_REG_ID_BASE 0x200220
+
+//#define POLAND_REG_ID_MSB 0x200228
+//#define POLAND_REG_ID_LSB 0x20022c
 
 #define POLAND_REG_FIRMWARE_VERSION 0x200280
 
@@ -122,13 +123,13 @@ public:
   unsigned int fFanSettings; //< setter pwm value for fan motion
 
 
-  unsigned long long fSensorId; //< unique id of the temperature sensors
+  unsigned long long fSensorId[POLAND_TEMP_NUM]; //< unique id of the temperature sensors
   unsigned int fVersionId;      //< fpga software version tag
 
 
   PolandSetup () :
       fInternalTrigger (0), fTriggerMode (0), fQFWMode(0),fTriggerOn(0),fEventCounter (0), fDACMode(1),fDACAllValue(0), fDACStartValue(0),
-      fDACOffset(0),fDACDelta(0),fDACCalibTime(0)
+      fDACOffset(0),fDACDelta(0),fDACCalibTime(0),fFanSettings(0),fVersionId(0)
   {
     for (int i = 0; i < POLAND_TS_NUM; ++i)
     {
@@ -143,7 +144,21 @@ public:
     {
       fDACValue[k] = 0;
     }
+    for (int k = 0; k < POLAND_TEMP_NUM; ++k)
+    {
+      fTemperature[k] = 0;
+      fSensorId[k] = 0;
+    }
+
+    for (int k = 0; k < POLAND_FAN_NUM; ++k)
+       {
+          fFanSpeed[k] = 0;
+       }
+
+
   }
+
+
 
   void SetTriggerMaster (bool on)
   {
@@ -235,7 +250,9 @@ public:
        return -1000.0;
      unsigned short raw = GetTempRaw(t);
      double sign = ((raw & 0x800) == 0x800) ? -1.0 : 1.0;
-     double rev = ((raw & 0x7FF) * POLAND_TEMP_TO_C) * sign;
+     raw=(raw & 0x7FF);
+     if(sign<0) raw =0x7FF-raw;
+     double rev = (raw* POLAND_TEMP_TO_C) * sign;
      return rev;
    }
 
@@ -273,8 +290,60 @@ public:
   {
     return GetTempCelsius (6);
   }
+
+
+
+
+
   /* end mapping of indices to sensor positions*/
 
+
+  void SetSensorId(unsigned int t, unsigned long long id)
+   {
+      if (t < POLAND_TEMP_NUM)
+          fSensorId[t]=id;
+   }
+
+   unsigned long long GetSensorId(unsigned int t)
+     {
+         if (t >= POLAND_TEMP_NUM)
+            return 0;
+       return fSensorId[t];
+   }
+
+   unsigned long long GetSensorId_Base ()
+    {
+      return GetSensorId(1);
+    }
+
+   unsigned long long GetSensorId_LogicUnit ()
+    {
+      return GetSensorId(0);
+    }
+
+   unsigned long long GetSensorId_Stretcher ()
+    {
+      return GetSensorId (2);
+    }
+
+   unsigned long long GetSensorId_Piggy_1 ()
+    {
+      return GetSensorId (3);
+    }
+
+   unsigned long long GetSensorId_Piggy_2 ()
+    {
+      return GetSensorId (4);
+    }
+   unsigned long long GetSensorId_Piggy_3 ()
+    {
+      return GetSensorId (5);
+    }
+
+   unsigned long long GetSensorId_Piggy_4 ()
+    {
+      return GetSensorId (6);
+    }
 
 
    /** Temperature sensor getter raw value*/
@@ -360,12 +429,7 @@ public:
      return rev;
     }
 
-   void SetSensorId(unsigned long long id)
-   {
-     fSensorId=id;
-   }
 
-   unsigned long long GetSensorId(){return fSensorId;}
 
 
    void SetVersionId(unsigned int id)
@@ -382,7 +446,7 @@ public:
   void Dump ()
   {
     printf ("-----POLAND device status dump:\n");
-    printf ("-----Unique id %ld , firmware version 0x%x:\n",GetSensorId(), GetVersionId());
+    printf ("-----Firmware version 0x%x:\n", GetVersionId());
     printf ("Trigger Master:%d, FESA:%d, Internal Trigger:%d Trigger Enabled:%d\n", IsTriggerMaster (), IsFesaMode (),
         IsInternalTrigger (), IsTriggerOn());
     printf ("QFW Mode:0x%x", fQFWMode);
@@ -415,6 +479,7 @@ public:
     for (int k = 0; k < POLAND_TEMP_NUM; ++k)
            {
               printf ("Temperature[%d]=%f Celsius\n",k,GetTempCelsius(k));
+              printf ("SensorID[%d]=0x%lx \n",k, GetSensorId(k));
            }
 
     for (int k = 0; k < POLAND_FAN_NUM; ++k)
