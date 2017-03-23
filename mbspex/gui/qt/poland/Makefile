@@ -61,7 +61,7 @@ ifneq ($(wildcard Makefile.qt),)
 endif
 	@rm -f Makefile.qt
 	@rm -rf .obj .moc
-	@echo "Clean Nyxor Gui done"
+	@echo "Clean Poland Gui done"
 endif
 
 	

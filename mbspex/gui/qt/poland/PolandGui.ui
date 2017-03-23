@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>965</width>
-    <height>923</height>
+    <width>930</width>
+    <height>743</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,8 +24,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>943</width>
-        <height>768</height>
+        <width>908</width>
+        <height>588</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_12">
@@ -44,13 +44,13 @@
           <enum>QFrame::Raised</enum>
          </property>
          <layout class="QGridLayout" name="gridLayout_3">
-          <item row="0" column="7">
+          <item row="0" column="6">
            <widget class="QPushButton" name="ResetSlaveButton">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reset logic on chosen POLAND device&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reset logic on selected slave device&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>Reset</string>
+             <string>Init Slave</string>
             </property>
            </widget>
           </item>
@@ -99,7 +99,7 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="8">
+          <item row="0" column="7">
            <widget class="QPushButton" name="ResetBoardButton">
             <property name="toolTip">
              <string>Reset sfp engine on pex board</string>
@@ -258,16 +258,6 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="6">
-           <widget class="QPushButton" name="OffsetButton">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Trigger offset measurement at channel SFP and slave DEV as set in spinbox&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string>ScanOffset</string>
-            </property>
-           </widget>
-          </item>
          </layout>
          <zorder>SFPspinBox</zorder>
          <zorder>SlavespinBox</zorder>
@@ -277,7 +267,6 @@
          <zorder>ResetSlaveButton</zorder>
          <zorder>ResetBoardButton</zorder>
          <zorder>groupBox</zorder>
-         <zorder>OffsetButton</zorder>
         </widget>
        </item>
        <item row="1" column="0">
@@ -290,8 +279,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>921</width>
-            <height>676</height>
+            <width>886</width>
+            <height>496</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_15">
@@ -668,7 +657,7 @@
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>754</width>
+                    <width>719</width>
                     <height>238</height>
                    </rect>
                   </property>
@@ -1480,7 +1469,7 @@
              </widget>
             </widget>
            </item>
-           <item row="0" column="1" rowspan="2">
+           <item row="0" column="1" rowspan="3">
             <layout class="QVBoxLayout" name="verticalLayout_5">
              <item>
               <widget class="QFrame" name="triggerframe">
@@ -1769,6 +1758,16 @@
                </layout>
               </widget>
              </item>
+             <item>
+              <widget class="QPushButton" name="OffsetButton">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Trigger offset measurement at channel SFP and slave DEV as set in spinbox&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>ScanOffset</string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </item>
            <item row="1" column="0">
@@ -1779,12 +1778,12 @@
              <property name="sizeHint" stdset="0">
               <size>
                <width>20</width>
-               <height>71</height>
+               <height>0</height>
               </size>
              </property>
             </spacer>
            </item>
-           <item row="2" column="0" colspan="2">
+           <item row="2" column="0">
             <widget class="QPlainTextEdit" name="TextOutput">
              <property name="font">
               <font>
@@ -1823,7 +1822,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>943</width>
+        <width>908</width>
         <height>123</height>
        </rect>
       </property>

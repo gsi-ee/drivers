@@ -112,6 +112,11 @@ PolandGui::PolandGui (QWidget* parent) :
   fEnv = QProcessEnvironment::systemEnvironment ();    // get PATH to gosipcmd from parent process
 #endif
 
+
+  fImplementationName="POLAND";
+  fVersionString="Welcome to POLAND GUI!\n\t v0.82 of 23-March-2017 by JAM (j.adamczewski@gsi.de)";
+
+
   fNumberBase=10;
 
  	memset( &fSFPChains, 0, sizeof(struct pex_sfp_links));
@@ -251,7 +256,7 @@ void PolandGui::ApplyBtn_clicked ()
     (QFW_DAC_tabWidget->currentIndex()==0) ? snprintf (description, 32, "QFW") : snprintf (description, 32, "DAC");
 
     snprintf (buffer, 1024, "Really apply %s settings  to SFP %d Device %d?", description, fSFP, fSlave);
-    if (QMessageBox::question (this, "Poland GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No,
+    if (QMessageBox::question (this, fImplementationName, QString (buffer), QMessageBox::Yes | QMessageBox::No,
         QMessageBox::Yes) != QMessageBox::Yes)
     {
       return;
@@ -391,7 +396,7 @@ AppendTextWindow (result);
 void PolandGui::ResetBoardBtn_clicked ()
 {
 //std::cout << "PolandGui::ResetBoardBtn_clicked"<< std::endl;
-if (QMessageBox::question (this, "Poland GUI", "Really Reset gosip on pex board?", QMessageBox::Yes | QMessageBox::No,
+if (QMessageBox::question (this, fImplementationName, "Really Reset gosip on pex board?", QMessageBox::Yes | QMessageBox::No,
     QMessageBox::Yes) != QMessageBox::Yes)
 {
   //std::cout <<"QMessageBox does not return yes! "<< std::endl;
@@ -421,8 +426,8 @@ void PolandGui::ResetSlaveBtn_clicked ()
 {
   char buffer[1024];
   EvaluateSlave ();
-  snprintf (buffer, 1024, "Really reset logic on POLAND device at SFP %d, Slave %d ?", fSFP, fSlave);
-  if (QMessageBox::question (this, "Poland GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
+  snprintf (buffer, 1024, "Really reset %s device at SFP %d, Slave %d ?", fImplementationName.toLatin1 ().constData () ,fSFP, fSlave);
+  if (QMessageBox::question (this, fImplementationName, QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
       != QMessageBox::Yes)
   {
     //std::cout <<"QMessageBox does not return yes! "<< std::endl;
@@ -446,7 +451,7 @@ void PolandGui::OffsetBtn_clicked ()
 char buffer[1024];
 EvaluateSlave ();
 snprintf (buffer, 1024, "Really scan offset for SFP chain %d, Slave %d ?", fSFP, fSlave);
-if (QMessageBox::question (this, "Poland GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
+if (QMessageBox::question (this, fImplementationName, QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
     != QMessageBox::Yes)
 {
   //std::cout <<"QMessageBox does not return yes! "<< std::endl;
@@ -484,7 +489,7 @@ void PolandGui::TriggerBtn_clicked ()
   char buffer[1024];
   fTriggerOn ?   snprintf (buffer, 1024, "Really disable Frontend Trigger acceptance?") : snprintf (buffer, 1024, "Really enable Frontend Trigger acceptance?");
 
-  if (QMessageBox::question (this, "Poland GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
+  if (QMessageBox::question (this, fImplementationName, QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
       != QMessageBox::Yes)
   {
     //std::cout <<"QMessageBox does not return yes! "<< std::endl;
@@ -565,7 +570,7 @@ void PolandGui::ClearOutputBtn_clicked ()
 {
 //std::cout << "PolandGui::ClearOutputBtn_clicked()"<< std::endl;
 TextOutput->clear ();
-TextOutput->setPlainText ("Welcome to POLAND GUI!\n\t v0.81 of 23-March-2017 by JAM (j.adamczewski@gsi.de)");
+TextOutput->setPlainText (fVersionString);
 
 }
 

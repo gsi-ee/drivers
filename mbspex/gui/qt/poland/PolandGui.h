@@ -525,6 +525,12 @@ protected:
   QProcessEnvironment fEnv;
 #endif
 
+  /** Name of the gui implementation*/
+  QString fImplementationName;
+
+  /** Versionstring to be printed on terminal*/
+  QString fVersionString;
+
   /** for saving of configuration, we now have setup structures for all slaves.
    * array index is sfp, vector index is febex in chain*/
   std::vector<PolandSetup> fSetup[4];
