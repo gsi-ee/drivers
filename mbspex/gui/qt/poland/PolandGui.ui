@@ -69,6 +69,12 @@
           </item>
           <item row="0" column="1">
            <widget class="QSpinBox" name="SlavespinBox">
+            <property name="minimumSize">
+             <size>
+              <width>80</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of device at sfp chain. -1 for broadcast setting.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
@@ -238,6 +244,12 @@
           </item>
           <item row="0" column="0">
            <widget class="QSpinBox" name="SFPspinBox">
+            <property name="minimumSize">
+             <size>
+              <width>80</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of sfp chain. -1 for broadcast to all chains&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
@@ -657,8 +669,8 @@
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>719</width>
-                    <height>238</height>
+                    <width>118</width>
+                    <height>236</height>
                    </rect>
                   </property>
                   <layout class="QVBoxLayout" name="verticalLayout">
@@ -1800,7 +1812,6 @@
         </widget>
        </item>
       </layout>
-      <zorder>FesaModeBox</zorder>
       <zorder>Settings_scrollArea</zorder>
       <zorder>configureframe</zorder>
      </widget>
