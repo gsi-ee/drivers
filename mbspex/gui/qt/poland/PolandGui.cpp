@@ -30,6 +30,7 @@ int oldslave = fSlave; \
 int oldchan = fSFP; \
 if (AssertNoBroadcast (false)) \
  { \
+   fBroadcasting=false;\
    X; \
  } \
  else if (fSFP < 0) \
@@ -114,7 +115,7 @@ PolandGui::PolandGui (QWidget* parent) :
 
 
   fImplementationName="POLAND";
-  fVersionString="Welcome to POLAND GUI!\n\t v0.82 of 23-March-2017 by JAM (j.adamczewski@gsi.de)";
+  fVersionString="Welcome to POLAND GUI!\n\t v0.83 of 24-March-2017 by JAM (j.adamczewski@gsi.de)";
 
 
   fNumberBase=10;
