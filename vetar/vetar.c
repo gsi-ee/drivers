@@ -2,6 +2,9 @@
 
 #ifdef VETAR_NEW_XPCLIB
 struct CesXpcBridge *vme_bridge;
+
+//struct CesVmeIrq *vme_irq;
+
 #endif
 
 /* this is for dynamic device numbering*/
@@ -247,7 +250,7 @@ static void vetar_irqhandler (int vec, int prio, void *arg)
 {
   // TODO: check if this works, do we have to clear interrupt source here explicitely?
   struct vetar_privdata *priv = arg;
-  vetar_dbg(KERN_NOTICE "** vetar_irqhandler with argument 0x%x !\n", (unsigned int) arg);
+  vetar_dbg(KERN_ERR "** vetar_irqhandler with argument 0x%x !\n", (unsigned int) arg);
   wishbone_slave_ready (&priv->wb);
   return;
 }
@@ -320,7 +323,11 @@ static void vetar_cleanup_dev (struct vetar_privdata *privdata, unsigned int ind
   }
 
 #ifdef VETAR_ENABLE_IRQ
+//#ifdef VETAR_NEW_XPCLIB
+//  CesVmeIrq_FreeIrq(vme_irq, privdata->vector);
+//#else
   xpc_vme_free_irq (privdata->vector);
+//#endif
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
@@ -561,8 +568,11 @@ void vetar_setup_csr_fa (struct vetar_privdata *privdata)
    }*/
 
 #ifdef VETAR_MAP_REGISTERS
-  am = VME_A32_USER_MBLT; /*0x08*/
-  vetar_dbg(KERN_NOTICE "vetar_setup_csr_fa sets register space address modifier 0x%x\n", am);
+  //am = VME_A32_USER_MBLT; /*0x08*/
+  // new for balloon:
+  am = VME_A32_USER_DATA_SCT; /*0x09*/
+
+  vetar_msg(KERN_NOTICE "vetar_setup_csr_fa sets register space address modifier 0x%x\n", am);
   /* do address relocation for FUN0 */
   fa[0] = (privdata->vmebase >> 24) & 0xFF;
   fa[1] = (privdata->vmebase >> 16) & 0xFF;
@@ -579,8 +589,11 @@ void vetar_setup_csr_fa (struct vetar_privdata *privdata)
 #ifdef VETAR_MAP_CONTROLSPACE
   /*do address relocation for FUN1, WB control mapping*/
   //am=0x39; /* JAM This is what we actually see on the vmebus monitor for (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_BLT | XPC_VME_PTYPE_USER)*/
-  am = VME_A24_USER_MBLT; /*0x38*/
-  vetar_dbg(KERN_NOTICE "vetar_setup_csr_fa sets control space address modifier 0x%x\n", am);
+  //am = VME_A24_USER_MBLT; /*0x38*/
+  // new for balloon release?!:
+  am = VME_A24_USER_DATA_SCT; /*0x39*/
+
+  vetar_msg(KERN_NOTICE "vetar_setup_csr_fa sets control space address modifier 0x%x\n", am);
 
   fa[0] = (privdata->ctrl_vmebase >> 24) & 0xFF;
   fa[1] = (privdata->ctrl_vmebase >> 16) & 0xFF;
@@ -693,18 +706,55 @@ static int vetar_probe_vme (unsigned int index)
     return -EFAULT;
   }
 
-  // setup interrupts:
-#ifdef VETAR_ENABLE_IRQ
-  snprintf (privdata->irqname, 64, VETARNAMEFMT, privdata->lun);
-  result = xpc_vme_request_irq (privdata->vector, (1 << privdata->level), vetar_irqhandler, privdata,
-      privdata->irqname);
-  if (result)
-  {
-    vetar_msg(KERN_ERR "** vetar_probe_vme could not register irq handler, result=%d \n",result);
-  }
-  vetar_msg(KERN_NOTICE "** vetar_probe_vme assigned irq vector=0x%x level=0x%x \n",privdata->vector, privdata->level);
-
-#endif
+//  // setup interrupts:
+//#ifdef VETAR_ENABLE_IRQ
+//  snprintf (privdata->irqname, 64, VETARNAMEFMT, privdata->lun);
+//
+//#ifdef VETAR_NEW_XPCLIB
+//
+//// TODO: put here interrupt claim with new xpc lib!
+//
+//vme_irq =CesXpcBridge_GetVmeIrq(vme_bridge);
+//if (!vme_irq) {
+//        vetar_msg(KERN_ERR "** vetar_probe_vme could not access CesVmeIrq!\n");
+//        vetar_cleanup_dev(privdata, index);
+//        return -ENOSYS;
+//    }
+////CesError CesVmeIrq_RequestIrq(struct CesVmeIrq *pThis, CesUint32 pVector, CesUint32 pLevelMask, void (*pHandler)(int pVector, int pPrio, void *arg), void *pArg, const char *pName);
+//
+//result=CesVmeIrq_RequestIrq(vme_irq, privdata->vector, (1 << privdata->level), vetar_irqhandler, privdata, privdata->irqname);
+//
+//if (result)
+// {
+//   vetar_msg(KERN_ERR "** vetar_probe_vme could not CesVmeIrq_RequestIrq handler, result=%d \n",result);
+// }
+//else
+// {
+//  vetar_msg(KERN_NOTICE "** vetar_probe_vme assigned irq vector=0x%x level=0x%x \n",privdata->vector, privdata->level);
+//  result= CesVmeIrq_EnableIrq(vme_irq, privdata->vector, (1 << privdata->level));
+//  if(result)
+//   {
+//     vetar_msg(KERN_ERR "** vetar_probe_vme could not CesVmeIrq_EnableIrq, result=%d \n",result);
+//   }
+// }
+//
+//
+//#else
+//
+//
+//
+//
+//  result = xpc_vme_request_irq (privdata->vector, (1 << privdata->level), vetar_irqhandler, privdata,
+//      privdata->irqname);
+//  if (result)
+//  {
+//    vetar_msg(KERN_ERR "** vetar_probe_vme could not register irq handler, result=%d \n",result);
+//  }
+//  vetar_msg(KERN_NOTICE "** vetar_probe_vme assigned irq vector=0x%x level=0x%x \n",privdata->vector, privdata->level);
+//
+//#endif
+//
+//#endif
 
   vetar_setup_csr_fa (privdata);
 
@@ -889,6 +939,8 @@ static int vetar_probe_vme (unsigned int index)
   privdata->wb.wops = &vetar_wb_ops;
   privdata->wb.parent = privdata->class_dev;
 
+  privdata->wb.mask = 0xffff; /*new  for msi */
+
   err = wishbone_register (&privdata->wb);
   if (err < 0)
   {
@@ -910,7 +962,64 @@ static int vetar_probe_vme (unsigned int index)
 #endif
 
 
+// setup interrupts:
+	#ifdef VETAR_ENABLE_IRQ
+	  snprintf (privdata->irqname, 64, VETARNAMEFMT, privdata->lun);
 
+//	#ifdef VETAR_NEW_XPCLIB
+//
+//	// TODO: put here interrupt claim with new xpc lib!
+//
+//	vme_irq =CesXpcBridge_GetVmeIrq(vme_bridge);
+//	if (!vme_irq) {
+//	        vetar_msg(KERN_ERR "** vetar_probe_vme could not access CesVmeIrq!\n");
+//	        vetar_cleanup_dev(privdata, index);
+//	        return -ENOSYS;
+//	    }
+//	//CesError CesVmeIrq_RequestIrq(struct CesVmeIrq *pThis, CesUint32 pVector, CesUint32 pLevelMask, void (*pHandler)(int pVector, int pPrio, void *arg), void *pArg, const char *pName);
+//
+//	result=CesVmeIrq_RequestIrq(vme_irq, privdata->vector, (1 << privdata->level), vetar_irqhandler, privdata, privdata->irqname);
+//
+//	if (result)
+//	 {
+//	   vetar_msg(KERN_ERR "** vetar_probe_vme could not CesVmeIrq_RequestIrq handler, result=%d \n",result);
+//	 }
+//	else
+//	 {
+//	  vetar_msg(KERN_NOTICE "** vetar_probe_vme assigned irq vector=0x%x level=0x%x \n",privdata->vector, privdata->level);
+//	  result= CesVmeIrq_EnableIrq(vme_irq, privdata->vector, (1 << privdata->level));
+//	  if(result)
+//	   {
+//	     vetar_msg(KERN_ERR "** vetar_probe_vme could not CesVmeIrq_EnableIrq, result=%d \n",result);
+//	   }
+//	 }
+//
+//
+//	#else
+//
+
+
+
+	  result = xpc_vme_request_irq (privdata->vector, (1 << privdata->level), vetar_irqhandler, privdata,
+	      privdata->irqname);
+	  if (result)
+	  {
+	    vetar_msg(KERN_ERR "** vetar_probe_vme could not register irq handler, result=%d \n",result);
+	  }
+	  vetar_msg(KERN_NOTICE "** vetar_probe_vme assigned irq vector=0x%x level=0x%x \n",privdata->vector, privdata->level);
+
+
+	  result=xpc_vme_enable_irq(privdata->vector, (1 << privdata->level));
+	  if (result)
+	       {
+	         vetar_msg(KERN_ERR "** vetar_probe_vme could not enable irq, result=%d \n",result);
+	       }
+	  vetar_msg(KERN_NOTICE "** vetar_probe_vme enabled irq vector=0x%x level=0x%x \n",privdata->vector, privdata->level);
+
+
+//	#endif
+
+	#endif
 
  privdata->init_done = 1;
  vetar_dbg(KERN_NOTICE "\nvetar_probe_vme has finished for index %d.\n", index);

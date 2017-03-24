@@ -78,7 +78,7 @@
 #define VME_A32_SUP_DATA_SCT 0x0d
 #define VME_CR_CSR 0x2f
 
-#define VETARVERSION     "1.1.1"
+#define VETARVERSION     "1.1.2"
 #define VETARAUTHORS     "Joern Adamczewski-Musch, Cesar Prados, GSI Darmstadt (www.gsi.de)"
 #define VETARDESC        "VETAR2 xpc/VME driver for CES RIO4 Linux"
 
@@ -121,6 +121,7 @@
 
 #ifdef VETAR_NEW_XPCLIB
 #include <ces/CesXpcBridge.h>
+//#include <ces/CesVmeIrq.h>
 #endif
 
 #include <ces/xpc_vme.h>

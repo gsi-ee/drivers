@@ -6,7 +6,8 @@
 #include <linux/cdev.h>
 
 #define WISHBONE_VERSION "0.1"
-#define WISHONE_MAX_DEVICES 32	/* default only */
+#define WISHBONE_MAX_DEVICES  32 /* default only */
+#define WISHBONE_MAX_MSI_OPEN 16 /* fixed */
 
 #define ETHERBONE_BCA	0x80
 #define ETHERBONE_RCA	0x40
@@ -24,7 +25,6 @@ typedef unsigned int wb_data_t;
 
 struct wishbone;
 struct etherbone_master_context;
-struct etherbone_slave_context;
 
 struct wishbone_request
 {
@@ -34,8 +34,15 @@ struct wishbone_request
 	unsigned char mask; /* byte-enable for write */
 };
 
+/* The wishbone driver guarantees that only one of these methods
+ * is active at a time. Furthermore, they are only ever called in
+ * a context where sleeping is safe.
+ */
 struct wishbone_operations 
 {
+	/* owning module */
+	struct module *owner;
+	
 	/* master operations */
 	void (*cycle)(struct wishbone *wb, int on);
 	void (*byteenable)(struct wishbone *wb, unsigned char mask);
@@ -44,7 +51,7 @@ struct wishbone_operations
 	wb_data_t (*read_cfg)(struct wishbone *wb, wb_addr_t addr);
 	
 	/* slave operations */
-	int (*request)(struct wishbone *wb, struct wishbone_request*); /* 1=record filled, 0=none pending */
+	int (*request)(struct wishbone *wb, struct wishbone_request*); /* 1=record filled, 0=none pending. re-enable non-MSI interrupts. */
 	void (*reply)(struct wishbone *wb, int err, wb_data_t dat);
 };
 
@@ -53,14 +60,31 @@ struct wishbone
 {
 	const struct wishbone_operations* wops;
 	struct device *parent;
+	wb_addr_t mask;
 	
-	/* internal (guarded by global mutex--register/unregister): */
+	/* internal (mutex guarding access to wops and msi_pending) */
+	struct mutex device_mutex;
+	/* internal (mutex held when MSIs are running) */
+	struct mutex msi_mutex;
+	
+	/* internal (an unack'd MSI has been handed to userspace; guarded by device_mutex) */
+	int msi_pending;
+	
+	/* internal (MSI mapping; guarded by msi_spinlock) */
+	spinlock_t msi_spinlock;
+	struct etherbone_master_context *msi_map[WISHBONE_MAX_MSI_OPEN];
+	
+	/* internal (character device; constant after creation) */
+	dev_t master_dev;
+	struct cdev master_cdev;
+	struct device *master_device;
+	
+	/* internal (workqueue to dispatch MSI to correct master device) */
+	struct work_struct msi_handler;
+	struct workqueue_struct *msi_workqueue;
+	
+	/* internal (registration of the device; guarded by global wishbone_mutex) */
 	struct list_head list;
-	dev_t master_dev, slave_dev;
-	struct cdev master_cdev, slave_cdev;
-	struct device *master_device, *slave_device;
-	struct mutex mutex; /* guards slave below */
-	struct etherbone_slave_context *slave;
 };
 
 #define RING_SIZE	8192
@@ -71,36 +95,25 @@ struct wishbone
 struct etherbone_master_context
 {
 	struct wishbone* wishbone;
-	struct fasync_struct *fasync;
-	struct mutex mutex;
-	wait_queue_head_t waitq;
 	
-	enum { header, idle, cycle } state;
+	/* Buffer status; access requires holding context_mutex */
+	struct mutex context_mutex;
+	enum { header, idle, cycle } state; /* cycle state <=> wishbone->device_mutex held */
 	unsigned int sent, processed, received; /* sent <= processed <= received */
-	
 	unsigned char buf[RING_SIZE]; /* Ring buffer */
-};
 
-struct etherbone_slave_context
-{
-	struct wishbone* wishbone;
+	/* MSI buffer data; access requires holding context_mutex */
+	unsigned char msi[sizeof(wb_data_t)*6];
+	int msi_unread;
+	int msi_pending;
+	wb_data_t msi_data;
+	
+	/* Wakeup polling threads */
 	struct fasync_struct *fasync;
-	struct mutex mutex;
 	wait_queue_head_t waitq;
 	
-	struct wishbone_request request;
-	int ready; /* if request is full */
-	unsigned int pending_err; /* unanswered operations */
-	
-	int negotiated;
-	wb_data_t data;
-
-	unsigned int rbuf_done; /* data remaining to be read: [rbuf_done, rbuf_end) */
-	unsigned int rbuf_end;
-	unsigned char rbuf[sizeof(wb_data_t)*6];
-	
-	unsigned int wbuf_fill; /* data remaining to be processed: [0, wbuf_full) */
-	unsigned char wbuf[sizeof(wb_data_t)*(255*2+3)];
+	/* MSI resource ownership; -1 = nothing; modification requires both context_mutex and msi_spinlock */
+	int msi_index;
 };
 
 #define RING_READ_LEN(ctx)   RING_POS((ctx)->processed - (ctx)->sent)
@@ -109,8 +122,9 @@ struct etherbone_slave_context
 #define RING_POINTER(ctx, idx) (&(ctx)->buf[RING_INDEX((ctx)->idx)])
 
 int wishbone_register(struct wishbone* wb);
-int wishbone_unregister(struct wishbone* wb);
+int wishbone_unregister(struct wishbone* wb); /* disable interrupts before calling this */
 
-void wishbone_slave_ready(struct wishbone* wb); /* called when device has data pending */
+/* call when device has data pending. disable non-MSI interrupt generation before calling. */
+void wishbone_slave_ready(struct wishbone* wb);
 
 #endif
