@@ -10,7 +10,7 @@ PEX_LIBA = $(PEX_LIBPATH)/libmbspex.a
 
 CFLAGS  = $(POSIX) -DLinux -Dunix -DV40 -DGSI_MBS -D$(GSI_CPU_ENDIAN) -D$(GSI_CPU_PLATFORM)
 
-
+GOSIPFRAME_INCPATH=../framework/
 
 
 ifneq ($(shell which qmake 2>/dev/null),)
@@ -46,7 +46,7 @@ nombspex: gui-nombspex
 
 gui:
 	@echo "Generating Makefile.qt"
-	$(QMAKE) FebexGui.pro -o Makefile.qt "DEFINES+=USE_MBSPEX_LIB" "QMAKE_LFLAGS += -Wl,-rpath,$(PEX_LIBPATH)" "INCLUDEPATH += $(PEX_INCPATH)" "LIBS+= -L $(PEX_LIBPATH) -lmbspex"
+	$(QMAKE) FebexGui.pro -o Makefile.qt "DEFINES+=USE_MBSPEX_LIB" "QMAKE_LFLAGS += -Wl,-rpath,$(PEX_LIBPATH)" "INCLUDEPATH += $(PEX_INCPATH) $(GOSIPFRAME_INCPATH)" "LIBS+= -L $(PEX_LIBPATH) -lmbspex"
 	+$(MAKE) -f Makefile.qt
 
 gui-nombspex: 
@@ -61,7 +61,7 @@ ifneq ($(wildcard Makefile.qt),)
 endif
 	@rm -f Makefile.qt
 	@rm -rf .obj .moc
-	@echo "Clean Nyxor Gui done"
+	@echo "Clean Febex Gui done"
 endif
 
 	

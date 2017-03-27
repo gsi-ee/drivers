@@ -1,6 +1,8 @@
 #ifndef BOARDSETUP_H
 #define BOARDSETUP_H
 
+#include "GosipGui.h"
+
 #include "ApfelDefines.h"
 
 #include "ApfelSetup.h"
@@ -16,7 +18,7 @@
 #include <QString>
 
 /** the setup of the apfel/febex slave board*/
-class BoardSetup
+class BoardSetup : public GosipSetup
 {
 
 private:

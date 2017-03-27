@@ -1,8 +1,9 @@
 #ifndef APFELGUI_H
 #define APFELGUI_H
 
-#include "ui_ApfelGui.h"
 
+#include "GosipGui.h"
+#include "ApfelWidget.h"
 
 #include <QProcess>
 #include <QString>
@@ -16,7 +17,7 @@
 
 
 
-class ApfelGui: public QWidget, public Ui::ApfelGui
+class ApfelGui: public GosipGui
 {
   friend class ApfelTest;
 
@@ -28,35 +29,22 @@ public:
   virtual ~ApfelGui ();
 
 
-  void AppendTextWindow (const QString& text);
-
-  void AppendTextWindow (const char* txt)
-         {
-           QString buf (txt);
-           AppendTextWindow (buf);
-         }
-
-  void FlushTextWindow();
-
-   /** singleton pointer to forward mbspex lib output, also useful without mbspex lib:*/
-  static ApfelGui* fInstance;
+virtual GosipSetup* CreateSetup()
+     {
+       return new BoardSetup();
+     }
+  
 
 protected:
 
-#if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
-  QProcessEnvironment fEnv;
-#endif
 
+  ApfelWidget* fApfelWidget;
 
-  /** for saving of configuration, we now have setup structures for all slaves.
-   * array index is sfp, vector index is febex in chain*/
-  std::vector<BoardSetup> fSetup[4];
 
   /** aggregate with all testing/sequencing functionality*/
   ApfelTest fBenchmark;
 
-  /** contains currently configured slaves at the chains.*/
-  struct pex_sfp_links fSFPChains;
+  
 
   /** timer for periodic test pulsing*/
   QTimer* fPulserTimer;
@@ -123,31 +111,7 @@ protected:
 
   unsigned fPulserProgressCounter;
 
-  /** text debug mode*/
-  bool fDebug;
-
-  /** save configuration file instead of setting device values*/
-  bool fSaveConfig;
-
-  /** this flag protects some slots during broadcast write mode*/
-  bool fBroadcasting;
-
-  /** base for number display (10 or 16)*/
-  int fNumberBase;
-
-  /** index of sfp channel,   -1 for broadcast */
-  int fSFP;
-  /** index of slave device , -1 for broadcast*/
-  int fSlave;
-
-  /** remember sfp channel to recover after broadcast*/
-  int fSFPSave;
-
-  /** remember slave channel to recover after broadcast*/
-  int fSlaveSave;
-
-  /** configuration output file handle*/
-  FILE* fConfigFile;
+ 
 
   /** test data output file handle*/
   FILE* fTestFile;
@@ -169,17 +133,6 @@ protected:
   int fPlotMaxAdc;
 
 
-#ifdef USE_MBSPEX_LIB
-
-
-
-  /** file descriptor on mbspex device*/
-  int fPexFD;
-
-  /** speed down mbspex io with this function from Nik*/
-  void I2c_sleep ();
-
-#endif
 
   /** update register display*/
   void RefreshView ();
@@ -203,20 +156,12 @@ protected:
    void RefreshSampleMaxima(int febexchannel);
 
 
-//  /** update febex device index display*/
-  void RefreshStatus ();
+   /** apply configuration from file*/
+   void ApplyFileConfig(int );
 
-  /** update initilized chain display and slave limit*/
-  void RefreshChains();
-
- /** helper function for broadcast: get shown set up and put it immediately to hardware.*/
-  void ApplyGUISettings();
 
   /** copy values from gui to internal status object*/
   void EvaluateView ();
-
-  /** copy sfp and slave from gui to variables*/
-  void EvaluateSlave ();
 
 
   /** put io switch settings for apfel chip from gui into setup structure*/
@@ -225,18 +170,14 @@ protected:
   /** put test pulser settings for apfel chip from gui into setup structure*/
   void EvaluatePulser(int apfel);
 
-
-
   /** decode pulser interval from frequency box index*/
   int EvaluatePulserInterval(int index);
-
 
   /** put gain settings for apfel chip and channel from gui into setup structure*/
   void EvaluateGain(int apfel, int channel);
 
   /** set register from status structure*/
   void SetRegisters ();
-
 
   /** apply test pulser settings for apfel chip from setup structure to device*/
   void SetPulser(uint8_t apfel);
@@ -261,30 +202,14 @@ protected:
 
 
 
-  /** get registers and write them to config file*/
-  void SaveRegisters();
+  /** entry point when save button is clicked*/
+  void SaveConfig();
 
+  /** the actual saving with requester menu*/
+  void DoSaveConfig(const char* name=0);
 
   /** save results of benchmark tests*/
   void SaveTestResults();
-
-
-  /** retrieve slave configuration from driver*/
-  void GetSFPChainSetup();
-
-
-  /** Read from address from sfp and slave, returns value*/
-  int ReadGosip (int sfp, int slave, int address);
-
-  /** Write value to address from sfp and slave*/
-  int WriteGosip (int sfp, int slave, int address, int value);
-
-  /** Save value to currently open *.gos configuration file*/
-  int SaveGosip(int sfp, int slave, int address, int value);
-
-  /** execute (gosip) command in shell. Return value is output of command*/
-  QString ExecuteGosipCmd (QString& command,  int timeout=5000);
-
 
   /** Map index of apfel chip on board to addressing id number*/
   uint8_t GetApfelId(int sfp, int slave, uint8_t apfelchip);
@@ -344,7 +269,7 @@ protected:
 
 
    /** Initialize febex after power up*/
-   void InitApfel();
+   void InitSlave();
 
 
   /** helper function that either does enable i2c on board, or writes such commands to .gos file*/
@@ -353,6 +278,11 @@ protected:
   /** helper function that either does disable i2c on board, or writes such commands to .gos file*/
   void DisableI2C ();
 
+
+  /** dump current ADC values of currently set FEBEX*/
+  void DumpSlave();
+
+
   /** dump current ADC values of currently set APFEL*/
   void DumpADCs();
 
@@ -360,15 +290,7 @@ protected:
   /** *dump dac2 channel calibrations */
   void DumpCalibrations();
 
-  /** open configuration file for writing*/
-  int OpenConfigFile(const QString& fname);
-
-  /** guess what...*/
-  int CloseConfigFile();
-
-  /** append text to currently open config file*/
-  int WriteConfigFile(const QString& text);
-
+ 
 
   /** open test characteristics file for writing*/
    int OpenTestFile(const QString& fname);
@@ -517,34 +439,10 @@ protected:
     void EvaluateBaseline(int channel);
 
 
-  void DebugTextWindow (const char*txt)
-  {
-      AppendTextWindow (txt);
-  }
-  void DebugTextWindow (const QString& text)
-  {
-    if (fDebug)
-      AppendTextWindow (text);
-  }
-  /** Check if broadast mode is not set. If set, returns false and prints error message if verbose is true*/
-  bool AssertNoBroadcast (bool verbose=true);
-
-
-  /** Check if chain for given sfp and slave index is configured correctly*/
-  bool AssertChainConfigured (bool verbose=true);
-
+ 
 
 public slots:
-  virtual void ShowBtn_clicked();
-  virtual void ApplyBtn_clicked ();
-  virtual void InitChainBtn_clicked ();
-  virtual void ResetBoardBtn_clicked ();
-  virtual void ResetSlaveBtn_clicked ();
-  virtual void BroadcastBtn_clicked (bool checked);
-  virtual void DumpBtn_clicked ();
-  virtual void ClearOutputBtn_clicked ();
-  virtual void ConfigBtn_clicked ();
-  virtual void SaveConfigBtn_clicked (const char* selectfile=0);
+  
   virtual void AutoAdjustBtn_clicked ();
   virtual void CalibrateADCBtn_clicked();
   virtual void CalibrateResetBtn_clicked();
@@ -559,9 +457,7 @@ public slots:
   virtual void PeakFinderBtn_clicked();
 
 
-  virtual void DebugBox_changed (int on);
-  virtual void HexBox_changed(int on);
-  virtual void Slave_changed(int val);
+ 
   virtual void DAC_spinBox_all_changed(int val);
   virtual void Any_spinBox00_changed(int val);
   virtual void Any_spinBox01_changed(int val);
@@ -716,54 +612,6 @@ public slots:
   virtual void RefreshBaselines();
 
 };
-
-
-/** JAM The following nice define handles all explicit broadcast actions depending on the currently set slave*/
-#define APFEL_BROADCAST_ACTION(X) \
-fBroadcasting=true;  \
-int oldslave = fSlave; \
-int oldchan = fSFP; \
-if (AssertNoBroadcast (false)) \
- { \
-   X; \
- } \
- else if (fSFP < 0) \
- { \
-   for (int sfp = 0; sfp < 4; ++sfp) \
-   {\
-     if (fSFPChains.numslaves[sfp] == 0) \
-       continue; \
-     fSFP = sfp; \
-     if (fSlave < 0) \
-     { \
-       for (int feb = 0; feb < fSFPChains.numslaves[sfp]; ++feb) \
-       { \
-         fSlave = feb; \
-         X; \
-       } \
-     } \
-     else \
-     { \
-       X;\
-     }\
-   }\
- } \
- else if (fSlave< 0) \
- { \
-   for (int feb = 0; feb < fSFPChains.numslaves[fSFP]; ++feb) \
-       { \
-         fSlave = feb; \
-         X; \
-       } \
- } \
- else \
- { \
-   AppendTextWindow ("--- NEVER COME HERE: undefined broadcast mode ---:"); \
- } \
-fSlave= oldslave;\
-fSFP= oldchan; \
-fBroadcasting=false;
-
 
 
 #endif

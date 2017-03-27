@@ -5,7 +5,7 @@
 ////////////////////////////////////////////////
 //////// the whole slave board setup:
 
-BoardSetup::BoardSetup () :
+BoardSetup::BoardSetup () : GosipSetup(),
     fUseApfel (true), fHighGainOutput (true), fStretcher (false), fRegularMapping (true), fCurrent (0.0)
 {
 

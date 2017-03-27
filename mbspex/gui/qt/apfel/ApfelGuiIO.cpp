@@ -45,7 +45,7 @@ void ApfelGui::DisableI2C ()
 #endif
 }
 
-void ApfelGui::InitApfel ()
+void ApfelGui::InitSlave ()
 {
   printm ("Resetting APFEL for SFP %d Slave %d...", fSFP, fSlave);
   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, APFEL_RESET);
@@ -152,14 +152,14 @@ void ApfelGui::SetRegisters ()
   QApplication::setOverrideCursor (Qt::WaitCursor);
   EnableI2C ();    // must be done since mbs setup program may shut i2c off at the end
 
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);    // check for indices is done in broadcast action macro that calls this function
+   theSetup_GET_FOR_SLAVE(BoardSetup);    // check for indices is done in broadcast action macro that calls this function
 
   SetIOSwitch ();
   for (uint8_t apf = 0; apf < APFEL_NUMCHIPS; ++apf)
   {
     for (uint8_t dac = 0; dac < APFEL_NUMDACS; ++dac)
     {
-      int val = theSetup.GetDACValue (apf, dac);
+      int val = theSetup->GetDACValue (apf, dac);
       WriteDAC_ApfelI2c (apf, dac, val);
       //std::cout << "SetRegisters DAC(" << apf <<"," << dac << ") val=" <<  val << std::endl;
     }
@@ -167,7 +167,7 @@ void ApfelGui::SetRegisters ()
     for (uint8_t ch = 0; ch < APFEL_NUMCHANS; ++ch)
     {
       // here set gain factors for each channel:
-      SetGain (apf, ch, theSetup.GetLowGain (apf, ch));
+      SetGain (apf, ch, theSetup->GetLowGain (apf, ch));
 
     }
 
@@ -182,40 +182,40 @@ void ApfelGui::SetRegisters ()
 
 void ApfelGui::SetIOSwitch ()
 {
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
-  //std::cout << "SetIOSwitch: apfel=" << theSetup.IsApfelInUse() <<", highgain=" << theSetup.IsHighGain() << ", stretcher="<< theSetup.IsStretcherInUse()<<")"<< std::endl;
-  SetSwitches (theSetup.IsApfelInUse (), theSetup.IsHighGain (), theSetup.IsStretcherInUse ());
+  theSetup_GET_FOR_SLAVE(BoardSetup);
+  //std::cout << "SetIOSwitch: apfel=" << theSetup->IsApfelInUse() <<", highgain=" << theSetup->IsHighGain() << ", stretcher="<< theSetup->IsStretcherInUse()<<")"<< std::endl;
+  SetSwitches (theSetup->IsApfelInUse (), theSetup->IsHighGain (), theSetup->IsStretcherInUse ());
 
 }
 
 void ApfelGui::SetPulser (uint8_t apf)
 {
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
   // here set test pulser properties. we must use both channels simultaneously:
   uint8_t amp1 = 0, amp2 = 0;
-  bool on_1 = theSetup.GetTestPulseEnable (apf, 0);
-  bool on_2 = theSetup.GetTestPulseEnable (apf, 1);
+  bool on_1 = theSetup->GetTestPulseEnable (apf, 0);
+  bool on_2 = theSetup->GetTestPulseEnable (apf, 1);
   bool on_any = on_1 || on_2;
 
   if (on_1)
-    amp1 = theSetup.GetTestPulseAmplitude (apf, 0);
+    amp1 = theSetup->GetTestPulseAmplitude (apf, 0);
   if (on_2)
-    amp2 = theSetup.GetTestPulseAmplitude (apf, 1);
-  SetTestPulse (apf, on_any, amp1, amp2, theSetup.GetTestPulsePositive (apf));
+    amp2 = theSetup->GetTestPulseAmplitude (apf, 1);
+  SetTestPulse (apf, on_any, amp1, amp2, theSetup->GetTestPulsePositive (apf));
 }
 
 void ApfelGui::SetBroadcastPulser ()
 {
-  bool on = PulserCheckBox_all->isChecked ();
-  uint8_t amp = PulserAmpSpinBox_all->value ();
-  bool positive = (ApfelTestPolarityBox_all->currentIndex () == 0);
+  bool on = fApfelWidget->PulserCheckBox_all->isChecked ();
+  uint8_t amp = fApfelWidget->PulserAmpSpinBox_all->value ();
+  bool positive = (fApfelWidget->ApfelTestPolarityBox_all->currentIndex () == 0);
   SetTestPulse (0xFF, on, amp, amp, positive);
 
 }
 
 void ApfelGui::GetDACs (int chip)
 {
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
 
   for (int dac = 0; dac < APFEL_NUMDACS; ++dac)
   {
@@ -228,7 +228,7 @@ void ApfelGui::GetDACs (int chip)
       AppendTextWindow ("GetDacs has error!");
       return;    // TODO error message
     }
-    theSetup.SetDACValue (chip, dac, val);
+    theSetup->SetDACValue (chip, dac, val);
   }
 }
 
@@ -256,33 +256,6 @@ void ApfelGui::GetRegisters ()
 }
 
 
-void ApfelGui::GetSFPChainSetup ()
-{
-//  std::cout<<"GetSFPChainSetup... "<< std::endl;
-#ifdef USE_MBSPEX_LIB
-  // broadcast mode: find out number of slaves and loop over all registered slaves
-  mbspex_get_configured_slaves(fPexFD, &fSFPChains);
-#else
-  // without mbspex lib, we just assume 4 devices for each chain:
-  for (int sfp = 0; sfp < 4; ++sfp)
-  {
-    fSFPChains.numslaves[sfp] = 4;
-  }
-#endif
-
-  // dynamically increase array of setup structures:
-  for (int sfp = 0; sfp < 4; ++sfp)
-  {
-    while (fSetup[sfp].size () < fSFPChains.numslaves[sfp])
-    {
-      fSetup[sfp].push_back (BoardSetup ());
-      // TODO: evaluate real mapping of apfel chips here!
-
-      //std::cout<<"GetSFPChainSetup increased setup at sfp "<<sfp<<" to "<<fSetup[sfp].size()<<" slaves." << std::endl;
-    }
-  }
-
-}
 
 int ApfelGui::ReadDAC_ApfelI2c (uint8_t apfelchip, uint8_t dac)
 {
@@ -611,120 +584,3 @@ void ApfelGui::ReadToellnerPower(double& u, double& i)
 
 }
 
-int ApfelGui::ReadGosip (int sfp, int slave, int address)
-{
-  int value = -1;
-#ifdef USE_MBSPEX_LIB
-  int rev = 0;
-  long int dat = 0;
-  //QApplication::setOverrideCursor (Qt::WaitCursor);
-  rev = mbspex_slave_rd (fPexFD, sfp, slave, address, &dat);
-  I2c_sleep ();
-  value = dat;
-  if (fDebug)
-  {
-    char buffer[1024];
-    if (rev == 0)
-    {
-      snprintf (buffer, 1024, "mbspex_slave_rd(%d,%d 0x%x) -> 0x%x", sfp, slave, address, value);
-    }
-    else
-    {
-      snprintf (buffer, 1024, "ERROR %d from mbspex_slave_rd(%d,%d 0x%x)", rev, sfp, slave, address);
-    }
-    QString msg (buffer);
-    AppendTextWindow (msg);
-
-  }
-  //QApplication::restoreOverrideCursor ();
-#else
-  char buffer[1024];
-//snprintf(buffer,1024,"/daq/usr/adamczew/workspace/drivers/mbspex/bin/gosipcmd -r -- %d %d 0x%x",sfp, slave, address);
-  snprintf (buffer, 1024, "gosipcmd -r -- %d %d 0x%x", sfp, slave, address);
-  QString com (buffer);
-  QString result = ExecuteGosipCmd (com);
-  if (result != "ERROR")
-  {
-    QString pre, valtext;
-    fNumberBase == 16 ? pre = "0x" : pre = "";
-    //DebugTextWindow (result);
-    value = result.toInt (0, 0);
-    valtext = pre + valtext.setNum (value, fNumberBase);
-    DebugTextWindow (valtext);
-
-  }
-  else
-  {
-
-    value = -1;
-  }
-#endif
-
-  return value;
-}
-
-
-
-
-int ApfelGui::WriteGosip (int sfp, int slave, int address, int value)
-{
-  int rev = 0;
-//std::cout << "#WriteGosip" << std::endl;
-  if (fSaveConfig)
-    return SaveGosip (sfp, slave, address, value);
-
-#ifdef USE_MBSPEX_LIB
-  //QApplication::setOverrideCursor (Qt::WaitCursor);
-  rev = mbspex_slave_wr (fPexFD, sfp, slave, address, value);
-  I2c_sleep ();
-  if (fDebug)
-  {
-    char buffer[1024];
-    snprintf (buffer, 1024, "mbspex_slave_wr(%d,%d 0x%x 0x%x)", sfp, slave, address, value);
-    QString msg (buffer);
-    AppendTextWindow (msg);
-  }
-  //QApplication::restoreOverrideCursor ();
-#else
-  char buffer[1024];
-  snprintf (buffer, 1024, "gosipcmd -w -- %d %d 0x%x 0x%x", sfp, slave, address, value);
-  QString com (buffer);
-  QString result = ExecuteGosipCmd (com);
-  if (result == "ERROR")
-    rev = -1;
-#endif
-
-  return rev;
-}
-
-QString ApfelGui::ExecuteGosipCmd (QString& com, int timeout)
-{
-// interface to shell gosipcmd
-// TODO optionally some remote call via ssh for Go4 gui?
-  QString result;
-  QProcess proc;
-  DebugTextWindow (com);
-#if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
-  proc.setProcessEnvironment (fEnv);
-#endif
-  proc.setReadChannel (QProcess::StandardOutput);
-  QApplication::setOverrideCursor (Qt::WaitCursor);
-
-  proc.start (com);
-// if(proc.waitForReadyRead (1000)) // will give termination warnings after leaving this function
-  if (proc.waitForFinished (timeout))    // after process is finished we can still read stdio buffer
-  {
-    // read back stdout of proc here
-    result = proc.readAll ();
-  }
-  else
-  {
-    std::stringstream buf;
-    buf << "! Warning: ExecuteGosipCmd not finished after " << timeout / 1000 << " s timeout !!!" << std::endl;
-    std::cout << " ApfelGui: " << buf.str ().c_str ();
-    AppendTextWindow (buf.str ().c_str ());
-    result = "ERROR";
-  }
-  QApplication::restoreOverrideCursor ();
-  return result;
-}

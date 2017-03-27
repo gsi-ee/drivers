@@ -1,0 +1,2102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>FebexWidget</class>
+ <widget class="QWidget" name="FebexWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>787</width>
+    <height>410</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>FEBEX Widget</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_2">
+   <item row="0" column="0">
+    <widget class="QTabWidget" name="FebexTabs">
+     <property name="currentIndex">
+      <number>1</number>
+     </property>
+     <widget class="QWidget" name="tab">
+      <attribute name="title">
+       <string>Basics</string>
+      </attribute>
+     </widget>
+     <widget class="QWidget" name="tab_2">
+      <attribute name="title">
+       <string>Baselines TUM</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="0" colspan="2">
+        <widget class="QFrame" name="TumBaseFrame">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>64</height>
+          </size>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QFrame" name="DAC_all_frame">
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <item>
+              <widget class="QCheckBox" name="checkBox_all">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked all DAC Values will changed when DAC-All spinbox is changed &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>All</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSlider" name="DAC_Slider_all">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="maximum">
+                <number>1000</number>
+               </property>
+               <property name="singleStep">
+                <number>10</number>
+               </property>
+               <property name="value">
+                <number>500</number>
+               </property>
+               <property name="sliderPosition">
+                <number>500</number>
+               </property>
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="DAC_spinBox_all">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="toolTip">
+                <string>DAC_Value_All (per mille)</string>
+               </property>
+               <property name="maximum">
+                <number>1000</number>
+               </property>
+               <property name="singleStep">
+                <number>1</number>
+               </property>
+               <property name="value">
+                <number>500</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>176</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QFrame" name="AutoAdjust_frame">
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_4">
+             <item>
+              <widget class="QPushButton" name="AutoAdjustButton">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="toolTip">
+                <string>Click to start automatic baseline adjustment of selected channels</string>
+               </property>
+               <property name="text">
+                <string>Set Baselines</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="ADCAdjustValue">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="toolTip">
+                <string>ADC Value for baseline auto adjustment </string>
+               </property>
+               <property name="readOnly">
+                <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="Baseline_Box_all">
+               <property name="toolTip">
+                <string>toggles all channels on or off for automatic baseline adjustment</string>
+               </property>
+               <property name="text">
+                <string>Select all</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_00">
+           <item>
+            <widget class="QLabel" name="label_0">
+             <property name="text">
+              <string>00</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="DAC_Slider_00">
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+             <property name="sliderPosition">
+              <number>500</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="DAC_spinBox_00">
+             <property name="toolTip">
+              <string>DAC_Value_00 (per mille)</string>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="ADC_Value_00">
+             <property name="toolTip">
+              <string>ADC_Value_00</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="Baseline_Box_00">
+             <property name="toolTip">
+              <string>enables auto adjustment of target baseline</string>
+             </property>
+             <property name="text">
+              <string>Set</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_01">
+           <item>
+            <widget class="QLabel" name="label_01">
+             <property name="text">
+              <string>01</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="DAC_Slider_01">
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+             <property name="sliderPosition">
+              <number>500</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="DAC_spinBox_01">
+             <property name="toolTip">
+              <string>DAC_Value_01 (per mille)</string>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="ADC_Value_01">
+             <property name="toolTip">
+              <string>ADC_Value_01</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="Baseline_Box_01">
+             <property name="toolTip">
+              <string>enables auto adjustment of target baseline</string>
+             </property>
+             <property name="text">
+              <string>Set</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_02">
+           <item>
+            <widget class="QLabel" name="label_02">
+             <property name="text">
+              <string>02</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="DAC_Slider_02">
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+             <property name="sliderPosition">
+              <number>500</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="DAC_spinBox_02">
+             <property name="toolTip">
+              <string>DAC_Value_02 (per mille)</string>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="ADC_Value_02">
+             <property name="toolTip">
+              <string>ADC_Value_02</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="Baseline_Box_02">
+             <property name="toolTip">
+              <string>enables auto adjustment of target baseline</string>
+             </property>
+             <property name="text">
+              <string>Set</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_03">
+           <item>
+            <widget class="QLabel" name="label_03">
+             <property name="text">
+              <string>03</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="DAC_Slider_03">
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+             <property name="sliderPosition">
+              <number>500</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="DAC_spinBox_03">
+             <property name="toolTip">
+              <string>DAC_Value_03 (per mille)</string>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="ADC_Value_03">
+             <property name="toolTip">
+              <string>ADC_Value_03</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="Baseline_Box_03">
+             <property name="toolTip">
+              <string>enables auto adjustment of target baseline</string>
+             </property>
+             <property name="text">
+              <string>Set</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_04">
+           <item>
+            <widget class="QLabel" name="label_04">
+             <property name="text">
+              <string>04</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="DAC_Slider_04">
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+             <property name="sliderPosition">
+              <number>500</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="DAC_spinBox_04">
+             <property name="toolTip">
+              <string>DAC_Value_04 (per mille)</string>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="ADC_Value_04">
+             <property name="toolTip">
+              <string>ADC_Value_04</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="Baseline_Box_04">
+             <property name="toolTip">
+              <string>enables auto adjustment of target baseline</string>
+             </property>
+             <property name="text">
+              <string>Set</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_05">
+           <item>
+            <widget class="QLabel" name="label_05">
+             <property name="text">
+              <string>05</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="DAC_Slider_05">
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+             <property name="sliderPosition">
+              <number>500</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="DAC_spinBox_05">
+             <property name="toolTip">
+              <string>DAC_Value_05 (per mille)</string>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="ADC_Value_05">
+             <property name="toolTip">
+              <string>ADC_Value_05</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="Baseline_Box_05">
+             <property name="toolTip">
+              <string>enables auto adjustment of target baseline</string>
+             </property>
+             <property name="text">
+              <string>Set</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_06">
+           <item>
+            <widget class="QLabel" name="label_06">
+             <property name="text">
+              <string>06</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="DAC_Slider_06">
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+             <property name="sliderPosition">
+              <number>500</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="DAC_spinBox_06">
+             <property name="toolTip">
+              <string>DAC_Value_06 (per mille)</string>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="ADC_Value_06">
+             <property name="toolTip">
+              <string>ADC_Value_06</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="Baseline_Box_06">
+             <property name="toolTip">
+              <string>enables auto adjustment of target baseline</string>
+             </property>
+             <property name="text">
+              <string>Set</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_07">
+           <item>
+            <widget class="QLabel" name="label_07">
+             <property name="text">
+              <string>07</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="DAC_Slider_07">
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+             <property name="sliderPosition">
+              <number>500</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="DAC_spinBox_07">
+             <property name="toolTip">
+              <string>DAC_Value_07 (per mille)</string>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="ADC_Value_07">
+             <property name="toolTip">
+              <string>ADC_Value_07</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="Baseline_Box_07">
+             <property name="toolTip">
+              <string>enables auto adjustment of target baseline</string>
+             </property>
+             <property name="text">
+              <string>Set</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item row="1" column="1">
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_08">
+           <item>
+            <widget class="QLabel" name="label_08">
+             <property name="text">
+              <string>08</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="DAC_Slider_08">
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+             <property name="sliderPosition">
+              <number>500</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="DAC_spinBox_08">
+             <property name="toolTip">
+              <string>DAC_Value_08 (per mille)</string>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="ADC_Value_08">
+             <property name="toolTip">
+              <string>ADC_Value_08</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="Baseline_Box_08">
+             <property name="toolTip">
+              <string>enables auto adjustment of target baseline</string>
+             </property>
+             <property name="text">
+              <string>Set</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_09">
+           <item>
+            <widget class="QLabel" name="label_09">
+             <property name="text">
+              <string>09</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="DAC_Slider_09">
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+             <property name="sliderPosition">
+              <number>500</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="DAC_spinBox_09">
+             <property name="toolTip">
+              <string>DAC_Value_09 (per mille)</string>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="ADC_Value_09">
+             <property name="toolTip">
+              <string>ADC_Value_09</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="Baseline_Box_09">
+             <property name="toolTip">
+              <string>enables auto adjustment of target baseline</string>
+             </property>
+             <property name="text">
+              <string>Set</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_16">
+           <item>
+            <widget class="QLabel" name="label_10">
+             <property name="text">
+              <string>10</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="DAC_Slider_10">
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+             <property name="sliderPosition">
+              <number>500</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="DAC_spinBox_10">
+             <property name="toolTip">
+              <string>DAC_Value_10 (per mille)</string>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="ADC_Value_10">
+             <property name="toolTip">
+              <string>ADC_Value_10</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="Baseline_Box_10">
+             <property name="toolTip">
+              <string>enables auto adjustment of target baseline</string>
+             </property>
+             <property name="text">
+              <string>Set</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_11">
+           <item>
+            <widget class="QLabel" name="label_11">
+             <property name="text">
+              <string>11</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="DAC_Slider_11">
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+             <property name="sliderPosition">
+              <number>500</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="DAC_spinBox_11">
+             <property name="toolTip">
+              <string>DAC_Value_11 (per mille)</string>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="ADC_Value_11">
+             <property name="toolTip">
+              <string>ADC_Value_11</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="Baseline_Box_11">
+             <property name="toolTip">
+              <string>enables auto adjustment of target baseline</string>
+             </property>
+             <property name="text">
+              <string>Set</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_12">
+           <item>
+            <widget class="QLabel" name="label_12">
+             <property name="text">
+              <string>12</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="DAC_Slider_12">
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+             <property name="sliderPosition">
+              <number>500</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="DAC_spinBox_12">
+             <property name="toolTip">
+              <string>DAC_Value_12 (per mille)</string>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="ADC_Value_12">
+             <property name="toolTip">
+              <string>ADC_Value_12</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="Baseline_Box_12">
+             <property name="toolTip">
+              <string>enables auto adjustment of target baseline</string>
+             </property>
+             <property name="text">
+              <string>Set</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_13">
+           <item>
+            <widget class="QLabel" name="label_13">
+             <property name="text">
+              <string>13</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="DAC_Slider_13">
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+             <property name="sliderPosition">
+              <number>500</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="DAC_spinBox_13">
+             <property name="toolTip">
+              <string>DAC_Value_13 (per mille)</string>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="ADC_Value_13">
+             <property name="toolTip">
+              <string>ADC_Value_13</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="Baseline_Box_13">
+             <property name="toolTip">
+              <string>enables auto adjustment of target baseline</string>
+             </property>
+             <property name="text">
+              <string>Set</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_14">
+           <item>
+            <widget class="QLabel" name="label_14">
+             <property name="text">
+              <string>14</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="DAC_Slider_14">
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+             <property name="sliderPosition">
+              <number>500</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="DAC_spinBox_14">
+             <property name="toolTip">
+              <string>DAC_Value_14 (per mille)</string>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="ADC_Value_14">
+             <property name="toolTip">
+              <string>ADC_Value_14</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="Baseline_Box_14">
+             <property name="toolTip">
+              <string>enables auto adjustment of target baseline</string>
+             </property>
+             <property name="text">
+              <string>Set</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_15">
+           <item>
+            <widget class="QLabel" name="label_15">
+             <property name="text">
+              <string>15</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="DAC_Slider_15">
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+             <property name="sliderPosition">
+              <number>500</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="DAC_spinBox_15">
+             <property name="toolTip">
+              <string>DAC_Value_15 (per mille)</string>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>500</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="ADC_Value_15">
+             <property name="toolTip">
+              <string>ADC_Value_15</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="Baseline_Box_15">
+             <property name="toolTip">
+              <string>enables auto adjustment of target baseline</string>
+             </property>
+             <property name="text">
+              <string>Set</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>DAC_Slider_00</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_00</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>161</x>
+     <y>172</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>221</x>
+     <y>174</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_spinBox_00</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_Slider_00</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>221</x>
+     <y>174</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>161</x>
+     <y>172</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_Slider_01</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_01</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>161</x>
+     <y>200</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>221</x>
+     <y>202</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_spinBox_01</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_Slider_01</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>221</x>
+     <y>202</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>161</x>
+     <y>200</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_Slider_02</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_02</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>161</x>
+     <y>228</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>221</x>
+     <y>230</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_spinBox_02</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_Slider_02</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>221</x>
+     <y>230</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>161</x>
+     <y>228</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_Slider_03</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_03</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>161</x>
+     <y>256</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>221</x>
+     <y>258</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_spinBox_03</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_Slider_03</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>221</x>
+     <y>258</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>161</x>
+     <y>256</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_Slider_04</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_04</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>161</x>
+     <y>284</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>221</x>
+     <y>286</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_spinBox_04</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_Slider_04</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>221</x>
+     <y>286</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>161</x>
+     <y>284</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_Slider_05</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_05</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>161</x>
+     <y>312</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>221</x>
+     <y>314</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_spinBox_05</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_Slider_05</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>221</x>
+     <y>314</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>161</x>
+     <y>312</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_Slider_06</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_06</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>161</x>
+     <y>340</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>221</x>
+     <y>342</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_spinBox_06</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_Slider_06</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>221</x>
+     <y>342</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>161</x>
+     <y>340</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_Slider_07</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_07</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>161</x>
+     <y>368</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>221</x>
+     <y>370</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_spinBox_07</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_Slider_07</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>221</x>
+     <y>370</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>161</x>
+     <y>368</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_Slider_08</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_08</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>526</x>
+     <y>172</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>586</x>
+     <y>174</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_spinBox_08</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_Slider_08</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>586</x>
+     <y>174</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>526</x>
+     <y>172</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_Slider_10</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_10</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>526</x>
+     <y>228</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>586</x>
+     <y>230</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_spinBox_10</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_Slider_10</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>586</x>
+     <y>230</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>526</x>
+     <y>228</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_Slider_11</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_11</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>526</x>
+     <y>256</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>586</x>
+     <y>258</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_spinBox_11</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_Slider_11</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>586</x>
+     <y>258</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>526</x>
+     <y>256</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_Slider_12</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_12</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>526</x>
+     <y>284</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>586</x>
+     <y>286</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_spinBox_12</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_Slider_12</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>586</x>
+     <y>286</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>526</x>
+     <y>284</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_Slider_13</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_13</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>526</x>
+     <y>312</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>586</x>
+     <y>314</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_spinBox_13</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_Slider_13</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>586</x>
+     <y>314</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>526</x>
+     <y>312</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_Slider_14</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_14</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>526</x>
+     <y>340</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>586</x>
+     <y>342</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_spinBox_14</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_Slider_14</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>586</x>
+     <y>342</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>526</x>
+     <y>340</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_Slider_15</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_15</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>526</x>
+     <y>368</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>586</x>
+     <y>370</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_spinBox_15</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_Slider_15</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>586</x>
+     <y>370</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>526</x>
+     <y>368</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_Slider_all</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_all</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>170</x>
+     <y>130</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>230</x>
+     <y>132</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_spinBox_all</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_Slider_all</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>230</x>
+     <y>132</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>170</x>
+     <y>130</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBox_all</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>DAC_Slider_all</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>79</x>
+     <y>132</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>170</x>
+     <y>130</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBox_all</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>DAC_spinBox_all</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>79</x>
+     <y>132</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>230</x>
+     <y>132</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_spinBox_09</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_Slider_09</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>586</x>
+     <y>202</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>526</x>
+     <y>200</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_Slider_09</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_09</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>526</x>
+     <y>200</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>586</x>
+     <y>202</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Baseline_Box_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Baseline_Box_00</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>683</x>
+     <y>129</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>388</x>
+     <y>174</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Baseline_Box_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Baseline_Box_01</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>695</x>
+     <y>131</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>388</x>
+     <y>202</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Baseline_Box_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Baseline_Box_02</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>743</x>
+     <y>132</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>388</x>
+     <y>230</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Baseline_Box_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Baseline_Box_03</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>743</x>
+     <y>132</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>364</x>
+     <y>252</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Baseline_Box_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Baseline_Box_04</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>723</x>
+     <y>126</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>368</x>
+     <y>286</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Baseline_Box_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Baseline_Box_05</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>673</x>
+     <y>125</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>371</x>
+     <y>310</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Baseline_Box_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Baseline_Box_06</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>743</x>
+     <y>132</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>388</x>
+     <y>342</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Baseline_Box_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Baseline_Box_07</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>743</x>
+     <y>132</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>374</x>
+     <y>367</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Baseline_Box_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Baseline_Box_08</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>743</x>
+     <y>132</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>753</x>
+     <y>174</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Baseline_Box_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Baseline_Box_09</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>743</x>
+     <y>132</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>753</x>
+     <y>202</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Baseline_Box_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Baseline_Box_10</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>720</x>
+     <y>127</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>753</x>
+     <y>230</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Baseline_Box_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Baseline_Box_11</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>719</x>
+     <y>132</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>753</x>
+     <y>258</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Baseline_Box_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Baseline_Box_12</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>705</x>
+     <y>122</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>753</x>
+     <y>286</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Baseline_Box_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Baseline_Box_13</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>716</x>
+     <y>132</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>722</x>
+     <y>307</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Baseline_Box_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Baseline_Box_14</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>743</x>
+     <y>132</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>753</x>
+     <y>342</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Baseline_Box_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Baseline_Box_15</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>722</x>
+     <y>131</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>718</x>
+     <y>370</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ADCAdjustValue</sender>
+   <signal>returnPressed()</signal>
+   <receiver>AutoAdjustButton</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>602</x>
+     <y>123</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>518</x>
+     <y>123</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

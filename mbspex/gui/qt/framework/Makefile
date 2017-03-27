@@ -10,7 +10,7 @@ PEX_LIBA = $(PEX_LIBPATH)/libmbspex.a
 
 CFLAGS  = $(POSIX) -DLinux -Dunix -DV40 -DGSI_MBS -D$(GSI_CPU_ENDIAN) -D$(GSI_CPU_PLATFORM)
 
-GOSIPFRAME_INCPATH=../framework/
+
 
 
 ifneq ($(shell which qmake 2>/dev/null),)
@@ -32,10 +32,10 @@ endif
 ifneq ($(QTVERSION),4)
 
 all:
-	@echo "No qt4 found, Poland gui cannot be compiled"
+	@echo "No qt4 found, Gosip gui cannot be compiled"
 
 clean:
-	@echo "No qt4 found, Poland gui was not compiled"
+	@echo "No qt4 found, Gosip gui was not compiled"
 
 else
 
@@ -46,12 +46,12 @@ nombspex: gui-nombspex
 
 gui:
 	@echo "Generating Makefile.qt"
-	$(QMAKE) PolandGui.pro -o Makefile.qt "DEFINES+=USE_MBSPEX_LIB" "QMAKE_LFLAGS += -Wl,-rpath,$(PEX_LIBPATH)" "INCLUDEPATH += $(PEX_INCPATH) $(GOSIPFRAME_INCPATH)" "LIBS+= -L $(PEX_LIBPATH) -lmbspex"
+	$(QMAKE) GosipGui.pro -o Makefile.qt "DEFINES+=USE_MBSPEX_LIB" "QMAKE_LFLAGS += -Wl,-rpath,$(PEX_LIBPATH)" "INCLUDEPATH += $(PEX_INCPATH)" "LIBS+= -L $(PEX_LIBPATH) -lmbspex"
 	+$(MAKE) -f Makefile.qt
 
 gui-nombspex: 
 	@echo "Generating Makefile.qt without mbspex"
-	$(QMAKE) PolandGui.pro -o Makefile.qt 
+	$(QMAKE) GosipGui.pro -o Makefile.qt 
 	+$(MAKE) -f Makefile.qt
 
 
@@ -61,7 +61,7 @@ ifneq ($(wildcard Makefile.qt),)
 endif
 	@rm -f Makefile.qt
 	@rm -rf .obj .moc
-	@echo "Clean Poland Gui done"
+	@echo "Clean Gosip Gui done"
 endif
 
 	
@@ -69,4 +69,4 @@ clean: cleangui
 
 install: 
 	@echo "Installing to $(PEX_BINPATH) ..."
-	@ln -fs $(PWD)/PolandGui $(PEX_BINPATH)
+	@ln -fs $(PWD)/GosipGui $(PEX_BINPATH)

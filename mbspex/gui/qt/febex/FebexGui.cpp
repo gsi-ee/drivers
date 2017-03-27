@@ -22,84 +22,6 @@
 // *********************************************************
 
 
-// this we need to implement for output of mbspex library, but also useful to format output without it:
-FebexGui* FebexGui::fInstance = 0;
-
-
-#include <stdarg.h>
-
-
-/** JAM The following nice define handles all explicit broadcast actions depending on the currently set slave*/
-#define FEBEX_BROADCAST_ACTION(X) \
-fBroadcasting=true;  \
-int oldslave = fSlave; \
-int oldchan = fSFP; \
-if (AssertNoBroadcast (false)) \
- { \
-   X; \
- } \
- else if (fSFP < 0) \
- { \
-   for (int sfp = 0; sfp < 4; ++sfp) \
-   {\
-     if (fSFPChains.numslaves[sfp] == 0) \
-       continue; \
-     fSFP = sfp; \
-     if (fSlave < 0) \
-     { \
-       for (int feb = 0; feb < fSFPChains.numslaves[sfp]; ++feb) \
-       { \
-         fSlave = feb; \
-         X; \
-       } \
-     } \
-     else \
-     { \
-       X;\
-     }\
-   }\
- } \
- else if (fSlave< 0) \
- { \
-   for (int feb = 0; feb < fSFPChains.numslaves[fSFP]; ++feb) \
-       { \
-         fSlave = feb; \
-         X; \
-       } \
- } \
- else \
- { \
-   AppendTextWindow ("--- NEVER COME HERE: undefined broadcast mode ---:"); \
- } \
-fSlave= oldslave;\
-fSFP= oldchan; \
-fBroadcasting=false;
-
-
-
-
-void printm (char *fmt, ...)
-{
-  char c_str[256];
-  va_list args;
-  va_start(args, fmt);
-  vsprintf (c_str, fmt, args);
-//printf ("%s", c_str);
-  FebexGui::fInstance->AppendTextWindow (c_str);
-  FebexGui::fInstance->FlushTextWindow();
-  va_end(args);
-}
-
-#ifdef USE_MBSPEX_LIB
-/** this one is used to speed down direct mbspex io:*/
-void FebexGui::I2c_sleep ()
-{
-  //usleep(300);
-
-  usleep(900); // JAM2016 need to increase wait time since some problems with adc read?
-}
-
-#endif
 
 
 
@@ -108,362 +30,110 @@ void FebexGui::I2c_sleep ()
  *  Constructs a FebexGui which is a child of 'parent', with the
  *  name 'name'.'
  */
-FebexGui::FebexGui (QWidget* parent) :
-    QWidget (parent), fDebug (false), fSaveConfig (false), fBroadcasting(false), fSFP (0), fSlave (0), fSFPSave (0), fSlaveSave (0),
-        fConfigFile (0)
+FebexGui::FebexGui (QWidget* parent) : GosipGui (parent)
 {
-  setupUi (this);
-#if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
-  fEnv = QProcessEnvironment::systemEnvironment ();    // get PATH to gosipcmd from parent process
-#endif
-
-  fNumberBase = 10;
-
-  memset( &fSFPChains, 0, sizeof(struct pex_sfp_links));
-
-  for(int sfp=0; sfp<4;++sfp)
-    fSetup[sfp].clear();
+ 
+ 
+ fImplementationName="FEBEX";
+  fVersionString="Welcome to FEBEX GUI!\n\t v0.95 of 27-March-2017 by JAM (j.adamczewski@gsi.de)";
 
 
-  SFPspinBox->setValue (fSFP);
-  SlavespinBox->setValue (fSlave);
-  DAC_spinBox_all->setValue (500);
-  TextOutput->setCenterOnScroll (false);
+  fFebexWidget=new FebexWidget(this);
+  Settings_scrollArea->setWidget(fFebexWidget);
+
+
   ClearOutputBtn_clicked ();
-
-  QObject::connect (RefreshButton, SIGNAL (clicked ()), this, SLOT (ShowBtn_clicked ()));
-  QObject::connect (ApplyButton, SIGNAL (clicked ()), this, SLOT (ApplyBtn_clicked ()));
-
-  QObject::connect (InitChainButton, SIGNAL (clicked ()), this, SLOT (InitChainBtn_clicked ()));
-  QObject::connect (ResetBoardButton, SIGNAL (clicked ()), this, SLOT (ResetBoardBtn_clicked ()));
-  QObject::connect (ResetSlaveButton, SIGNAL (clicked ()), this, SLOT (ResetSlaveBtn_clicked ()));
-  QObject::connect (BroadcastButton, SIGNAL (clicked (bool)), this, SLOT (BroadcastBtn_clicked (bool)));
-  QObject::connect (DumpButton, SIGNAL (clicked ()), this, SLOT (DumpBtn_clicked ()));
-  QObject::connect (ConfigButton, SIGNAL (clicked ()), this, SLOT (ConfigBtn_clicked ()));
-  QObject::connect (SaveConfigButton, SIGNAL (clicked ()), this, SLOT (SaveConfigBtn_clicked ()));
-  QObject::connect (ClearOutputButton, SIGNAL (clicked ()), this, SLOT (ClearOutputBtn_clicked ()));
-
-  QObject::connect (AutoAdjustButton, SIGNAL (clicked ()), this, SLOT (AutoAdjustBtn_clicked ()));
+ 
+ 
+ 
+  QObject::connect (fFebexWidget->AutoAdjustButton, SIGNAL (clicked ()), this, SLOT (AutoAdjustBtn_clicked ()));
 
 
-  QObject::connect (DebugBox, SIGNAL(stateChanged(int)), this, SLOT(DebugBox_changed(int)));
-  QObject::connect (HexBox, SIGNAL(stateChanged(int)), this, SLOT(HexBox_changed(int)));
-  QObject::connect (SFPspinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
-  QObject::connect (SlavespinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
-  QObject::connect (DAC_spinBox_all, SIGNAL(valueChanged(int)), this, SLOT(DAC_spinBox_all_changed(int)));
-  QObject::connect (DAC_spinBox_00, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox00_changed(int)));
-  QObject::connect (DAC_spinBox_01, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox01_changed(int))); 
-  QObject::connect (DAC_spinBox_02, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox02_changed(int)));
-  QObject::connect (DAC_spinBox_03, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox03_changed(int)));
-  QObject::connect (DAC_spinBox_04, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox04_changed(int)));
-  QObject::connect (DAC_spinBox_05, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox05_changed(int)));
-  QObject::connect (DAC_spinBox_06, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox06_changed(int)));
-  QObject::connect (DAC_spinBox_07, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox07_changed(int)));
-  QObject::connect (DAC_spinBox_08, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox08_changed(int)));
-  QObject::connect (DAC_spinBox_09, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox09_changed(int)));
-  QObject::connect (DAC_spinBox_10, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox10_changed(int)));
-  QObject::connect (DAC_spinBox_11, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox11_changed(int)));
-  QObject::connect (DAC_spinBox_12, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox12_changed(int)));
-  QObject::connect (DAC_spinBox_13, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox13_changed(int)));
-  QObject::connect (DAC_spinBox_14, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox14_changed(int)));
-  QObject::connect (DAC_spinBox_15, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox15_changed(int)));
+  QObject::connect (fFebexWidget->DAC_spinBox_all, SIGNAL(valueChanged(int)), this, SLOT(DAC_spinBox_all_changed(int)));
+  QObject::connect (fFebexWidget->DAC_spinBox_00, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox00_changed(int)));
+  QObject::connect (fFebexWidget->DAC_spinBox_01, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox01_changed(int))); 
+  QObject::connect (fFebexWidget->DAC_spinBox_02, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox02_changed(int)));
+  QObject::connect (fFebexWidget->DAC_spinBox_03, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox03_changed(int)));
+  QObject::connect (fFebexWidget->DAC_spinBox_04, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox04_changed(int)));
+  QObject::connect (fFebexWidget->DAC_spinBox_05, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox05_changed(int)));
+  QObject::connect (fFebexWidget->DAC_spinBox_06, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox06_changed(int)));
+  QObject::connect (fFebexWidget->DAC_spinBox_07, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox07_changed(int)));
+  QObject::connect (fFebexWidget->DAC_spinBox_08, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox08_changed(int)));
+  QObject::connect (fFebexWidget->DAC_spinBox_09, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox09_changed(int)));
+  QObject::connect (fFebexWidget->DAC_spinBox_10, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox10_changed(int)));
+  QObject::connect (fFebexWidget->DAC_spinBox_11, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox11_changed(int)));
+  QObject::connect (fFebexWidget->DAC_spinBox_12, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox12_changed(int)));
+  QObject::connect (fFebexWidget->DAC_spinBox_13, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox13_changed(int)));
+  QObject::connect (fFebexWidget->DAC_spinBox_14, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox14_changed(int)));
+  QObject::connect (fFebexWidget->DAC_spinBox_15, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox15_changed(int)));
 
 
 
   /** JAM put references to designer checkboxes into array to be handled later easily: */
-  fBaselineBoxes[0]=Baseline_Box_00;
-  fBaselineBoxes[1]=Baseline_Box_01;
-  fBaselineBoxes[2]=Baseline_Box_02;
-  fBaselineBoxes[3]=Baseline_Box_03;
-  fBaselineBoxes[4]=Baseline_Box_04;
-  fBaselineBoxes[5]=Baseline_Box_05;
-  fBaselineBoxes[6]=Baseline_Box_06;
-  fBaselineBoxes[7]=Baseline_Box_07;
-  fBaselineBoxes[8]=Baseline_Box_08;
-  fBaselineBoxes[9]=Baseline_Box_09;
-  fBaselineBoxes[10]=Baseline_Box_10;
-  fBaselineBoxes[11]=Baseline_Box_11;
-  fBaselineBoxes[12]=Baseline_Box_12;
-  fBaselineBoxes[13]=Baseline_Box_13;
-  fBaselineBoxes[14]=Baseline_Box_14;
-  fBaselineBoxes[15]=Baseline_Box_15;
+  fBaselineBoxes[0]=fFebexWidget->Baseline_Box_00;
+  fBaselineBoxes[1]=fFebexWidget->Baseline_Box_01;
+  fBaselineBoxes[2]=fFebexWidget->Baseline_Box_02;
+  fBaselineBoxes[3]=fFebexWidget->Baseline_Box_03;
+  fBaselineBoxes[4]=fFebexWidget->Baseline_Box_04;
+  fBaselineBoxes[5]=fFebexWidget->Baseline_Box_05;
+  fBaselineBoxes[6]=fFebexWidget->Baseline_Box_06;
+  fBaselineBoxes[7]=fFebexWidget->Baseline_Box_07;
+  fBaselineBoxes[8]=fFebexWidget->Baseline_Box_08;
+  fBaselineBoxes[9]=fFebexWidget->Baseline_Box_09;
+  fBaselineBoxes[10]=fFebexWidget->Baseline_Box_10;
+  fBaselineBoxes[11]=fFebexWidget->Baseline_Box_11;
+  fBaselineBoxes[12]=fFebexWidget->Baseline_Box_12;
+  fBaselineBoxes[13]=fFebexWidget->Baseline_Box_13;
+  fBaselineBoxes[14]=fFebexWidget->Baseline_Box_14;
+  fBaselineBoxes[15]=fFebexWidget->Baseline_Box_15;
 
-  fDACSpinBoxes[0] = DAC_spinBox_00;
-  fDACSpinBoxes[1] = DAC_spinBox_01;
-  fDACSpinBoxes[2] = DAC_spinBox_02;
-  fDACSpinBoxes[3] = DAC_spinBox_03;
-  fDACSpinBoxes[4] = DAC_spinBox_04;
-  fDACSpinBoxes[5] = DAC_spinBox_05;
-  fDACSpinBoxes[6] = DAC_spinBox_06;
-  fDACSpinBoxes[7] = DAC_spinBox_07;
-  fDACSpinBoxes[8] = DAC_spinBox_08;
-  fDACSpinBoxes[9] = DAC_spinBox_09;
-  fDACSpinBoxes[10] = DAC_spinBox_10;
-  fDACSpinBoxes[11] = DAC_spinBox_11;
-  fDACSpinBoxes[12] = DAC_spinBox_12;
-  fDACSpinBoxes[13] = DAC_spinBox_13;
-  fDACSpinBoxes[14] = DAC_spinBox_14;
-  fDACSpinBoxes[15] = DAC_spinBox_15;
+  fDACSpinBoxes[0] = fFebexWidget->DAC_spinBox_00;
+  fDACSpinBoxes[1] = fFebexWidget->DAC_spinBox_01;
+  fDACSpinBoxes[2] = fFebexWidget->DAC_spinBox_02;
+  fDACSpinBoxes[3] = fFebexWidget->DAC_spinBox_03;
+  fDACSpinBoxes[4] = fFebexWidget->DAC_spinBox_04;
+  fDACSpinBoxes[5] = fFebexWidget->DAC_spinBox_05;
+  fDACSpinBoxes[6] = fFebexWidget->DAC_spinBox_06;
+  fDACSpinBoxes[7] = fFebexWidget->DAC_spinBox_07;
+  fDACSpinBoxes[8] = fFebexWidget->DAC_spinBox_08;
+  fDACSpinBoxes[9] = fFebexWidget->DAC_spinBox_09;
+  fDACSpinBoxes[10] = fFebexWidget->DAC_spinBox_10;
+  fDACSpinBoxes[11] = fFebexWidget->DAC_spinBox_11;
+  fDACSpinBoxes[12] = fFebexWidget->DAC_spinBox_12;
+  fDACSpinBoxes[13] = fFebexWidget->DAC_spinBox_13;
+  fDACSpinBoxes[14] = fFebexWidget->DAC_spinBox_14;
+  fDACSpinBoxes[15] = fFebexWidget->DAC_spinBox_15;
 
-  fADCLineEdit[0] = ADC_Value_00;
-  fADCLineEdit[1] = ADC_Value_01;
-  fADCLineEdit[2] = ADC_Value_02;
-  fADCLineEdit[3] = ADC_Value_03;
-  fADCLineEdit[4] = ADC_Value_04;
-  fADCLineEdit[5] = ADC_Value_05;
-  fADCLineEdit[6] = ADC_Value_06;
-  fADCLineEdit[7] = ADC_Value_07;
-  fADCLineEdit[8] = ADC_Value_08;
-  fADCLineEdit[9] = ADC_Value_09;
-  fADCLineEdit[10] = ADC_Value_10;
-  fADCLineEdit[11] = ADC_Value_11;
-  fADCLineEdit[12] = ADC_Value_12;
-  fADCLineEdit[13] = ADC_Value_13;
-  fADCLineEdit[14] = ADC_Value_14;
-  fADCLineEdit[15] = ADC_Value_15;
+  fADCLineEdit[0] = fFebexWidget->ADC_Value_00;
+  fADCLineEdit[1] = fFebexWidget->ADC_Value_01;
+  fADCLineEdit[2] = fFebexWidget->ADC_Value_02;
+  fADCLineEdit[3] = fFebexWidget->ADC_Value_03;
+  fADCLineEdit[4] = fFebexWidget->ADC_Value_04;
+  fADCLineEdit[5] = fFebexWidget->ADC_Value_05;
+  fADCLineEdit[6] = fFebexWidget->ADC_Value_06;
+  fADCLineEdit[7] = fFebexWidget->ADC_Value_07;
+  fADCLineEdit[8] = fFebexWidget->ADC_Value_08;
+  fADCLineEdit[9] = fFebexWidget->ADC_Value_09;
+  fADCLineEdit[10] = fFebexWidget->ADC_Value_10;
+  fADCLineEdit[11] = fFebexWidget->ADC_Value_11;
+  fADCLineEdit[12] = fFebexWidget->ADC_Value_12;
+  fADCLineEdit[13] = fFebexWidget->ADC_Value_13;
+  fADCLineEdit[14] = fFebexWidget->ADC_Value_14;
+  fADCLineEdit[15] = fFebexWidget->ADC_Value_15;
 
-#ifdef USE_MBSPEX_LIB
-// open handle to driver file:
-  fPexFD = mbspex_open (0);    // we restrict to board number 0 here
-  if (fPexFD < 0)
-  {
-    printm ("ERROR>> open /dev/pexor%d \n", 0);
-    exit (1);
-  }
-#endif
-  fInstance = this;
+  GetSFPChainSetup(); // ensure that any slave has a status structure before we begin clicking...
   show ();
 }
 
 FebexGui::~FebexGui ()
 {
-#ifdef USE_MBSPEX_LIB
-  mbspex_close (fPexFD);
-#endif
-}
-
-void FebexGui::ShowBtn_clicked ()
-{
-  //std::cout << "FebexGui::ShowBtn_clicked()"<< std::endl;
-  EvaluateSlave ();
-  GetSFPChainSetup();
-
-  if(!AssertNoBroadcast(false)) return;
-  if(!AssertChainConfigured()) return;
-  GetRegisters ();
-  RefreshView ();
-}
-
-void FebexGui::ApplyBtn_clicked ()
-{
-//std::cout << "FebexGui::ApplyBtn_clicked()"<< std::endl;
-
-
-  EvaluateSlave ();
-
-// JAM maybe disable confirm window ?
-//  char buffer[1024];
-//  snprintf (buffer, 1024, "Really apply FEBEX settings  to SFP %d Device %d?", fSFP, fSlave);
-//  if (QMessageBox::question (this, "FEBEX GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
-//      != QMessageBox::Yes)
-//  {
-//    return;
-//  }
-
-
-  GetSFPChainSetup();
-  if(AssertNoBroadcast(false) && !AssertChainConfigured()) return;
-
-  // JAM: since we keep all slave set ups in vector/array, we must handle broadcast mode explicitely
-  // no implicit driver broadcast via -1 indices anymore!
-  FEBEX_BROADCAST_ACTION(ApplyGUISettings());
-
-
-}
-
-void FebexGui::ApplyGUISettings()
-{
-  EvaluateView(); // from gui to memory
-  SetRegisters(); // from memory to device
-}
-
-void FebexGui::SaveConfigBtn_clicked ()
-{
-//std::cout << "FebexGui::SaveConfigBtn_clicked()"<< std::endl;
-
-  static char buffer[1024];
-  QString gos_filter ("gosipcmd file (*.gos)");
-  QStringList filters;
-  filters << gos_filter;
-
-  QFileDialog fd (this, "Write Febex configuration file");
-
-  // ".", "nyxor setup file (*.txt);;gosipcmd file (*.gos);;context dump file (*.dmp)");
-  fd.setNameFilters (filters);
-  fd.setFileMode (QFileDialog::AnyFile);
-  fd.setAcceptMode (QFileDialog::AcceptSave);
-  if (fd.exec () != QDialog::Accepted)
-    return;
-  QStringList flst = fd.selectedFiles ();
-  if (flst.isEmpty ())
-    return;
-  QString fileName = flst[0];
-
-  // complete suffix if user did not
-  if (fd.selectedNameFilter () == gos_filter)
-  {
-    if (!fileName.endsWith (".gos"))
-      fileName.append (".gos");
-  }
-  else
-  {
-    std::cout << "FebexGui::SaveConfigBtn_clicked( - NEVER COME HERE!!!!)" << std::endl;
-  }
-
-  // open file
-  if (OpenConfigFile (fileName) != 0)
-    return;
-
-  if (fileName.endsWith (".gos"))
-  {
-    WriteConfigFile (QString ("#Format *.gos"));
-    WriteConfigFile (QString ("#usage: gosipcmd -x -c file.gos \n"));
-    WriteConfigFile (QString ("#                                         \n"));
-    WriteConfigFile (QString ("#sfp slave address value\n"));
-    FEBEX_BROADCAST_ACTION(SaveRegisters()); // refresh actual setup from hardware and write it to open file
-  }
-
-
-  else
-  {
-    std::cout << "FebexGui::SaveConfigBtn_clicked( -  unknown file type, NEVER COME HERE!!!!)" << std::endl;
-  }
-
-  // close file
-  CloseConfigFile ();
-  snprintf (buffer, 1024, "Saved current slave configuration to file '%s' .\n", fileName.toLatin1 ().constData ());
-  AppendTextWindow (buffer);
-}
-
-int FebexGui::OpenConfigFile (const QString& fname)
-{
-  fConfigFile = fopen (fname.toLatin1 ().constData (), "w");
-  if (fConfigFile == NULL)
-  {
-    char buffer[1024];
-    snprintf (buffer, 1024, " Error opening Configuration File '%s': %s\n", fname.toLatin1 ().constData (),
-        strerror (errno));
-    AppendTextWindow (buffer);
-    return -1;
-  }
-  QString timestring = QDateTime::currentDateTime ().toString ("ddd dd.MM.yyyy hh:mm:ss");
-  WriteConfigFile (QString ("# Febex configuration file saved on ") + timestring + QString ("\n"));
-  return 0;
-}
-
-int FebexGui::CloseConfigFile ()
-{
-  int rev = 0;
-  if (fConfigFile == NULL)
-    return 0;
-  if (fclose (fConfigFile) != 0)
-  {
-    char buffer[1024];
-    snprintf (buffer, 1024, " Error closing Configuration File! (%s)\n", strerror (errno));
-    AppendTextWindow (buffer);
-    rev = -1;
-  }
-  fConfigFile = NULL;    // must not use handle again even if close fails
-  return rev;
-}
-
-int FebexGui::WriteConfigFile (const QString& text)
-{
-  if (fConfigFile == NULL)
-    return -1;
-  if (fprintf (fConfigFile, text.toLatin1 ().constData ()) < 0)
-    return -2;
-  return 0;
 }
 
 
-void FebexGui::InitChainBtn_clicked ()
-{
-  char buffer[1024];
-  EvaluateSlave ();
-//std::cout << "InitChainBtn_clicked()"<< std::endl;
-  bool ok;
-  snprintf (buffer, 1024, "Please specify NUMBER OF DEVICES to initialize at SFP %d ?", fSFP);
-#if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
-  int numslaves = QInputDialog::getInt (this, tr ("Number of Slaves?"), tr (buffer), 1, 1, 1024, 1, &ok);
-#else
-  int numslaves = QInputDialog::getInteger(this, tr("Number of Slaves?"),
-      tr(buffer), 1, 1, 1024, 1, &ok);
-
-#endif
-  if (!ok)
-    return;
-  if (fSFP < 0)
-  {
-    AppendTextWindow ("--- Error: Broadcast not allowed for init chain!");
-    return;
-  }
-#ifdef USE_MBSPEX_LIB
-  int rev = mbspex_slave_init (fPexFD, fSFP, numslaves);
-
-#else
-  snprintf (buffer, 1024, "gosipcmd -i  %d %d", fSFP, numslaves);
-  QString com (buffer);
-  QString result = ExecuteGosipCmd (com);
-  AppendTextWindow (result);
-#endif
-
-  GetSFPChainSetup();
-  RefreshChains();
-}
-
-void FebexGui::ResetBoardBtn_clicked ()
-{
-//std::cout << "FebexGui::ResetBoardBtn_clicked"<< std::endl;
-  if (QMessageBox::question (this, "FEBEX GUI", "Really Reset gosip on pex board?", QMessageBox::Yes | QMessageBox::No,
-      QMessageBox::Yes) != QMessageBox::Yes)
-  {
-    //std::cout <<"QMessageBox does not return yes! "<< std::endl;
-    return;
-  }
-#ifdef USE_MBSPEX_LIB
-  mbspex_reset (fPexFD);
-  AppendTextWindow ("Reset PEX board with mbspex_reset()");
-
-#else
-
-  char buffer[1024];
-  snprintf (buffer, 1024, "gosipcmd -z");
-  QString com (buffer);
-  QString result = ExecuteGosipCmd (com);
-  AppendTextWindow (result);
-
-#endif
-
-  GetSFPChainSetup();
-  RefreshChains();
-}
-
-void FebexGui::ResetSlaveBtn_clicked ()
-{
-  char buffer[1024];
-  EvaluateSlave ();
-  snprintf (buffer, 1024, "Really initialize FEBEX device at SFP %d, Slave %d ?", fSFP, fSlave);
-  if (QMessageBox::question (this, "Febex GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
-      != QMessageBox::Yes)
-  {
-    //std::cout <<"QMessageBox does not return yes! "<< std::endl;
-    return;
-  }
-  FEBEX_BROADCAST_ACTION(InitFebex());
 
 
-}
+
+
 void FebexGui::EnableI2C ()
 {
   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x1000080);
@@ -476,7 +146,7 @@ void FebexGui::DisableI2C ()
 }
 
 
-void FebexGui::InitFebex()
+void FebexGui::ResetSlave()
 {
   WriteGosip (fSFP, fSlave, DATA_FILT_CONTROL_REG, 0x00);
   usleep (4000);
@@ -560,40 +230,7 @@ void FebexGui::InitFebex()
 
   WriteGosip (fSFP, fSlave,  REG_HEADER, fSFP);
 
-// JAM the following is redundant due to new macro FEBEX_BROADCAST_ACTION
-//  if(AssertNoBroadcast(false))
-//  {
-//    WriteGosip (fSFP, fSlave,  REG_HEADER, fSFP);
-//  }
-//  else
-//    {
-//#ifdef USE_MBSPEX_LIB
-//
-//    // broadcast mode: find out number of slaves and loop over all registered slaves
-//    GetSFPChainSetup();
-//    if (fSFP < 0)
-//    {
-//      for (int sfp = 0; sfp < 4; ++sfp)
-//      {
-//        int numslaves = fSFPChains.numslaves[sfp];
-//        for (int feb = 0; feb < numslaves; ++feb)
-//          WriteGosip (sfp, feb, REG_HEADER, sfp);
-//      }
-//    }
-//    else if (fSlave < 0)
-//    {
-//      int numslaves = fSFPChains.numslaves[fSFP];
-//      for (int feb = 0; feb < numslaves; ++feb)
-//               WriteGosip (fSFP, feb, REG_HEADER, fSFP);
-//    }
-//
-//
-//#else
-//      AppendTextWindow("Could not set sfp id in broadcast mode with gosipcmd interface!");
-//      return;
-//#endif
-//    }
-//////////////////////////////////////////////////// end old code
+
 
 //        // set trapez parameters for trigger/hit finding
   WriteGosip (fSFP, fSlave,  TRIG_SUM_A_REG, TRIG_SUM_A);
@@ -626,7 +263,7 @@ void FebexGui::AutoAdjustBtn_clicked ()
   //std::cout <<"AutoAdjustBtn_clicked "<< std::endl;
   EvaluateSlave ();
   QApplication::setOverrideCursor (Qt::WaitCursor);
-  FEBEX_BROADCAST_ACTION(AutoAdjust());
+  GOSIP_BROADCAST_ACTION(AutoAdjust());
   QApplication::restoreOverrideCursor ();
 }
 
@@ -634,7 +271,7 @@ void FebexGui::AutoAdjustBtn_clicked ()
 void FebexGui::AutoAdjust()
 {
   if(!AssertChainConfigured()) return;
-   QString targetstring=ADCAdjustValue->text ();
+   QString targetstring=fFebexWidget->ADCAdjustValue->text ();
    unsigned targetvalue =targetstring.toUInt (0, fNumberBase);
    //std::cout <<"string="<<targetstring.toLatin1 ().constData ()<< ", targetvalue="<< targetvalue<< std::endl;
    for(int channel=0; channel<16;++channel)
@@ -700,26 +337,9 @@ int FebexGui::AdjustBaseline(int channel, int adctarget)
 
 
 
-void FebexGui::BroadcastBtn_clicked (bool checked)
-{
-//std::cout << "FebexGui::BroadcastBtn_clicked with checked="<<checked<< std::endl;
-  if (checked)
-  {
-    fSFPSave = SFPspinBox->value ();
-    fSlaveSave = SlavespinBox->value ();
-    SFPspinBox->setValue (-1);
-    SlavespinBox->setValue (-1);
-  }
-  else
-  {
-    RefreshChains();
-    SFPspinBox->setValue (fSFPSave);
-    SlavespinBox->setValue (fSlaveSave);
 
-  }
-}
 
-void FebexGui::DumpADCs()
+void FebexGui::DumpSlave()
 {
   // JAM 2016 first demonstration how to get the actual adc values:
   if(!AssertChainConfigured()) return;
@@ -743,117 +363,16 @@ void FebexGui::DumpADCs()
 
 }
 
-
-
-void FebexGui::DumpBtn_clicked ()
+void FebexGui::ApplyFileConfig(int )
 {
-//std::cout << "FebexGui::DumpBtn_clicked"<< std::endl;
-// dump register contents from gosipcmd into TextOutput (QPlainText)
-  EvaluateSlave ();
-  AppendTextWindow ("--- ADC Dump ---:");
-  FEBEX_BROADCAST_ACTION(DumpADCs());
-
+    GosipGui::ApplyFileConfig(900); // adjust bus wait time to 900 us
 }
 
-void FebexGui::ClearOutputBtn_clicked ()
-{
-//std::cout << "FebexGui::ClearOutputBtn_clicked()"<< std::endl;
-  TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to FEBEX GUI!\n\t v0.90 of 21-March-2016 by Armin Entezami and JAM (j.adamczewski@gsi.de)\n");
 
-}
 
-void FebexGui::ConfigBtn_clicked ()
-{
-//std::cout << "FebexGui::ConfigBtn_clicked" << std::endl;
 
-// here file requester and application of set up via gosipcmd
-  QFileDialog fd (this, "Select FEBEX configuration file", ".", "gosipcmd file (*.gos)");
-  fd.setFileMode (QFileDialog::ExistingFile);
-  if (fd.exec () != QDialog::Accepted)
-    return;
-  QStringList flst = fd.selectedFiles ();
-  if (flst.isEmpty ())
-    return;
-  char buffer[1024];
-  // JAM: need to increase default bus wait time to 900us first for febex i2c!
-  snprintf (buffer, 1024, "setGosipwait.sh 900"); // output redirection inside QProcess does not work, use helper script
-  QString tcom (buffer);
-  QString tresult=ExecuteGosipCmd (tcom, 10000);
-  AppendTextWindow (tresult);
-  QString fileName = flst[0];
-  {
-    if (!fileName.endsWith (".gos"))
-      fileName.append (".gos");
-    snprintf (buffer, 1024, "gosipcmd -x -c %s ", fileName.toLatin1 ().constData ());
-  }
-  QString com (buffer);
-  QString result = ExecuteGosipCmd (com, 10000);    // this will just execute the command in shell, gosip or not
-  AppendTextWindow (result);
 
-  snprintf (buffer, 1024, "setGosipwait.sh 0"); // set back to zero bus wait since we have explicit i2c_sleep elsewhere!
-  QString zcom (buffer);
-  QString zresult=ExecuteGosipCmd (zcom, 10000);
-  AppendTextWindow (zresult);
 
-  ShowBtn_clicked() ;
-}
-
-void FebexGui::DebugBox_changed (int on)
-{
-//std::cout << "DebugBox_changed to "<< on << std::endl;
-  fDebug = on;
-}
-
-void FebexGui::HexBox_changed (int on)
-{
-
-  unsigned adjustvalue = ADCAdjustValue->text ().toUInt (0, fNumberBase);    // save value in auto adjust field
-  fNumberBase = (on ? 16 : 10);
-//std::cout << "HexBox_changed set base to "<< fNumberBase << std::endl;
-
-  QString text;
-  QString pre;
-  fNumberBase == 16 ? pre = "0x" : pre = "";
-  ADCAdjustValue->setText (pre + text.setNum (adjustvalue, fNumberBase));    // recover with new base
-
-  int oldsfp = fSFP;
-  int oldslave = fSlave;
-
-  if (!AssertNoBroadcast (false))
-  {
-    fSFP = fSFPSave;
-    fSlave = fSlaveSave;
-  }
-  RefreshView (); // need to workaround the case that any broadcast was set. however, we do not need full FEBEX_BROADCAST_ACTION
-  if (!AssertNoBroadcast (false))
-  {
-    fSFP = oldsfp;
-    fSlave = oldslave;
-  }
-
-}
-
-void FebexGui::Slave_changed (int)
-{
-  //std::cout << "FebexGui::Slave_changed" << std::endl;
-  EvaluateSlave ();
-  bool refreshable = AssertNoBroadcast (false);
-  RefreshButton->setEnabled (refreshable);
-
-  RefreshChains();
-  //if(checkBox_AA->isChecked() && refreshable)
-  if(refreshable)
-  {
-    // JAM note that we had a problem of prelling spinbox here (arrow buttons only, keyboard arrows are ok)
-    // probably caused by too long response time of this slot?
-    // workaround is to refresh the view delayed per single shot timer:
-    //std::cout << "Timer started" << std::endl;
-    QTimer::singleShot(10, this, SLOT(ShowBtn_clicked()));
-    //std::cout << "Timer end" << std::endl;
-    //ShowBtn_clicked() ;
-  }
-}
 
  void FebexGui::DAC_spinBox_all_changed(int val)
 {
@@ -870,7 +389,7 @@ void FebexGui::Slave_changed (int)
   if (checkBox_AA->isChecked () && !fBroadcasting)
   {
     EvaluateSlave ();
-    FEBEX_BROADCAST_ACTION(AutoApplyRefresh(channel, val));
+    GOSIP_BROADCAST_ACTION(AutoApplyRefresh(channel, val));
   }
 
 }
@@ -975,10 +494,11 @@ int FebexGui::autoApply(int channel, int dac)
   int value=255-round((dac*255.0/1000.0)) ;
   dacchip= channel/FEBEX_MCP433_NUMCHAN ;
   dacchannel= channel-dacchip*FEBEX_MCP433_NUMCHAN;
-  fSetup[fSFP].at(fSlave).SetDACValue(dacchip,dacchannel, value);
+  theSetup_GET_FOR_SLAVE_RETURN(FebexSetup);
+  theSetup->SetDACValue(dacchip,dacchannel, value);
    
    EnableI2C ();  
-   WriteDAC_FebexI2c (dacchip, dacchannel, fSetup[fSFP].at(fSlave).GetDACValue(dacchip, dacchannel));
+   WriteDAC_FebexI2c (dacchip, dacchannel, theSetup->GetDACValue(dacchip, dacchannel));
    DisableI2C ();
    if (!AssertNoBroadcast ())
       return -1;
@@ -1014,9 +534,10 @@ void FebexGui::RefreshView ()
   QString text;
   QString pre;
   fNumberBase == 16 ? pre = "0x" : pre = "";
+  theSetup_GET_FOR_SLAVE(FebexSetup);
   for(int channel=0; channel<16;++channel)
      {
-          int val=fSetup[fSFP].at(fSlave).GetDACValue(channel);
+          int val=theSetup->GetDACValue(channel);
           int permille=1000 - round((val*1000.0/255.0)) ;
           fDACSpinBoxes[channel]->setValue(permille);
           int adc=AcquireBaselineSample(channel);
@@ -1027,88 +548,37 @@ void FebexGui::RefreshView ()
 }
 
 
-void FebexGui::RefreshStatus ()
-{
-  QString text;
-  QString statustext;
-   statustext.append ("SFP ");
-   statustext.append (text.setNum (fSFP));
-   statustext.append (" DEV ");
-   statustext.append (text.setNum (fSlave));
-   statustext.append (" - Last refresh:");
-   statustext.append (QDateTime::currentDateTime ().toString (Qt::TextDate));
-   StatusLabel->setText (statustext);
-}
 
-
-void FebexGui::RefreshChains ()
-{
-
-#ifdef USE_MBSPEX_LIB
-  // show status of configured chains:
-  Chain0_Box->setValue (fSFPChains.numslaves[0]);
-  Chain1_Box->setValue (fSFPChains.numslaves[1]);
-  Chain2_Box->setValue (fSFPChains.numslaves[2]);
-  Chain3_Box->setValue (fSFPChains.numslaves[3]);
-
-  // set maximum value of device spinbox according to init chains:
-
-  if (fSFP >= 0) // only for non broadcast mode of slaves
-  {
-    if (fSFPChains.numslaves[fSFP] > 0) // configured chains
-    {
-      SlavespinBox->setMaximum (fSFPChains.numslaves[fSFP] - 1);
-      SlavespinBox->setEnabled (true);
-    }
-    else // non configured chains
-    {
-      SlavespinBox->setEnabled (false);
-    }
-  }
-#else
-    Chain0_Box->setEnabled (false);
-    Chain1_Box->setEnabled (false);
-    Chain2_Box->setEnabled (false);
-    Chain3_Box->setEnabled (false);
-
-#endif
-
-}
 
 
 void FebexGui::EvaluateView ()
 {
   // here the current gui display is just copied to setup structure in local memory
-
+  theSetup_GET_FOR_SLAVE(FebexSetup);
 
 // JAM improved this by looping over spinbox references
   for(int channel=0; channel<16;++channel)
      {
           int permille=fDACSpinBoxes[channel]->value();
           int value=255 - round((permille*255.0/1000.0)) ;
-          fSetup[fSFP].at(fSlave).SetDACValue(channel, value);
+          theSetup->SetDACValue(channel, value);
      }
 
 }
 
-void FebexGui::EvaluateSlave ()
-{
-  if(fBroadcasting) return;
-  fSFP = SFPspinBox->value ();
-  fSlave = SlavespinBox->value ();
 
-}
 
 void FebexGui::SetRegisters ()
 {
   QApplication::setOverrideCursor (Qt::WaitCursor);
   EnableI2C ();    // must be done since mbs setup program may shut i2c off at the end
+  theSetup_GET_FOR_SLAVE(FebexSetup);
 
       for (int m = 0; m < FEBEX_MCP433_NUMCHIPS; ++m)
     {
       for (int c = 0; c < FEBEX_MCP433_NUMCHAN; ++c)
        {
-          WriteDAC_FebexI2c (m, c, fSetup[fSFP].at(fSlave).GetDACValue(m, c));
+          WriteDAC_FebexI2c (m, c, theSetup->GetDACValue(m, c));
        }
     }
 
@@ -1123,6 +593,7 @@ void FebexGui::GetRegisters ()
 
   if (!AssertNoBroadcast ())
     return;
+  theSetup_GET_FOR_SLAVE(FebexSetup);
   QApplication::setOverrideCursor (Qt::WaitCursor);
  EnableI2C ();
  for (int m = 0; m < FEBEX_MCP433_NUMCHIPS; ++m)
@@ -1137,7 +608,7 @@ void FebexGui::GetRegisters ()
 	  AppendTextWindow("GetRegisters has error!");
 	  return; // TODO error message 
 	  }
-	  fSetup[fSFP].at(fSlave).SetDACValue(m, c,val);
+	  theSetup->SetDACValue(m, c,val);
 	 
        }
     }
@@ -1146,41 +617,9 @@ void FebexGui::GetRegisters ()
 }
 
 
-void FebexGui::SaveRegisters()
-
-{
-   GetRegisters(); // refresh actual setup from hardware
-   fSaveConfig = true;    // switch to file output mode
-   SetRegisters();    // register settings are written to file
-   fSaveConfig = false;
-}
-
-void FebexGui::GetSFPChainSetup()
-{
-//  std::cout<<"GetSFPChainSetup... "<< std::endl;
-#ifdef USE_MBSPEX_LIB
-    // broadcast mode: find out number of slaves and loop over all registered slaves
-    mbspex_get_configured_slaves(fPexFD, &fSFPChains);
-#else
-    // without mbspex lib, we just assume 4 devices for each chain:
-    for(int sfp=0; sfp<4; ++sfp)
-    {
-      fSFPChains.numslaves[sfp]=4;
-    }
-#endif
 
 
-    // dynamically increase array of setup structures:
-    for(int sfp=0; sfp<4; ++sfp)
-    {
-      while(fSetup[sfp].size()<fSFPChains.numslaves[sfp])
-      {
-        fSetup[sfp].push_back(FebexSetup());
-        //std::cout<<"GetSFPChainSetup increased setup at sfp "<<sfp<<" to "<<fSetup[sfp].size()<<" slaves." << std::endl;
-      }
-    }
-  
-}
+
 
     
 int FebexGui::ReadDAC_FebexI2c (uint8_t mcpchip, uint8_t chan)
@@ -1231,57 +670,7 @@ int  FebexGui::ReadADC_Febex (uint8_t adc, uint8_t chan)
 
 
 
-int FebexGui::ReadGosip (int sfp, int slave, int address)
-{
-  int value = -1;
-#ifdef USE_MBSPEX_LIB
-  int rev = 0;
-  long int dat = 0;
-  //QApplication::setOverrideCursor (Qt::WaitCursor);
-  rev = mbspex_slave_rd (fPexFD, sfp, slave, address, &dat);
-  I2c_sleep ();
-  value = dat;
-  if (fDebug)
-  {
-    char buffer[1024];
-    if (rev == 0)
-    {
-      snprintf (buffer, 1024, "mbspex_slave_rd(%d,%d 0x%x) -> 0x%x", sfp, slave, address, value);
-    }
-    else
-    {
-      snprintf (buffer, 1024, "ERROR %d from mbspex_slave_rd(%d,%d 0x%x)", rev, sfp, slave, address);
-    }
-    QString msg (buffer);
-    AppendTextWindow (msg);
 
-  }
-  //QApplication::restoreOverrideCursor ();
-#else
-  char buffer[1024];
-//snprintf(buffer,1024,"/daq/usr/adamczew/workspace/drivers/mbspex/bin/gosipcmd -r -- %d %d 0x%x",sfp, slave, address);
-  snprintf (buffer, 1024, "gosipcmd -r -- %d %d 0x%x", sfp, slave, address);
-  QString com (buffer);
-  QString result = ExecuteGosipCmd (com);
-  if (result != "ERROR")
-  {
-    QString pre, valtext;
-    fNumberBase==16? pre="0x" : pre="";
-    //DebugTextWindow (result);
-    value = result.toInt (0, 0);
-    valtext=pre+valtext.setNum (value, fNumberBase);
-    DebugTextWindow (valtext);
-
-  }
-  else
-  {
-
-    value = -1;
-  }
-#endif
-
-  return value;
-}
 
 
 int FebexGui::GetChannelOffsetDAC(uint8_t chan)
@@ -1328,111 +717,3 @@ int FebexGui::WriteDAC_FebexI2c (uint8_t mcpchip, uint8_t chan, uint8_t value)
   return 0;
 }
 
-int FebexGui::SaveGosip (int sfp, int slave, int address, int value)
-{
-//std::cout << "# SaveGosip" << std::endl;
-  static char buffer[1024] = { };
-  snprintf (buffer, 1024, "%d %d %x %x \n", sfp, slave, address, value);
-  QString line (buffer);
-  return (WriteConfigFile (line));
-}
-
-int FebexGui::WriteGosip (int sfp, int slave, int address, int value)
-{
-  int rev = 0;
-//std::cout << "#WriteGosip" << std::endl;
-  if (fSaveConfig)
-    return SaveGosip (sfp, slave, address, value);
-
-#ifdef USE_MBSPEX_LIB
-  //QApplication::setOverrideCursor (Qt::WaitCursor);
-  rev = mbspex_slave_wr (fPexFD, sfp, slave, address, value);
-  I2c_sleep ();
-  if (fDebug)
-  {
-    char buffer[1024];
-    snprintf (buffer, 1024, "mbspex_slave_wr(%d,%d 0x%x 0x%x)", sfp, slave, address, value);
-    QString msg (buffer);
-    AppendTextWindow (msg);
-  }
-  //QApplication::restoreOverrideCursor ();
-#else
-  char buffer[1024];
-  snprintf (buffer, 1024, "gosipcmd -w -- %d %d 0x%x 0x%x", sfp, slave, address, value);
-  QString com (buffer);
-  QString result = ExecuteGosipCmd (com);
-  if (result == "ERROR")
-  rev = -1;
-#endif
-
-  return rev;
-}
-
-QString FebexGui::ExecuteGosipCmd (QString& com, int timeout)
-{
-// interface to shell gosipcmd
-// TODO optionally some remote call via ssh for Go4 gui?
-  QString result;
-  QProcess proc;
-  DebugTextWindow (com);
-#if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
-  proc.setProcessEnvironment (fEnv);
-#endif
-  proc.setReadChannel (QProcess::StandardOutput);
-  QApplication::setOverrideCursor (Qt::WaitCursor);
-
-  proc.start (com);
-// if(proc.waitForReadyRead (1000)) // will give termination warnings after leaving this function
-  if (proc.waitForFinished (timeout))    // after process is finished we can still read stdio buffer
-  {
-    // read back stdout of proc here
-    result = proc.readAll ();
-  }
-  else
-  {
-    std::stringstream buf;
-    buf << "! Warning: ExecuteGosipCmd not finished after " << timeout / 1000 << " s timeout !!!" << std::endl;
-    std::cout << " FebexGui: " << buf.str ().c_str ();
-    AppendTextWindow (buf.str ().c_str ());
-    result = "ERROR";
-  }
-  QApplication::restoreOverrideCursor ();
-  return result;
-}
-
-void FebexGui::AppendTextWindow (const QString& text)
-{
-  TextOutput->appendPlainText (text);
-  TextOutput->update ();
-}
-
-void FebexGui::FlushTextWindow ()
-{
-  TextOutput->repaint ();
-}
-
-bool FebexGui::AssertNoBroadcast (bool verbose)
-{
-  if (fSFP < 0 || fSlave < 0)
-  {
-    //std::cerr << "# FebexGui Error: broadcast not supported here!" << std::endl;
-    if (verbose)
-      AppendTextWindow ("#Error: broadcast not supported here!");
-    return false;
-  }
-  return true;
-}
-
-bool FebexGui::AssertChainConfigured (bool verbose)
-{
-#ifdef USE_MBSPEX_LIB
-
-  if (fSlave >= fSFPChains.numslaves[fSFP])
-  {
-    if (verbose)
-      printm("#Error: device index %d not in initialized chain of length %d at SFP %d",fSlave,fSFPChains.numslaves[fSFP],fSFP);
-    return false;
-  }
-#endif
-return true;
-}

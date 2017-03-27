@@ -8,221 +8,19 @@
 #include <QDateTime>
 #include <QTimer>
 
-void ApfelGui::BroadcastBtn_clicked (bool checked)
-{
-//std::cout << "ApfelGui::BroadcastBtn_clicked with checked="<<checked<< std::endl;
-  if (checked)
-  {
-    fSFPSave = SFPspinBox->value ();
-    fSlaveSave = SlavespinBox->value ();
-    SFPspinBox->setValue (-1);
-    SlavespinBox->setValue (-1);
-  }
-  else
-  {
-    RefreshChains ();
-    SFPspinBox->setValue (fSFPSave);
-    SlavespinBox->setValue (fSlaveSave);
-
-  }
-}
 
 
 
 
-void ApfelGui::ShowBtn_clicked ()
-{
-  //std::cout << "ApfelGui::ShowBtn_clicked()"<< std::endl;
-  EvaluateSlave ();
-  GetSFPChainSetup ();
-
-  if (!AssertNoBroadcast (false))
-    return;
-  if (!AssertChainConfigured ())
-    return;
-  GetRegisters ();
-  RefreshView ();
-}
-
-void ApfelGui::ApplyBtn_clicked ()
-{
-//std::cout << "ApfelGui::ApplyBtn_clicked()"<< std::endl;
-
-  EvaluateSlave ();
-
-// JAM maybe disable confirm window ?
-//  char buffer[1024];
-//  snprintf (buffer, 1024, "Really apply APFEL settings  to SFP %d Device %d?", fSFP, fSlave);
-//  if (QMessageBox::question (this, "APFEL GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
-//      != QMessageBox::Yes)
-//  {
-//    return;
-//  }
-
-  GetSFPChainSetup ();
-  if (AssertNoBroadcast (false) && !AssertChainConfigured ())
-    return;
-
-  // JAM: since we keep all slave set ups in vector/array, we must handle broadcast mode explicitely
-  // no implicit driver broadcast via -1 indices anymore!
-  APFEL_BROADCAST_ACTION(ApplyGUISettings());
-
-}
 
 
-void ApfelGui::SaveConfigBtn_clicked (const char* selectfile)
-{
-//std::cout << "ApfelGui::SaveConfigBtn_clicked()"<< std::endl;
-
-  static char buffer[1024];
-  QString gos_filter ("gosipcmd file (*.gos)");
-  QString apf_filter ("apfel characterization file (*.apf)");
-  QStringList filters;
-  filters << gos_filter << apf_filter;
-
-  QFileDialog fd (this, "Write Apfel configuration file");
-
-  // ".", "nyxor setup file (*.txt);;gosipcmd file (*.gos);;context dump file (*.dmp)");
-  fd.setNameFilters (filters);
-  fd.selectNameFilter (apf_filter);
-  fd.setFileMode (QFileDialog::AnyFile);
-  fd.setAcceptMode (QFileDialog::AcceptSave);
-
-  if (selectfile)
-  {
-    fd.selectFile (QString (selectfile));
-  }
-  if (fd.exec () != QDialog::Accepted)
-    return;
-  QStringList flst = fd.selectedFiles ();
-  if (flst.isEmpty ())
-    return;
-  QString fileName = flst[0];
-
-  // complete suffix if user did not
-  if (fd.selectedNameFilter () == gos_filter)
-  {
-    if (!fileName.endsWith (".gos"))
-      fileName.append (".gos");
-
-    // open file
-    if (OpenConfigFile (fileName) != 0)
-      return;
-
-    WriteConfigFile (QString ("#Format *.gos"));
-    WriteConfigFile (QString ("#usage: gosipcmd -x -c file.gos \n"));
-    WriteConfigFile (QString ("#                                         \n"));
-    WriteConfigFile (QString ("#sfp slave address value\n"));
-    APFEL_BROADCAST_ACTION(SaveRegisters());
-    // refresh actual setup from hardware and write it to open file
-    CloseConfigFile ();
-    snprintf (buffer, 1024, "Saved current slave configuration to file '%s' .\n", fileName.toLatin1 ().constData ());
-    AppendTextWindow (buffer);
-  }
-  else if (fd.selectedNameFilter () == apf_filter)
-  {
-    if (!fileName.endsWith (".apf"))
-      fileName.append (".apf");
-
-    OpenTestFile (fileName);
-    APFEL_BROADCAST_ACTION(SaveTestResults());
-    // dump figures of merit of current slave, or of all slaves
-    CloseTestFile ();
-    snprintf (buffer, 1024, "Saved test result to file '%s' .\n", fileName.toLatin1 ().constData ());
-    AppendTextWindow (buffer);
-  }
-
-  else
-  {
-    std::cout << "ApfelGui::SaveConfigBtn_clicked( - NEVER COME HERE!!!!)" << std::endl;
-  }
-
-}
-
-
-void ApfelGui::InitChainBtn_clicked ()
-{
-  char buffer[1024];
-  EvaluateSlave ();
-//std::cout << "InitChainBtn_clicked()"<< std::endl;
-  bool ok;
-  snprintf (buffer, 1024, "Please specify NUMBER OF DEVICES to initialize at SFP %d ?", fSFP);
-#if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
-  int numslaves = QInputDialog::getInt (this, tr ("Number of Slaves?"), tr (buffer), 1, 1, 1024, 1, &ok);
-#else
-  int numslaves = QInputDialog::getInteger(this, tr("Number of Slaves?"),
-      tr(buffer), 1, 1, 1024, 1, &ok);
-
-#endif
-  if (!ok)
-    return;
-  if (fSFP < 0)
-  {
-    AppendTextWindow ("--- Error: Broadcast not allowed for init chain!");
-    return;
-  }
-#ifdef USE_MBSPEX_LIB
-  int rev = mbspex_slave_init (fPexFD, fSFP, numslaves);
-
-#else
-  snprintf (buffer, 1024, "gosipcmd -i  %d %d", fSFP, numslaves);
-  QString com (buffer);
-  QString result = ExecuteGosipCmd (com);
-  AppendTextWindow (result);
-#endif
-
-  GetSFPChainSetup ();
-  RefreshChains ();
-}
-
-void ApfelGui::ResetBoardBtn_clicked ()
-{
-//std::cout << "ApfelGui::ResetBoardBtn_clicked"<< std::endl;
-  if (QMessageBox::question (this, "APFEL GUI", "Really Reset gosip on pex board?", QMessageBox::Yes | QMessageBox::No,
-      QMessageBox::Yes) != QMessageBox::Yes)
-  {
-    //std::cout <<"QMessageBox does not return yes! "<< std::endl;
-    return;
-  }
-#ifdef USE_MBSPEX_LIB
-  mbspex_reset (fPexFD);
-  AppendTextWindow ("Reset PEX board with mbspex_reset()");
-
-#else
-
-  char buffer[1024];
-  snprintf (buffer, 1024, "gosipcmd -z");
-  QString com (buffer);
-  QString result = ExecuteGosipCmd (com);
-  AppendTextWindow (result);
-
-#endif
-
-  GetSFPChainSetup ();
-  RefreshChains ();
-}
-
-void ApfelGui::ResetSlaveBtn_clicked ()
-{
-  char buffer[1024];
-  EvaluateSlave ();
-  snprintf (buffer, 1024, "Really initialize APFEL device at SFP %d, Slave %d ?", fSFP, fSlave);
-  if (QMessageBox::question (this, "Apfel GUI", QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
-      != QMessageBox::Yes)
-  {
-    //std::cout <<"QMessageBox does not return yes! "<< std::endl;
-    return;
-  }
-  APFEL_BROADCAST_ACTION(InitApfel());
-
-}
 
 void ApfelGui::AutoAdjustBtn_clicked ()
 {
   //std::cout <<"AutoAdjustBtn_clicked "<< std::endl;
   EvaluateSlave ();
   QApplication::setOverrideCursor (Qt::WaitCursor);
-  APFEL_BROADCAST_ACTION(AutoAdjust());
+  GOSIP_BROADCAST_ACTION(AutoAdjust());
   QApplication::restoreOverrideCursor ();
 }
 
@@ -232,7 +30,7 @@ void ApfelGui::CalibrateADCBtn_clicked ()
   //std::cout <<"CalibrateADCBtn_clicked"<< std::endl;
   EvaluateSlave ();
   QApplication::setOverrideCursor (Qt::WaitCursor);
-  APFEL_BROADCAST_ACTION(CalibrateSelectedADCs());
+  GOSIP_BROADCAST_ACTION(CalibrateSelectedADCs());
   QApplication::restoreOverrideCursor ();
 }
 
@@ -242,7 +40,7 @@ void ApfelGui::CalibrateResetBtn_clicked ()
   //std::cout <<"CalibrateResetBtn_clicked"<< std::endl;
   EvaluateSlave ();
   QApplication::setOverrideCursor (Qt::WaitCursor);
-  APFEL_BROADCAST_ACTION(CalibrateResetSelectedADCs());
+  GOSIP_BROADCAST_ACTION(CalibrateResetSelectedADCs());
   QApplication::restoreOverrideCursor ();
 }
 
@@ -251,7 +49,7 @@ void ApfelGui::CalibrateResetBtn_clicked ()
 void ApfelGui::PeakFinderBtn_clicked()
 {
   //std::cout <<"PeakFinderBtn_clicked"<< std::endl;
-  int channel = PlotTabWidget->currentIndex ();
+  int channel = fApfelWidget->PlotTabWidget->currentIndex ();
   FindPeaks(channel);
   RefreshSampleMaxima(channel);
 }
@@ -261,14 +59,14 @@ void ApfelGui::AcquireSamplesBtn_clicked ()
   //std::cout <<"AcquireSamplesBtn_clicked"<< std::endl;
   EvaluateSlave ();
   QApplication::setOverrideCursor (Qt::WaitCursor);
-  APFEL_BROADCAST_ACTION(AcquireSelectedSamples());
+  GOSIP_BROADCAST_ACTION(AcquireSelectedSamples());
   QApplication::restoreOverrideCursor ();
 }
 
 void ApfelGui::MaximaCellDoubleClicked(int row, int column)
 {
   //std::cout <<"MaximaCellDoubleClicked("<<row<<","<<column<<")"<< std::endl;
-  int channel = PlotTabWidget->currentIndex ();
+  int channel = fApfelWidget->PlotTabWidget->currentIndex ();
   ZoomSampleToPeak(channel,row);
 }
 
@@ -278,7 +76,7 @@ void ApfelGui::DumpSamplesBtn_clicked ()
   //std::cout <<"DumpSamplesBtn_clicked"<< std::endl;
   EvaluateSlave ();
   QApplication::setOverrideCursor (Qt::WaitCursor);
-  APFEL_BROADCAST_ACTION(ShowSelectedSamples());
+  GOSIP_BROADCAST_ACTION(ShowSelectedSamples());
   QApplication::restoreOverrideCursor ();
 }
 
@@ -286,21 +84,21 @@ void ApfelGui::DumpSamplesBtn_clicked ()
 void ApfelGui::ZoomSampleBtn_clicked ()
 {
   //std::cout <<"ZoomSampleBtn_clicked"<< std::endl;
-  int channel = PlotTabWidget->currentIndex ();
+  int channel = fApfelWidget->PlotTabWidget->currentIndex ();
   ZoomSample (channel);
 }
 
 void ApfelGui::UnzoomSampleBtn_clicked ()
 {
   //std::cout <<"UnzoomSampleBtn_clicked"<< std::endl;
-  int channel = PlotTabWidget->currentIndex ();
+  int channel = fApfelWidget->PlotTabWidget->currentIndex ();
   UnzoomSample (channel);
 }
 
 void ApfelGui::RefreshSampleBtn_clicked ()
 {
   //std::cout <<"RefreshSampleBtn_clicked"<< std::endl;
-  int channel = PlotTabWidget->currentIndex ();
+  int channel = fApfelWidget->PlotTabWidget->currentIndex ();
   //std::cout <<"Got current index"<<channel<< std::endl;
   QApplication::setOverrideCursor (Qt::WaitCursor);
   AcquireSample (channel);
@@ -309,114 +107,11 @@ void ApfelGui::RefreshSampleBtn_clicked ()
   QApplication::restoreOverrideCursor ();
 }
 
-void ApfelGui::DumpBtn_clicked ()
-{
-//std::cout << "ApfelGui::DumpBtn_clicked"<< std::endl;
-// dump register contents from gosipcmd into TextOutput (QPlainText)
-  EvaluateSlave ();
-  AppendTextWindow ("--- ADC Dump ---:");
-  APFEL_BROADCAST_ACTION(DumpADCs());
-
-}
-
-void ApfelGui::ClearOutputBtn_clicked ()
-{
-//std::cout << "ApfelGui::ClearOutputBtn_clicked()"<< std::endl;
-  TextOutput->clear ();
-  TextOutput->setPlainText ("Welcome to APFEL GUI!\n\t v0.985 of 12-January-2017 by JAM (j.adamczewski@gsi.de)\n");
-
-}
 
 
-void ApfelGui::ConfigBtn_clicked ()
-{
-//std::cout << "ApfelGui::ConfigBtn_clicked" << std::endl;
 
-// here file requester and application of set up via gosipcmd
-  QFileDialog fd (this, "Select APFEL configuration file", ".", "gosipcmd file (*.gos)");
-  fd.setFileMode (QFileDialog::ExistingFile);
-  if (fd.exec () != QDialog::Accepted)
-    return;
-  QStringList flst = fd.selectedFiles ();
-  if (flst.isEmpty ())
-    return;
-  char buffer[1024];
-  // JAM: need to increase default bus wait time to 900us first for febex i2c!
-  snprintf (buffer, 1024, "setGosipwait.sh 900");    // output redirection inside QProcess does not work, use helper script
-  QString tcom (buffer);
-  QString tresult = ExecuteGosipCmd (tcom, 10000);
-  AppendTextWindow (tresult);
-  QString fileName = flst[0];
-  {
-    if (!fileName.endsWith (".gos"))
-      fileName.append (".gos");
-    snprintf (buffer, 1024, "gosipcmd -x -c %s ", fileName.toLatin1 ().constData ());
-  }
-  QString com (buffer);
-  QString result = ExecuteGosipCmd (com, 10000);    // this will just execute the command in shell, gosip or not
-  AppendTextWindow (result);
 
-  snprintf (buffer, 1024, "setGosipwait.sh 0");    // set back to zero bus wait since we have explicit i2c_sleep elsewhere!
-  QString zcom (buffer);
-  QString zresult = ExecuteGosipCmd (zcom, 10000);
-  AppendTextWindow (zresult);
 
-  ShowBtn_clicked ();
-}
-
-void ApfelGui::DebugBox_changed (int on)
-{
-//std::cout << "DebugBox_changed to "<< on << std::endl;
-  fDebug = on;
-}
-
-void ApfelGui::HexBox_changed (int on)
-{
-
-  unsigned adjustvalue = ADCAdjustValue->text ().toUInt (0, fNumberBase);    // save value in auto adjust field
-  fNumberBase = (on ? 16 : 10);
-//std::cout << "HexBox_changed set base to "<< fNumberBase << std::endl;
-
-  QString text;
-  QString pre;
-  fNumberBase == 16 ? pre = "0x" : pre = "";
-  ADCAdjustValue->setText (pre + text.setNum (adjustvalue, fNumberBase));    // recover with new base
-
-  int oldsfp = fSFP;
-  int oldslave = fSlave;
-
-  if (!AssertNoBroadcast (false))
-  {
-    fSFP = fSFPSave;
-    fSlave = fSlaveSave;
-  }
-  RefreshView ();    // need to workaround the case that any broadcast was set. however, we do not need full APFEL_BROADCAST_ACTION
-  if (!AssertNoBroadcast (false))
-  {
-    fSFP = oldsfp;
-    fSlave = oldslave;
-  }
-
-}
-
-void ApfelGui::Slave_changed (int)
-{
-  //std::cout << "ApfelGui::Slave_changed" << std::endl;
-  EvaluateSlave ();
-  bool refreshable = AssertNoBroadcast (false);
-  RefreshButton->setEnabled (refreshable);
-
-  RefreshChains ();
-  if (refreshable)
-  {
-    // JAM note that we had a problem of prelling spinbox here (arrow buttons only, keyboard arrows are ok)
-    // probably caused by too long response time of this slot?
-    // workaround is to refresh the view delayed per single shot timer:
-    //std::cout << "Timer started" << std::endl;
-    QTimer::singleShot (10, this, SLOT (ShowBtn_clicked ()));
-    //std::cout << "Timer end" << std::endl;
-  }
-}
 
 
 void ApfelGui::SwitchChanged ()
@@ -424,7 +119,7 @@ void ApfelGui::SwitchChanged ()
   if (checkBox_AA->isChecked () && !fBroadcasting)
   {
     EvaluateSlave ();
-    APFEL_BROADCAST_ACTION(AutoApplySwitch());
+    GOSIP_BROADCAST_ACTION(AutoApplySwitch());
   }
 }
 
@@ -432,7 +127,7 @@ void ApfelGui::PulserTimeout ()
 {
   //std::cout << "ApfelGui::PulserTimeout" << std::endl;
 
-  if (PulseBroadcastCheckBox->isChecked () && !fBroadcasting)
+  if (fApfelWidget->PulseBroadcastCheckBox->isChecked () && !fBroadcasting)
   {
     SetBroadcastPulser ();
   }
@@ -454,7 +149,7 @@ void ApfelGui::PulserDisplayTimeout ()
 
   double progress = (fPulserProgressCounter % 100);
 
-  PulserProgressBar->setValue (progress);    // let the progress bar flicker from 0 to 100%
+  fApfelWidget->PulserProgressBar->setValue (progress);    // let the progress bar flicker from 0 to 100%
   //std::cout << "Set Progress to"<<progress << std::endl;
 }
 
@@ -465,7 +160,7 @@ void ApfelGui::PulserChanged (int apfel)
   if (checkBox_AA->isChecked () && !fBroadcasting)
   {
     EvaluateSlave ();
-    APFEL_BROADCAST_ACTION(AutoApplyPulser(apfel));
+    GOSIP_BROADCAST_ACTION(AutoApplyPulser(apfel));
   }
 
 }
@@ -515,7 +210,7 @@ void ApfelGui::GainChanged (int apfel, int channel)
   if (checkBox_AA->isChecked () && !fBroadcasting)
   {
     EvaluateSlave ();
-    APFEL_BROADCAST_ACTION(AutoApplyGain(apfel,channel));
+    GOSIP_BROADCAST_ACTION(AutoApplyGain(apfel,channel));
   }
 }
 
@@ -610,7 +305,7 @@ void ApfelGui::DAC_enterText (int apfel, int dac)
   if (checkBox_AA->isChecked () && !fBroadcasting)
   {
     EvaluateSlave ();
-    APFEL_BROADCAST_ACTION(AutoApplyDAC(apfel,dac, val));
+    GOSIP_BROADCAST_ACTION(AutoApplyDAC(apfel,dac, val));
   }
 }
 
@@ -783,7 +478,7 @@ void ApfelGui::DAC_changed (int apfel, int dac, int val)
   if (checkBox_AA->isChecked () && !fBroadcasting)
   {
     EvaluateSlave ();
-    APFEL_BROADCAST_ACTION(AutoApplyDAC(apfel,dac, val));
+    GOSIP_BROADCAST_ACTION(AutoApplyDAC(apfel,dac, val));
   }
 
 }
@@ -962,7 +657,7 @@ void ApfelGui::AutoCalibrate (int apfel)
   if (!fBroadcasting)
   {
     EvaluateSlave ();
-    APFEL_BROADCAST_ACTION(DoAutoCalibrate(apfel));
+    GOSIP_BROADCAST_ACTION(DoAutoCalibrate(apfel));
   }
 }
 
@@ -1015,10 +710,10 @@ void ApfelGui::AutoCalibrate_all ()
   if (!fBroadcasting)
   {
     EvaluateSlave ();
-    APFEL_BROADCAST_ACTION(DoAutoCalibrateAll());
+    GOSIP_BROADCAST_ACTION(DoAutoCalibrateAll());
     for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
     {
-      APFEL_BROADCAST_ACTION(UpdateAfterAutoCalibrate(apfel));
+      GOSIP_BROADCAST_ACTION(UpdateAfterAutoCalibrate(apfel));
     }
   }
 }
@@ -1036,7 +731,7 @@ void ApfelGui::DAC_spinBox_changed (int channel, int val)
   if (checkBox_AA->isChecked () && !fBroadcasting)
   {
     EvaluateSlave ();
-    APFEL_BROADCAST_ACTION(AutoApplyRefresh(channel, val));
+    GOSIP_BROADCAST_ACTION(AutoApplyRefresh(channel, val));
   }
 
 }
@@ -1130,7 +825,7 @@ void ApfelGui::InverseMapping_changed (int on)
   if (checkBox_AA->isChecked () && !fBroadcasting)
   {
     EvaluateSlave ();
-    APFEL_BROADCAST_ACTION(SetInverseMapping(on));
+    GOSIP_BROADCAST_ACTION(SetInverseMapping(on));
   }
 
 }
@@ -1149,7 +844,7 @@ void ApfelGui::PulseBroadcast_changed (int on)
     if (checkBox_AA->isChecked () && !fBroadcasting)
     {
       EvaluateSlave ();
-      APFEL_BROADCAST_ACTION(SetBroadcastPulser());
+      GOSIP_BROADCAST_ACTION(SetBroadcastPulser());
     }
 
   }
@@ -1163,7 +858,7 @@ void ApfelGui::PulseTimer_changed (int on)
 
   if (on)
   {
-    int period = EvaluatePulserInterval (FrequencyComboBox->currentIndex ());
+    int period = EvaluatePulserInterval (fApfelWidget->FrequencyComboBox->currentIndex ());
     printm ("Pulser Timer has been started with %d ms period.", period);
     //std::cout << "PulseTimer starts with ms period" <<  period << std::endl;
     fPulserTimer->setInterval (period);
@@ -1174,7 +869,7 @@ void ApfelGui::PulseTimer_changed (int on)
   {
     fPulserTimer->stop ();
     fDisplayTimer->stop ();
-    PulserProgressBar->reset ();
+    fApfelWidget->PulserProgressBar->reset ();
     printm ("Pulser Timer has been stopped.");
     //std::cout << "PulseTimer has been stopped. " << std::endl;
   }
@@ -1210,25 +905,25 @@ void ApfelGui::BenchmarkTimerCallback ()
   //fBenchmark.SetSetup(&theSetup);
 //
   int progress = fBenchmark.GetSequencerProgress ();
-  BenchmarkProgressBar->setValue (progress);
+  fApfelWidget->BenchmarkProgressBar->setValue (progress);
 
   double seconds = fSequencerStopwatch.elapsed () / 1000.0;
-  TimeNumber->display (seconds);
+  fApfelWidget->TimeNumber->display (seconds);
 
   if (!fBenchmark.ProcessBenchmark ())
     fSequencerTimer->stop ();
 
-  APFEL_BROADCAST_ACTION(RefreshView ());
+  GOSIP_BROADCAST_ACTION(RefreshView ());
   // instead of changing gui elements during measurement, we update view completely after each command. avoid unwanted effects by widget signals with auto apply!
-  // the APFEL_BROADCAST_ACTION is just use to supress further signal slot executions
+  // the GOSIP_BROADCAST_ACTION is just use to supress further signal slot executions
 }
 
 void ApfelGui::StartBenchmarkPressed ()
 {
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
   printm ("Benchmark Timer has been started!");
-  QString apfel1 = ApfelID1_lineEdit->text ();
-  QString apfel2 = ApfelID2_lineEdit->text ();
+  QString apfel1 = fApfelWidget->ApfelID1_lineEdit->text ();
+  QString apfel2 = fApfelWidget->ApfelID2_lineEdit->text ();
   if (apfel1.isEmpty () || apfel2.isEmpty ())
   {
     printm ("Please specify full id information!");
@@ -1237,23 +932,23 @@ void ApfelGui::StartBenchmarkPressed ()
 
 
 
-  theSetup.SetBoardID (0, apfel1);
-  theSetup.SetBoardID (1, apfel2);
+  theSetup->SetBoardID (0, apfel1);
+  theSetup->SetBoardID (1, apfel2);
 
   double current=0, voltage=0;
   // here put automatic evaluation of power supply via serial connection:
-  if(AutoPowerscanCheckBox->isChecked())
+  if(fApfelWidget->AutoPowerscanCheckBox->isChecked())
   {
     printm ("Reading power supply settings via serial line...");
 
     ReadToellnerPower(voltage,current);
-    CurrentDoubleSpinBox->setValue(current*1000.0);
-    VoltageDoubleSpinBox->setValue(voltage);
+    fApfelWidget->CurrentDoubleSpinBox->setValue(current*1000.0);
+    fApfelWidget->VoltageDoubleSpinBox->setValue(voltage);
   }
   else
   {
-     current = CurrentDoubleSpinBox->value () / 1000.0;
-     voltage = VoltageDoubleSpinBox->value ();
+     current = fApfelWidget->CurrentDoubleSpinBox->value () / 1000.0;
+     voltage = fApfelWidget->VoltageDoubleSpinBox->value ();
   }
 
 
@@ -1262,15 +957,15 @@ void ApfelGui::StartBenchmarkPressed ()
   //return;
 
 
-  theSetup.SetCurrent (current);
-  theSetup.SetVoltage(voltage);
+  theSetup->SetCurrent (current);
+  theSetup->SetVoltage(voltage);
 
   printm ("Benchmark has been started for sfp %d slave %d", fSFP, fSlave);
   printm ("Board 1:%s Board2:%s Current=%f A Voltage=%f V", apfel1.toLatin1 ().constData (), apfel2.toLatin1 ().constData (),
       current, voltage);
 
   // here we evaluate a to do list that the timer should process:
-  fBenchmark.SetSetup (&theSetup);
+  fBenchmark.SetSetup (theSetup);
 
 
 
@@ -1278,29 +973,29 @@ void ApfelGui::StartBenchmarkPressed ()
 
 
   fBenchmark.ResetSequencerList ();
-  if (Gain1groupBox->isChecked ())
+  if (fApfelWidget->Gain1groupBox->isChecked ())
   {
 
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_1));
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_INIT));
 
-    if (Gain1TestAutocalCheckBox->isChecked ())
+    if (fApfelWidget->Gain1TestAutocalCheckBox->isChecked ())
     {
       fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_AUTOCALIB));
     }
-    if (Gain1TestSigmaCheckBox->isChecked ())
+    if (fApfelWidget->Gain1TestSigmaCheckBox->isChecked ())
     {
       for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_NOISESAMPLE, channel));
 
     }
-    if (Gain1TestBaselineCheckBox->isChecked ())
+    if (fApfelWidget->Gain1TestBaselineCheckBox->isChecked ())
     {
       for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_BASELINE, channel));
 
     }
-    if (Gain1TestCurveCheckBox->isChecked ())
+    if (fApfelWidget->Gain1TestCurveCheckBox->isChecked ())
     {
       for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_CURVE, channel));
@@ -1308,55 +1003,55 @@ void ApfelGui::StartBenchmarkPressed ()
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_FINALIZE));
   }
 
-  if (Gain16groupBox->isChecked ())
+  if (fApfelWidget->Gain16groupBox->isChecked ())
   {
 
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_16));
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_INIT));
 
 
-    if (Gain16TestAutocalCheckBox->isChecked ())
+    if (fApfelWidget->Gain16TestAutocalCheckBox->isChecked ())
     {
       fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_AUTOCALIB));
     }
-    if (Gain16TestSigmaCheckBox->isChecked ())
+    if (fApfelWidget->Gain16TestSigmaCheckBox->isChecked ())
     {
       for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_NOISESAMPLE, channel));
     }
-    if (Gain16TestBaselineCheckBox->isChecked ())
+    if (fApfelWidget->Gain16TestBaselineCheckBox->isChecked ())
     {
       for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_BASELINE, channel));
     }
-    if (Gain16TestCurveCheckBox->isChecked ())
+    if (fApfelWidget->Gain16TestCurveCheckBox->isChecked ())
     {
       for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_CURVE, channel));
     }
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_FINALIZE));
   }
-  if (Gain32groupBox->isChecked ())
+  if (fApfelWidget->Gain32groupBox->isChecked ())
   {
 
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_32));
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_INIT));
 
-    if (Gain32TestAutocalCheckBox->isChecked ())
+    if (fApfelWidget->Gain32TestAutocalCheckBox->isChecked ())
     {
       fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_AUTOCALIB));
     }
-    if (Gain32TestSigmaCheckBox->isChecked ())
+    if (fApfelWidget->Gain32TestSigmaCheckBox->isChecked ())
     {
       for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_NOISESAMPLE, channel));
     }
-    if (Gain32TestBaselineCheckBox->isChecked ())
+    if (fApfelWidget->Gain32TestBaselineCheckBox->isChecked ())
     {
       for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_BASELINE, channel));
     }
-    if (Gain32TestCurveCheckBox->isChecked ())
+    if (fApfelWidget->Gain32TestCurveCheckBox->isChecked ())
     {
       for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_CURVE, channel));
@@ -1385,29 +1080,29 @@ void ApfelGui::ContinueBenchmarkPressed ()
 
 void ApfelGui::SaveBenchmarkPressed ()
 {
-  QString apfel1 = ApfelID1_lineEdit->text ();
-  QString apfel2 = ApfelID2_lineEdit->text ();
+  QString apfel1 = fApfelWidget->ApfelID1_lineEdit->text ();
+  QString apfel2 = fApfelWidget->ApfelID2_lineEdit->text ();
   QString filename = apfel1.append ("_").append (apfel2).append (".apf");
-  SaveConfigBtn_clicked (filename.toLatin1 ().constData ());
+  DoSaveConfig(filename.toLatin1 ().constData ());
 }
 
 void ApfelGui::BenchmarkPressed (QAbstractButton* but)
 {
-  if (but == BenchmarkButtonBox->button (QDialogButtonBox::Apply))
+  if (but == fApfelWidget->BenchmarkButtonBox->button (QDialogButtonBox::Apply))
   {
     StartBenchmarkPressed ();
   }
-  else if (but == BenchmarkButtonBox->button (QDialogButtonBox::Save))
+  else if (but == fApfelWidget->BenchmarkButtonBox->button (QDialogButtonBox::Save))
   {
 
     SaveBenchmarkPressed ();
   }
-  else if (but == BenchmarkButtonBox->button (QDialogButtonBox::Cancel))
+  else if (but == fApfelWidget->BenchmarkButtonBox->button (QDialogButtonBox::Cancel))
   {
     //printm("Benchmark will be canceled.");
     CancelBenchmarkPressed ();
   }
-  else if (but == BenchmarkButtonBox->button (QDialogButtonBox::Retry))
+  else if (but == fApfelWidget->BenchmarkButtonBox->button (QDialogButtonBox::Retry))
   {
     ContinueBenchmarkPressed ();
   }
@@ -1420,13 +1115,13 @@ void ApfelGui::ChangeReferenceDataPressed(QAbstractButton* but)
 
   //std::cout << "ChangeReferenceDataPressed" << std::endl;
 
-  if (but == ReferenceLoadButtonBox->button (QDialogButtonBox::Open))
+  if (but == fApfelWidget->ReferenceLoadButtonBox->button (QDialogButtonBox::Open))
     {
       LoadBenchmarkReferences();
     }
-  else if (but == ReferenceLoadButtonBox->button (QDialogButtonBox::RestoreDefaults))
+  else if (but == fApfelWidget->ReferenceLoadButtonBox->button (QDialogButtonBox::RestoreDefaults))
    {
-      ReferenceLineEdit->setText("buildin defaults");
+    fApfelWidget->ReferenceLineEdit->setText("buildin defaults");
       fBenchmark.InitReferenceValues();
    }
 

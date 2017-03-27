@@ -25,534 +25,480 @@
 
 // *********************************************************
 
-// this we need to implement for output of mbspex library, but also useful to format output without it:
-ApfelGui* ApfelGui::fInstance = 0;
-
-#include <stdarg.h>
-
-
-void printm (char *fmt, ...)
-{
-  char c_str[256];
-  va_list args;
-  va_start(args, fmt);
-  vsprintf (c_str, fmt, args);
-//printf ("%s", c_str);
-  ApfelGui::fInstance->AppendTextWindow (c_str);
-  ApfelGui::fInstance->FlushTextWindow ();
-  va_end(args);
-}
-
-#ifdef USE_MBSPEX_LIB
-/** this one is used to speed down direct mbspex io:*/
-void ApfelGui::I2c_sleep ()
-{
-  //usleep(300);
-
-  usleep(1000);// JAM2016 2x time specified in docu
-}
-
-#endif
 
 /*
  *  Constructs a ApfelGui which is a child of 'parent', with the
  *  name 'name'.'
  */
 ApfelGui::ApfelGui (QWidget* parent) :
-    QWidget (parent), fPulserProgressCounter (0), fDebug (false), fSaveConfig (false), fBroadcasting (false), fSFP (0),
-        fSlave (0), fSFPSave (0), fSlaveSave (0), fConfigFile (0), fTestFile (0), fPlotMinDac (0),
+    GosipGui (parent), fPulserProgressCounter (0), fTestFile (0), fPlotMinDac (0),
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
 {
-  setupUi (this);
-#if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
-  fEnv = QProcessEnvironment::systemEnvironment ();    // get PATH to gosipcmd from parent process
-#endif
+  fImplementationName="APFEL";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.990 of 27-March-2017 by JAM (j.adamczewski@gsi.de)\n";
 
-  fNumberBase = 10;
+  fApfelWidget=new ApfelWidget();
+  Settings_scrollArea->setWidget(fApfelWidget);
 
-  memset (&fSFPChains, 0, sizeof(struct pex_sfp_links));
-
-  for (int sfp = 0; sfp < 4; ++sfp)
-    fSetup[sfp].clear ();
-
-  SFPspinBox->setValue (fSFP);
-  SlavespinBox->setValue (fSlave);
-  DAC_spinBox_all->setValue (500);
-  TextOutput->setCenterOnScroll (false);
   ClearOutputBtn_clicked ();
 
-  QObject::connect (RefreshButton, SIGNAL (clicked ()), this, SLOT (ShowBtn_clicked ()));
-  QObject::connect (ApplyButton, SIGNAL (clicked ()), this, SLOT (ApplyBtn_clicked ()));
 
-  QObject::connect (InitChainButton, SIGNAL (clicked ()), this, SLOT (InitChainBtn_clicked ()));
-  QObject::connect (ResetBoardButton, SIGNAL (clicked ()), this, SLOT (ResetBoardBtn_clicked ()));
-  QObject::connect (ResetSlaveButton, SIGNAL (clicked ()), this, SLOT (ResetSlaveBtn_clicked ()));
-  QObject::connect (BroadcastButton, SIGNAL (clicked (bool)), this, SLOT (BroadcastBtn_clicked (bool)));
-  QObject::connect (DumpButton, SIGNAL (clicked ()), this, SLOT (DumpBtn_clicked ()));
-  QObject::connect (ConfigButton, SIGNAL (clicked ()), this, SLOT (ConfigBtn_clicked ()));
-  QObject::connect (SaveConfigButton, SIGNAL (clicked ()), this, SLOT (SaveConfigBtn_clicked ()));
-  QObject::connect (ClearOutputButton, SIGNAL (clicked ()), this, SLOT (ClearOutputBtn_clicked ()));
+  QObject::connect (fApfelWidget->AutoAdjustButton, SIGNAL (clicked ()), this, SLOT (AutoAdjustBtn_clicked ()));
+  QObject::connect (fApfelWidget->CalibrateADCButton, SIGNAL (clicked ()), this, SLOT (CalibrateADCBtn_clicked ()));
+  QObject::connect (fApfelWidget->CalibrateResetButton, SIGNAL (clicked ()), this, SLOT (CalibrateResetBtn_clicked ()));
 
-  QObject::connect (AutoAdjustButton, SIGNAL (clicked ()), this, SLOT (AutoAdjustBtn_clicked ()));
-  QObject::connect (CalibrateADCButton, SIGNAL (clicked ()), this, SLOT (CalibrateADCBtn_clicked ()));
-  QObject::connect (CalibrateResetButton, SIGNAL (clicked ()), this, SLOT (CalibrateResetBtn_clicked ()));
+  QObject::connect (fApfelWidget->DAC_spinBox_all, SIGNAL(valueChanged(int)), this, SLOT(DAC_spinBox_all_changed(int)));
+  QObject::connect (fApfelWidget->DAC_spinBox_00, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox00_changed(int)));
+  QObject::connect (fApfelWidget->DAC_spinBox_01, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox01_changed(int)));
+  QObject::connect (fApfelWidget->DAC_spinBox_02, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox02_changed(int)));
+  QObject::connect (fApfelWidget->DAC_spinBox_03, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox03_changed(int)));
+  QObject::connect (fApfelWidget->DAC_spinBox_04, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox04_changed(int)));
+  QObject::connect (fApfelWidget->DAC_spinBox_05, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox05_changed(int)));
+  QObject::connect (fApfelWidget->DAC_spinBox_06, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox06_changed(int)));
+  QObject::connect (fApfelWidget->DAC_spinBox_07, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox07_changed(int)));
+  QObject::connect (fApfelWidget->DAC_spinBox_08, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox08_changed(int)));
+  QObject::connect (fApfelWidget->DAC_spinBox_09, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox09_changed(int)));
+  QObject::connect (fApfelWidget->DAC_spinBox_10, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox10_changed(int)));
+  QObject::connect (fApfelWidget->DAC_spinBox_11, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox11_changed(int)));
+  QObject::connect (fApfelWidget->DAC_spinBox_12, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox12_changed(int)));
+  QObject::connect (fApfelWidget->DAC_spinBox_13, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox13_changed(int)));
+  QObject::connect (fApfelWidget->DAC_spinBox_14, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox14_changed(int)));
+  QObject::connect (fApfelWidget->DAC_spinBox_15, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox15_changed(int)));
 
-  QObject::connect (DebugBox, SIGNAL(stateChanged(int)), this, SLOT(DebugBox_changed(int)));
-  QObject::connect (HexBox, SIGNAL(stateChanged(int)), this, SLOT(HexBox_changed(int)));
-  QObject::connect (SFPspinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
-  QObject::connect (SlavespinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_changed(int)));
-  QObject::connect (DAC_spinBox_all, SIGNAL(valueChanged(int)), this, SLOT(DAC_spinBox_all_changed(int)));
-  QObject::connect (DAC_spinBox_00, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox00_changed(int)));
-  QObject::connect (DAC_spinBox_01, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox01_changed(int)));
-  QObject::connect (DAC_spinBox_02, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox02_changed(int)));
-  QObject::connect (DAC_spinBox_03, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox03_changed(int)));
-  QObject::connect (DAC_spinBox_04, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox04_changed(int)));
-  QObject::connect (DAC_spinBox_05, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox05_changed(int)));
-  QObject::connect (DAC_spinBox_06, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox06_changed(int)));
-  QObject::connect (DAC_spinBox_07, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox07_changed(int)));
-  QObject::connect (DAC_spinBox_08, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox08_changed(int)));
-  QObject::connect (DAC_spinBox_09, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox09_changed(int)));
-  QObject::connect (DAC_spinBox_10, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox10_changed(int)));
-  QObject::connect (DAC_spinBox_11, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox11_changed(int)));
-  QObject::connect (DAC_spinBox_12, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox12_changed(int)));
-  QObject::connect (DAC_spinBox_13, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox13_changed(int)));
-  QObject::connect (DAC_spinBox_14, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox14_changed(int)));
-  QObject::connect (DAC_spinBox_15, SIGNAL(valueChanged(int)), this, SLOT (Any_spinBox15_changed(int)));
+  QObject::connect (fApfelWidget->Apfel1_DACSlider_1, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_0_0(int)));
+  QObject::connect (fApfelWidget->Apfel1_DACSlider_2, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_0_1(int)));
+  QObject::connect (fApfelWidget->Apfel1_DACSlider_3, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_0_2(int)));
+  QObject::connect (fApfelWidget->Apfel1_DACSlider_4, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_0_3(int)));
+  QObject::connect (fApfelWidget->Apfel2_DACSlider_1, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_1_0(int)));
+  QObject::connect (fApfelWidget->Apfel2_DACSlider_2, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_1_1(int)));
+  QObject::connect (fApfelWidget->Apfel2_DACSlider_3, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_1_2(int)));
+  QObject::connect (fApfelWidget->Apfel2_DACSlider_4, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_1_3(int)));
+  QObject::connect (fApfelWidget->Apfel3_DACSlider_1, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_2_0(int)));
+  QObject::connect (fApfelWidget->Apfel3_DACSlider_2, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_2_1(int)));
+  QObject::connect (fApfelWidget->Apfel3_DACSlider_3, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_2_2(int)));
+  QObject::connect (fApfelWidget->Apfel3_DACSlider_4, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_2_3(int)));
+  QObject::connect (fApfelWidget->Apfel4_DACSlider_1, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_3_0(int)));
+  QObject::connect (fApfelWidget->Apfel4_DACSlider_2, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_3_1(int)));
+  QObject::connect (fApfelWidget->Apfel4_DACSlider_3, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_3_2(int)));
+  QObject::connect (fApfelWidget->Apfel4_DACSlider_4, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_3_3(int)));
+  QObject::connect (fApfelWidget->Apfel5_DACSlider_1, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_4_0(int)));
+  QObject::connect (fApfelWidget->Apfel5_DACSlider_2, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_4_1(int)));
+  QObject::connect (fApfelWidget->Apfel5_DACSlider_3, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_4_2(int)));
+  QObject::connect (fApfelWidget->Apfel5_DACSlider_4, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_4_3(int)));
+  QObject::connect (fApfelWidget->Apfel6_DACSlider_1, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_5_0(int)));
+  QObject::connect (fApfelWidget->Apfel6_DACSlider_2, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_5_1(int)));
+  QObject::connect (fApfelWidget->Apfel6_DACSlider_3, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_5_2(int)));
+  QObject::connect (fApfelWidget->Apfel6_DACSlider_4, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_5_3(int)));
+  QObject::connect (fApfelWidget->Apfel7_DACSlider_1, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_6_0(int)));
+  QObject::connect (fApfelWidget->Apfel7_DACSlider_2, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_6_1(int)));
+  QObject::connect (fApfelWidget->Apfel7_DACSlider_3, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_6_2(int)));
+  QObject::connect (fApfelWidget->Apfel7_DACSlider_4, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_6_3(int)));
+  QObject::connect (fApfelWidget->Apfel8_DACSlider_1, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_7_0(int)));
+  QObject::connect (fApfelWidget->Apfel8_DACSlider_2, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_7_1(int)));
+  QObject::connect (fApfelWidget->Apfel8_DACSlider_3, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_7_2(int)));
+  QObject::connect (fApfelWidget->Apfel8_DACSlider_4, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_7_3(int)));
 
-  QObject::connect (Apfel1_DACSlider_1, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_0_0(int)));
-  QObject::connect (Apfel1_DACSlider_2, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_0_1(int)));
-  QObject::connect (Apfel1_DACSlider_3, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_0_2(int)));
-  QObject::connect (Apfel1_DACSlider_4, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_0_3(int)));
-  QObject::connect (Apfel2_DACSlider_1, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_1_0(int)));
-  QObject::connect (Apfel2_DACSlider_2, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_1_1(int)));
-  QObject::connect (Apfel2_DACSlider_3, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_1_2(int)));
-  QObject::connect (Apfel2_DACSlider_4, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_1_3(int)));
-  QObject::connect (Apfel3_DACSlider_1, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_2_0(int)));
-  QObject::connect (Apfel3_DACSlider_2, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_2_1(int)));
-  QObject::connect (Apfel3_DACSlider_3, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_2_2(int)));
-  QObject::connect (Apfel3_DACSlider_4, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_2_3(int)));
-  QObject::connect (Apfel4_DACSlider_1, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_3_0(int)));
-  QObject::connect (Apfel4_DACSlider_2, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_3_1(int)));
-  QObject::connect (Apfel4_DACSlider_3, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_3_2(int)));
-  QObject::connect (Apfel4_DACSlider_4, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_3_3(int)));
-  QObject::connect (Apfel5_DACSlider_1, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_4_0(int)));
-  QObject::connect (Apfel5_DACSlider_2, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_4_1(int)));
-  QObject::connect (Apfel5_DACSlider_3, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_4_2(int)));
-  QObject::connect (Apfel5_DACSlider_4, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_4_3(int)));
-  QObject::connect (Apfel6_DACSlider_1, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_5_0(int)));
-  QObject::connect (Apfel6_DACSlider_2, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_5_1(int)));
-  QObject::connect (Apfel6_DACSlider_3, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_5_2(int)));
-  QObject::connect (Apfel6_DACSlider_4, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_5_3(int)));
-  QObject::connect (Apfel7_DACSlider_1, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_6_0(int)));
-  QObject::connect (Apfel7_DACSlider_2, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_6_1(int)));
-  QObject::connect (Apfel7_DACSlider_3, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_6_2(int)));
-  QObject::connect (Apfel7_DACSlider_4, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_6_3(int)));
-  QObject::connect (Apfel8_DACSlider_1, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_7_0(int)));
-  QObject::connect (Apfel8_DACSlider_2, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_7_1(int)));
-  QObject::connect (Apfel8_DACSlider_3, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_7_2(int)));
-  QObject::connect (Apfel8_DACSlider_4, SIGNAL(valueChanged(int)), this, SLOT (DAC_changed_7_3(int)));
+  QObject::connect (fApfelWidget->Apfel1_DAClineEdit_1, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_0_0 ()));
+  QObject::connect (fApfelWidget->Apfel1_DAClineEdit_2, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_0_1 ()));
+  QObject::connect (fApfelWidget->Apfel1_DAClineEdit_3, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_0_2 ()));
+  QObject::connect (fApfelWidget->Apfel1_DAClineEdit_4, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_0_3 ()));
+  QObject::connect (fApfelWidget->Apfel2_DAClineEdit_1, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_1_0 ()));
+  QObject::connect (fApfelWidget->Apfel2_DAClineEdit_2, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_1_1 ()));
+  QObject::connect (fApfelWidget->Apfel2_DAClineEdit_3, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_1_2 ()));
+  QObject::connect (fApfelWidget->Apfel2_DAClineEdit_4, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_1_3 ()));
+  QObject::connect (fApfelWidget->Apfel3_DAClineEdit_1, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_2_0 ()));
+  QObject::connect (fApfelWidget->Apfel3_DAClineEdit_2, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_2_1 ()));
+  QObject::connect (fApfelWidget->Apfel3_DAClineEdit_3, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_2_2 ()));
+  QObject::connect (fApfelWidget->Apfel3_DAClineEdit_4, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_2_3 ()));
+  QObject::connect (fApfelWidget->Apfel4_DAClineEdit_1, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_3_0 ()));
+  QObject::connect (fApfelWidget->Apfel4_DAClineEdit_2, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_3_1 ()));
+  QObject::connect (fApfelWidget->Apfel4_DAClineEdit_3, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_3_2 ()));
+  QObject::connect (fApfelWidget->Apfel4_DAClineEdit_4, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_3_3 ()));
+  QObject::connect (fApfelWidget->Apfel5_DAClineEdit_1, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_4_0 ()));
+  QObject::connect (fApfelWidget->Apfel5_DAClineEdit_2, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_4_1 ()));
+  QObject::connect (fApfelWidget->Apfel5_DAClineEdit_3, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_4_2 ()));
+  QObject::connect (fApfelWidget->Apfel5_DAClineEdit_4, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_4_3 ()));
+  QObject::connect (fApfelWidget->Apfel6_DAClineEdit_1, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_5_0 ()));
+  QObject::connect (fApfelWidget->Apfel6_DAClineEdit_2, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_5_1 ()));
+  QObject::connect (fApfelWidget->Apfel6_DAClineEdit_3, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_5_2 ()));
+  QObject::connect (fApfelWidget->Apfel6_DAClineEdit_4, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_5_3 ()));
+  QObject::connect (fApfelWidget->Apfel7_DAClineEdit_1, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_6_0 ()));
+  QObject::connect (fApfelWidget->Apfel7_DAClineEdit_2, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_6_1 ()));
+  QObject::connect (fApfelWidget->Apfel7_DAClineEdit_3, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_6_2 ()));
+  QObject::connect (fApfelWidget->Apfel7_DAClineEdit_4, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_6_3 ()));
+  QObject::connect (fApfelWidget->Apfel8_DAClineEdit_1, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_7_0 ()));
+  QObject::connect (fApfelWidget->Apfel8_DAClineEdit_2, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_7_1 ()));
+  QObject::connect (fApfelWidget->Apfel8_DAClineEdit_3, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_7_2 ()));
+  QObject::connect (fApfelWidget->Apfel8_DAClineEdit_4, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_7_3 ()));
 
-  QObject::connect (Apfel1_DAClineEdit_1, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_0_0 ()));
-  QObject::connect (Apfel1_DAClineEdit_2, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_0_1 ()));
-  QObject::connect (Apfel1_DAClineEdit_3, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_0_2 ()));
-  QObject::connect (Apfel1_DAClineEdit_4, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_0_3 ()));
-  QObject::connect (Apfel2_DAClineEdit_1, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_1_0 ()));
-  QObject::connect (Apfel2_DAClineEdit_2, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_1_1 ()));
-  QObject::connect (Apfel2_DAClineEdit_3, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_1_2 ()));
-  QObject::connect (Apfel2_DAClineEdit_4, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_1_3 ()));
-  QObject::connect (Apfel3_DAClineEdit_1, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_2_0 ()));
-  QObject::connect (Apfel3_DAClineEdit_2, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_2_1 ()));
-  QObject::connect (Apfel3_DAClineEdit_3, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_2_2 ()));
-  QObject::connect (Apfel3_DAClineEdit_4, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_2_3 ()));
-  QObject::connect (Apfel4_DAClineEdit_1, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_3_0 ()));
-  QObject::connect (Apfel4_DAClineEdit_2, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_3_1 ()));
-  QObject::connect (Apfel4_DAClineEdit_3, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_3_2 ()));
-  QObject::connect (Apfel4_DAClineEdit_4, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_3_3 ()));
-  QObject::connect (Apfel5_DAClineEdit_1, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_4_0 ()));
-  QObject::connect (Apfel5_DAClineEdit_2, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_4_1 ()));
-  QObject::connect (Apfel5_DAClineEdit_3, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_4_2 ()));
-  QObject::connect (Apfel5_DAClineEdit_4, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_4_3 ()));
-  QObject::connect (Apfel6_DAClineEdit_1, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_5_0 ()));
-  QObject::connect (Apfel6_DAClineEdit_2, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_5_1 ()));
-  QObject::connect (Apfel6_DAClineEdit_3, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_5_2 ()));
-  QObject::connect (Apfel6_DAClineEdit_4, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_5_3 ()));
-  QObject::connect (Apfel7_DAClineEdit_1, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_6_0 ()));
-  QObject::connect (Apfel7_DAClineEdit_2, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_6_1 ()));
-  QObject::connect (Apfel7_DAClineEdit_3, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_6_2 ()));
-  QObject::connect (Apfel7_DAClineEdit_4, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_6_3 ()));
-  QObject::connect (Apfel8_DAClineEdit_1, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_7_0 ()));
-  QObject::connect (Apfel8_DAClineEdit_2, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_7_1 ()));
-  QObject::connect (Apfel8_DAClineEdit_3, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_7_2 ()));
-  QObject::connect (Apfel8_DAClineEdit_4, SIGNAL (editingFinished ()), this, SLOT (DAC_enterText_7_3 ()));
+  QObject::connect (fApfelWidget->AutocalibrateButton_1, SIGNAL (pressed ()), this, SLOT (AutoCalibrate_0 ()));
+  QObject::connect (fApfelWidget->AutocalibrateButton_2, SIGNAL (pressed ()), this, SLOT (AutoCalibrate_1 ()));
+  QObject::connect (fApfelWidget->AutocalibrateButton_3, SIGNAL (pressed ()), this, SLOT (AutoCalibrate_2 ()));
+  QObject::connect (fApfelWidget->AutocalibrateButton_4, SIGNAL (pressed ()), this, SLOT (AutoCalibrate_3 ()));
+  QObject::connect (fApfelWidget->AutocalibrateButton_5, SIGNAL (pressed ()), this, SLOT (AutoCalibrate_4 ()));
+  QObject::connect (fApfelWidget->AutocalibrateButton_6, SIGNAL (pressed ()), this, SLOT (AutoCalibrate_5 ()));
+  QObject::connect (fApfelWidget->AutocalibrateButton_7, SIGNAL (pressed ()), this, SLOT (AutoCalibrate_6 ()));
+  QObject::connect (fApfelWidget->AutocalibrateButton_8, SIGNAL (pressed ()), this, SLOT (AutoCalibrate_7 ()));
 
-  QObject::connect (AutocalibrateButton_1, SIGNAL (pressed ()), this, SLOT (AutoCalibrate_0 ()));
-  QObject::connect (AutocalibrateButton_2, SIGNAL (pressed ()), this, SLOT (AutoCalibrate_1 ()));
-  QObject::connect (AutocalibrateButton_3, SIGNAL (pressed ()), this, SLOT (AutoCalibrate_2 ()));
-  QObject::connect (AutocalibrateButton_4, SIGNAL (pressed ()), this, SLOT (AutoCalibrate_3 ()));
-  QObject::connect (AutocalibrateButton_5, SIGNAL (pressed ()), this, SLOT (AutoCalibrate_4 ()));
-  QObject::connect (AutocalibrateButton_6, SIGNAL (pressed ()), this, SLOT (AutoCalibrate_5 ()));
-  QObject::connect (AutocalibrateButton_7, SIGNAL (pressed ()), this, SLOT (AutoCalibrate_6 ()));
-  QObject::connect (AutocalibrateButton_8, SIGNAL (pressed ()), this, SLOT (AutoCalibrate_7 ()));
+  QObject::connect (fApfelWidget->AutocalibrateButton_all, SIGNAL (pressed ()), this, SLOT (AutoCalibrate_all ()));
 
-  QObject::connect (AutocalibrateButton_all, SIGNAL (pressed ()), this, SLOT (AutoCalibrate_all ()));
+  QObject::connect (fApfelWidget->PulserCheckBox_0, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_0()));
+  QObject::connect (fApfelWidget->PulserCheckBox_1, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_0()));
+  QObject::connect (fApfelWidget->PulserAmpSpinBox_0, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_0()));
+  QObject::connect (fApfelWidget->PulserAmpSpinBox_1, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_0()));
+  QObject::connect (fApfelWidget->ApfelTestPolarityBox_0, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_0()));
 
-  QObject::connect (PulserCheckBox_0, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_0()));
-  QObject::connect (PulserCheckBox_1, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_0()));
-  QObject::connect (PulserAmpSpinBox_0, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_0()));
-  QObject::connect (PulserAmpSpinBox_1, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_0()));
-  QObject::connect (ApfelTestPolarityBox_0, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_0()));
+  QObject::connect (fApfelWidget->PulserCheckBox_2, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_1()));
+  QObject::connect (fApfelWidget->PulserCheckBox_3, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_1()));
+  QObject::connect (fApfelWidget->PulserAmpSpinBox_2, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_1()));
+  QObject::connect (fApfelWidget->PulserAmpSpinBox_3, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_1()));
+  QObject::connect (fApfelWidget->ApfelTestPolarityBox_1, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_1()));
 
-  QObject::connect (PulserCheckBox_2, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_1()));
-  QObject::connect (PulserCheckBox_3, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_1()));
-  QObject::connect (PulserAmpSpinBox_2, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_1()));
-  QObject::connect (PulserAmpSpinBox_3, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_1()));
-  QObject::connect (ApfelTestPolarityBox_1, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_1()));
+  QObject::connect (fApfelWidget->PulserCheckBox_4, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_2()));
+  QObject::connect (fApfelWidget->PulserCheckBox_5, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_2()));
+  QObject::connect (fApfelWidget->PulserAmpSpinBox_4, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_2()));
+  QObject::connect (fApfelWidget->PulserAmpSpinBox_5, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_2()));
+  QObject::connect (fApfelWidget->ApfelTestPolarityBox_2, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_2()));
 
-  QObject::connect (PulserCheckBox_4, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_2()));
-  QObject::connect (PulserCheckBox_5, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_2()));
-  QObject::connect (PulserAmpSpinBox_4, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_2()));
-  QObject::connect (PulserAmpSpinBox_5, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_2()));
-  QObject::connect (ApfelTestPolarityBox_2, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_2()));
+  QObject::connect (fApfelWidget->PulserCheckBox_6, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_3()));
+  QObject::connect (fApfelWidget->PulserCheckBox_7, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_3()));
+  QObject::connect (fApfelWidget->PulserAmpSpinBox_6, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_3()));
+  QObject::connect (fApfelWidget->PulserAmpSpinBox_7, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_3()));
+  QObject::connect (fApfelWidget->ApfelTestPolarityBox_3, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_3()));
 
-  QObject::connect (PulserCheckBox_6, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_3()));
-  QObject::connect (PulserCheckBox_7, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_3()));
-  QObject::connect (PulserAmpSpinBox_6, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_3()));
-  QObject::connect (PulserAmpSpinBox_7, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_3()));
-  QObject::connect (ApfelTestPolarityBox_3, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_3()));
+  QObject::connect (fApfelWidget->PulserCheckBox_8, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_4()));
+  QObject::connect (fApfelWidget->PulserCheckBox_9, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_4()));
+  QObject::connect (fApfelWidget->PulserAmpSpinBox_8, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_4()));
+  QObject::connect (fApfelWidget->PulserAmpSpinBox_9, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_4()));
+  QObject::connect (fApfelWidget->ApfelTestPolarityBox_4, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_4()));
 
-  QObject::connect (PulserCheckBox_8, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_4()));
-  QObject::connect (PulserCheckBox_9, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_4()));
-  QObject::connect (PulserAmpSpinBox_8, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_4()));
-  QObject::connect (PulserAmpSpinBox_9, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_4()));
-  QObject::connect (ApfelTestPolarityBox_4, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_4()));
+  QObject::connect (fApfelWidget->PulserCheckBox_10, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_5()));
+  QObject::connect (fApfelWidget->PulserCheckBox_11, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_5()));
+  QObject::connect (fApfelWidget->PulserAmpSpinBox_10, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_5()));
+  QObject::connect (fApfelWidget->PulserAmpSpinBox_11, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_5()));
+  QObject::connect (fApfelWidget->ApfelTestPolarityBox_5, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_5()));
 
-  QObject::connect (PulserCheckBox_10, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_5()));
-  QObject::connect (PulserCheckBox_11, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_5()));
-  QObject::connect (PulserAmpSpinBox_10, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_5()));
-  QObject::connect (PulserAmpSpinBox_11, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_5()));
-  QObject::connect (ApfelTestPolarityBox_5, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_5()));
+  QObject::connect (fApfelWidget->PulserCheckBox_12, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_6()));
+  QObject::connect (fApfelWidget->PulserCheckBox_13, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_6()));
+  QObject::connect (fApfelWidget->PulserAmpSpinBox_12, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_6()));
+  QObject::connect (fApfelWidget->PulserAmpSpinBox_13, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_6()));
+  QObject::connect (fApfelWidget->ApfelTestPolarityBox_6, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_6()));
 
-  QObject::connect (PulserCheckBox_12, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_6()));
-  QObject::connect (PulserCheckBox_13, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_6()));
-  QObject::connect (PulserAmpSpinBox_12, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_6()));
-  QObject::connect (PulserAmpSpinBox_13, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_6()));
-  QObject::connect (ApfelTestPolarityBox_6, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_6()));
+  QObject::connect (fApfelWidget->PulserCheckBox_14, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_7()));
+  QObject::connect (fApfelWidget->PulserCheckBox_15, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_7()));
+  QObject::connect (fApfelWidget->PulserAmpSpinBox_14, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_7()));
+  QObject::connect (fApfelWidget->PulserAmpSpinBox_15, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_7()));
 
-  QObject::connect (PulserCheckBox_14, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_7()));
-  QObject::connect (PulserCheckBox_15, SIGNAL(stateChanged(int)), this, SLOT (PulserChanged_7()));
-  QObject::connect (PulserAmpSpinBox_14, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_7()));
-  QObject::connect (PulserAmpSpinBox_15, SIGNAL(valueChanged(int)), this, SLOT (PulserChanged_7()));
+  QObject::connect (fApfelWidget->ApfelTestPolarityBox_7, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_7()));
 
-  QObject::connect (ApfelTestPolarityBox_7, SIGNAL(currentIndexChanged(int)), this, SLOT (PulserChanged_7()));
+  QObject::connect (fApfelWidget->gainCombo_0, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_0()));
+  QObject::connect (fApfelWidget->gainCombo_1, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_1()));
+  QObject::connect (fApfelWidget->gainCombo_2, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_2()));
+  QObject::connect (fApfelWidget->gainCombo_3, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_3()));
+  QObject::connect (fApfelWidget->gainCombo_4, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_4()));
+  QObject::connect (fApfelWidget->gainCombo_5, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_5()));
+  QObject::connect (fApfelWidget->gainCombo_6, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_6()));
+  QObject::connect (fApfelWidget->gainCombo_7, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_7()));
+  QObject::connect (fApfelWidget->gainCombo_8, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_8()));
+  QObject::connect (fApfelWidget->gainCombo_9, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_9()));
+  QObject::connect (fApfelWidget->gainCombo_10, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_10()));
+  QObject::connect (fApfelWidget->gainCombo_11, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_11()));
+  QObject::connect (fApfelWidget->gainCombo_12, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_12()));
+  QObject::connect (fApfelWidget->gainCombo_13, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_13()));
+  QObject::connect (fApfelWidget->gainCombo_14, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_14()));
+  QObject::connect (fApfelWidget->gainCombo_15, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_15()));
 
-  QObject::connect (gainCombo_0, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_0()));
-  QObject::connect (gainCombo_1, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_1()));
-  QObject::connect (gainCombo_2, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_2()));
-  QObject::connect (gainCombo_3, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_3()));
-  QObject::connect (gainCombo_4, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_4()));
-  QObject::connect (gainCombo_5, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_5()));
-  QObject::connect (gainCombo_6, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_6()));
-  QObject::connect (gainCombo_7, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_7()));
-  QObject::connect (gainCombo_8, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_8()));
-  QObject::connect (gainCombo_9, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_9()));
-  QObject::connect (gainCombo_10, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_10()));
-  QObject::connect (gainCombo_11, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_11()));
-  QObject::connect (gainCombo_12, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_12()));
-  QObject::connect (gainCombo_13, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_13()));
-  QObject::connect (gainCombo_14, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_14()));
-  QObject::connect (gainCombo_15, SIGNAL(currentIndexChanged(int)), this, SLOT (GainChanged_15()));
+  QObject::connect (fApfelWidget->ApfelRadioButton, SIGNAL(toggled(bool)), this, SLOT (SwitchChanged()));
+  QObject::connect (fApfelWidget->LoGainRadioButton, SIGNAL(toggled(bool)), this, SLOT (SwitchChanged()));
+  QObject::connect (fApfelWidget->StretcherOnRadioButton, SIGNAL(toggled(bool)), this, SLOT (SwitchChanged()));
 
-  QObject::connect (ApfelRadioButton, SIGNAL(toggled(bool)), this, SLOT (SwitchChanged()));
-  QObject::connect (LoGainRadioButton, SIGNAL(toggled(bool)), this, SLOT (SwitchChanged()));
-  QObject::connect (StretcherOnRadioButton, SIGNAL(toggled(bool)), this, SLOT (SwitchChanged()));
+  QObject::connect (fApfelWidget->InverseMappingCheckBox, SIGNAL(stateChanged(int)), this, SLOT (InverseMapping_changed(int)));
 
-  QObject::connect (InverseMappingCheckBox, SIGNAL(stateChanged(int)), this, SLOT (InverseMapping_changed(int)));
+  QObject::connect (fApfelWidget->DoSampleButton, SIGNAL (clicked ()), this, SLOT (AcquireSamplesBtn_clicked ()));
+  QObject::connect (fApfelWidget->DumpSampleButton, SIGNAL (clicked ()), this, SLOT (DumpSamplesBtn_clicked ()));
 
-  QObject::connect (DoSampleButton, SIGNAL (clicked ()), this, SLOT (AcquireSamplesBtn_clicked ()));
-  QObject::connect (DumpSampleButton, SIGNAL (clicked ()), this, SLOT (DumpSamplesBtn_clicked ()));
+  QObject::connect (fApfelWidget->ZoomButton, SIGNAL (clicked ()), this, SLOT (ZoomSampleBtn_clicked ()));
+  QObject::connect (fApfelWidget->UnzoomButton, SIGNAL (clicked ()), this, SLOT (UnzoomSampleBtn_clicked ()));
+  QObject::connect (fApfelWidget->RefreshSampleButton, SIGNAL (clicked ()), this, SLOT (RefreshSampleBtn_clicked ()));
 
-  QObject::connect (ZoomButton, SIGNAL (clicked ()), this, SLOT (ZoomSampleBtn_clicked ()));
-  QObject::connect (UnzoomButton, SIGNAL (clicked ()), this, SLOT (UnzoomSampleBtn_clicked ()));
-  QObject::connect (RefreshSampleButton, SIGNAL (clicked ()), this, SLOT (RefreshSampleBtn_clicked ()));
+  QObject::connect (fApfelWidget->PeakFinderButton, SIGNAL (clicked ()), this, SLOT (PeakFinderBtn_clicked ()));
 
-  QObject::connect (PeakFinderButton, SIGNAL (clicked ()), this, SLOT (PeakFinderBtn_clicked ()));
+  QObject::connect (fApfelWidget->PulseTimerCheckBox, SIGNAL(stateChanged(int)), this, SLOT(PulseTimer_changed(int)));
+  QObject::connect (fApfelWidget->FrequencyComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT (PulseFrequencyChanged(int)));
 
-  QObject::connect (PulseTimerCheckBox, SIGNAL(stateChanged(int)), this, SLOT(PulseTimer_changed(int)));
-  QObject::connect (FrequencyComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT (PulseFrequencyChanged(int)));
-
-  QObject::connect (PulseBroadcastCheckBox, SIGNAL(stateChanged(int)), this, SLOT(PulseBroadcast_changed(int)));
+  QObject::connect (fApfelWidget->PulseBroadcastCheckBox, SIGNAL(stateChanged(int)), this, SLOT(PulseBroadcast_changed(int)));
 
 //  QObject::connect (BenchmarkButtonBox, SIGNAL(accepted()), this, SLOT(StartBenchmarkPressed()));
 //  QObject::connect (BenchmarkButtonBox, SIGNAL(rejected()), this, SLOT(CancelBenchmarkPressed()));
 
-  QObject::connect (BenchmarkButtonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(BenchmarkPressed(QAbstractButton*)));
+  QObject::connect (fApfelWidget->BenchmarkButtonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(BenchmarkPressed(QAbstractButton*)));
 
-  QObject::connect (ReferenceLoadButtonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(ChangeReferenceDataPressed(QAbstractButton*)));
-
-
-  QObject::connect (PlotTabWidget, SIGNAL(currentChanged(int)), this, SLOT (PlotTabChanged(int)));
-
-  QObject::connect (MaximaTableWidget, SIGNAL(cellDoubleClicked(int, int )), this, SLOT (MaximaCellDoubleClicked(int,int)));
+  QObject::connect (fApfelWidget->ReferenceLoadButtonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(ChangeReferenceDataPressed(QAbstractButton*)));
 
 
-  QObject::connect (BaselineLowerSlider, SIGNAL(valueChanged(int)), this, SLOT (RefreshBaselines()));
-  QObject::connect (BaselineUpperSlider, SIGNAL(valueChanged(int)), this, SLOT (RefreshBaselines()));
-  QObject::connect (ReadoutRadioButton, SIGNAL(toggled(bool)), this, SLOT (RefreshBaselines()));
+  QObject::connect (fApfelWidget->PlotTabWidget, SIGNAL(currentChanged(int)), this, SLOT (PlotTabChanged(int)));
+
+  QObject::connect (fApfelWidget->MaximaTableWidget, SIGNAL(cellDoubleClicked(int, int )), this, SLOT (MaximaCellDoubleClicked(int,int)));
+
+
+  QObject::connect (fApfelWidget->BaselineLowerSlider, SIGNAL(valueChanged(int)), this, SLOT (RefreshBaselines()));
+  QObject::connect (fApfelWidget->BaselineUpperSlider, SIGNAL(valueChanged(int)), this, SLOT (RefreshBaselines()));
+  QObject::connect (fApfelWidget->ReadoutRadioButton, SIGNAL(toggled(bool)), this, SLOT (RefreshBaselines()));
 
   /** JAM put references to designer checkboxes into array to be handled later easily: */
-  fBaselineBoxes[0] = Baseline_Box_00;
-  fBaselineBoxes[1] = Baseline_Box_01;
-  fBaselineBoxes[2] = Baseline_Box_02;
-  fBaselineBoxes[3] = Baseline_Box_03;
-  fBaselineBoxes[4] = Baseline_Box_04;
-  fBaselineBoxes[5] = Baseline_Box_05;
-  fBaselineBoxes[6] = Baseline_Box_06;
-  fBaselineBoxes[7] = Baseline_Box_07;
-  fBaselineBoxes[8] = Baseline_Box_08;
-  fBaselineBoxes[9] = Baseline_Box_09;
-  fBaselineBoxes[10] = Baseline_Box_10;
-  fBaselineBoxes[11] = Baseline_Box_11;
-  fBaselineBoxes[12] = Baseline_Box_12;
-  fBaselineBoxes[13] = Baseline_Box_13;
-  fBaselineBoxes[14] = Baseline_Box_14;
-  fBaselineBoxes[15] = Baseline_Box_15;
+  fBaselineBoxes[0] = fApfelWidget->Baseline_Box_00;
+  fBaselineBoxes[1] = fApfelWidget->Baseline_Box_01;
+  fBaselineBoxes[2] = fApfelWidget->Baseline_Box_02;
+  fBaselineBoxes[3] = fApfelWidget->Baseline_Box_03;
+  fBaselineBoxes[4] = fApfelWidget->Baseline_Box_04;
+  fBaselineBoxes[5] = fApfelWidget->Baseline_Box_05;
+  fBaselineBoxes[6] = fApfelWidget->Baseline_Box_06;
+  fBaselineBoxes[7] = fApfelWidget->Baseline_Box_07;
+  fBaselineBoxes[8] = fApfelWidget->Baseline_Box_08;
+  fBaselineBoxes[9] = fApfelWidget->Baseline_Box_09;
+  fBaselineBoxes[10] = fApfelWidget->Baseline_Box_10;
+  fBaselineBoxes[11] = fApfelWidget->Baseline_Box_11;
+  fBaselineBoxes[12] = fApfelWidget->Baseline_Box_12;
+  fBaselineBoxes[13] = fApfelWidget->Baseline_Box_13;
+  fBaselineBoxes[14] = fApfelWidget->Baseline_Box_14;
+  fBaselineBoxes[15] = fApfelWidget->Baseline_Box_15;
 
-  fDACSpinBoxes[0] = DAC_spinBox_00;
-  fDACSpinBoxes[1] = DAC_spinBox_01;
-  fDACSpinBoxes[2] = DAC_spinBox_02;
-  fDACSpinBoxes[3] = DAC_spinBox_03;
-  fDACSpinBoxes[4] = DAC_spinBox_04;
-  fDACSpinBoxes[5] = DAC_spinBox_05;
-  fDACSpinBoxes[6] = DAC_spinBox_06;
-  fDACSpinBoxes[7] = DAC_spinBox_07;
-  fDACSpinBoxes[8] = DAC_spinBox_08;
-  fDACSpinBoxes[9] = DAC_spinBox_09;
-  fDACSpinBoxes[10] = DAC_spinBox_10;
-  fDACSpinBoxes[11] = DAC_spinBox_11;
-  fDACSpinBoxes[12] = DAC_spinBox_12;
-  fDACSpinBoxes[13] = DAC_spinBox_13;
-  fDACSpinBoxes[14] = DAC_spinBox_14;
-  fDACSpinBoxes[15] = DAC_spinBox_15;
+  fDACSpinBoxes[0] = fApfelWidget->DAC_spinBox_00;
+  fDACSpinBoxes[1] = fApfelWidget->DAC_spinBox_01;
+  fDACSpinBoxes[2] = fApfelWidget->DAC_spinBox_02;
+  fDACSpinBoxes[3] = fApfelWidget->DAC_spinBox_03;
+  fDACSpinBoxes[4] = fApfelWidget->DAC_spinBox_04;
+  fDACSpinBoxes[5] = fApfelWidget->DAC_spinBox_05;
+  fDACSpinBoxes[6] = fApfelWidget->DAC_spinBox_06;
+  fDACSpinBoxes[7] = fApfelWidget->DAC_spinBox_07;
+  fDACSpinBoxes[8] = fApfelWidget->DAC_spinBox_08;
+  fDACSpinBoxes[9] = fApfelWidget->DAC_spinBox_09;
+  fDACSpinBoxes[10] = fApfelWidget->DAC_spinBox_10;
+  fDACSpinBoxes[11] = fApfelWidget->DAC_spinBox_11;
+  fDACSpinBoxes[12] = fApfelWidget->DAC_spinBox_12;
+  fDACSpinBoxes[13] = fApfelWidget->DAC_spinBox_13;
+  fDACSpinBoxes[14] = fApfelWidget->DAC_spinBox_14;
+  fDACSpinBoxes[15] = fApfelWidget->DAC_spinBox_15;
 
-  fADCLineEdit[0] = ADC_Value_00;
-  fADCLineEdit[1] = ADC_Value_01;
-  fADCLineEdit[2] = ADC_Value_02;
-  fADCLineEdit[3] = ADC_Value_03;
-  fADCLineEdit[4] = ADC_Value_04;
-  fADCLineEdit[5] = ADC_Value_05;
-  fADCLineEdit[6] = ADC_Value_06;
-  fADCLineEdit[7] = ADC_Value_07;
-  fADCLineEdit[8] = ADC_Value_08;
-  fADCLineEdit[9] = ADC_Value_09;
-  fADCLineEdit[10] = ADC_Value_10;
-  fADCLineEdit[11] = ADC_Value_11;
-  fADCLineEdit[12] = ADC_Value_12;
-  fADCLineEdit[13] = ADC_Value_13;
-  fADCLineEdit[14] = ADC_Value_14;
-  fADCLineEdit[15] = ADC_Value_15;
+  fADCLineEdit[0] = fApfelWidget->ADC_Value_00;
+  fADCLineEdit[1] = fApfelWidget->ADC_Value_01;
+  fADCLineEdit[2] = fApfelWidget->ADC_Value_02;
+  fADCLineEdit[3] = fApfelWidget->ADC_Value_03;
+  fADCLineEdit[4] = fApfelWidget->ADC_Value_04;
+  fADCLineEdit[5] = fApfelWidget->ADC_Value_05;
+  fADCLineEdit[6] = fApfelWidget->ADC_Value_06;
+  fADCLineEdit[7] = fApfelWidget->ADC_Value_07;
+  fADCLineEdit[8] = fApfelWidget->ADC_Value_08;
+  fADCLineEdit[9] = fApfelWidget->ADC_Value_09;
+  fADCLineEdit[10] = fApfelWidget->ADC_Value_10;
+  fADCLineEdit[11] = fApfelWidget->ADC_Value_11;
+  fADCLineEdit[12] = fApfelWidget->ADC_Value_12;
+  fADCLineEdit[13] = fApfelWidget->ADC_Value_13;
+  fADCLineEdit[14] = fApfelWidget->ADC_Value_14;
+  fADCLineEdit[15] = fApfelWidget->ADC_Value_15;
 
-  fDACSlider[0][0] = Apfel1_DACSlider_1;
-  fDACSlider[0][1] = Apfel1_DACSlider_2;
-  fDACSlider[0][2] = Apfel1_DACSlider_3;
-  fDACSlider[0][3] = Apfel1_DACSlider_4;
-  fDACSlider[1][0] = Apfel2_DACSlider_1;
-  fDACSlider[1][1] = Apfel2_DACSlider_2;
-  fDACSlider[1][2] = Apfel2_DACSlider_3;
-  fDACSlider[1][3] = Apfel2_DACSlider_4;
-  fDACSlider[2][0] = Apfel3_DACSlider_1;
-  fDACSlider[2][1] = Apfel3_DACSlider_2;
-  fDACSlider[2][2] = Apfel3_DACSlider_3;
-  fDACSlider[2][3] = Apfel3_DACSlider_4;
-  fDACSlider[3][0] = Apfel4_DACSlider_1;
-  fDACSlider[3][1] = Apfel4_DACSlider_2;
-  fDACSlider[3][2] = Apfel4_DACSlider_3;
-  fDACSlider[3][3] = Apfel4_DACSlider_4;
-  fDACSlider[4][0] = Apfel5_DACSlider_1;
-  fDACSlider[4][1] = Apfel5_DACSlider_2;
-  fDACSlider[4][2] = Apfel5_DACSlider_3;
-  fDACSlider[4][3] = Apfel5_DACSlider_4;
-  fDACSlider[5][0] = Apfel6_DACSlider_1;
-  fDACSlider[5][1] = Apfel6_DACSlider_2;
-  fDACSlider[5][2] = Apfel6_DACSlider_3;
-  fDACSlider[5][3] = Apfel6_DACSlider_4;
-  fDACSlider[6][0] = Apfel7_DACSlider_1;
-  fDACSlider[6][1] = Apfel7_DACSlider_2;
-  fDACSlider[6][2] = Apfel7_DACSlider_3;
-  fDACSlider[6][3] = Apfel7_DACSlider_4;
-  fDACSlider[7][0] = Apfel8_DACSlider_1;
-  fDACSlider[7][1] = Apfel8_DACSlider_2;
-  fDACSlider[7][2] = Apfel8_DACSlider_3;
-  fDACSlider[7][3] = Apfel8_DACSlider_4;
+  fDACSlider[0][0] = fApfelWidget->Apfel1_DACSlider_1;
+  fDACSlider[0][1] = fApfelWidget->Apfel1_DACSlider_2;
+  fDACSlider[0][2] = fApfelWidget->Apfel1_DACSlider_3;
+  fDACSlider[0][3] = fApfelWidget->Apfel1_DACSlider_4;
+  fDACSlider[1][0] = fApfelWidget->Apfel2_DACSlider_1;
+  fDACSlider[1][1] = fApfelWidget->Apfel2_DACSlider_2;
+  fDACSlider[1][2] = fApfelWidget->Apfel2_DACSlider_3;
+  fDACSlider[1][3] = fApfelWidget->Apfel2_DACSlider_4;
+  fDACSlider[2][0] = fApfelWidget->Apfel3_DACSlider_1;
+  fDACSlider[2][1] = fApfelWidget->Apfel3_DACSlider_2;
+  fDACSlider[2][2] = fApfelWidget->Apfel3_DACSlider_3;
+  fDACSlider[2][3] = fApfelWidget->Apfel3_DACSlider_4;
+  fDACSlider[3][0] = fApfelWidget->Apfel4_DACSlider_1;
+  fDACSlider[3][1] = fApfelWidget->Apfel4_DACSlider_2;
+  fDACSlider[3][2] = fApfelWidget->Apfel4_DACSlider_3;
+  fDACSlider[3][3] = fApfelWidget->Apfel4_DACSlider_4;
+  fDACSlider[4][0] = fApfelWidget->Apfel5_DACSlider_1;
+  fDACSlider[4][1] = fApfelWidget->Apfel5_DACSlider_2;
+  fDACSlider[4][2] = fApfelWidget->Apfel5_DACSlider_3;
+  fDACSlider[4][3] = fApfelWidget->Apfel5_DACSlider_4;
+  fDACSlider[5][0] = fApfelWidget->Apfel6_DACSlider_1;
+  fDACSlider[5][1] = fApfelWidget->Apfel6_DACSlider_2;
+  fDACSlider[5][2] = fApfelWidget->Apfel6_DACSlider_3;
+  fDACSlider[5][3] = fApfelWidget->Apfel6_DACSlider_4;
+  fDACSlider[6][0] = fApfelWidget->Apfel7_DACSlider_1;
+  fDACSlider[6][1] = fApfelWidget->Apfel7_DACSlider_2;
+  fDACSlider[6][2] = fApfelWidget->Apfel7_DACSlider_3;
+  fDACSlider[6][3] = fApfelWidget->Apfel7_DACSlider_4;
+  fDACSlider[7][0] = fApfelWidget->Apfel8_DACSlider_1;
+  fDACSlider[7][1] = fApfelWidget->Apfel8_DACSlider_2;
+  fDACSlider[7][2] = fApfelWidget->Apfel8_DACSlider_3;
+  fDACSlider[7][3] = fApfelWidget->Apfel8_DACSlider_4;
 
-  fDACLineEdit[0][0] = Apfel1_DAClineEdit_1;
-  fDACLineEdit[0][1] = Apfel1_DAClineEdit_2;
-  fDACLineEdit[0][2] = Apfel1_DAClineEdit_3;
-  fDACLineEdit[0][3] = Apfel1_DAClineEdit_4;
-  fDACLineEdit[1][0] = Apfel2_DAClineEdit_1;
-  fDACLineEdit[1][1] = Apfel2_DAClineEdit_2;
-  fDACLineEdit[1][2] = Apfel2_DAClineEdit_3;
-  fDACLineEdit[1][3] = Apfel2_DAClineEdit_4;
-  fDACLineEdit[2][0] = Apfel3_DAClineEdit_1;
-  fDACLineEdit[2][1] = Apfel3_DAClineEdit_2;
-  fDACLineEdit[2][2] = Apfel3_DAClineEdit_3;
-  fDACLineEdit[2][3] = Apfel3_DAClineEdit_4;
-  fDACLineEdit[3][0] = Apfel4_DAClineEdit_1;
-  fDACLineEdit[3][1] = Apfel4_DAClineEdit_2;
-  fDACLineEdit[3][2] = Apfel4_DAClineEdit_3;
-  fDACLineEdit[3][3] = Apfel4_DAClineEdit_4;
-  fDACLineEdit[4][0] = Apfel5_DAClineEdit_1;
-  fDACLineEdit[4][1] = Apfel5_DAClineEdit_2;
-  fDACLineEdit[4][2] = Apfel5_DAClineEdit_3;
-  fDACLineEdit[4][3] = Apfel5_DAClineEdit_4;
-  fDACLineEdit[5][0] = Apfel6_DAClineEdit_1;
-  fDACLineEdit[5][1] = Apfel6_DAClineEdit_2;
-  fDACLineEdit[5][2] = Apfel6_DAClineEdit_3;
-  fDACLineEdit[5][3] = Apfel6_DAClineEdit_4;
-  fDACLineEdit[6][0] = Apfel7_DAClineEdit_1;
-  fDACLineEdit[6][1] = Apfel7_DAClineEdit_2;
-  fDACLineEdit[6][2] = Apfel7_DAClineEdit_3;
-  fDACLineEdit[6][3] = Apfel7_DAClineEdit_4;
-  fDACLineEdit[7][0] = Apfel8_DAClineEdit_1;
-  fDACLineEdit[7][1] = Apfel8_DAClineEdit_2;
-  fDACLineEdit[7][2] = Apfel8_DAClineEdit_3;
-  fDACLineEdit[7][3] = Apfel8_DAClineEdit_4;
+  fDACLineEdit[0][0] = fApfelWidget->Apfel1_DAClineEdit_1;
+  fDACLineEdit[0][1] = fApfelWidget->Apfel1_DAClineEdit_2;
+  fDACLineEdit[0][2] = fApfelWidget->Apfel1_DAClineEdit_3;
+  fDACLineEdit[0][3] = fApfelWidget->Apfel1_DAClineEdit_4;
+  fDACLineEdit[1][0] = fApfelWidget->Apfel2_DAClineEdit_1;
+  fDACLineEdit[1][1] = fApfelWidget->Apfel2_DAClineEdit_2;
+  fDACLineEdit[1][2] = fApfelWidget->Apfel2_DAClineEdit_3;
+  fDACLineEdit[1][3] = fApfelWidget->Apfel2_DAClineEdit_4;
+  fDACLineEdit[2][0] = fApfelWidget->Apfel3_DAClineEdit_1;
+  fDACLineEdit[2][1] = fApfelWidget->Apfel3_DAClineEdit_2;
+  fDACLineEdit[2][2] = fApfelWidget->Apfel3_DAClineEdit_3;
+  fDACLineEdit[2][3] = fApfelWidget->Apfel3_DAClineEdit_4;
+  fDACLineEdit[3][0] = fApfelWidget->Apfel4_DAClineEdit_1;
+  fDACLineEdit[3][1] = fApfelWidget->Apfel4_DAClineEdit_2;
+  fDACLineEdit[3][2] = fApfelWidget->Apfel4_DAClineEdit_3;
+  fDACLineEdit[3][3] = fApfelWidget->Apfel4_DAClineEdit_4;
+  fDACLineEdit[4][0] = fApfelWidget->Apfel5_DAClineEdit_1;
+  fDACLineEdit[4][1] = fApfelWidget->Apfel5_DAClineEdit_2;
+  fDACLineEdit[4][2] = fApfelWidget->Apfel5_DAClineEdit_3;
+  fDACLineEdit[4][3] = fApfelWidget->Apfel5_DAClineEdit_4;
+  fDACLineEdit[5][0] = fApfelWidget->Apfel6_DAClineEdit_1;
+  fDACLineEdit[5][1] = fApfelWidget->Apfel6_DAClineEdit_2;
+  fDACLineEdit[5][2] = fApfelWidget->Apfel6_DAClineEdit_3;
+  fDACLineEdit[5][3] = fApfelWidget->Apfel6_DAClineEdit_4;
+  fDACLineEdit[6][0] = fApfelWidget->Apfel7_DAClineEdit_1;
+  fDACLineEdit[6][1] = fApfelWidget->Apfel7_DAClineEdit_2;
+  fDACLineEdit[6][2] = fApfelWidget->Apfel7_DAClineEdit_3;
+  fDACLineEdit[6][3] = fApfelWidget->Apfel7_DAClineEdit_4;
+  fDACLineEdit[7][0] = fApfelWidget->Apfel8_DAClineEdit_1;
+  fDACLineEdit[7][1] = fApfelWidget->Apfel8_DAClineEdit_2;
+  fDACLineEdit[7][2] = fApfelWidget->Apfel8_DAClineEdit_3;
+  fDACLineEdit[7][3] = fApfelWidget->Apfel8_DAClineEdit_4;
 
-  fApfelPulsePolarityCombo[0] = ApfelTestPolarityBox_0;
-  fApfelPulsePolarityCombo[1] = ApfelTestPolarityBox_1;
-  fApfelPulsePolarityCombo[2] = ApfelTestPolarityBox_2;
-  fApfelPulsePolarityCombo[3] = ApfelTestPolarityBox_3;
-  fApfelPulsePolarityCombo[4] = ApfelTestPolarityBox_4;
-  fApfelPulsePolarityCombo[5] = ApfelTestPolarityBox_5;
-  fApfelPulsePolarityCombo[6] = ApfelTestPolarityBox_6;
-  fApfelPulsePolarityCombo[7] = ApfelTestPolarityBox_7;
+  fApfelPulsePolarityCombo[0] = fApfelWidget->ApfelTestPolarityBox_0;
+  fApfelPulsePolarityCombo[1] = fApfelWidget->ApfelTestPolarityBox_1;
+  fApfelPulsePolarityCombo[2] = fApfelWidget->ApfelTestPolarityBox_2;
+  fApfelPulsePolarityCombo[3] = fApfelWidget->ApfelTestPolarityBox_3;
+  fApfelPulsePolarityCombo[4] = fApfelWidget->ApfelTestPolarityBox_4;
+  fApfelPulsePolarityCombo[5] = fApfelWidget->ApfelTestPolarityBox_5;
+  fApfelPulsePolarityCombo[6] = fApfelWidget->ApfelTestPolarityBox_6;
+  fApfelPulsePolarityCombo[7] = fApfelWidget->ApfelTestPolarityBox_7;
 
-  fApfelPulseEnabledCheckbox[0][0] = PulserCheckBox_0;
-  fApfelPulseEnabledCheckbox[0][1] = PulserCheckBox_1;
-  fApfelPulseEnabledCheckbox[1][0] = PulserCheckBox_2;
-  fApfelPulseEnabledCheckbox[1][1] = PulserCheckBox_3;
-  fApfelPulseEnabledCheckbox[2][0] = PulserCheckBox_4;
-  fApfelPulseEnabledCheckbox[2][1] = PulserCheckBox_5;
-  fApfelPulseEnabledCheckbox[3][0] = PulserCheckBox_6;
-  fApfelPulseEnabledCheckbox[3][1] = PulserCheckBox_7;
-  fApfelPulseEnabledCheckbox[4][0] = PulserCheckBox_8;
-  fApfelPulseEnabledCheckbox[4][1] = PulserCheckBox_9;
-  fApfelPulseEnabledCheckbox[5][0] = PulserCheckBox_10;
-  fApfelPulseEnabledCheckbox[5][1] = PulserCheckBox_11;
-  fApfelPulseEnabledCheckbox[6][0] = PulserCheckBox_12;
-  fApfelPulseEnabledCheckbox[6][1] = PulserCheckBox_13;
-  fApfelPulseEnabledCheckbox[7][0] = PulserCheckBox_14;
-  fApfelPulseEnabledCheckbox[7][1] = PulserCheckBox_15;
+  fApfelPulseEnabledCheckbox[0][0] = fApfelWidget->PulserCheckBox_0;
+  fApfelPulseEnabledCheckbox[0][1] = fApfelWidget->PulserCheckBox_1;
+  fApfelPulseEnabledCheckbox[1][0] = fApfelWidget->PulserCheckBox_2;
+  fApfelPulseEnabledCheckbox[1][1] = fApfelWidget->PulserCheckBox_3;
+  fApfelPulseEnabledCheckbox[2][0] = fApfelWidget->PulserCheckBox_4;
+  fApfelPulseEnabledCheckbox[2][1] = fApfelWidget->PulserCheckBox_5;
+  fApfelPulseEnabledCheckbox[3][0] = fApfelWidget->PulserCheckBox_6;
+  fApfelPulseEnabledCheckbox[3][1] = fApfelWidget->PulserCheckBox_7;
+  fApfelPulseEnabledCheckbox[4][0] = fApfelWidget->PulserCheckBox_8;
+  fApfelPulseEnabledCheckbox[4][1] = fApfelWidget->PulserCheckBox_9;
+  fApfelPulseEnabledCheckbox[5][0] = fApfelWidget->PulserCheckBox_10;
+  fApfelPulseEnabledCheckbox[5][1] = fApfelWidget->PulserCheckBox_11;
+  fApfelPulseEnabledCheckbox[6][0] = fApfelWidget->PulserCheckBox_12;
+  fApfelPulseEnabledCheckbox[6][1] = fApfelWidget->PulserCheckBox_13;
+  fApfelPulseEnabledCheckbox[7][0] = fApfelWidget->PulserCheckBox_14;
+  fApfelPulseEnabledCheckbox[7][1] = fApfelWidget->PulserCheckBox_15;
 
-  fApfelPulseAmplitudeSpin[0][0] = PulserAmpSpinBox_0;
-  fApfelPulseAmplitudeSpin[0][1] = PulserAmpSpinBox_1;
-  fApfelPulseAmplitudeSpin[1][0] = PulserAmpSpinBox_2;
-  fApfelPulseAmplitudeSpin[1][1] = PulserAmpSpinBox_3;
-  fApfelPulseAmplitudeSpin[2][0] = PulserAmpSpinBox_4;
-  fApfelPulseAmplitudeSpin[2][1] = PulserAmpSpinBox_5;
-  fApfelPulseAmplitudeSpin[3][0] = PulserAmpSpinBox_6;
-  fApfelPulseAmplitudeSpin[3][1] = PulserAmpSpinBox_7;
-  fApfelPulseAmplitudeSpin[4][0] = PulserAmpSpinBox_8;
-  fApfelPulseAmplitudeSpin[4][1] = PulserAmpSpinBox_9;
-  fApfelPulseAmplitudeSpin[5][0] = PulserAmpSpinBox_10;
-  fApfelPulseAmplitudeSpin[5][1] = PulserAmpSpinBox_11;
-  fApfelPulseAmplitudeSpin[6][0] = PulserAmpSpinBox_12;
-  fApfelPulseAmplitudeSpin[6][1] = PulserAmpSpinBox_13;
-  fApfelPulseAmplitudeSpin[7][0] = PulserAmpSpinBox_14;
-  fApfelPulseAmplitudeSpin[7][1] = PulserAmpSpinBox_15;
+  fApfelPulseAmplitudeSpin[0][0] = fApfelWidget->PulserAmpSpinBox_0;
+  fApfelPulseAmplitudeSpin[0][1] = fApfelWidget->PulserAmpSpinBox_1;
+  fApfelPulseAmplitudeSpin[1][0] = fApfelWidget->PulserAmpSpinBox_2;
+  fApfelPulseAmplitudeSpin[1][1] = fApfelWidget->PulserAmpSpinBox_3;
+  fApfelPulseAmplitudeSpin[2][0] = fApfelWidget->PulserAmpSpinBox_4;
+  fApfelPulseAmplitudeSpin[2][1] = fApfelWidget->PulserAmpSpinBox_5;
+  fApfelPulseAmplitudeSpin[3][0] = fApfelWidget->PulserAmpSpinBox_6;
+  fApfelPulseAmplitudeSpin[3][1] = fApfelWidget->PulserAmpSpinBox_7;
+  fApfelPulseAmplitudeSpin[4][0] = fApfelWidget->PulserAmpSpinBox_8;
+  fApfelPulseAmplitudeSpin[4][1] = fApfelWidget->PulserAmpSpinBox_9;
+  fApfelPulseAmplitudeSpin[5][0] = fApfelWidget->PulserAmpSpinBox_10;
+  fApfelPulseAmplitudeSpin[5][1] = fApfelWidget->PulserAmpSpinBox_11;
+  fApfelPulseAmplitudeSpin[6][0] = fApfelWidget->PulserAmpSpinBox_12;
+  fApfelPulseAmplitudeSpin[6][1] = fApfelWidget->PulserAmpSpinBox_13;
+  fApfelPulseAmplitudeSpin[7][0] = fApfelWidget->PulserAmpSpinBox_14;
+  fApfelPulseAmplitudeSpin[7][1] = fApfelWidget->PulserAmpSpinBox_15;
 
-  fApfelPulseGroup[0] = ApfelPulseBox_1;
-  fApfelPulseGroup[1] = ApfelPulseBox_2;
-  fApfelPulseGroup[2] = ApfelPulseBox_3;
-  fApfelPulseGroup[3] = ApfelPulseBox_4;
-  fApfelPulseGroup[4] = ApfelPulseBox_5;
-  fApfelPulseGroup[5] = ApfelPulseBox_6;
-  fApfelPulseGroup[6] = ApfelPulseBox_7;
-  fApfelPulseGroup[7] = ApfelPulseBox_8;
+  fApfelPulseGroup[0] = fApfelWidget->ApfelPulseBox_1;
+  fApfelPulseGroup[1] = fApfelWidget->ApfelPulseBox_2;
+  fApfelPulseGroup[2] = fApfelWidget->ApfelPulseBox_3;
+  fApfelPulseGroup[3] = fApfelWidget->ApfelPulseBox_4;
+  fApfelPulseGroup[4] = fApfelWidget->ApfelPulseBox_5;
+  fApfelPulseGroup[5] = fApfelWidget->ApfelPulseBox_6;
+  fApfelPulseGroup[6] = fApfelWidget->ApfelPulseBox_7;
+  fApfelPulseGroup[7] = fApfelWidget->ApfelPulseBox_8;
 
-  fApfelGainCombo[0][0] = gainCombo_0;
-  fApfelGainCombo[0][1] = gainCombo_1;
-  fApfelGainCombo[1][0] = gainCombo_2;
-  fApfelGainCombo[1][1] = gainCombo_3;
-  fApfelGainCombo[2][0] = gainCombo_4;
-  fApfelGainCombo[2][1] = gainCombo_5;
-  fApfelGainCombo[3][0] = gainCombo_6;
-  fApfelGainCombo[3][1] = gainCombo_7;
-  fApfelGainCombo[4][0] = gainCombo_8;
-  fApfelGainCombo[4][1] = gainCombo_9;
-  fApfelGainCombo[5][0] = gainCombo_10;
-  fApfelGainCombo[5][1] = gainCombo_11;
-  fApfelGainCombo[6][0] = gainCombo_12;
-  fApfelGainCombo[6][1] = gainCombo_13;
-  fApfelGainCombo[7][0] = gainCombo_14;
-  fApfelGainCombo[7][1] = gainCombo_15;
+  fApfelGainCombo[0][0] = fApfelWidget->gainCombo_0;
+  fApfelGainCombo[0][1] = fApfelWidget->gainCombo_1;
+  fApfelGainCombo[1][0] = fApfelWidget->gainCombo_2;
+  fApfelGainCombo[1][1] = fApfelWidget->gainCombo_3;
+  fApfelGainCombo[2][0] = fApfelWidget->gainCombo_4;
+  fApfelGainCombo[2][1] = fApfelWidget->gainCombo_5;
+  fApfelGainCombo[3][0] = fApfelWidget->gainCombo_6;
+  fApfelGainCombo[3][1] = fApfelWidget->gainCombo_7;
+  fApfelGainCombo[4][0] = fApfelWidget->gainCombo_8;
+  fApfelGainCombo[4][1] = fApfelWidget->gainCombo_9;
+  fApfelGainCombo[5][0] = fApfelWidget->gainCombo_10;
+  fApfelGainCombo[5][1] = fApfelWidget->gainCombo_11;
+  fApfelGainCombo[6][0] = fApfelWidget->gainCombo_12;
+  fApfelGainCombo[6][1] = fApfelWidget->gainCombo_13;
+  fApfelGainCombo[7][0] = fApfelWidget->gainCombo_14;
+  fApfelGainCombo[7][1] = fApfelWidget->gainCombo_15;
 
-  fSamplingBoxes[0] = Sampling_Box_0;
-  fSamplingBoxes[1] = Sampling_Box_1;
-  fSamplingBoxes[2] = Sampling_Box_2;
-  fSamplingBoxes[3] = Sampling_Box_3;
-  fSamplingBoxes[4] = Sampling_Box_4;
-  fSamplingBoxes[5] = Sampling_Box_5;
-  fSamplingBoxes[6] = Sampling_Box_6;
-  fSamplingBoxes[7] = Sampling_Box_7;
-  fSamplingBoxes[8] = Sampling_Box_8;
-  fSamplingBoxes[9] = Sampling_Box_9;
-  fSamplingBoxes[10] = Sampling_Box_10;
-  fSamplingBoxes[11] = Sampling_Box_11;
-  fSamplingBoxes[12] = Sampling_Box_12;
-  fSamplingBoxes[13] = Sampling_Box_13;
-  fSamplingBoxes[14] = Sampling_Box_14;
-  fSamplingBoxes[15] = Sampling_Box_15;
+  fSamplingBoxes[0] = fApfelWidget->Sampling_Box_0;
+  fSamplingBoxes[1] = fApfelWidget->Sampling_Box_1;
+  fSamplingBoxes[2] = fApfelWidget->Sampling_Box_2;
+  fSamplingBoxes[3] = fApfelWidget->Sampling_Box_3;
+  fSamplingBoxes[4] = fApfelWidget->Sampling_Box_4;
+  fSamplingBoxes[5] = fApfelWidget->Sampling_Box_5;
+  fSamplingBoxes[6] = fApfelWidget->Sampling_Box_6;
+  fSamplingBoxes[7] = fApfelWidget->Sampling_Box_7;
+  fSamplingBoxes[8] = fApfelWidget->Sampling_Box_8;
+  fSamplingBoxes[9] = fApfelWidget->Sampling_Box_9;
+  fSamplingBoxes[10] = fApfelWidget->Sampling_Box_10;
+  fSamplingBoxes[11] = fApfelWidget->Sampling_Box_11;
+  fSamplingBoxes[12] = fApfelWidget->Sampling_Box_12;
+  fSamplingBoxes[13] = fApfelWidget->Sampling_Box_13;
+  fSamplingBoxes[14] = fApfelWidget->Sampling_Box_14;
+  fSamplingBoxes[15] = fApfelWidget->Sampling_Box_15;
 
-  fSamplingMeanLineEdit[0] = ADC_SampleMean_0;
-  fSamplingMeanLineEdit[1] = ADC_SampleMean_1;
-  fSamplingMeanLineEdit[2] = ADC_SampleMean_2;
-  fSamplingMeanLineEdit[3] = ADC_SampleMean_3;
-  fSamplingMeanLineEdit[4] = ADC_SampleMean_4;
-  fSamplingMeanLineEdit[5] = ADC_SampleMean_5;
-  fSamplingMeanLineEdit[6] = ADC_SampleMean_6;
-  fSamplingMeanLineEdit[7] = ADC_SampleMean_7;
-  fSamplingMeanLineEdit[8] = ADC_SampleMean_8;
-  fSamplingMeanLineEdit[9] = ADC_SampleMean_9;
-  fSamplingMeanLineEdit[10] = ADC_SampleMean_10;
-  fSamplingMeanLineEdit[11] = ADC_SampleMean_11;
-  fSamplingMeanLineEdit[12] = ADC_SampleMean_12;
-  fSamplingMeanLineEdit[13] = ADC_SampleMean_13;
-  fSamplingMeanLineEdit[14] = ADC_SampleMean_14;
-  fSamplingMeanLineEdit[15] = ADC_SampleMean_15;
+  fSamplingMeanLineEdit[0] = fApfelWidget->ADC_SampleMean_0;
+  fSamplingMeanLineEdit[1] = fApfelWidget->ADC_SampleMean_1;
+  fSamplingMeanLineEdit[2] = fApfelWidget->ADC_SampleMean_2;
+  fSamplingMeanLineEdit[3] = fApfelWidget->ADC_SampleMean_3;
+  fSamplingMeanLineEdit[4] = fApfelWidget->ADC_SampleMean_4;
+  fSamplingMeanLineEdit[5] = fApfelWidget->ADC_SampleMean_5;
+  fSamplingMeanLineEdit[6] = fApfelWidget->ADC_SampleMean_6;
+  fSamplingMeanLineEdit[7] = fApfelWidget->ADC_SampleMean_7;
+  fSamplingMeanLineEdit[8] = fApfelWidget->ADC_SampleMean_8;
+  fSamplingMeanLineEdit[9] = fApfelWidget->ADC_SampleMean_9;
+  fSamplingMeanLineEdit[10] = fApfelWidget->ADC_SampleMean_10;
+  fSamplingMeanLineEdit[11] = fApfelWidget->ADC_SampleMean_11;
+  fSamplingMeanLineEdit[12] = fApfelWidget->ADC_SampleMean_12;
+  fSamplingMeanLineEdit[13] = fApfelWidget->ADC_SampleMean_13;
+  fSamplingMeanLineEdit[14] = fApfelWidget->ADC_SampleMean_14;
+  fSamplingMeanLineEdit[15] = fApfelWidget->ADC_SampleMean_15;
 
-  fSamplingSigmaLineEdit[0] = ADC_SampleSigma_0;
-  fSamplingSigmaLineEdit[1] = ADC_SampleSigma_1;
-  fSamplingSigmaLineEdit[2] = ADC_SampleSigma_2;
-  fSamplingSigmaLineEdit[3] = ADC_SampleSigma_3;
-  fSamplingSigmaLineEdit[4] = ADC_SampleSigma_4;
-  fSamplingSigmaLineEdit[5] = ADC_SampleSigma_5;
-  fSamplingSigmaLineEdit[6] = ADC_SampleSigma_6;
-  fSamplingSigmaLineEdit[7] = ADC_SampleSigma_7;
-  fSamplingSigmaLineEdit[8] = ADC_SampleSigma_8;
-  fSamplingSigmaLineEdit[9] = ADC_SampleSigma_9;
-  fSamplingSigmaLineEdit[10] = ADC_SampleSigma_10;
-  fSamplingSigmaLineEdit[11] = ADC_SampleSigma_11;
-  fSamplingSigmaLineEdit[12] = ADC_SampleSigma_12;
-  fSamplingSigmaLineEdit[13] = ADC_SampleSigma_13;
-  fSamplingSigmaLineEdit[14] = ADC_SampleSigma_14;
-  fSamplingSigmaLineEdit[15] = ADC_SampleSigma_15;
+  fSamplingSigmaLineEdit[0] = fApfelWidget->ADC_SampleSigma_0;
+  fSamplingSigmaLineEdit[1] = fApfelWidget->ADC_SampleSigma_1;
+  fSamplingSigmaLineEdit[2] = fApfelWidget->ADC_SampleSigma_2;
+  fSamplingSigmaLineEdit[3] = fApfelWidget->ADC_SampleSigma_3;
+  fSamplingSigmaLineEdit[4] = fApfelWidget->ADC_SampleSigma_4;
+  fSamplingSigmaLineEdit[5] = fApfelWidget->ADC_SampleSigma_5;
+  fSamplingSigmaLineEdit[6] = fApfelWidget->ADC_SampleSigma_6;
+  fSamplingSigmaLineEdit[7] = fApfelWidget->ADC_SampleSigma_7;
+  fSamplingSigmaLineEdit[8] = fApfelWidget->ADC_SampleSigma_8;
+  fSamplingSigmaLineEdit[9] = fApfelWidget->ADC_SampleSigma_9;
+  fSamplingSigmaLineEdit[10] = fApfelWidget->ADC_SampleSigma_10;
+  fSamplingSigmaLineEdit[11] = fApfelWidget->ADC_SampleSigma_11;
+  fSamplingSigmaLineEdit[12] = fApfelWidget->ADC_SampleSigma_12;
+  fSamplingSigmaLineEdit[13] = fApfelWidget->ADC_SampleSigma_13;
+  fSamplingSigmaLineEdit[14] = fApfelWidget->ADC_SampleSigma_14;
+  fSamplingSigmaLineEdit[15] = fApfelWidget->ADC_SampleSigma_15;
 
-  fPlotWidget[0] = PlotWidget_0;
-  fPlotWidget[1] = PlotWidget_1;
-  fPlotWidget[2] = PlotWidget_2;
-  fPlotWidget[3] = PlotWidget_3;
-  fPlotWidget[4] = PlotWidget_4;
-  fPlotWidget[5] = PlotWidget_5;
-  fPlotWidget[6] = PlotWidget_6;
-  fPlotWidget[7] = PlotWidget_7;
-  fPlotWidget[8] = PlotWidget_8;
-  fPlotWidget[9] = PlotWidget_9;
-  fPlotWidget[10] = PlotWidget_10;
-  fPlotWidget[11] = PlotWidget_11;
-  fPlotWidget[12] = PlotWidget_12;
-  fPlotWidget[13] = PlotWidget_13;
-  fPlotWidget[14] = PlotWidget_14;
-  fPlotWidget[15] = PlotWidget_15;
+  fPlotWidget[0] = fApfelWidget->PlotWidget_0;
+  fPlotWidget[1] = fApfelWidget->PlotWidget_1;
+  fPlotWidget[2] = fApfelWidget->PlotWidget_2;
+  fPlotWidget[3] = fApfelWidget->PlotWidget_3;
+  fPlotWidget[4] = fApfelWidget->PlotWidget_4;
+  fPlotWidget[5] = fApfelWidget->PlotWidget_5;
+  fPlotWidget[6] = fApfelWidget->PlotWidget_6;
+  fPlotWidget[7] = fApfelWidget->PlotWidget_7;
+  fPlotWidget[8] = fApfelWidget->PlotWidget_8;
+  fPlotWidget[9] = fApfelWidget->PlotWidget_9;
+  fPlotWidget[10] = fApfelWidget->PlotWidget_10;
+  fPlotWidget[11] = fApfelWidget->PlotWidget_11;
+  fPlotWidget[12] = fApfelWidget->PlotWidget_12;
+  fPlotWidget[13] = fApfelWidget->PlotWidget_13;
+  fPlotWidget[14] = fApfelWidget->PlotWidget_14;
+  fPlotWidget[15] = fApfelWidget->PlotWidget_15;
 
   // labels for plot area:
   for (int i = 0; i < 16; ++i)
@@ -570,22 +516,12 @@ ApfelGui::ApfelGui (QWidget* parent) :
   QObject::connect (fDisplayTimer, SIGNAL (timeout ()), this, SLOT (PulserDisplayTimeout ()));
 
   // benchmark testing procedure related:
-  BenchmarkButtonBox->button (QDialogButtonBox::Apply)->setDefault (true);
+  fApfelWidget->BenchmarkButtonBox->button (QDialogButtonBox::Apply)->setDefault (true);
 
   fSequencerTimer = new QTimer (this);
   fSequencerTimer->setInterval (20);
   QObject::connect (fSequencerTimer, SIGNAL (timeout ()), this, SLOT (BenchmarkTimerCallback ()));
 
-#ifdef USE_MBSPEX_LIB
-// open handle to driver file:
-  fPexFD = mbspex_open (0);// we restrict to board number 0 here
-  if (fPexFD < 0)
-  {
-    printm ("ERROR>> open /dev/pexor%d \n", 0);
-    exit (1);
-  }
-#endif
-  fInstance = this;
 
   fBenchmark.SetOwner (this);
   //fBenchmark.LoadReferenceValues (QString ("default.apf"));
@@ -600,60 +536,17 @@ ApfelGui::ApfelGui (QWidget* parent) :
 
 ApfelGui::~ApfelGui ()
 {
-#ifdef USE_MBSPEX_LIB
-  mbspex_close (fPexFD);
-#endif
+
 }
 
 
 
-void ApfelGui::ApplyGUISettings ()
+
+void ApfelGui::ApplyFileConfig(int )
 {
-  EvaluateView ();    // from gui to memory
-  SetRegisters ();    // from memory to device
+    GosipGui::ApplyFileConfig(900); // adjust bus wait time to 900 us
 }
 
-
-int ApfelGui::OpenConfigFile (const QString& fname)
-{
-  fConfigFile = fopen (fname.toLatin1 ().constData (), "w");
-  if (fConfigFile == NULL)
-  {
-    char buffer[1024];
-    snprintf (buffer, 1024, " Error opening Configuration File '%s': %s\n", fname.toLatin1 ().constData (),
-        strerror (errno));
-    AppendTextWindow (buffer);
-    return -1;
-  }
-  QString timestring = QDateTime::currentDateTime ().toString ("ddd dd.MM.yyyy hh:mm:ss");
-  WriteConfigFile (QString ("# Apfel configuration file saved on ") + timestring + QString ("\n"));
-  return 0;
-}
-
-int ApfelGui::CloseConfigFile ()
-{
-  int rev = 0;
-  if (fConfigFile == NULL)
-    return 0;
-  if (fclose (fConfigFile) != 0)
-  {
-    char buffer[1024];
-    snprintf (buffer, 1024, " Error closing Configuration File! (%s)\n", strerror (errno));
-    AppendTextWindow (buffer);
-    rev = -1;
-  }
-  fConfigFile = NULL;    // must not use handle again even if close fails
-  return rev;
-}
-
-int ApfelGui::WriteConfigFile (const QString& text)
-{
-  if (fConfigFile == NULL)
-    return -1;
-  if (fprintf (fConfigFile, text.toLatin1 ().constData ()) < 0)
-    return -2;
-  return 0;
-}
 
 int ApfelGui::OpenTestFile (const QString& fname)
 {
@@ -705,7 +598,7 @@ void ApfelGui::AutoAdjust ()
 {
   if (!AssertChainConfigured ())
     return;
-  QString targetstring = ADCAdjustValue->text ();
+  QString targetstring = fApfelWidget->ADCAdjustValue->text ();
   unsigned targetvalue = targetstring.toUInt (0, fNumberBase);
   //std::cout <<"string="<<targetstring.toLatin1 ().constData ()<< ", targetvalue="<< targetvalue<< std::endl;
   for (int channel = 0; channel < 16; ++channel)
@@ -788,18 +681,19 @@ void ApfelGui::CalibrateSelectedADCs ()
 
 int ApfelGui::CalibrateADC (int channel)
 {
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+
+  theSetup_GET_FOR_SLAVE_RETURN(BoardSetup);
 
   int apfel = 0, dac = 0;
-  theSetup.EvaluateDACIndices (channel, apfel, dac);
+  theSetup->EvaluateDACIndices (channel, apfel, dac);
 
   // DO NOT first autocalibrate DAC that belongs to selected channel
   // we decouple chip autocalibration from channel calibration curve now
   //DoAutoCalibrate(apfel);
 
   // measure slope of DAC kennlinie by differential variation:
-  int gain = theSetup.GetGain (apfel, dac);
-  int valDAC = theSetup.GetDACValue (apfel, dac);    // current value after automatic DAC calibration
+  int gain = theSetup->GetGain (apfel, dac);
+  int valDAC = theSetup->GetDACValue (apfel, dac);    // current value after automatic DAC calibration
   int valADC = AcquireBaselineSample (channel);    // fetch a sample
 
   EnableI2C ();
@@ -853,14 +747,14 @@ int ApfelGui::CalibrateADC (int channel)
 
     }
     printm ("found ADC_min=%d, DAC_min=%d, DAC_max=%d", valADC_min, valDAC_min, valDAC_max);
-    theSetup.SetDACmin (gain, channel, valDAC_min);
-    theSetup.SetDACmax (gain, channel, valDAC_max);
-    theSetup.SetADCmin (gain, channel, valADC_min);
+    theSetup->SetDACmin (gain, channel, valDAC_min);
+    theSetup->SetDACmax (gain, channel, valDAC_max);
+    theSetup->SetADCmin (gain, channel, valADC_min);
 
     // linear calibration only in non saturated ADC range:
     int deltaDAC = valDAC_max - valDAC_min;
     int deltaADC = APFEL_ADC_MAXSATURATION - valADC_min;
-    theSetup.EvaluateCalibration (gain, channel, deltaDAC, deltaADC, valDAC_min, valADC_sample);
+    theSetup->EvaluateCalibration (gain, channel, deltaDAC, deltaADC, valDAC_min, valADC_sample);
   }
   else
   {
@@ -898,14 +792,14 @@ int ApfelGui::CalibrateADC (int channel)
 
     }
     printm ("found ADC_min=%d, DAC_min=%d, DAC_max=%d", valADC_min, valDAC_min, valDAC_max);
-    theSetup.SetDACmin (gain, channel, valDAC_min);
-    theSetup.SetDACmax (gain, channel, valDAC_max);
-    theSetup.SetADCmin (gain, channel, valADC_min);
+    theSetup->SetDACmin (gain, channel, valDAC_min);
+    theSetup->SetDACmax (gain, channel, valDAC_max);
+    theSetup->SetADCmin (gain, channel, valADC_min);
 
     // linear calibration only in non saturated ADC range:
     int deltaDAC = valDAC_max - valDAC_min;
     int deltaADC = valADC_min - APFEL_ADC_MAXSATURATION;
-    theSetup.EvaluateCalibration (gain, channel, deltaDAC, deltaADC, valDAC_max, valADC_sample);
+    theSetup->EvaluateCalibration (gain, channel, deltaDAC, deltaADC, valDAC_max, valADC_sample);
 
   }
 
@@ -916,7 +810,7 @@ int ApfelGui::CalibrateADC (int channel)
       apfel, dac);
 
 #ifdef  APFEL_DAC_LOCALCALIB
-  theSetup.EvaluateCalibration(gain, channel, deltaDAC, deltaADC, valDAC, valADC);
+  theSetup->EvaluateCalibration(gain, channel, deltaDAC, deltaADC, valDAC, valADC);
 #else
 
 // trial and error of slider calibration in the following:
@@ -924,21 +818,21 @@ int ApfelGui::CalibrateADC (int channel)
 // in this mode, we make linearcalibration over full range
 //  int deltaDAC=APFEL_DAC_MAXVALUE-valDAC_min;
 //       int deltaADC=valADC_min - APFEL_ADC_MAXSATURATION;
-//       theSetup.EvaluateCalibration(gain, channel, deltaDAC, deltaADC, APFEL_DAC_MAXVALUE, valADC_min);
+//       theSetup->EvaluateCalibration(gain, channel, deltaDAC, deltaADC, APFEL_DAC_MAXVALUE, valADC_min);
 
 // linear calibration only in non saturated ADC range:
 //      int deltaDAC=valDAC_max-valDAC_min;
 //      int deltaADC=valADC_min - APFEL_ADC_MAXSATURATION;
-//      theSetup.EvaluateCalibration(gain, channel, deltaDAC, deltaADC, valDAC_max, valADC_sample);
+//      theSetup->EvaluateCalibration(gain, channel, deltaDAC, deltaADC, valDAC_max, valADC_sample);
 
 // test: semi-range linear calibration
 //     int deltaDAC=APFEL_DAC_MAXVALUE-valDAC;
 //      int deltaADC=valADC_min - valADC;
-//      theSetup.EvaluateCalibration(gain, channel, deltaDAC, deltaADC, valDAC, valADC);
+//      theSetup->EvaluateCalibration(gain, channel, deltaDAC, deltaADC, valDAC, valADC);
 ///////////
 //      int deltaDAC=valDAC-valDAC_min;
 //      int deltaADC=APFEL_ADC_MAXSATURATION - valADC;
-//      theSetup.EvaluateCalibration(gain, channel, deltaDAC, deltaADC, valDAC, valADC);
+//      theSetup->EvaluateCalibration(gain, channel, deltaDAC, deltaADC, valDAC, valADC);
 
 #endif
 
@@ -968,12 +862,12 @@ void ApfelGui::CalibrateResetSelectedADCs ()
 
 int ApfelGui::CalibrateResetADC (int channel)
 {
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  theSetup_GET_FOR_SLAVE_RETURN(BoardSetup);
   // TODO: first autocalibrate DAC that belongs to selected channel
   int apfel = 0, dac = 0;
-  theSetup.EvaluateDACIndices (channel, apfel, dac);
-  int gain = theSetup.GetGain (apfel, dac);
-  theSetup.ResetCalibration (gain, channel);
+  theSetup->EvaluateDACIndices (channel, apfel, dac);
+  int gain = theSetup->GetGain (apfel, dac);
+  theSetup->ResetCalibration (gain, channel);
   printm ("--- Reset Calibration of DAC->ADC slider for sfp:%d board:%d channel:%d apfel:%d dac:%d", fSFP, fSlave,
       channel, apfel, dac);
   return 0;
@@ -983,10 +877,10 @@ int ApfelGui::CalibrateResetADC (int channel)
 int ApfelGui::AcquireSample (int channel)
 {
 
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
-  bool usemonitorport = MonitorRadioButton->isChecked ();
+  theSetup_GET_FOR_SLAVE_RETURN(BoardSetup);
+  bool usemonitorport = fApfelWidget->MonitorRadioButton->isChecked ();
   double val = 0;
-  theSetup.ResetADCSample (channel);
+  theSetup->ResetADCSample (channel);
 
   if (usemonitorport)
   {
@@ -995,7 +889,7 @@ int ApfelGui::AcquireSample (int channel)
     {
       // evaluate  a single sample from ADC monitor port (no averaging like in baseline setup!)
       val = AcquireBaselineSample (channel, 1);
-      theSetup.AddADCSample (channel,val);
+      theSetup->AddADCSample (channel,val);
     }
   }
   else
@@ -1019,7 +913,7 @@ int ApfelGui::AcquireSample (int channel)
          double value = (fData[cursor] & 0x3FFF);
          cursor++;
          //std::cout <<"got value"<<value<< "at position "<< i <<", cursor="<<cursor<<", sum="<<sum << std::endl;
-         theSetup.AddADCSample (channel, value);
+         theSetup->AddADCSample (channel, value);
        }
     //std::cout << "Filled "<<i<< "adc samples from mbs trace up to position #"<< cursor<< std::endl;
   }
@@ -1032,31 +926,31 @@ int ApfelGui::AcquireSample (int channel)
 
 void ApfelGui::EvaluateBaseline(int channel)
 {
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
   bool ok=false;
-  int startbase=BaselineLowerLineEdit->text().toInt(&ok,fNumberBase);
-  int stopbase=BaselineUpperLineEdit->text().toInt(&ok,fNumberBase);
+  int startbase=fApfelWidget->BaselineLowerLineEdit->text().toInt(&ok,fNumberBase);
+  int stopbase=fApfelWidget->BaselineUpperLineEdit->text().toInt(&ok,fNumberBase);
 
  //std::cout<< "EvaluateBaseline for channel "<<channel<<" has start:"<<startbase<<", stop="<<stopbase << std::endl;
 
-  theSetup.EvaluateBaseline(channel,startbase, stopbase);
+  theSetup->EvaluateBaseline(channel,startbase, stopbase);
 }
 
 
 void ApfelGui::FindPeaks(int channel)
 {
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
-  double deltaratio= PeakDeltaDoubleSpinBox->value()/100.0;
-  double fall=PeakFallDoubleSpinBox->value();
-  bool negative=PeakNegaitveCheckBox->isChecked();
-  theSetup.EvaluatePeaks(channel,deltaratio,fall,negative);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
+  double deltaratio= fApfelWidget->PeakDeltaDoubleSpinBox->value()/100.0;
+  double fall=fApfelWidget->PeakFallDoubleSpinBox->value();
+  bool negative=fApfelWidget->PeakNegaitveCheckBox->isChecked();
+  theSetup->EvaluatePeaks(channel,deltaratio,fall,negative);
 
 
 }
 
 void ApfelGui::SetPeakfinderPolarityNegative(bool on)
 {
-  PeakNegaitveCheckBox->setChecked(on);
+  fApfelWidget->PeakNegaitveCheckBox->setChecked(on);
 
 }
 
@@ -1084,12 +978,12 @@ void ApfelGui::AcquireSelectedSamples ()
 
 void ApfelGui::ZoomSampleToPeak(int channel, int peak)
 {
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
-  double nmax=theSetup.GetSamplePeakHeight(channel,peak);
-  double pos=theSetup.GetSamplePeakPosition(channel,peak);
-  double window=theSetup.GetSamplePeaksPositionDelta(channel);
-  double headroom=theSetup.GetSamplePeaksHeightDelta(channel);
-  //bool negative=theSetup.IsSamplePeaksNegative(channel);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
+  double nmax=theSetup->GetSamplePeakHeight(channel,peak);
+  double pos=theSetup->GetSamplePeakPosition(channel,peak);
+  double window=theSetup->GetSamplePeaksPositionDelta(channel);
+  double headroom=theSetup->GetSamplePeaksHeightDelta(channel);
+  //bool negative=theSetup->IsSamplePeaksNegative(channel);
   double xmin=pos-window;
   double xmax=pos+window;
   double ymin=nmax-headroom*0.8;
@@ -1102,22 +996,22 @@ void ApfelGui::ZoomSampleToPeak(int channel, int peak)
 
 void ApfelGui::RefreshSampleMaxima (int febexchannel)
 {
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
   QString text;
   QString pre;
   fNumberBase == 16 ? pre = "0x" : pre = "";
-  int numpeaks = theSetup.NumSamplePeaks (febexchannel);
+  int numpeaks = theSetup->NumSamplePeaks (febexchannel);
   for (int i = 0; i < APFEL_ADC_NUMMAXIMA; ++i)
   {
     uint16_t height = 0;
     int pos = 0;
     if (i < numpeaks)
     {
-      height = theSetup.GetSamplePeakHeight (febexchannel, i);
-      pos = theSetup.GetSamplePeakPosition (febexchannel, i);
+      height = theSetup->GetSamplePeakHeight (febexchannel, i);
+      pos = theSetup->GetSamplePeakPosition (febexchannel, i);
     }
-    QTableWidgetItem * pitem = MaximaTableWidget->item (i, 0);
-    QTableWidgetItem * hitem = MaximaTableWidget->item (i, 1);
+    QTableWidgetItem * pitem = fApfelWidget->MaximaTableWidget->item (i, 0);
+    QTableWidgetItem * hitem = fApfelWidget->MaximaTableWidget->item (i, 1);
     if(pitem) pitem->setText (pre + text.setNum (pos, fNumberBase));
     if(hitem )hitem->setText (pre + text.setNum (height, fNumberBase));
   }
@@ -1131,12 +1025,12 @@ void ApfelGui::RefreshSampleMaxima (int febexchannel)
 int ApfelGui::ShowSample (int channel, bool benchmarkdisplay)
 {
   //std::cout <<"ShowSample for channel:"<<channel<< std::endl;
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
-  //theSetup.ShowADCSample(channel); // todo: dump sample on different knob
+  theSetup_GET_FOR_SLAVE_RETURN(BoardSetup);
+  //theSetup->ShowADCSample(channel); // todo: dump sample on different knob
 
   KPlotWidget* canvas = fPlotWidget[channel];
   if (benchmarkdisplay)
-    canvas = BenchmarkPlotwidget;
+    canvas = fApfelWidget->BenchmarkPlotwidget;
   // first fill plotobject with samplepoints
   QColor col;
   KPlotObject::PointStyle pstyle = KPlotObject::Circle;
@@ -1201,14 +1095,14 @@ int ApfelGui::ShowSample (int channel, bool benchmarkdisplay)
   //KPlotObject *sampleplot = new KPlotObject(col, KPlotObject::Points, 1, pstyle);
   KPlotObject *sampleplot = new KPlotObject (col, KPlotObject::Lines, 2);
   QString label = QString ("channel:%1").arg (channel);
-  sampleplot->addPoint (0, theSetup.GetADCSample (channel, 0), label);
+  sampleplot->addPoint (0, theSetup->GetADCSample (channel, 0), label);
 
 
 
-  int samplength=theSetup.GetADCSampleLength(channel);
+  int samplength=theSetup->GetADCSampleLength(channel);
   for (int i = 1; i < samplength; ++i)
   {
-    sampleplot->addPoint (i, theSetup.GetADCSample (channel, i));
+    sampleplot->addPoint (i, theSetup->GetADCSample (channel, i));
   }
 
   // add it to the plot area
@@ -1244,8 +1138,8 @@ void ApfelGui::ShowSelectedSamples ()
       lastchecked = channel;
     }
   }
-  ApfelTabWidget->setCurrentIndex (5);
-  PlotTabWidget->setCurrentIndex (lastchecked);
+  fApfelWidget->ApfelTabWidget->setCurrentIndex (5);
+  fApfelWidget->PlotTabWidget->setCurrentIndex (lastchecked);
 }
 
 /** Clear display of benchmark DAC curve*/
@@ -1256,7 +1150,7 @@ void ApfelGui::ResetBenchmarkCurve ()
   fPlotMinAdc = 0;
   fPlotMaxAdc = APFEL_ADC_MAXVALUE;
 
-  KPlotWidget* canvas = BenchmarkPlotwidget;
+  KPlotWidget* canvas = fApfelWidget->BenchmarkPlotwidget;
   canvas->resetPlot ();
   // labels for plot area:
   canvas->setAntialiasing (true);
@@ -1277,12 +1171,12 @@ void ApfelGui::ShowLimitsCurve (int gain, int apfel, int dac)
   KPlotObject *lower = new KPlotObject (col, KPlotObject::Lines, 3);
   //std::cout<<"ShowLimitsCurve: gain:"<<gain<<", apfel:"<<apfel<<", dac:"<<dac << std::endl;
 
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
-  ApfelTestResults& theResults = theSetup.AccessTestResults (gain, apfel);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
+  ApfelTestResults& theResults = theSetup->AccessTestResults (gain, apfel);
   ApfelTestResults& reference = fBenchmark.GetReferenceValues (gain);
 
-  double tolerance = ToleranceSpinBox->value () / 100.0;
-  bool relativeMode=RelativeComparisonBox->isChecked();
+  double tolerance = fApfelWidget->ToleranceSpinBox->value () / 100.0;
+  bool relativeMode=fApfelWidget->RelativeComparisonBox->isChecked();
   int ashift=0, dshift=0;
   if(relativeMode)
   {
@@ -1322,15 +1216,15 @@ void ApfelGui::ShowLimitsCurve (int gain, int apfel, int dac)
     //std::cout<<"ShowLimitsCurve: i:"<<i<<", dacval:"<<dval<<"up:"<<adcup<<", lo:"<<adclow << std::endl;
 
   }
-  BenchmarkPlotwidget->addPlotObject (upper);
-  BenchmarkPlotwidget->addPlotObject (lower);
-  BenchmarkPlotwidget->setLimits (fPlotMinDac, fPlotMaxDac, fPlotMinAdc, fPlotMaxAdc);
-  BenchmarkPlotwidget->update ();
+  fApfelWidget->BenchmarkPlotwidget->addPlotObject (upper);
+  fApfelWidget->BenchmarkPlotwidget->addPlotObject (lower);
+  fApfelWidget->BenchmarkPlotwidget->setLimits (fPlotMinDac, fPlotMaxDac, fPlotMinAdc, fPlotMaxAdc);
+  fApfelWidget->BenchmarkPlotwidget->update ();
 }
 
 void ApfelGui::ShowBenchmarkCurve (int gain, int apfel, int dac)
 {
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+   theSetup_GET_FOR_SLAVE(BoardSetup);
 
   QColor col;
   KPlotObject::PointStyle pstyle = KPlotObject::Circle;
@@ -1378,7 +1272,7 @@ void ApfelGui::ShowBenchmarkCurve (int gain, int apfel, int dac)
   };
 
   KPlotObject *curveplot = new KPlotObject (col, KPlotObject::Points, 3, pstyle);
-  ApfelTestResults& theResults = theSetup.AccessTestResults (gain, apfel);
+  ApfelTestResults& theResults = theSetup->AccessTestResults (gain, apfel);
 
   QString label = QString ("gain:%1 apfel:%2 dac:%3").arg (gain).arg (apfel).arg (dac);
   for (int i = 0; i < APFEL_DAC_CURVEPOINTS; ++i)
@@ -1406,15 +1300,15 @@ void ApfelGui::ShowBenchmarkCurve (int gain, int apfel, int dac)
   }
 
   // add it to the plot area
-  BenchmarkPlotwidget->addPlotObject (curveplot);
+  fApfelWidget->BenchmarkPlotwidget->addPlotObject (curveplot);
 
   //if(gain!=1)
-  BenchmarkPlotwidget->setLimits (fPlotMinDac, fPlotMaxDac, fPlotMinAdc, fPlotMaxAdc);
+  fApfelWidget->BenchmarkPlotwidget->setLimits (fPlotMinDac, fPlotMaxDac, fPlotMinAdc, fPlotMaxAdc);
   //else
   //  BenchmarkPlotwidget->setLimits (0, APFEL_DAC_MAXVALUE, 0, APFEL_ADC_MAXVALUE);
   //std::cout<<"ShowBenchmarkCurve limits: dmin:"<<fPlotMinDac<<", dmax:"<<fPlotMaxDac<<", amin:"<< fPlotMinAdc<<", amax:"<<fPlotMaxAdc<< std::endl;
 
-  BenchmarkPlotwidget->update ();
+  fApfelWidget->BenchmarkPlotwidget->update ();
 
 }
 
@@ -1423,10 +1317,10 @@ void ApfelGui::ZoomSample (int channel)
 {
   //std::cout <<"ZoomSample for channel"<< channel<< std::endl;
   // evaluate minimum and maximum value of current sample:
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
-  double minimum = theSetup.GetADCMiminum (channel);
-  double maximum = theSetup.GetADCMaximum (channel);
-  double xmax=theSetup.GetADCSampleLength(channel);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
+  double minimum = theSetup->GetADCMiminum (channel);
+  double maximum = theSetup->GetADCMaximum (channel);
+  double xmax=theSetup->GetADCSampleLength(channel);
   fPlotWidget[channel]->setLimits (0, xmax, minimum, maximum);
   fPlotWidget[channel]->update ();
 }
@@ -1434,8 +1328,8 @@ void ApfelGui::ZoomSample (int channel)
 void ApfelGui::UnzoomSample (int channel)
 {
   //std::cout <<"UnzoomSample for channel"<< channel<< std::endl;
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
-  double xmax=theSetup.GetADCSampleLength(channel);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
+  double xmax=theSetup->GetADCSampleLength(channel);
   fPlotWidget[channel]->setLimits (0, xmax, 0.0, 17000);
   fPlotWidget[channel]->update ();
 }
@@ -1444,9 +1338,9 @@ void ApfelGui::UnzoomSample (int channel)
 void ApfelGui::RefreshLastADCSample (int febexchannel)
 {
   QString text;
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
-  double mean = theSetup.GetADCMean (febexchannel);
-  double sigma = theSetup.GetADCSigma (febexchannel);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
+  double mean = theSetup->GetADCMean (febexchannel);
+  double sigma = theSetup->GetADCSigma (febexchannel);
   if (fNumberBase == 16)
   {
     QString pre = "0x";
@@ -1460,6 +1354,13 @@ void ApfelGui::RefreshLastADCSample (int febexchannel)
     fSamplingSigmaLineEdit[febexchannel]->setText (text.setNum (sigma, 'f', 3));
   }
 
+}
+
+
+void ApfelGui::DumpSlave ()
+{
+  DumpADCs();
+  DumpCalibrations ();    // later put to separate button
 }
 
 
@@ -1486,8 +1387,6 @@ void ApfelGui::DumpADCs ()
       }
     }
   }
-
-  DumpCalibrations ();    // later put to separate button
 }
 
 void ApfelGui::DumpCalibrations ()
@@ -1495,14 +1394,14 @@ void ApfelGui::DumpCalibrations ()
   // JAM 2016 first demonstration how to get the actual adc values:
   if (!AssertChainConfigured ())
     return;
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
   printm ("SFP %d DEV:%d : Dump calibration)", fSFP, fSlave);
   int apfel = 0, dac = 0;
   for (int febchan = 0; febchan < APFEL_ADC_CHANNELS; ++febchan)
   {
-    theSetup.EvaluateDACIndices (febchan, apfel, dac);
-    int gain = theSetup.GetGain (apfel, dac);
-    theSetup.DumpCalibration (gain, febchan);
+    theSetup->EvaluateDACIndices (febchan, apfel, dac);
+    int gain = theSetup->GetGain (apfel, dac);
+    theSetup->DumpCalibration (gain, febchan);
   }
 
 }
@@ -1527,20 +1426,20 @@ void ApfelGui::AutoApplyPulser (int apfel)
 
 void ApfelGui::AutoApplyGain (int apfel, int channel)
 {
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
   EvaluateGain (apfel, channel);
   //std::cout << "AutoApplyGain apfel=" << apfel << ", channel=" << channel << ", lowgain:"
-  //    << theSetup.GetLowGain (apfel, channel) << std::endl;
-  SetGain (apfel, channel, theSetup.GetLowGain (apfel, channel));
+  //    << theSetup->GetLowGain (apfel, channel) << std::endl;
+  SetGain (apfel, channel, theSetup->GetLowGain (apfel, channel));
 }
 
 
 void ApfelGui::AutoApplyDAC (int apfel, int dac, int val)
 {
   // keep setup structure always consistent:
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
-  theSetup.SetDACValue (apfel, dac, val);
-  WriteDAC_ApfelI2c (apfel, dac, theSetup.GetDACValue (apfel, dac));
+  theSetup_GET_FOR_SLAVE(BoardSetup);
+  theSetup->SetDACValue (apfel, dac, val);
+  WriteDAC_ApfelI2c (apfel, dac, theSetup->GetDACValue (apfel, dac));
   RefreshADC_Apfel (apfel, dac);
 }
 
@@ -1559,16 +1458,16 @@ int ApfelGui::autoApply (int channel, int permillevalue)
 
 {
   int apfel = 0, dac = 0;
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
-  theSetup.EvaluateDACIndices (channel, apfel, dac);
-  int gain = theSetup.GetGain (apfel, dac);
-  //int value=theSetup.EvaluateDACvalueAbsolute(permillevalue,-1,gain);
-  int value = theSetup.EvaluateDACvalueAbsolute (permillevalue, channel, gain);
+  theSetup_GET_FOR_SLAVE_RETURN(BoardSetup);
+  theSetup->EvaluateDACIndices (channel, apfel, dac);
+  int gain = theSetup->GetGain (apfel, dac);
+  //int value=theSetup->EvaluateDACvalueAbsolute(permillevalue,-1,gain);
+  int value = theSetup->EvaluateDACvalueAbsolute (permillevalue, channel, gain);
 
-  theSetup.SetDACValue (apfel, dac, value);
+  theSetup->SetDACValue (apfel, dac, value);
 
   EnableI2C ();
-  WriteDAC_ApfelI2c (apfel, dac, theSetup.GetDACValue (apfel, dac));
+  WriteDAC_ApfelI2c (apfel, dac, theSetup->GetDACValue (apfel, dac));
   DisableI2C ();
 
   RefreshDAC (apfel);    //  immediately update DAC sliders when shifting baseline!
@@ -1624,10 +1523,10 @@ void ApfelGui::RefreshDAC (int apfel)
   QString text;
   QString pre;
   fNumberBase == 16 ? pre = "0x" : pre = "";
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+   theSetup_GET_FOR_SLAVE(BoardSetup);
   for (int dac = 0; dac < APFEL_NUMDACS; ++dac)
   {
-    int value = theSetup.GetDACValue (apfel, dac);
+    int value = theSetup->GetDACValue (apfel, dac);
     fDACSlider[apfel][dac]->setValue (value);
     fDACLineEdit[apfel][dac]->setText (pre + text.setNum (value, fNumberBase));
   }
@@ -1638,9 +1537,9 @@ void ApfelGui::RefreshADC_channel (int channel, int gain)
   QString text;
   QString pre;
   fNumberBase == 16 ? pre = "0x" : pre = "";
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
-  int val = theSetup.GetDACValue (channel);
-  int permille = theSetup.EvaluateADCvaluePermille (val, channel, gain);
+   theSetup_GET_FOR_SLAVE(BoardSetup);
+  int val = theSetup->GetDACValue (channel);
+  int permille = theSetup->EvaluateADCvaluePermille (val, channel, gain);
   //std::cout << "RefreshADC_channel(" << (int) channel <<","<<gain<<") - val="<<val<<" permille=" << permille<< std::endl;
   fDACSpinBoxes[channel]->setValue (permille);
   int adc = AcquireBaselineSample (channel);
@@ -1649,15 +1548,15 @@ void ApfelGui::RefreshADC_channel (int channel, int gain)
 
 void ApfelGui::RefreshADC_Apfel (int apfelchip, int dac)
 {
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
-  int chan = theSetup.EvaluateADCChannel (apfelchip, dac);
+   theSetup_GET_FOR_SLAVE(BoardSetup);
+  int chan = theSetup->EvaluateADCChannel (apfelchip, dac);
   //std::cout << "RefreshADC(" << (int) apfelchip <<"):  dac:"<<dac<<", chan=" << chan<< std::endl;
   if (chan >= 0)
   {
     // only refresh adc channels once for active dacs
-    int gain = theSetup.GetGain (apfelchip, dac);
+    int gain = theSetup->GetGain (apfelchip, dac);
     RefreshADC_channel (chan, gain);
-    if (!theSetup.IsHighGain ())
+    if (!theSetup->IsHighGain ())
       RefreshADC_channel (chan + 1, gain);    // kludge to cover both adc channels set by dac2 for gain 1
   }
 
@@ -1669,27 +1568,27 @@ void ApfelGui::RefreshView ()
 //  QString text;
 //  QString pre;
 //  fNumberBase == 16 ? pre = "0x" : pre = "";
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
 
 //////////////////////////////////////////////////////
 // first io configuration and gain:
-  ApfelRadioButton->setChecked (theSetup.IsApfelInUse ());
-  PolandRadioButton->setChecked (!theSetup.IsApfelInUse ());    // probably we do not need this because of autoExclusive flag
-  LoGainRadioButton->setChecked (!theSetup.IsHighGain ());
-  HiGainRadioButton->setChecked (theSetup.IsHighGain ());    // probably we do not need this because of autoExclusive flag
-  StretcherOnRadioButton->setChecked (theSetup.IsStretcherInUse ());
-  StretcherOffRadioButton->setChecked (!theSetup.IsStretcherInUse ());
+  fApfelWidget->ApfelRadioButton->setChecked (theSetup->IsApfelInUse ());
+  fApfelWidget->PolandRadioButton->setChecked (!theSetup->IsApfelInUse ());    // probably we do not need this because of autoExclusive flag
+  fApfelWidget->LoGainRadioButton->setChecked (!theSetup->IsHighGain ());
+  fApfelWidget->HiGainRadioButton->setChecked (theSetup->IsHighGain ());    // probably we do not need this because of autoExclusive flag
+  fApfelWidget->StretcherOnRadioButton->setChecked (theSetup->IsStretcherInUse ());
+  fApfelWidget->StretcherOffRadioButton->setChecked (!theSetup->IsStretcherInUse ());
 
-  InverseMappingCheckBox->setChecked (!theSetup.IsRegularMapping ());
+  fApfelWidget->InverseMappingCheckBox->setChecked (!theSetup->IsRegularMapping ());
 
-  if (theSetup.IsHighGain ())
+  if (theSetup->IsHighGain ())
   {
     // only refresh gain entries if we are in high gain mode
     for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
     {
       for (int chan = 0; chan < APFEL_NUMCHANS; ++chan)
       {
-        bool logain = theSetup.GetLowGain (apfel, chan);
+        bool logain = theSetup->GetLowGain (apfel, chan);
         if (logain)
           fApfelGainCombo[apfel][chan]->setCurrentIndex (0);
         else
@@ -1710,14 +1609,14 @@ void ApfelGui::RefreshView ()
 //show pulser setup:
   for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
   {
-    bool positive = theSetup.GetTestPulsePositive (apfel);
+    bool positive = theSetup->GetTestPulsePositive (apfel);
     if (positive)
       fApfelPulsePolarityCombo[apfel]->setCurrentIndex (0);
     else
       fApfelPulsePolarityCombo[apfel]->setCurrentIndex (1);
     for (int chan = 0; chan < APFEL_NUMCHANS; ++chan)
     {
-      bool on = theSetup.GetTestPulseEnable (apfel, chan);
+      bool on = theSetup->GetTestPulseEnable (apfel, chan);
       fApfelPulseEnabledCheckbox[apfel][chan]->setChecked (on);
     }
   }
@@ -1729,8 +1628,8 @@ void ApfelGui::RefreshView ()
   int apfel = 0, dac = 0;
   for (int channel = 0; channel < 16; ++channel)
   {
-    theSetup.EvaluateDACIndices (channel, apfel, dac);
-    int gain = theSetup.GetGain (apfel, dac);
+    theSetup->EvaluateDACIndices (channel, apfel, dac);
+    int gain = theSetup->GetGain (apfel, dac);
     RefreshADC_channel (channel, gain);
 
     // also put most recent sample parameters to display:
@@ -1741,95 +1640,52 @@ void ApfelGui::RefreshView ()
   RefreshStatus ();
 }
 
-void ApfelGui::RefreshStatus ()
-{
-  QString text;
-  QString statustext;
-  statustext.append ("SFP ");
-  statustext.append (text.setNum (fSFP));
-  statustext.append (" DEV ");
-  statustext.append (text.setNum (fSlave));
-  statustext.append (" - Last refresh:");
-  statustext.append (QDateTime::currentDateTime ().toString (Qt::TextDate));
-  StatusLabel->setText (statustext);
-}
 
-void ApfelGui::RefreshChains ()
-{
 
-#ifdef USE_MBSPEX_LIB
-  // show status of configured chains:
-  Chain0_Box->setValue (fSFPChains.numslaves[0]);
-  Chain1_Box->setValue (fSFPChains.numslaves[1]);
-  Chain2_Box->setValue (fSFPChains.numslaves[2]);
-  Chain3_Box->setValue (fSFPChains.numslaves[3]);
 
-  // set maximum value of device spinbox according to init chains:
-
-  if (fSFP >= 0)// only for non broadcast mode of slaves
-  {
-    if (fSFPChains.numslaves[fSFP] > 0)    // configured chains
-    {
-      SlavespinBox->setMaximum (fSFPChains.numslaves[fSFP] - 1);
-      SlavespinBox->setEnabled (true);
-    }
-    else    // non configured chains
-    {
-      SlavespinBox->setEnabled (false);
-    }
-  }
-#else
-  Chain0_Box->setEnabled (false);
-  Chain1_Box->setEnabled (false);
-  Chain2_Box->setEnabled (false);
-  Chain3_Box->setEnabled (false);
-
-#endif
-
-}
 
 void ApfelGui::EvaluatePulser (int apfel)
 {
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
   bool positive = (fApfelPulsePolarityCombo[apfel]->currentIndex () == 0);
-  theSetup.SetTestPulsePostive (apfel, positive);
+  theSetup->SetTestPulsePostive (apfel, positive);
   for (int chan = 0; chan < APFEL_NUMCHANS; ++chan)
   {
     bool on = fApfelPulseEnabledCheckbox[apfel][chan]->isChecked ();
-    theSetup.SetTestPulseEnable (apfel, chan, on);
+    theSetup->SetTestPulseEnable (apfel, chan, on);
     int amplitude = fApfelPulseAmplitudeSpin[apfel][chan]->value ();
-    theSetup.SetTestPulseAmplitude (apfel, chan, amplitude);
+    theSetup->SetTestPulseAmplitude (apfel, chan, amplitude);
   }
 }
 
 void ApfelGui::EvaluateGain (int apfel, int channel)
 {
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
   bool logain = (fApfelGainCombo[apfel][channel]->currentIndex () == 0);
-  theSetup.SetLowGain (apfel, channel, logain);
+  theSetup->SetLowGain (apfel, channel, logain);
 }
 
 void ApfelGui::EvaluateIOSwitch ()
 {
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
   // get io config from gui
-  theSetup.SetApfelInUse (ApfelRadioButton->isChecked ());
-  theSetup.SetHighGain (HiGainRadioButton->isChecked ());
-  theSetup.SetStretcherInUse (StretcherOnRadioButton->isChecked ());
+  theSetup->SetApfelInUse (fApfelWidget->ApfelRadioButton->isChecked ());
+  theSetup->SetHighGain (fApfelWidget->HiGainRadioButton->isChecked ());
+  theSetup->SetStretcherInUse (fApfelWidget->StretcherOnRadioButton->isChecked ());
 
 }
 
 void ApfelGui::EvaluateView ()
 {
   // here the current gui display is just copied to setup structure in local memory
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
 //std::cout<<"ApfelGui::EvaluateView ()" << std::endl;
 
-  theSetup.SetApfelMapping (!InverseMappingCheckBox->isChecked ());
+  theSetup->SetApfelMapping (!fApfelWidget->InverseMappingCheckBox->isChecked ());
 
   EvaluateIOSwitch ();
 
-  if (theSetup.IsHighGain ())
+  if (theSetup->IsHighGain ())
   {
     // only apply gain entries if we are in high gain mode
     for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
@@ -1842,15 +1698,15 @@ void ApfelGui::EvaluateView ()
   }
 // here baseline sliders for dacs
 // todo: prevent different settings from DAC and ADC tabs; check which tab is active?
-  if (ApfelTabWidget->currentIndex () == 3)
+  if (fApfelWidget->ApfelTabWidget->currentIndex () == 3)
   {
     // only apply the adc sliders when visible
     for (int channel = 0; channel < 16; ++channel)
     {
       int permille = fDACSpinBoxes[channel]->value ();
-      int value = theSetup.EvaluateDACvalueAbsolute (permille);
+      int value = theSetup->EvaluateDACvalueAbsolute (permille);
       //std::cout<<"EvaluateView for channel:"<<channel<<", permille:"<<permille<<" - val="<<value<< std::endl;
-      theSetup.SetDACValue (channel, value);
+      theSetup->SetDACValue (channel, value);
     }
   }
   else
@@ -1862,7 +1718,7 @@ void ApfelGui::EvaluateView ()
       {
         int value = fDACSlider[apfel][dac]->value () & 0x3FF;
         //std::cout<<"EvaluateView for apfel:"<<apfel<<", dac:"<<dac<<" - val="<<value<< std::endl;
-        theSetup.SetDACValue (apfel, dac, value);
+        theSetup->SetDACValue (apfel, dac, value);
       }
 
     }
@@ -1875,24 +1731,9 @@ void ApfelGui::EvaluateView ()
   }
 }
 
-void ApfelGui::EvaluateSlave ()
-{
-  if (fBroadcasting)
-    return;
-  fSFP = SFPspinBox->value ();
-  fSlave = SlavespinBox->value ();
-
-}
 
 
-void ApfelGui::SaveRegisters ()
 
-{
-  GetRegisters ();    // refresh actual setup from hardware
-  fSaveConfig = true;    // switch to file output mode
-  SetRegisters ();    // register settings are written to file
-  fSaveConfig = false;
-}
 
 
 uint8_t ApfelGui::GetApfelId (int sfp, int slave, uint8_t apfelchip)
@@ -1901,18 +1742,18 @@ uint8_t ApfelGui::GetApfelId (int sfp, int slave, uint8_t apfelchip)
     return 0xFF;
   if (slave < 0 || slave >= fSFPChains.numslaves[sfp])
     return 0xFF;
-  BoardSetup& theSetup = fSetup[sfp].at (slave);
-  return theSetup.GetApfelID (apfelchip);
+  theSetup_GET_FOR_SLAVE_RETURN(BoardSetup);
+  return theSetup->GetApfelID (apfelchip);
 }
 
 
 int ApfelGui::ScanDACCurve (int gain, int channel)
 {
   QApplication::setOverrideCursor (Qt::WaitCursor);
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  theSetup_GET_FOR_SLAVE_RETURN(BoardSetup);
   int apfel = 0, dac = 0;
-  theSetup.EvaluateDACIndices (channel, apfel, dac);
-  ApfelTestResults& theResults = theSetup.AccessTestResults (gain, apfel);
+  theSetup->EvaluateDACIndices (channel, apfel, dac);
+  ApfelTestResults& theResults = theSetup->AccessTestResults (gain, apfel);
   theResults.ResetDacSample (dac);
   int points = APFEL_DAC_CURVEPOINTS;
   // depending on gain, we have different stepsizes
@@ -1937,7 +1778,7 @@ int ApfelGui::ScanDACCurve (int gain, int channel)
   {
     // no calibration done yet, do it now
     DoAutoCalibrate (apfel);
-    dac_mid = theSetup.GetDACValue (apfel, dac);
+    dac_mid = theSetup->GetDACValue (apfel, dac);
   }
   //std::cout<<"ScanDACCurve for gain:"<<gain<<", step:"<<step<<", channel:"<<channel<<" - DAC middle point is "<<dac_mid << std::endl;
   EnableI2C ();
@@ -1945,8 +1786,8 @@ int ApfelGui::ScanDACCurve (int gain, int channel)
   for (int p = 0; p < points; ++p)
   {
     uint16_t dacval = d0 + p * step;
-    theSetup.SetDACValue (apfel, dac, dacval);
-    WriteDAC_ApfelI2c (apfel, dac, theSetup.GetDACValue (apfel, dac));
+    theSetup->SetDACValue (apfel, dac, dacval);
+    WriteDAC_ApfelI2c (apfel, dac, theSetup->GetDACValue (apfel, dac));
     int adcval = AcquireBaselineSample (channel);
    // std::cout<<"   ScanDACCurve got d:"<<dacval<<", adc:"<<adcval << std::endl;
     theResults.AddDacSample (dac, dacval, adcval);
@@ -1975,8 +1816,8 @@ void ApfelGui::UpdateAfterAutoCalibrate (uint8_t apfelchip)
 
 void ApfelGui::SetInverseMapping (int on)
 {
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
-  theSetup.SetApfelMapping (!on);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
+  theSetup->SetApfelMapping (!on);
 
 }
 
@@ -2016,15 +1857,15 @@ void ApfelGui::RefreshBaselines()
   QString pre;
   fNumberBase == 16 ? pre = "0x" : pre = "";
 
-  double lowpermil=BaselineLowerSlider->value();
-  double uppermil=BaselineUpperSlider->value();
+  double lowpermil=fApfelWidget->BaselineLowerSlider->value();
+  double uppermil=fApfelWidget->BaselineUpperSlider->value();
   double maxrange=APFEL_ADC_SAMPLEVALUES;
-  if(ReadoutRadioButton->isChecked())
+  if(fApfelWidget->ReadoutRadioButton->isChecked())
     maxrange=APFEL_MBS_TRACELEN;
   int lowvalue= lowpermil*0.001*maxrange;
   int upvalue= uppermil*0.001*maxrange;
-  BaselineLowerLineEdit->setText(pre + text.setNum (lowvalue, fNumberBase));
-  BaselineUpperLineEdit->setText(pre + text.setNum (upvalue, fNumberBase));
+  fApfelWidget->BaselineLowerLineEdit->setText(pre + text.setNum (lowvalue, fNumberBase));
+  fApfelWidget->BaselineUpperLineEdit->setText(pre + text.setNum (upvalue, fNumberBase));
 
 }
 
@@ -2042,7 +1883,7 @@ void ApfelGui::LoadBenchmarkReferences()
     return;
   QString filename = flst[0];
   fBenchmark.LoadReferenceValues(filename);
-  ReferenceLineEdit->setText(filename);
+  fApfelWidget->ReferenceLineEdit->setText(filename);
 }
 
 
@@ -2052,18 +1893,18 @@ void ApfelGui::SaveTestResults ()
 {
 
   printm ("Saving test results of sfp:%d slave%d.", fSFP, fSlave);
-  BoardSetup& theSetup = fSetup[fSFP].at (fSlave);
+  theSetup_GET_FOR_SLAVE(BoardSetup);
 
 // do not refer to current setup entries here, but to saved results.
-//  QString apf1 = theSetup.GetBoardID (0);
-//  QString apf2 = theSetup.GetBoardID (1);
+//  QString apf1 = theSetup->GetBoardID (0);
+//  QString apf2 = theSetup->GetBoardID (1);
 //  if (apf1.isEmpty () || apf2.isEmpty ())
 //  {
 //    printm ("Can not save test results: full id information was not given! Please rerun test.");
 //    return;
 //  }
-//  double current = theSetup.GetCurrent ();
-//  double voltage = theSetup.GetVoltage();
+//  double current = theSetup->GetCurrent ();
+//  double voltage = theSetup->GetVoltage();
 //  QString header = QString ("# apfel1:").append (apf1).append (", apfel2:").append (apf2);
 //  header.append (QString (" Current:%1 A Voltage:%1 A").arg (current).arg (voltage));
 //  header.append ("\n");
@@ -2101,8 +1942,8 @@ void ApfelGui::SaveTestResults ()
       gain = 32;    // :)
     for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
     {
-      //int apfeladdress = theSetup.GetApfelID (apfel);    // index to address id, depends on setup!
-      ApfelTestResults& theResult = theSetup.AccessTestResults (gain, apfel);
+      //int apfeladdress = theSetup->GetApfelID (apfel);    // index to address id, depends on setup!
+      ApfelTestResults& theResult = theSetup->AccessTestResults (gain, apfel);
       for (int dac = 0; dac < APFEL_NUMDACS; ++dac)
       {
         QString boardid=QString(theResult.GetBoardDescriptor().c_str());
@@ -2209,50 +2050,81 @@ void ApfelGui::SaveTestResults ()
 }
 
 
-
-int ApfelGui::SaveGosip (int sfp, int slave, int address, int value)
-{
-//std::cout << "# SaveGosip" << std::endl;
-  static char buffer[1024] = { };
-  snprintf (buffer, 1024, "%d %d %x %x \n", sfp, slave, address, value);
-  QString line (buffer);
-  return (WriteConfigFile (line));
-}
-
-
-void ApfelGui::AppendTextWindow (const QString& text)
-{
-  TextOutput->appendPlainText (text);
-  TextOutput->update ();
-}
-
-void ApfelGui::FlushTextWindow ()
-{
-  TextOutput->repaint ();
-}
-
-bool ApfelGui::AssertNoBroadcast (bool verbose)
-{
-  if (fSFP < 0 || fSlave < 0)
+void ApfelGui::SaveConfig()
   {
-    //std::cerr << "# ApfelGui Error: broadcast not supported here!" << std::endl;
-    if (verbose)
-      AppendTextWindow ("#Error: broadcast not supported here!");
-    return false;
+    DoSaveConfig();
   }
-  return true;
-}
 
-bool ApfelGui::AssertChainConfigured (bool verbose)
+
+void ApfelGui::DoSaveConfig(const char* selectfile)
 {
-#ifdef USE_MBSPEX_LIB
+//std::cout << "ApfelGui::SaveConfigBtn_clicked()"<< std::endl;
 
-  if (fSlave >= fSFPChains.numslaves[fSFP])
+  static char buffer[1024];
+  QString gos_filter ("gosipcmd file (*.gos)");
+  QString apf_filter ("apfel characterization file (*.apf)");
+  QStringList filters;
+  filters << gos_filter << apf_filter;
+
+  QFileDialog fd (this, "Write Apfel configuration file");
+
+  // ".", "nyxor setup file (*.txt);;gosipcmd file (*.gos);;context dump file (*.dmp)");
+  fd.setNameFilters (filters);
+  fd.selectNameFilter (apf_filter);
+  fd.setFileMode (QFileDialog::AnyFile);
+  fd.setAcceptMode (QFileDialog::AcceptSave);
+
+  if (selectfile)
   {
-    if (verbose)
-    printm("#Error: device index %d not in initialized chain of length %d at SFP %d",fSlave,fSFPChains.numslaves[fSFP],fSFP);
-    return false;
+    fd.selectFile (QString (selectfile));
   }
-#endif
-  return true;
+  if (fd.exec () != QDialog::Accepted)
+    return;
+  QStringList flst = fd.selectedFiles ();
+  if (flst.isEmpty ())
+    return;
+  QString fileName = flst[0];
+
+  // complete suffix if user did not
+  if (fd.selectedNameFilter () == gos_filter)
+  {
+    if (!fileName.endsWith (".gos"))
+      fileName.append (".gos");
+
+    // open file
+    if (OpenConfigFile (fileName) != 0)
+      return;
+
+    WriteConfigFile (QString ("#Format *.gos"));
+    WriteConfigFile (QString ("#usage: gosipcmd -x -c file.gos \n"));
+    WriteConfigFile (QString ("#                                         \n"));
+    WriteConfigFile (QString ("#sfp slave address value\n"));
+    GOSIP_BROADCAST_ACTION(SaveRegisters());
+    // refresh actual setup from hardware and write it to open file
+    CloseConfigFile ();
+    snprintf (buffer, 1024, "Saved current slave configuration to file '%s' .\n", fileName.toLatin1 ().constData ());
+    AppendTextWindow (buffer);
+  }
+  else if (fd.selectedNameFilter () == apf_filter)
+  {
+    if (!fileName.endsWith (".apf"))
+      fileName.append (".apf");
+
+    OpenTestFile (fileName);
+    GOSIP_BROADCAST_ACTION(SaveTestResults());
+    // dump figures of merit of current slave, or of all slaves
+    CloseTestFile ();
+    snprintf (buffer, 1024, "Saved test result to file '%s' .\n", fileName.toLatin1 ().constData ());
+    AppendTextWindow (buffer);
+  }
+
+  else
+  {
+    std::cout << "ApfelGui::SaveConfigBtn_clicked( - NEVER COME HERE!!!!)" << std::endl;
+  }
+
 }
+
+
+
+
