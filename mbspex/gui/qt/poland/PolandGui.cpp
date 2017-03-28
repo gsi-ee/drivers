@@ -31,7 +31,7 @@ PolandGui::PolandGui (QWidget* parent) :
     GosipGui (parent), fTriggerOn(true)
 {
   fImplementationName="POLAND";
-  fVersionString="Welcome to POLAND GUI!\n\t v0.91 of 27-March-2017 by JAM (j.adamczewski@gsi.de)";
+  fVersionString="Welcome to POLAND GUI!\n\t v0.92 of 28-March-2017 by JAM (j.adamczewski@gsi.de)";
 
 
   fPolandWidget=new PolandWidget(this);
