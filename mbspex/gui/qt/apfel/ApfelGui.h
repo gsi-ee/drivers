@@ -269,7 +269,7 @@ protected:
 
 
    /** Initialize febex after power up*/
-   void InitSlave();
+   void ResetSlave();
 
 
   /** helper function that either does enable i2c on board, or writes such commands to .gos file*/

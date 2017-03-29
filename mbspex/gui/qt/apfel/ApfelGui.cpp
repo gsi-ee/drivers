@@ -39,7 +39,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
 
   fApfelWidget=new ApfelWidget();
   Settings_scrollArea->setWidget(fApfelWidget);
-
+  setWindowTitle(QString("%1 GUI").arg(fImplementationName));
   ClearOutputBtn_clicked ();
 
 

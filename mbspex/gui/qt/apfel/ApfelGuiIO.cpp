@@ -45,7 +45,7 @@ void ApfelGui::DisableI2C ()
 #endif
 }
 
-void ApfelGui::InitSlave ()
+void ApfelGui::ResetSlave ()
 {
   printm ("Resetting APFEL for SFP %d Slave %d...", fSFP, fSlave);
   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, APFEL_RESET);
