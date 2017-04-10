@@ -6,25 +6,303 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>787</width>
-    <height>410</height>
+    <width>770</width>
+    <height>373</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>FEBEX Widget</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_2">
+  <layout class="QGridLayout" name="gridLayout_7">
    <item row="0" column="0">
     <widget class="QTabWidget" name="FebexTabs">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
-     <widget class="QWidget" name="tab">
+     <widget class="QWidget" name="Trace_tab">
       <attribute name="title">
-       <string>Basics</string>
+       <string>Traces</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_6">
+       <item row="0" column="0">
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <widget class="QGroupBox" name="TracegroupBox">
+           <property name="title">
+            <string>Trace</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_4">
+            <item row="0" column="0">
+             <layout class="QVBoxLayout" name="verticalLayout">
+              <item>
+               <widget class="QLabel" name="TraceLenLabel">
+                <property name="text">
+                 <string>Length</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="TraceLengthSpinBox">
+                <property name="minimum">
+                 <number>10</number>
+                </property>
+                <property name="maximum">
+                 <number>8000</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item row="0" column="1">
+             <layout class="QVBoxLayout" name="verticalLayout_4">
+              <item>
+               <widget class="QLabel" name="TrigDelayLabel">
+                <property name="text">
+                 <string>Trigger Delay</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="TrigDelayspinBox">
+                <property name="minimum">
+                 <number>10</number>
+                </property>
+                <property name="maximum">
+                 <number>8000</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item row="0" column="2">
+             <layout class="QVBoxLayout" name="verticalLayout_5">
+              <item>
+               <widget class="QCheckBox" name="PolarityCheckBox">
+                <property name="text">
+                 <string>Negative polarity</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="EvenOddOrCheckBox">
+                <property name="text">
+                 <string>Even-odd OR</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="DatagroupBox">
+           <property name="title">
+            <string>Data</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_5">
+            <item row="0" column="0">
+             <widget class="QCheckBox" name="DataTraceCheckBox">
+              <property name="text">
+               <string>Send data traces</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QCheckBox" name="FilterTraceCheckBox">
+              <property name="text">
+               <string>Send filter traces</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QCheckBox" name="MoreThanOneHitCheckBox">
+              <property name="text">
+               <string>Only if hits &gt; 1</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="1" column="0">
+        <widget class="QGroupBox" name="TriggerMethodgroupBox">
+         <property name="title">
+          <string>Trigger method</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_6">
+          <item>
+           <widget class="QCheckBox" name="TriggerUseWindowCheckBox">
+            <property name="text">
+             <string>Use 2 Windows</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_6">
+            <item>
+             <widget class="QLabel" name="WindowSpeedLabel">
+              <property name="text">
+               <string>Window frequency</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="WindowSpeedComboBox">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Frequency of the 2 window trigger: &lt;/p&gt;&lt;p&gt;100% refers to 60 MHz on febex 3&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>100 %</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>50%</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>25%</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>12.5 %</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <item>
+          <widget class="QGroupBox" name="TriggerGroupBox">
+           <property name="title">
+            <string>Trigger</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_2">
+            <item row="0" column="0">
+             <widget class="QLabel" name="TrigSumALabel">
+              <property name="text">
+               <string>SumA</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QSpinBox" name="TrigSumAspinBox">
+              <property name="maximum">
+               <number>1000</number>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="TrigGapLabel">
+              <property name="text">
+               <string>Gap</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QSpinBox" name="TrigGapspinBox">
+              <property name="maximum">
+               <number>1000</number>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="TrigSumBLabel">
+              <property name="text">
+               <string>SumB</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QSpinBox" name="TrigSumBspinBox">
+              <property name="maximum">
+               <number>1000</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="FilterGroupBox">
+           <property name="title">
+            <string>Energy Filter</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_3">
+            <item row="0" column="0">
+             <widget class="QLabel" name="EnergySumALabel">
+              <property name="text">
+               <string>SumA</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QSpinBox" name="EnergySumAspinBox">
+              <property name="maximum">
+               <number>1000</number>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="EnergyGapLabel">
+              <property name="text">
+               <string>Gap</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QSpinBox" name="EnergyGapspinBox">
+              <property name="maximum">
+               <number>1000</number>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="EnergySumBLabel">
+              <property name="text">
+               <string>SumB</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QSpinBox" name="EnergySumBspinBox">
+              <property name="maximum">
+               <number>1000</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="Chanel_tab">
+      <attribute name="title">
+       <string>Channels</string>
       </attribute>
      </widget>
-     <widget class="QWidget" name="tab_2">
+     <widget class="QWidget" name="Threshold_tab">
+      <attribute name="title">
+       <string>Thresholds</string>
+      </attribute>
+     </widget>
+     <widget class="QWidget" name="TUM_tab">
       <attribute name="title">
        <string>Baselines TUM</string>
       </attribute>

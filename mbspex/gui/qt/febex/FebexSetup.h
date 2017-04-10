@@ -141,14 +141,124 @@ class FebexSetup : public GosipSetup
 {
 public:
 
-  /** the (relative) baseline values set on the dacs*/
+  /** the (relative) baseline values set on the TUM addon  dacs*/
   uint8_t fDACValueSet[FEBEX_MCP433_NUMCHIPS][FEBEX_MCP433_NUMCHAN];
 
-  /** TODO: probably keep the real adc values also here and display them...*/
+  //////////////////////////////////////////////////////////////////////////////////////////////
+  // below the basic febex settings:
+
+  /**
+   * Length of trace in number of samples.
+   *  maximum trace length 8000 (133 us)
+   *  attention
+   *  CVT to set: trace length - irq latency (10us)
+   */
+  uint16_t fTraceLength;
+
+  /**
+   *   Trigger delay in number of samples
+   */
+  uint16_t fTriggerDelay;
+
+  /** control register 0--------------------------------------------------------------------------------------------
+   *   bit 31            12 bit adc:  0
+   *                     14 bit adc:  1
+   *
+   * bit 28       signal polarity:  0: positive,    <-- very important info for fpga hit finder!
+   *                                1: negative     <-- "
+   * bit 24 - 27  trigger methode:  0: 3step
+   *                                1: 2-window 60  MHz
+   *                                2: 2-window 30  MHz
+   *                                4: 2-window 15  MHz
+   *                                8: 2-window 7.5 MHz
+   *
+   * bit 20       even-odd or       0: disabled
+   *                                1: enabled
+   *
+   * bit  0 - 16  disable channels: bit 0: special channel, bit 1-16: adc channels
+   *                                0x00000: all enabled
+   *                                0x1fffe: all adc channels disabled, special channel enabled
+   * --------------------------------------------------------------------------------------------------------
+  **/
+    uint32_t fControl_0;
+
+
+    /** control register 1
+     * bit  0 - 16  data sparsifying: bit 0: special channel, bit 1-16: adc channels
+     *                          0x00000: sparsifying disabled for all channles
+     *                          0x1fffe: sparsifying for all adc channels enabled
+     *                                   sparsifying for special channel  disabled
+     */
+    uint32_t fControl_1;
+
+
+    /** control register 2
+     *  bit  0 - 15    internal trigger enable/disable for aadc channels 0-15
+     *          0x0000: trigger disabled for all adc channels
+     *          0xffff: trigger enabled  for all adc channels
+     *
+     */
+    uint32_t fControl_2;
+
+
+  /** the threshold settings per channel, max 255 (adc counts)*/
+  uint16_t fThresholds[FEBEX_CH];
+
+
+  /** Trigger finder parameter TRIG_SUM_A
+   * for 12 bit: 8, 4 ,9 (8+1); for 14 bit: 14, 4, 15 (14 + 1).
+   * */
+  uint16_t fTriggerSumA;
+
+
+  /** Trigger finder parameter TRIG_GAP
+     * for 12 bit: 8, 4 ,9 (8+1); for 14 bit: 14, 4, 15 (14 + 1).
+     * */
+    uint16_t fTriggerGap;
+
+  /** Trigger finder parameter TRIG_SUM_B
+     * 8 + 1: one has to be added.
+     * */
+  uint16_t fTriggerSumB;
+
+
+
+  /** Trapez filter parameter ENERGY_SUM_A
+   *  64
+   * */
+   uint16_t fEnergySumA;
+
+
+   /** Trigger finder parameter ENERGY_GAP
+      * 32
+      * */
+     uint16_t fEnergyGap;
+
+   /** Trigger finder parameter ENERGY_SUM_B
+      * 64 + 1: one has to be added.
+      * */
+   uint16_t fEnergySumB;
+
+
+
+   /* Filter and control mode: which data is send
+    * (0x80 E,t summary always +  data trace                 always
+    * (0x82 E,t summery always + (data trace + filter trace) always
+    * (0x84 E,t summery always +  data trace                 if > 1 hit
+    * (0x86 E,t summery always + (data trace + filter trace) if > 1 hit
+   */
+   uint8_t fFilterControl;
+
+
+
+
+
 
 
   /* all initialization here:*/
-  FebexSetup (): GosipSetup()
+  FebexSetup (): GosipSetup(),
+      fTraceLength(200), fTriggerDelay(100), fControl_0(0),fControl_1(0),fControl_2(0),
+      fTriggerSumA(8), fTriggerGap(4), fTriggerSumB(8), fEnergySumA(64), fEnergyGap(32), fEnergySumB(64), fFilterControl(0x84)
   {
     for (int m = 0; m < FEBEX_MCP433_NUMCHIPS; ++m)
     {
@@ -157,6 +267,9 @@ public:
          fDACValueSet[m][c]=0;
        }
     }
+    for (int t = 0; t < FEBEX_CH; ++t)
+      fThresholds[t]=0x1ff;
+
   }
 
   /** getter and setter methods to avoid possible segfaults at wrong indices: */
@@ -198,6 +311,363 @@ public:
           return SetDACValue(chip, chan, value);
      }
 
+  uint16_t GetTriggerSumA ()
+  {
+    return fTriggerSumA;
+  }
+
+  void SetTriggerSumA (uint16_t val)
+  {
+    fTriggerSumA = val;
+  }
+
+  uint16_t GetTriggerSumB ()
+  {
+    return fTriggerSumB;
+  }
+
+  void SetTriggerSumB (uint16_t val)
+  {
+    fTriggerSumB = val;
+  }
+
+  uint16_t GetTriggerGap ()
+  {
+    return fTriggerGap;
+  }
+
+  void SetTriggerGap (uint16_t val)
+  {
+    fTriggerGap = val;
+  }
+
+  uint16_t GetEnergySumA ()
+  {
+    return fEnergySumA;
+  }
+
+  void SetEnergySumA (uint16_t val)
+  {
+    fEnergySumA = val;
+  }
+
+  uint16_t GetEnergySumB ()
+  {
+    return fEnergySumB;
+  }
+
+  void SetEnergySumB (uint16_t val)
+  {
+    fEnergySumB = val;
+  }
+
+  uint16_t GetEnergyGap ()
+  {
+    return fEnergyGap;
+  }
+
+  void SetEnergyGap (uint16_t val)
+  {
+    fEnergyGap = val;
+  }
+
+
+  uint16_t GetTraceLength ()
+   {
+        return fTraceLength;
+   }
+
+  void SetTraceLength (uint16_t val)
+    {
+      fTraceLength = val;
+    }
+
+
+  uint16_t GetTriggerDelay ()
+   {
+        return fTriggerDelay;
+   }
+
+  void SetTriggerDelay (uint16_t val)
+    {
+      fTriggerDelay = val;
+    }
+
+  uint32_t GetRawControl_0 ()
+  {
+    return fControl_0;
+  }
+
+  void SetRawControl_0 (uint32_t val)
+  {
+    fControl_0 = val;
+  }
+
+  uint32_t GetRawControl_1 ()
+  {
+    return fControl_1;
+  }
+
+  void SetRawControl_1 (uint32_t val)
+  {
+    fControl_1 = val;
+  }
+  uint32_t GetRawControl_2 ()
+  {
+    return fControl_2;
+  }
+
+  void SetRawControl_2 (uint32_t val)
+  {
+    fControl_2 = val;
+  }
+
+  uint16_t GetThreshold (int ch)
+  {
+    if (ch < 0 || ch >= FEBEX_CH)
+      return -1;
+    return fThresholds[ch];
+  }
+
+  void SetThreshold (int ch, uint16_t val)
+  {
+    if (ch < 0 || ch >= FEBEX_CH)
+      return;
+    fThresholds[ch] = val;
+  }
+
+
+  void Set14Bit(bool on)
+      {
+        uint32_t reg=GetRawControl_0();
+        uint32_t flags = 0x80000000;
+        if(on)
+          reg |= flags;
+        else
+          reg &= ~flags;
+        SetRawControl_0(reg);
+      }
+
+   bool Is14Bit()
+   {
+     uint32_t reg=GetRawControl_0();
+     bool rev = ((reg & 0x80000000) == 0x80000000);
+     return rev;
+   }
+
+  void SetPolarityNegative(bool on)
+    {
+      uint32_t reg=GetRawControl_0();
+      uint32_t flags = 0x10000000;
+      if(on)
+        reg |= flags;
+      else
+        reg &= ~flags;
+
+      SetRawControl_0(reg);
+    }
+
+ bool IsPolarityNegative()
+ {
+   uint32_t reg=GetRawControl_0();
+   bool rev = ((reg & 0x10000000) == 0x10000000);
+   return rev;
+ }
+
+
+ void SetEvenOddOr(bool on)
+    {
+      uint32_t reg=GetRawControl_0();
+      uint32_t flags = 0x100000;
+      if(on)
+        reg |= flags;
+      else
+        reg &= ~flags;
+      SetRawControl_0(reg);
+    }
+
+ bool IsEvenOddOr()
+ {
+   uint32_t reg=GetRawControl_0();
+   bool rev = ((reg & 0x100000) == 0x100000);
+   return rev;
+ }
+
+
+ void SetTriggerMethod(uint8_t kind)
+     {
+       uint32_t reg=GetRawControl_0();
+       uint32_t flags= (reg>>24) & 0xf;
+       uint32_t toset=kind;
+       flags &= toset; // clear bits to be unset
+       flags |= toset; // set bits to be set
+       flags = (flags << 24);
+       reg = (reg  & 0xf0ffffff);
+       reg |= flags;
+       SetRawControl_0(reg);
+     }
+
+ uint8_t GetTriggerMethod()
+ {
+   uint32_t reg=GetRawControl_0();
+   uint8_t rev = (reg >>24) & 0xF;
+   return rev;
+ }
+
+ void SetChannelDisabled(uint8_t ch)
+ {
+     if(ch>FEBEX_CH) return;
+     uint32_t reg=GetRawControl_0();
+     uint32_t flags=reg & 0xFFFF;
+     uint32_t toset= (1 << (ch+1));
+     flags &= toset; // clear if set
+     flags |= toset; // set if unset
+     reg = (reg  & 0xfffff0000);
+     reg |= flags;
+     SetRawControl_0(reg);
+ }
+
+ bool IsChannelDisabled(uint8_t ch)
+  {
+      if(ch>FEBEX_CH) return true;
+      uint32_t reg=GetRawControl_0();
+      uint32_t flags= (1 << (ch+1));
+      bool rev = (reg & flags == flags);
+      return rev;
+  }
+
+ void SetSpecialChannelDisabled(bool on)
+  {
+      uint32_t reg=GetRawControl_0();
+      if(on)
+        reg |= 0x1;
+      else
+        reg &= ~0x1;
+      SetRawControl_0(reg);
+  }
+
+  bool IsSpecialChannelDisabled()
+   {
+       uint32_t reg=GetRawControl_0();
+       bool rev = (reg & 0x1 == 0x1);
+       return rev;
+   }
+
+
+
+  void SetSparsifyingChannelEnabled (uint8_t ch)
+  {
+    if (ch > FEBEX_CH)
+      return;
+    uint32_t reg = GetRawControl_1 ();
+    uint32_t flags = (1 << (ch + 1));
+    reg &= flags;
+    reg |= flags;
+    SetRawControl_1 (reg);
+  }
+
+  bool IsSparsifyingChannelEnabled (uint8_t ch)
+  {
+    if (ch > FEBEX_CH)
+      return true;
+    uint32_t reg = GetRawControl_1 ();
+    uint32_t flags = (1 << (ch + 1));
+    bool rev = (reg & flags == flags);
+    return rev;
+  }
+
+  void SetSparsifyingSpecialChannelEnabled (bool on)
+  {
+    uint32_t reg = GetRawControl_1 ();
+    if(on)
+      reg |= 0x1;
+    else
+      reg &= ~0x1;
+    SetRawControl_1 (reg);
+  }
+
+  bool IsSparsifyingSpecialChannelEnabled ()
+  {
+    uint32_t reg = GetRawControl_1 ();
+    bool rev = (reg & 0x1 == 0x1);
+    return rev;
+  }
+
+  void SetTriggerChannelEnabled (uint8_t ch)
+  {
+    if (ch > FEBEX_CH)
+      return;
+    uint32_t reg = GetRawControl_2 ();
+    uint32_t flags = (1 << ch);
+    reg |= flags;
+    SetRawControl_2 (reg);
+  }
+
+  bool IsTriggerChannelEnabled (uint8_t ch)
+  {
+    if (ch > FEBEX_CH)
+      return true;
+    uint32_t reg = GetRawControl_2 ();
+    uint32_t flags = (1 << ch);
+    bool rev = (reg & flags == flags);
+    return rev;
+  }
+  void SetFilterControl (uint8_t val)
+  {
+    fFilterControl=val;
+  }
+
+  uint8_t GetFilterControl ()
+   {
+     return fFilterControl;
+   }
+
+
+  void SetSendDataTrace(bool on)
+  {
+      // dummy method, maybe there is a bit to switch here?
+      // ask ivan
+  }
+
+  bool IsSendDataTrace()
+  {
+    // dummy method
+    return true;
+  }
+
+
+  void SetSendFilterTrace(bool on)
+   {
+    uint8_t control=GetFilterControl();
+    if(on)
+          control |= 0x02;
+    else
+        control &= ~0x02;
+    SetFilterControl(control);
+   }
+
+   bool IsSendFilterTrace()
+   {
+     uint8_t control=GetFilterControl();
+     return ((control & 0x02) == 0x02);
+   }
+
+
+   void SetSendMoreThanOneHitsOnly(bool on)
+     {
+         uint8_t control=GetFilterControl();
+         if(on)
+               control |= 0x04;
+         else
+             control &= ~0x04;
+         SetFilterControl(control);
+     }
+
+     bool IsSendMoreThanOneHitsOnly()
+     {
+       uint8_t control=GetFilterControl();
+       return ((control & 0x04) == 0x04);
+     }
 
 
 

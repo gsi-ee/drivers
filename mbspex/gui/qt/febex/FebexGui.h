@@ -145,6 +145,10 @@ public slots:
   virtual void Any_spinBox13_changed(int val);
   virtual void Any_spinBox14_changed(int val);
   virtual void Any_spinBox15_changed(int val);
+
+
+  virtual void TriggerUseWindowChecked(bool);
+
 };
 
 #endif

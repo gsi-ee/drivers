@@ -35,16 +35,24 @@ FebexGui::FebexGui (QWidget* parent) : GosipGui (parent)
  
  
  fImplementationName="FEBEX";
-  fVersionString="Welcome to FEBEX GUI!\n\t v0.95 of 27-March-2017 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to FEBEX GUI!\n\t v0.97 of 10-April-2017 by JAM (j.adamczewski@gsi.de)";
 
 
   fFebexWidget=new FebexWidget(this);
   Settings_scrollArea->setWidget(fFebexWidget);
+  setWindowTitle(QString("%1 GUI").arg(fImplementationName));
 
+
+  fFebexWidget->DataTraceCheckBox->setDisabled(); // show the switch, but do not let the user change it
 
   ClearOutputBtn_clicked ();
  
  
+
+  QObject::connect (fFebexWidget->TriggerUseWindowCheckBox, SIGNAL(toggled(bool)), this, SLOT(TriggerUseWindowChecked(bool)));
+
+
+
  
   QObject::connect (fFebexWidget->AutoAdjustButton, SIGNAL (clicked ()), this, SLOT (AutoAdjustBtn_clicked ()));
 
@@ -371,7 +379,12 @@ void FebexGui::ApplyFileConfig(int )
 
 
 
+void FebexGui::TriggerUseWindowChecked(bool checked)
+{
+  std::cout << "FebexGui::TriggerUseWindowChecked, val="<<checked << std::endl;
+  fFebexWidget->WindowSpeedComboBox->setEnabled(checked);
 
+}
 
 
  void FebexGui::DAC_spinBox_all_changed(int val)
@@ -530,11 +543,71 @@ int FebexGui::AcquireBaselineSample(uint8_t febexchan)
 
 void FebexGui::RefreshView ()
 {
+
+  std::cout << "FebexGui::RefreshView"<<std::endl;
 // display setup structure to gui:
   QString text;
   QString pre;
   fNumberBase == 16 ? pre = "0x" : pre = "";
   theSetup_GET_FOR_SLAVE(FebexSetup);
+
+
+  fFebexWidget->TraceLengthSpinBox->setValue(theSetup->GetTraceLength());
+  std::cout << "FebexGui::RefreshView with trace length "<< theSetup->GetTraceLength()<<std::endl;
+  fFebexWidget->TrigDelayspinBox->setValue(theSetup->GetTriggerDelay());
+  std::cout << "FebexGui::RefreshView with trigger delay "<< theSetup->GetTriggerDelay()<<std::endl;
+
+  fFebexWidget->PolarityCheckBox->setChecked(theSetup->IsPolarityNegative());
+  std::cout << "FebexGui::RefreshView with polarity negative  "<< theSetup->IsPolarityNegative()<<std::endl;
+  fFebexWidget->EvenOddOrCheckBox->setChecked(theSetup->IsEvenOddOr());
+  std::cout << "FebexGui::RefreshView with evenoddor "<< theSetup->IsEvenOddOr()<<std::endl;
+
+//  std::cout << "FebexGui::RefreshView with trigsuma="<< theSetup->GetTriggerSumA()<<std::endl;
+//  std::cout << "FebexGui::RefreshView with trigsumb="<< theSetup->GetTriggerSumB()<<std::endl;
+//  std::cout << "FebexGui::RefreshView with triggap="<< theSetup->GetTriggerGap()<<std::endl;
+
+  fFebexWidget->TrigSumAspinBox->setValue(theSetup->GetTriggerSumA());
+  fFebexWidget->TrigSumBspinBox->setValue(theSetup->GetTriggerSumB());
+  fFebexWidget->TrigGapspinBox->setValue(theSetup->GetTriggerGap());
+
+
+//  std::cout << "FebexGui::RefreshView with esuma="<< theSetup->GetEnergySumA()<<std::endl;
+//  std::cout << "FebexGui::RefreshView with esumb="<< theSetup->GetEnergySumB()<<std::endl;
+//  std::cout << "FebexGui::RefreshView with egap="<< theSetup->GetEnergyGap()<<std::endl;
+
+  fFebexWidget->EnergySumAspinBox->setValue(theSetup->GetEnergySumA());
+  fFebexWidget->EnergySumBspinBox->setValue(theSetup->GetEnergySumB());
+  fFebexWidget->EnergyGapspinBox->setValue(theSetup->GetEnergyGap());
+
+  uint8_t tm =theSetup->GetTriggerMethod();
+  printf("FebexGui::RefreshView with trigger method 0x%x\n",tm);
+  bool usewindow (tm != 0);
+  fFebexWidget->TriggerUseWindowCheckBox->setChecked(usewindow);
+  if (usewindow)
+  {
+    int i = 0;
+    for (i = 0; i < 4; ++i)
+    {
+      if ((tm >> i) & 0x1 == 0x1)
+        break;
+    }
+    fFebexWidget->WindowSpeedComboBox->setCurrentIndex (i);
+    fFebexWidget->WindowSpeedComboBox->setEnabled(true);
+  }
+  else
+  {
+    fFebexWidget->WindowSpeedComboBox->setEnabled(false);
+  }
+
+
+  fFebexWidget->DataTraceCheckBox->setChecked(theSetup->IsSendDataTrace());
+  fFebexWidget->FilterTraceCheckBox->setChecked(theSetup->IsSendFilterTrace());
+  fFebexWidget->MoreThanOneHitCheckBox->setChecked(theSetup->IsSendMoreThanOneHitsOnly());
+
+
+  // below for tum addon only:
+
+
   for(int channel=0; channel<16;++channel)
      {
           int val=theSetup->GetDACValue(channel);
@@ -553,8 +626,60 @@ void FebexGui::RefreshView ()
 
 void FebexGui::EvaluateView ()
 {
+  //std::cout << "FebexGui::EvaluateView"<<std::endl;
+
   // here the current gui display is just copied to setup structure in local memory
   theSetup_GET_FOR_SLAVE(FebexSetup);
+
+
+  theSetup->SetTraceLength(fFebexWidget->TraceLengthSpinBox->value());
+  theSetup->SetTriggerDelay(fFebexWidget->TrigDelayspinBox->value());
+
+  printf("FebexGui::EvaluateView with raw control word before: 0x%x\n", theSetup->GetRawControl_0());
+
+
+  //std::cout << "FebexGui::EvaluateView with polarity negative  "<< fFebexWidget->PolarityCheckBox->isChecked()<<std::endl;
+  theSetup->SetPolarityNegative(fFebexWidget->PolarityCheckBox->isChecked());
+  //std::cout << "FebexGui::EvaluateView with evenoddor  "<< fFebexWidget->EvenOddOrCheckBox->isChecked()<<std::endl;
+  theSetup->SetEvenOddOr(fFebexWidget->EvenOddOrCheckBox->isChecked());
+
+  theSetup->SetTriggerSumA(fFebexWidget->TrigSumAspinBox->value());
+  theSetup->SetTriggerSumB(fFebexWidget->TrigSumBspinBox->value());
+  theSetup->SetTriggerGap(fFebexWidget->TrigGapspinBox->value());
+//
+  theSetup->SetEnergySumA(fFebexWidget->EnergySumAspinBox->value());
+    theSetup->SetEnergySumB(fFebexWidget->EnergySumBspinBox->value());
+    theSetup->SetEnergyGap(fFebexWidget->EnergyGapspinBox->value());
+
+
+// TODO: trigger method
+    uint8_t tm=0;
+    bool usewindow (fFebexWidget->TriggerUseWindowCheckBox->isChecked());
+    if(!usewindow)
+    {
+        tm=0x0;
+    }
+    else
+    {
+      int ix= fFebexWidget->WindowSpeedComboBox->currentIndex();
+      if(ix>3) ix=3;
+      tm = (0x01 << ix);
+    }
+    //printf("FebexGui::EvaluateView finds trigger method 0x%x\n",tm);
+    theSetup->SetTriggerMethod(tm);
+
+    // end trigger method
+
+
+    printf("FebexGui::EvaluateView with raw control word after set trigger method: 0x%x\n", theSetup->GetRawControl_0());
+
+
+
+    theSetup->SetSendDataTrace(fFebexWidget->DataTraceCheckBox->isChecked());
+    theSetup->SetSendFilterTrace(fFebexWidget->FilterTraceCheckBox->isChecked());
+    theSetup->SetSendMoreThanOneHitsOnly(fFebexWidget->MoreThanOneHitCheckBox->isChecked());
+
+
 
 // JAM improved this by looping over spinbox references
   for(int channel=0; channel<16;++channel)
@@ -570,9 +695,95 @@ void FebexGui::EvaluateView ()
 
 void FebexGui::SetRegisters ()
 {
-  QApplication::setOverrideCursor (Qt::WaitCursor);
-  EnableI2C ();    // must be done since mbs setup program may shut i2c off at the end
   theSetup_GET_FOR_SLAVE(FebexSetup);
+
+  QApplication::setOverrideCursor (Qt::WaitCursor);
+
+
+  WriteGosip (fSFP, fSlave, REG_DATA_LEN, 0x10000000); // disable test data length
+
+  WriteGosip (fSFP, fSlave, REG_FEB_TRACE_LEN, theSetup->GetTraceLength());
+  WriteGosip (fSFP, fSlave, REG_FEB_TRIG_DELAY, theSetup->GetTriggerDelay());
+
+
+  // disable trigger acceptance in febex
+  WriteGosip (fSFP, fSlave, REG_FEB_CTRL, 0);
+  // enable trigger acceptance in febex
+  WriteGosip (fSFP, fSlave, REG_FEB_CTRL, 1);
+
+  // set channels used for self trigger signal
+  int l_12_14, l_pol, l_trig_mod, l_ev_od_or, l_dis_cha, l_dat_redu, l_ena_trig;
+  l_pol = theSetup->IsPolarityNegative () ? 0x1 : 0;
+  l_ev_od_or = theSetup->IsEvenOddOr () ? 0x1 : 0;
+  l_trig_mod = theSetup->GetTriggerMethod () & 0xF;
+  l_ena_trig = theSetup->GetRawControl_2 () & 0xFFFF;
+
+
+  printf("FebexGui::SetRegisters with raw control word: 0x%x\n", theSetup->GetRawControl_0());
+  printf("FebexGui::SetRegisters with evenoddor 0x%x\n",l_ev_od_or);
+  printf("FebexGui::SetRegisters with polarity 0x%x\n",l_pol);
+  printf("FebexGui::SetRegisters with trigger method 0x%x\n",l_trig_mod);
+  printf("FebexGui::SetRegisters with trigger enabled 0x%x\n",l_ena_trig);
+
+
+  WriteGosip (fSFP, fSlave, REG_FEB_SELF_TRIG, (l_ev_od_or<<21)|(l_pol<<20)|(l_trig_mod<<16)|l_ena_trig);
+
+  // set the step size for self trigger and data reduction
+  for (int c = 0; c < FEBEX_CH; ++c)
+        {
+          int l_thresh= theSetup->GetThreshold(c);
+          WriteGosip (fSFP, fSlave, REG_FEB_STEP_SIZE, ( c << 24 ) | l_thresh);
+        }
+
+  // TODO TODO
+  // reset the time stamp and set the clock source for time stamp counter
+//         if( l_i==clk_source[0] &&   l_j==clk_source[1] )
+//         {
+//           l_stat = f_pex_slave_wr (l_i, l_j, REG_FEB_TIME,0x0 );
+//           l_stat = f_pex_slave_wr (l_i, l_j, REG_FEB_TIME,0x7 );
+//           //l_stat = f_pex_slave_wr (l_i, l_j, REG_FEB_TIME,0x3 );
+//         }
+//         else
+//         {
+//           l_stat = f_pex_slave_wr (l_i, l_j, REG_FEB_TIME, 0x0 );
+//           l_stat = f_pex_slave_wr (l_i, l_j, REG_FEB_TIME, 0x5 );
+//           //l_stat = f_pex_slave_wr (l_i, l_j, REG_FEB_TIME, 0x1 );
+//         }
+
+
+  // enable/disable no hit in trace data suppression of channel
+  l_dat_redu=theSetup->GetRawControl_1() & 0x1ffff;
+   WriteGosip (fSFP, fSlave, REG_DATA_REDUCTION, l_dat_redu);
+
+
+   // set channels used for self trigger signal
+   l_dis_cha=theSetup->GetRawControl_0() & 0x1FFFF;
+   WriteGosip (fSFP, fSlave, REG_MEM_DISABLE, l_dis_cha);
+
+
+
+  // set trapez parameters for trigger/hit finding:
+  WriteGosip (fSFP, fSlave, TRIG_SUM_A_REG, theSetup->GetTriggerSumA());
+  WriteGosip (fSFP, fSlave, TRIG_GAP_REG, theSetup->GetTriggerSumA() + theSetup->GetTriggerGap());
+  WriteGosip (fSFP, fSlave, TRIG_SUM_B_REG, theSetup->GetTriggerSumA() + theSetup->GetTriggerGap() + theSetup->GetTriggerSumB() +1);
+
+  WriteGosip (fSFP, fSlave, ENERGY_SUM_A_REG, theSetup->GetEnergySumA());
+  WriteGosip (fSFP, fSlave, ENERGY_GAP_REG,  theSetup->GetEnergySumA() + theSetup->GetEnergyGap());
+  WriteGosip (fSFP, fSlave, ENERGY_SUM_B_REG, theSetup->GetEnergySumA() + theSetup->GetEnergyGap() + theSetup->GetEnergySumB()+1);
+
+
+
+
+  usleep(50);
+    // enabling after "ini" of all registers (Ivan - 16.01.2013):
+  WriteGosip (fSFP, fSlave, DATA_FILT_CONTROL_REG, theSetup->GetFilterControl());
+
+
+
+
+
+  EnableI2C ();    // must be done since mbs setup program may shut i2c off at the end
+
 
       for (int m = 0; m < FEBEX_MCP433_NUMCHIPS; ++m)
     {
@@ -595,6 +806,112 @@ void FebexGui::GetRegisters ()
     return;
   theSetup_GET_FOR_SLAVE(FebexSetup);
   QApplication::setOverrideCursor (Qt::WaitCursor);
+
+  std::cout << "FebexGui::GetRegisters()"<<std::endl;
+
+  // start with basic settings:
+  int dat=0;
+
+  dat = ReadGosip (fSFP, fSlave, REG_FEB_TRACE_LEN);
+    theSetup->SetTraceLength(dat & 0xFFFF);
+
+  dat = ReadGosip (fSFP, fSlave, REG_FEB_TRIG_DELAY);
+  theSetup->SetTriggerDelay(dat & 0xFFFF);
+
+
+  uint16_t trigsum_a, trigsum_b, trig_gap;
+  dat = ReadGosip (fSFP, fSlave, TRIG_SUM_A_REG);
+  trigsum_a = (dat & 0xFFFF);
+  dat = ReadGosip (fSFP, fSlave, TRIG_GAP_REG);
+  trig_gap= (dat & 0xFFFF) - trigsum_a;
+  dat = ReadGosip (fSFP, fSlave, TRIG_SUM_B_REG);
+  trigsum_b = (dat & 0xFFFF) - trig_gap - trigsum_a - 1;
+  theSetup->SetTriggerSumA(trigsum_a);
+  theSetup->SetTriggerSumB(trigsum_b);
+  theSetup->SetTriggerGap(trig_gap);
+
+  uint16_t esum_a, esum_b, e_gap;
+
+
+  dat = ReadGosip (fSFP, fSlave, ENERGY_SUM_A_REG);
+  esum_a=(dat & 0xFFFF);
+  dat = ReadGosip (fSFP, fSlave, ENERGY_GAP_REG);
+  e_gap= (dat & 0xFFFF) - esum_a;
+  dat = ReadGosip (fSFP, fSlave, ENERGY_SUM_B_REG);
+  esum_b = (dat & 0xFFFF) - e_gap - esum_a - 1;
+  theSetup->SetEnergySumA(esum_a);
+  theSetup->SetEnergySumB(esum_b);
+  theSetup->SetEnergyGap(e_gap);
+
+
+  //  l_12_14   [0][l_j] = (l_sfp0_feb_ctrl0[l_j] >> 31) & 0x1;
+  //       l_pol     [0][l_j] = (l_sfp0_feb_ctrl0[l_j] >> 28) & 0x1;
+  //       l_trig_mod[0][l_j] = (l_sfp0_feb_ctrl0[l_j] >> 24) & 0xf;
+  //       l_ev_od_or[0][l_j] = (l_sfp0_feb_ctrl0[l_j] >> 20) & 0x1;
+  //       l_dis_cha [0][l_j] =  l_sfp0_feb_ctrl0[l_j]        & 0x1ffff;
+  //       l_dat_redu[0][l_j] =  l_sfp0_feb_ctrl1[l_j]        & 0x1ffff;
+  //       l_ena_trig[0][l_j] =  l_sfp0_feb_ctrl2[l_j]        & 0xffff;
+
+
+  //  l_stat = f_pex_slave_wr (l_i, l_j, REG_FEB_SELF_TRIG,
+  //    ((l_ev_od_or[l_i][l_j]<<21)|(l_pol[l_i][l_j]<<20)|(l_trig_mod[l_i][l_j]<<16)|l_ena_trig[l_i][l_j]) );
+  //
+  //
+
+  //  l_stat = f_pex_slave_wr (l_i, l_j, REG_FEB_STEP_SIZE, (( l_k<<24 ) | l_thresh[l_i][l_j]
+
+  //l_stat = f_pex_slave_wr (l_i, l_j, REG_DATA_REDUCTION, l_dat_redu[l_i][l_j]);
+
+  //l_stat = f_pex_slave_wr (l_i, l_j, REG_MEM_DISABLE, l_dis_cha[l_i][l_j] );
+
+  int l_12_14, l_pol, l_trig_mod, l_ev_od_or, l_dis_cha, l_dat_redu, l_ena_trig;
+
+  dat= ReadGosip (fSFP, fSlave,REG_MEM_DISABLE);
+  l_dis_cha = dat & 0x1FFFF;
+  uint32_t reg=theSetup->GetRawControl_0();
+  reg = reg & ~0x1FFFF; // clear old mask first
+  reg |= l_dis_cha; // activate current mask
+  theSetup->SetRawControl_0(reg);
+
+  dat= ReadGosip (fSFP, fSlave,REG_FEB_SELF_TRIG);
+  l_ev_od_or = (dat >> 21) & 0x1;
+  l_pol = (dat >> 20) & 0x1;
+  l_trig_mod = (dat >> 16) & 0xF;
+  l_ena_trig = dat % 0xFFFF;
+
+  printf("FebexGui::GetRegisters with evenoddor 0x%x\n",l_ev_od_or);
+  printf("FebexGui::GetRegisters with polarity 0x%x\n",l_pol);
+  printf("FebexGui::GetRegisters with trigger method 0x%x\n",l_trig_mod);
+  printf("FebexGui::GetRegisters with trigger enabled 0x%x\n",l_ena_trig);
+
+
+  theSetup->SetPolarityNegative(l_pol);
+  theSetup->SetEvenOddOr(l_ev_od_or);
+  theSetup->SetTriggerMethod(l_trig_mod);
+  theSetup->SetRawControl_2(l_ena_trig);
+
+  dat = ReadGosip (fSFP, fSlave,REG_DATA_REDUCTION);
+  theSetup->SetRawControl_1(dat & 0x1ffff);
+
+
+  // TODO: how to select channel for reading back the thresholds?
+  for (int c = 0; c < FEBEX_CH; ++c)
+      {
+        dat = ReadGosip (fSFP, fSlave, REG_FEB_STEP_SIZE);
+        int channel = (dat >> 24) & 0xF; // maybe just shift register with channel masked.
+        //std::cout << "FebexGui::GetRegisters with threshold("<< channel<<") = "<< (dat & 0x1FF) <<std::endl;
+        theSetup->SetThreshold(channel, dat & 0x1FF);
+      }
+
+
+  dat=ReadGosip (fSFP, fSlave, DATA_FILT_CONTROL_REG);
+  theSetup->SetFilterControl(dat);
+  printf("FebexGui::GetRegisters with data filter control 0x%x\n",dat);
+
+
+/// TODO: mode to disable tum addon!!!!!!!!!!!!!!!!!
+
+ // this one is for TUM addon:
  EnableI2C ();
  for (int m = 0; m < FEBEX_MCP433_NUMCHIPS; ++m)
     {
