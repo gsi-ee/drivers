@@ -45,6 +45,20 @@ protected:
   QLineEdit* fADCLineEdit[16];
 
 
+
+  /** auxiliary references to spinbox for threshold setup*/
+  QSpinBox* fThresholdSpinBoxes[16];
+
+  /** auxiliary references to channel disabled flags*/
+  QRadioButton* fChannelDisabledRadio[16];
+
+  /** auxiliary references to channel sparsifying flags*/
+   QRadioButton* fChannelSparseRadio[16];
+
+   /** auxiliary references to channel internal trigger flags*/
+   QRadioButton* fChannelTriggerRadio[16];
+
+
  
  /** reset current febex slave, i.e. initialize it to defaults*/
   virtual void ResetSlave ();
@@ -111,8 +125,43 @@ protected:
   void AutoApplyRefresh(int channel, int dac);
 
 
- /** evaluate change of spinbox for febex channel channel*/
+ /** evaluate change of TUM addon baseline spinbox for febex channel channel*/
   void DAC_spinBox_changed(int channel, int val);
+
+
+  /** apply threshold for trigger.
+   * This function is capable of usage in FEBEX_BROADCAST_ACTION macro*/
+  void ApplyThreshold(int channel, int val);
+
+
+
+  /** evaluate change of threshold spinbox for febex channel channel*/
+  void Threshold_spinBox_changed(int channel, int val);
+
+
+  /** apply change of disabled febex channel channel
+   * This function is capable of usage in GOSIP_BROADCAST_ACTION macro*/
+  void ApplyDisabled(int channel, bool on);
+
+    /** evaluate change of disabled febex channel channel*/
+  void Disabled_toggled(int channel, bool on);
+
+
+  /** apply change of sparsifying data reduction febex channel channel
+     * This function is capable of usage in GOSIP_BROADCAST_ACTION macro*/
+  void ApplySparsy(int channel, bool on);
+
+      /** evaluate change of sparsifying febex channel channel*/
+  void Sparsy_toggled(int channel, bool on);
+
+
+  /** apply change of internal trigger for febex channel channel
+       * This function is capable of usage in GOSIP_BROADCAST_ACTION macro*/
+    void ApplyIntTrigger(int channel, bool on);
+
+        /** evaluate change of internal triggerfebex channel channel*/
+    void IntTrigger_toggled(int channel, bool on);
+
 
 
   /** Automatic adjustment of adc baseline to adctarget value for global febex channel.
@@ -148,6 +197,93 @@ public slots:
 
 
   virtual void TriggerUseWindowChecked(bool);
+
+  virtual void Threshold_spinBox_all_changed(int val);
+
+
+  virtual void Threshold_spinBox_00_changed (int val);
+  virtual void Threshold_spinBox_01_changed (int val);
+  virtual void Threshold_spinBox_02_changed (int val);
+  virtual void Threshold_spinBox_03_changed (int val);
+  virtual void Threshold_spinBox_04_changed (int val);
+  virtual void Threshold_spinBox_05_changed (int val);
+  virtual void Threshold_spinBox_06_changed (int val);
+  virtual void Threshold_spinBox_07_changed (int val);
+  virtual void Threshold_spinBox_08_changed (int val);
+  virtual void Threshold_spinBox_09_changed (int val);
+  virtual void Threshold_spinBox_10_changed (int val);
+  virtual void Threshold_spinBox_11_changed (int val);
+  virtual void Threshold_spinBox_12_changed (int val);
+  virtual void Threshold_spinBox_13_changed (int val);
+  virtual void Threshold_spinBox_14_changed (int val);
+  virtual void Threshold_spinBox_15_changed (int val);
+
+
+  virtual void ChannelDisabled_toggled_all(bool on);
+
+  virtual void ChannelDisabled_toggled_00 (bool on);
+  virtual void ChannelDisabled_toggled_01 (bool on);
+  virtual void ChannelDisabled_toggled_02 (bool on);
+  virtual void ChannelDisabled_toggled_03 (bool on);
+  virtual void ChannelDisabled_toggled_04 (bool on);
+  virtual void ChannelDisabled_toggled_05 (bool on);
+  virtual void ChannelDisabled_toggled_06 (bool on);
+  virtual void ChannelDisabled_toggled_07 (bool on);
+  virtual void ChannelDisabled_toggled_08 (bool on);
+  virtual void ChannelDisabled_toggled_09 (bool on);
+  virtual void ChannelDisabled_toggled_10 (bool on);
+  virtual void ChannelDisabled_toggled_11 (bool on);
+  virtual void ChannelDisabled_toggled_12 (bool on);
+  virtual void ChannelDisabled_toggled_13 (bool on);
+  virtual void ChannelDisabled_toggled_14 (bool on);
+  virtual void ChannelDisabled_toggled_15 (bool on);
+
+  virtual void  ChannelDisabled_toggled_special(bool on);
+
+
+  virtual void ChannelSparsy_toggled_all(bool on);
+
+  virtual void ChannelSparsy_toggled_00 (bool on);
+  virtual void ChannelSparsy_toggled_01 (bool on);
+  virtual void ChannelSparsy_toggled_02 (bool on);
+  virtual void ChannelSparsy_toggled_03 (bool on);
+  virtual void ChannelSparsy_toggled_04 (bool on);
+  virtual void ChannelSparsy_toggled_05 (bool on);
+  virtual void ChannelSparsy_toggled_06 (bool on);
+  virtual void ChannelSparsy_toggled_07 (bool on);
+  virtual void ChannelSparsy_toggled_08 (bool on);
+  virtual void ChannelSparsy_toggled_09 (bool on);
+  virtual void ChannelSparsy_toggled_10 (bool on);
+  virtual void ChannelSparsy_toggled_11 (bool on);
+  virtual void ChannelSparsy_toggled_12 (bool on);
+  virtual void ChannelSparsy_toggled_13 (bool on);
+  virtual void ChannelSparsy_toggled_14 (bool on);
+  virtual void ChannelSparsy_toggled_15 (bool on);
+
+  virtual void ChannelSparsy_toggled_special (bool on);
+
+  virtual void ChannelTrigger_toggled_all(bool on);
+
+
+  virtual void ChannelTrigger_toggled_00 (bool on);
+  virtual void ChannelTrigger_toggled_01 (bool on);
+  virtual void ChannelTrigger_toggled_02 (bool on);
+  virtual void ChannelTrigger_toggled_03 (bool on);
+  virtual void ChannelTrigger_toggled_04 (bool on);
+  virtual void ChannelTrigger_toggled_05 (bool on);
+  virtual void ChannelTrigger_toggled_06 (bool on);
+  virtual void ChannelTrigger_toggled_07 (bool on);
+  virtual void ChannelTrigger_toggled_08 (bool on);
+  virtual void ChannelTrigger_toggled_09 (bool on);
+  virtual void ChannelTrigger_toggled_10 (bool on);
+  virtual void ChannelTrigger_toggled_11 (bool on);
+  virtual void ChannelTrigger_toggled_12 (bool on);
+  virtual void ChannelTrigger_toggled_13 (bool on);
+  virtual void ChannelTrigger_toggled_14 (bool on);
+  virtual void ChannelTrigger_toggled_15 (bool on);
+
+
+
 
 };
 

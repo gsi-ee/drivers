@@ -422,16 +422,16 @@ public:
     fControl_2 = val;
   }
 
-  uint16_t GetThreshold (int ch)
+  uint16_t GetThreshold (uint8_t ch)
   {
-    if (ch < 0 || ch >= FEBEX_CH)
+    if (ch >= FEBEX_CH)
       return -1;
     return fThresholds[ch];
   }
 
-  void SetThreshold (int ch, uint16_t val)
+  void SetThreshold (uint8_t ch, uint16_t val)
   {
-    if (ch < 0 || ch >= FEBEX_CH)
+    if (ch >= FEBEX_CH)
       return;
     fThresholds[ch] = val;
   }
@@ -514,16 +514,15 @@ public:
    return rev;
  }
 
- void SetChannelDisabled(uint8_t ch)
+ void SetChannelDisabled(uint8_t ch, bool on)
  {
      if(ch>FEBEX_CH) return;
      uint32_t reg=GetRawControl_0();
-     uint32_t flags=reg & 0xFFFF;
-     uint32_t toset= (1 << (ch+1));
-     flags &= toset; // clear if set
-     flags |= toset; // set if unset
-     reg = (reg  & 0xfffff0000);
-     reg |= flags;
+     uint32_t flags= (1 << (ch+1));
+     if(on)
+       reg |= flags;
+     else
+       reg &= ~flags;
      SetRawControl_0(reg);
  }
 
@@ -532,7 +531,7 @@ public:
       if(ch>FEBEX_CH) return true;
       uint32_t reg=GetRawControl_0();
       uint32_t flags= (1 << (ch+1));
-      bool rev = (reg & flags == flags);
+      bool rev = ((reg & flags) == flags);
       return rev;
   }
 
@@ -542,27 +541,29 @@ public:
       if(on)
         reg |= 0x1;
       else
-        reg &= ~0x1;
+        reg &= ~0x00000001;
       SetRawControl_0(reg);
   }
 
   bool IsSpecialChannelDisabled()
    {
        uint32_t reg=GetRawControl_0();
-       bool rev = (reg & 0x1 == 0x1);
+       bool rev = ((reg & 0x1) == 0x1);
        return rev;
    }
 
 
 
-  void SetSparsifyingChannelEnabled (uint8_t ch)
+  void SetSparsifyingChannelEnabled (uint8_t ch, bool on)
   {
     if (ch > FEBEX_CH)
       return;
     uint32_t reg = GetRawControl_1 ();
     uint32_t flags = (1 << (ch + 1));
-    reg &= flags;
-    reg |= flags;
+    if(on)
+      reg |= flags;
+    else
+      reg &= ~flags;
     SetRawControl_1 (reg);
   }
 
@@ -572,7 +573,7 @@ public:
       return true;
     uint32_t reg = GetRawControl_1 ();
     uint32_t flags = (1 << (ch + 1));
-    bool rev = (reg & flags == flags);
+    bool rev = ((reg & flags) == flags);
     return rev;
   }
 
@@ -582,24 +583,27 @@ public:
     if(on)
       reg |= 0x1;
     else
-      reg &= ~0x1;
+      reg &= ~0x00000001;
     SetRawControl_1 (reg);
   }
 
   bool IsSparsifyingSpecialChannelEnabled ()
   {
     uint32_t reg = GetRawControl_1 ();
-    bool rev = (reg & 0x1 == 0x1);
+    bool rev = ((reg & 0x1) == 0x1);
     return rev;
   }
 
-  void SetTriggerChannelEnabled (uint8_t ch)
+  void SetTriggerChannelEnabled (uint8_t ch, bool on)
   {
     if (ch > FEBEX_CH)
       return;
     uint32_t reg = GetRawControl_2 ();
     uint32_t flags = (1 << ch);
-    reg |= flags;
+    if(on)
+      reg |= flags;
+    else
+      reg &= ~flags;
     SetRawControl_2 (reg);
   }
 
@@ -609,7 +613,7 @@ public:
       return true;
     uint32_t reg = GetRawControl_2 ();
     uint32_t flags = (1 << ch);
-    bool rev = (reg & flags == flags);
+    bool rev = ((reg & flags) == flags);
     return rev;
   }
   void SetFilterControl (uint8_t val)

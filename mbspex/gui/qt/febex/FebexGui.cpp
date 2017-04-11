@@ -35,7 +35,7 @@ FebexGui::FebexGui (QWidget* parent) : GosipGui (parent)
  
  
  fImplementationName="FEBEX";
- fVersionString="Welcome to FEBEX GUI!\n\t v0.97 of 10-April-2017 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to FEBEX GUI!\n\t v0.975 of 11-April-2017 by JAM (j.adamczewski@gsi.de)";
 
 
   fFebexWidget=new FebexWidget(this);
@@ -43,7 +43,7 @@ FebexGui::FebexGui (QWidget* parent) : GosipGui (parent)
   setWindowTitle(QString("%1 GUI").arg(fImplementationName));
 
 
-  fFebexWidget->DataTraceCheckBox->setDisabled(); // show the switch, but do not let the user change it
+  fFebexWidget->DataTraceCheckBox->setDisabled(true); // show the switch, but do not let the user change it
 
   ClearOutputBtn_clicked ();
  
@@ -51,9 +51,100 @@ FebexGui::FebexGui (QWidget* parent) : GosipGui (parent)
 
   QObject::connect (fFebexWidget->TriggerUseWindowCheckBox, SIGNAL(toggled(bool)), this, SLOT(TriggerUseWindowChecked(bool)));
 
+  QObject::connect (fFebexWidget->Threshold_spinBox_all, SIGNAL(valueChanged(int)), this, SLOT(Threshold_spinBox_all_changed(int)));
 
 
- 
+  QObject::connect (fFebexWidget->Threshold_spinBox_00, SIGNAL(valueChanged(int)), this, SLOT(Threshold_spinBox_00_changed(int)));
+  QObject::connect (fFebexWidget->Threshold_spinBox_01, SIGNAL(valueChanged(int)), this, SLOT(Threshold_spinBox_01_changed(int)));
+  QObject::connect (fFebexWidget->Threshold_spinBox_02, SIGNAL(valueChanged(int)), this, SLOT(Threshold_spinBox_02_changed(int)));
+  QObject::connect (fFebexWidget->Threshold_spinBox_03, SIGNAL(valueChanged(int)), this, SLOT(Threshold_spinBox_03_changed(int)));
+  QObject::connect (fFebexWidget->Threshold_spinBox_04, SIGNAL(valueChanged(int)), this, SLOT(Threshold_spinBox_04_changed(int)));
+  QObject::connect (fFebexWidget->Threshold_spinBox_05, SIGNAL(valueChanged(int)), this, SLOT(Threshold_spinBox_05_changed(int)));
+  QObject::connect (fFebexWidget->Threshold_spinBox_06, SIGNAL(valueChanged(int)), this, SLOT(Threshold_spinBox_06_changed(int)));
+  QObject::connect (fFebexWidget->Threshold_spinBox_07, SIGNAL(valueChanged(int)), this, SLOT(Threshold_spinBox_07_changed(int)));
+  QObject::connect (fFebexWidget->Threshold_spinBox_08, SIGNAL(valueChanged(int)), this, SLOT(Threshold_spinBox_08_changed(int)));
+  QObject::connect (fFebexWidget->Threshold_spinBox_09, SIGNAL(valueChanged(int)), this, SLOT(Threshold_spinBox_09_changed(int)));
+  QObject::connect (fFebexWidget->Threshold_spinBox_10, SIGNAL(valueChanged(int)), this, SLOT(Threshold_spinBox_10_changed(int)));
+  QObject::connect (fFebexWidget->Threshold_spinBox_11, SIGNAL(valueChanged(int)), this, SLOT(Threshold_spinBox_11_changed(int)));
+  QObject::connect (fFebexWidget->Threshold_spinBox_12, SIGNAL(valueChanged(int)), this, SLOT(Threshold_spinBox_12_changed(int)));
+  QObject::connect (fFebexWidget->Threshold_spinBox_13, SIGNAL(valueChanged(int)), this, SLOT(Threshold_spinBox_13_changed(int)));
+  QObject::connect (fFebexWidget->Threshold_spinBox_14, SIGNAL(valueChanged(int)), this, SLOT(Threshold_spinBox_14_changed(int)));
+  QObject::connect (fFebexWidget->Threshold_spinBox_15, SIGNAL(valueChanged(int)), this, SLOT(Threshold_spinBox_15_changed(int)));
+
+
+
+
+
+
+  QObject::connect (fFebexWidget->Channel_disabled_radio_all, SIGNAL(toggled(bool)), this, SLOT(ChannelDisabled_toggled_all(bool)));
+
+
+  QObject::connect (fFebexWidget->Channel_disabled_radio_00, SIGNAL(toggled(bool)), this, SLOT(ChannelDisabled_toggled_00(bool)));
+  QObject::connect (fFebexWidget->Channel_disabled_radio_01, SIGNAL(toggled(bool)), this, SLOT(ChannelDisabled_toggled_01(bool)));
+  QObject::connect (fFebexWidget->Channel_disabled_radio_02, SIGNAL(toggled(bool)), this, SLOT(ChannelDisabled_toggled_02(bool)));
+  QObject::connect (fFebexWidget->Channel_disabled_radio_03, SIGNAL(toggled(bool)), this, SLOT(ChannelDisabled_toggled_03(bool)));
+  QObject::connect (fFebexWidget->Channel_disabled_radio_04, SIGNAL(toggled(bool)), this, SLOT(ChannelDisabled_toggled_04(bool)));
+  QObject::connect (fFebexWidget->Channel_disabled_radio_05, SIGNAL(toggled(bool)), this, SLOT(ChannelDisabled_toggled_05(bool)));
+  QObject::connect (fFebexWidget->Channel_disabled_radio_06, SIGNAL(toggled(bool)), this, SLOT(ChannelDisabled_toggled_06(bool)));
+  QObject::connect (fFebexWidget->Channel_disabled_radio_07, SIGNAL(toggled(bool)), this, SLOT(ChannelDisabled_toggled_07(bool)));
+  QObject::connect (fFebexWidget->Channel_disabled_radio_08, SIGNAL(toggled(bool)), this, SLOT(ChannelDisabled_toggled_08(bool)));
+  QObject::connect (fFebexWidget->Channel_disabled_radio_09, SIGNAL(toggled(bool)), this, SLOT(ChannelDisabled_toggled_09(bool)));
+  QObject::connect (fFebexWidget->Channel_disabled_radio_10, SIGNAL(toggled(bool)), this, SLOT(ChannelDisabled_toggled_10(bool)));
+  QObject::connect (fFebexWidget->Channel_disabled_radio_11, SIGNAL(toggled(bool)), this, SLOT(ChannelDisabled_toggled_11(bool)));
+  QObject::connect (fFebexWidget->Channel_disabled_radio_12, SIGNAL(toggled(bool)), this, SLOT(ChannelDisabled_toggled_12(bool)));
+  QObject::connect (fFebexWidget->Channel_disabled_radio_13, SIGNAL(toggled(bool)), this, SLOT(ChannelDisabled_toggled_13(bool)));
+  QObject::connect (fFebexWidget->Channel_disabled_radio_14, SIGNAL(toggled(bool)), this, SLOT(ChannelDisabled_toggled_14(bool)));
+  QObject::connect (fFebexWidget->Channel_disabled_radio_15, SIGNAL(toggled(bool)), this, SLOT(ChannelDisabled_toggled_15(bool)));
+
+
+  QObject::connect (fFebexWidget->Channel_disabled_radio_special, SIGNAL(toggled(bool)), this, SLOT(ChannelDisabled_toggled_special(bool)));
+
+  QObject::connect (fFebexWidget->Channel_sparsifying_radio_all, SIGNAL(toggled(bool)), this, SLOT(ChannelSparsy_toggled_all(bool)));
+
+  QObject::connect (fFebexWidget->Channel_sparsifying_radio_00, SIGNAL(toggled(bool)), this, SLOT(ChannelSparsy_toggled_00(bool)));
+  QObject::connect (fFebexWidget->Channel_sparsifying_radio_01, SIGNAL(toggled(bool)), this, SLOT(ChannelSparsy_toggled_01(bool)));
+  QObject::connect (fFebexWidget->Channel_sparsifying_radio_02, SIGNAL(toggled(bool)), this, SLOT(ChannelSparsy_toggled_02(bool)));
+  QObject::connect (fFebexWidget->Channel_sparsifying_radio_03, SIGNAL(toggled(bool)), this, SLOT(ChannelSparsy_toggled_03(bool)));
+  QObject::connect (fFebexWidget->Channel_sparsifying_radio_04, SIGNAL(toggled(bool)), this, SLOT(ChannelSparsy_toggled_04(bool)));
+  QObject::connect (fFebexWidget->Channel_sparsifying_radio_05, SIGNAL(toggled(bool)), this, SLOT(ChannelSparsy_toggled_05(bool)));
+  QObject::connect (fFebexWidget->Channel_sparsifying_radio_06, SIGNAL(toggled(bool)), this, SLOT(ChannelSparsy_toggled_06(bool)));
+  QObject::connect (fFebexWidget->Channel_sparsifying_radio_07, SIGNAL(toggled(bool)), this, SLOT(ChannelSparsy_toggled_07(bool)));
+  QObject::connect (fFebexWidget->Channel_sparsifying_radio_08, SIGNAL(toggled(bool)), this, SLOT(ChannelSparsy_toggled_08(bool)));
+  QObject::connect (fFebexWidget->Channel_sparsifying_radio_09, SIGNAL(toggled(bool)), this, SLOT(ChannelSparsy_toggled_09(bool)));
+  QObject::connect (fFebexWidget->Channel_sparsifying_radio_10, SIGNAL(toggled(bool)), this, SLOT(ChannelSparsy_toggled_10(bool)));
+  QObject::connect (fFebexWidget->Channel_sparsifying_radio_11, SIGNAL(toggled(bool)), this, SLOT(ChannelSparsy_toggled_11(bool)));
+  QObject::connect (fFebexWidget->Channel_sparsifying_radio_12, SIGNAL(toggled(bool)), this, SLOT(ChannelSparsy_toggled_12(bool)));
+  QObject::connect (fFebexWidget->Channel_sparsifying_radio_13, SIGNAL(toggled(bool)), this, SLOT(ChannelSparsy_toggled_13(bool)));
+  QObject::connect (fFebexWidget->Channel_sparsifying_radio_14, SIGNAL(toggled(bool)), this, SLOT(ChannelSparsy_toggled_14(bool)));
+  QObject::connect (fFebexWidget->Channel_sparsifying_radio_15, SIGNAL(toggled(bool)), this, SLOT(ChannelSparsy_toggled_15(bool)));
+
+
+  QObject::connect (fFebexWidget->Channel_sparsifying_radio_special, SIGNAL(toggled(bool)), this, SLOT(ChannelSparsy_toggled_special(bool)));
+
+
+
+
+  QObject::connect (fFebexWidget->Channel_intrigger_radio_all, SIGNAL(toggled(bool)), this, SLOT(ChannelTrigger_toggled_all(bool)));
+
+  QObject::connect (fFebexWidget->Channel_intrigger_radio_00, SIGNAL(toggled(bool)), this, SLOT(ChannelTrigger_toggled_00(bool)));
+  QObject::connect (fFebexWidget->Channel_intrigger_radio_01, SIGNAL(toggled(bool)), this, SLOT(ChannelTrigger_toggled_01(bool)));
+  QObject::connect (fFebexWidget->Channel_intrigger_radio_02, SIGNAL(toggled(bool)), this, SLOT(ChannelTrigger_toggled_02(bool)));
+  QObject::connect (fFebexWidget->Channel_intrigger_radio_03, SIGNAL(toggled(bool)), this, SLOT(ChannelTrigger_toggled_03(bool)));
+  QObject::connect (fFebexWidget->Channel_intrigger_radio_04, SIGNAL(toggled(bool)), this, SLOT(ChannelTrigger_toggled_04(bool)));
+  QObject::connect (fFebexWidget->Channel_intrigger_radio_05, SIGNAL(toggled(bool)), this, SLOT(ChannelTrigger_toggled_05(bool)));
+  QObject::connect (fFebexWidget->Channel_intrigger_radio_06, SIGNAL(toggled(bool)), this, SLOT(ChannelTrigger_toggled_06(bool)));
+  QObject::connect (fFebexWidget->Channel_intrigger_radio_07, SIGNAL(toggled(bool)), this, SLOT(ChannelTrigger_toggled_07(bool)));
+  QObject::connect (fFebexWidget->Channel_intrigger_radio_08, SIGNAL(toggled(bool)), this, SLOT(ChannelTrigger_toggled_08(bool)));
+  QObject::connect (fFebexWidget->Channel_intrigger_radio_09, SIGNAL(toggled(bool)), this, SLOT(ChannelTrigger_toggled_09(bool)));
+  QObject::connect (fFebexWidget->Channel_intrigger_radio_10, SIGNAL(toggled(bool)), this, SLOT(ChannelTrigger_toggled_10(bool)));
+  QObject::connect (fFebexWidget->Channel_intrigger_radio_11, SIGNAL(toggled(bool)), this, SLOT(ChannelTrigger_toggled_11(bool)));
+  QObject::connect (fFebexWidget->Channel_intrigger_radio_12, SIGNAL(toggled(bool)), this, SLOT(ChannelTrigger_toggled_12(bool)));
+  QObject::connect (fFebexWidget->Channel_intrigger_radio_13, SIGNAL(toggled(bool)), this, SLOT(ChannelTrigger_toggled_13(bool)));
+  QObject::connect (fFebexWidget->Channel_intrigger_radio_14, SIGNAL(toggled(bool)), this, SLOT(ChannelTrigger_toggled_14(bool)));
+  QObject::connect (fFebexWidget->Channel_intrigger_radio_15, SIGNAL(toggled(bool)), this, SLOT(ChannelTrigger_toggled_15(bool)));
+
+
+
   QObject::connect (fFebexWidget->AutoAdjustButton, SIGNAL (clicked ()), this, SLOT (AutoAdjustBtn_clicked ()));
 
 
@@ -128,6 +219,78 @@ FebexGui::FebexGui (QWidget* parent) : GosipGui (parent)
   fADCLineEdit[13] = fFebexWidget->ADC_Value_13;
   fADCLineEdit[14] = fFebexWidget->ADC_Value_14;
   fADCLineEdit[15] = fFebexWidget->ADC_Value_15;
+
+
+  fThresholdSpinBoxes[0] = fFebexWidget->Threshold_spinBox_00;
+  fThresholdSpinBoxes[1] = fFebexWidget->Threshold_spinBox_01;
+  fThresholdSpinBoxes[2] = fFebexWidget->Threshold_spinBox_02;
+  fThresholdSpinBoxes[3] = fFebexWidget->Threshold_spinBox_03;
+  fThresholdSpinBoxes[4] = fFebexWidget->Threshold_spinBox_04;
+  fThresholdSpinBoxes[5] = fFebexWidget->Threshold_spinBox_05;
+  fThresholdSpinBoxes[6] = fFebexWidget->Threshold_spinBox_06;
+  fThresholdSpinBoxes[7] = fFebexWidget->Threshold_spinBox_07;
+  fThresholdSpinBoxes[8] = fFebexWidget->Threshold_spinBox_08;
+  fThresholdSpinBoxes[9] = fFebexWidget->Threshold_spinBox_09;
+  fThresholdSpinBoxes[10] = fFebexWidget->Threshold_spinBox_10;
+  fThresholdSpinBoxes[11] = fFebexWidget->Threshold_spinBox_11;
+  fThresholdSpinBoxes[12] = fFebexWidget->Threshold_spinBox_12;
+  fThresholdSpinBoxes[13] = fFebexWidget->Threshold_spinBox_13;
+  fThresholdSpinBoxes[14] = fFebexWidget->Threshold_spinBox_14;
+  fThresholdSpinBoxes[15] = fFebexWidget->Threshold_spinBox_15;
+
+
+  fChannelDisabledRadio[0] = fFebexWidget->Channel_disabled_radio_00;
+  fChannelDisabledRadio[1] = fFebexWidget->Channel_disabled_radio_01;
+  fChannelDisabledRadio[2] = fFebexWidget->Channel_disabled_radio_02;
+  fChannelDisabledRadio[3] = fFebexWidget->Channel_disabled_radio_03;
+  fChannelDisabledRadio[4] = fFebexWidget->Channel_disabled_radio_04;
+  fChannelDisabledRadio[5] = fFebexWidget->Channel_disabled_radio_05;
+  fChannelDisabledRadio[6] = fFebexWidget->Channel_disabled_radio_06;
+  fChannelDisabledRadio[7] = fFebexWidget->Channel_disabled_radio_07;
+  fChannelDisabledRadio[8] = fFebexWidget->Channel_disabled_radio_08;
+  fChannelDisabledRadio[9] = fFebexWidget->Channel_disabled_radio_09;
+  fChannelDisabledRadio[10] = fFebexWidget->Channel_disabled_radio_10;
+  fChannelDisabledRadio[11] = fFebexWidget->Channel_disabled_radio_11;
+  fChannelDisabledRadio[12] = fFebexWidget->Channel_disabled_radio_12;
+  fChannelDisabledRadio[13] = fFebexWidget->Channel_disabled_radio_13;
+  fChannelDisabledRadio[14] = fFebexWidget->Channel_disabled_radio_14;
+  fChannelDisabledRadio[15] = fFebexWidget->Channel_disabled_radio_15;
+
+  fChannelSparseRadio[0] = fFebexWidget->Channel_sparsifying_radio_00;
+  fChannelSparseRadio[1] = fFebexWidget->Channel_sparsifying_radio_01;
+  fChannelSparseRadio[2] = fFebexWidget->Channel_sparsifying_radio_02;
+  fChannelSparseRadio[3] = fFebexWidget->Channel_sparsifying_radio_03;
+  fChannelSparseRadio[4] = fFebexWidget->Channel_sparsifying_radio_04;
+  fChannelSparseRadio[5] = fFebexWidget->Channel_sparsifying_radio_05;
+  fChannelSparseRadio[6] = fFebexWidget->Channel_sparsifying_radio_06;
+  fChannelSparseRadio[7] = fFebexWidget->Channel_sparsifying_radio_07;
+  fChannelSparseRadio[8] = fFebexWidget->Channel_sparsifying_radio_08;
+  fChannelSparseRadio[9] = fFebexWidget->Channel_sparsifying_radio_09;
+  fChannelSparseRadio[10] = fFebexWidget->Channel_sparsifying_radio_10;
+  fChannelSparseRadio[11] = fFebexWidget->Channel_sparsifying_radio_11;
+  fChannelSparseRadio[12] = fFebexWidget->Channel_sparsifying_radio_12;
+  fChannelSparseRadio[13] = fFebexWidget->Channel_sparsifying_radio_13;
+  fChannelSparseRadio[14] = fFebexWidget->Channel_sparsifying_radio_14;
+  fChannelSparseRadio[15] = fFebexWidget->Channel_sparsifying_radio_15;
+
+  fChannelTriggerRadio[0] = fFebexWidget->Channel_intrigger_radio_00;
+  fChannelTriggerRadio[1] = fFebexWidget->Channel_intrigger_radio_01;
+  fChannelTriggerRadio[2] = fFebexWidget->Channel_intrigger_radio_02;
+  fChannelTriggerRadio[3] = fFebexWidget->Channel_intrigger_radio_03;
+  fChannelTriggerRadio[4] = fFebexWidget->Channel_intrigger_radio_04;
+  fChannelTriggerRadio[5] = fFebexWidget->Channel_intrigger_radio_05;
+  fChannelTriggerRadio[6] = fFebexWidget->Channel_intrigger_radio_06;
+  fChannelTriggerRadio[7] = fFebexWidget->Channel_intrigger_radio_07;
+  fChannelTriggerRadio[8] = fFebexWidget->Channel_intrigger_radio_08;
+  fChannelTriggerRadio[9] = fFebexWidget->Channel_intrigger_radio_09;
+  fChannelTriggerRadio[10] = fFebexWidget->Channel_intrigger_radio_10;
+  fChannelTriggerRadio[11] = fFebexWidget->Channel_intrigger_radio_11;
+  fChannelTriggerRadio[12] = fFebexWidget->Channel_intrigger_radio_12;
+  fChannelTriggerRadio[13] = fFebexWidget->Channel_intrigger_radio_13;
+  fChannelTriggerRadio[14] = fFebexWidget->Channel_intrigger_radio_14;
+  fChannelTriggerRadio[15] = fFebexWidget->Channel_intrigger_radio_15;
+
+
 
   GetSFPChainSetup(); // ensure that any slave has a status structure before we begin clicking...
   show ();
@@ -381,10 +544,435 @@ void FebexGui::ApplyFileConfig(int )
 
 void FebexGui::TriggerUseWindowChecked(bool checked)
 {
-  std::cout << "FebexGui::TriggerUseWindowChecked, val="<<checked << std::endl;
+  //std::cout << "FebexGui::TriggerUseWindowChecked, val="<<checked << std::endl;
   fFebexWidget->WindowSpeedComboBox->setEnabled(checked);
 
 }
+
+
+
+void FebexGui::ApplyDisabled(int channel, bool on)
+{
+  theSetup_GET_FOR_SLAVE(FebexSetup);
+  if(channel<0)
+  {
+    theSetup->SetSpecialChannelDisabled(on);
+  }
+  else
+  {
+    theSetup->SetChannelDisabled(channel, on);
+  }
+  int l_dis_cha=theSetup->GetRawControl_0() & 0x1FFFF;
+  //printf("FebexGui::ApplyDisabled with channels disabled mask 0x%x\n",l_dis_cha);
+  WriteGosip (fSFP, fSlave, REG_MEM_DISABLE, l_dis_cha);
+}
+
+
+
+void FebexGui::ApplySparsy(int channel, bool on)
+{
+  theSetup_GET_FOR_SLAVE(FebexSetup);
+  if(channel<0)
+  {
+    theSetup->SetSparsifyingSpecialChannelEnabled(on);
+  }
+  else
+  {
+    theSetup->SetSparsifyingChannelEnabled(channel, on);
+  }
+  int l_dat_redu=theSetup->GetRawControl_1() & 0x1ffff;
+  //printf("FebexGui::ApplySparsy  with data reduction mask  0x%x\n",l_dat_redu);
+  WriteGosip (fSFP, fSlave, REG_DATA_REDUCTION, l_dat_redu);
+}
+
+
+  void FebexGui::ApplyIntTrigger (int channel, bool on)
+{
+  theSetup_GET_FOR_SLAVE(FebexSetup);
+  theSetup->SetTriggerChannelEnabled (channel, on);
+  int l_ena_trig = theSetup->GetRawControl_2 () & 0xFFFF;
+  //printf ("FebexGui::ApplyIntTrigger with trigger enabled mask 0x%x\n", l_ena_trig);
+  int dat = ReadGosip (fSFP, fSlave, REG_FEB_SELF_TRIG);
+  dat &= ~0x0000FFFF;    // clear old mask except for other bits.
+  dat |= l_ena_trig;    // apply new setup
+  WriteGosip (fSFP, fSlave, REG_FEB_SELF_TRIG, dat);
+}
+
+
+
+
+
+
+
+
+
+
+void FebexGui::ApplyThreshold(int channel, int val)
+{
+  theSetup_GET_FOR_SLAVE(FebexSetup);
+  uint16_t thres=val;
+  theSetup->SetThreshold(channel,thres); // keep setup structure consistent
+  WriteGosip (fSFP, fSlave, REG_FEB_STEP_SIZE, ( channel << 24 ) | thres);
+}
+
+
+
+void FebexGui::Threshold_spinBox_all_changed(int val)
+{
+  for(int chan=0;chan<16;++chan)
+    fThresholdSpinBoxes[chan]->setValue (val);
+}
+
+void  FebexGui::Threshold_spinBox_changed(int channel, int val)
+{
+  if (IsAutoApply() && !fBroadcasting)
+   {
+     EvaluateSlave ();
+     GOSIP_BROADCAST_ACTION(ApplyThreshold(channel, val));
+   }
+}
+
+void FebexGui::Threshold_spinBox_00_changed (int val)
+{
+  Threshold_spinBox_changed(0,val);
+}
+
+void FebexGui::Threshold_spinBox_01_changed(int val)
+{
+  Threshold_spinBox_changed(1,val);
+}
+
+
+void FebexGui::Threshold_spinBox_02_changed(int val)
+{
+  Threshold_spinBox_changed(2,val);
+}
+
+void FebexGui::Threshold_spinBox_03_changed (int val)
+ {
+   Threshold_spinBox_changed(3,val);
+ }
+void FebexGui::Threshold_spinBox_04_changed (int val)
+ {
+   Threshold_spinBox_changed(4,val);
+ }
+void FebexGui::Threshold_spinBox_05_changed (int val)
+ {
+   Threshold_spinBox_changed(5,val);
+ }
+void FebexGui::Threshold_spinBox_06_changed (int val)
+ {
+   Threshold_spinBox_changed(6,val);
+ }
+void FebexGui::Threshold_spinBox_07_changed (int val)
+ {
+   Threshold_spinBox_changed(7,val);
+ }
+void FebexGui::Threshold_spinBox_08_changed (int val)
+ {
+   Threshold_spinBox_changed(8,val);
+ }
+void FebexGui::Threshold_spinBox_09_changed (int val)
+ {
+   Threshold_spinBox_changed(9,val);
+ }
+void FebexGui::Threshold_spinBox_10_changed (int val)
+ {
+   Threshold_spinBox_changed(10,val);
+ }
+void FebexGui::Threshold_spinBox_11_changed (int val)
+ {
+   Threshold_spinBox_changed(11,val);
+ }
+void FebexGui::Threshold_spinBox_12_changed (int val)
+ {
+   Threshold_spinBox_changed(12,val);
+ }
+
+void FebexGui::Threshold_spinBox_13_changed (int val)
+ {
+   Threshold_spinBox_changed(13,val);
+ }
+void FebexGui::Threshold_spinBox_14_changed (int val)
+ {
+   Threshold_spinBox_changed(14,val);
+ }
+void FebexGui::Threshold_spinBox_15_changed (int val)
+ {
+   Threshold_spinBox_changed(15,val);
+ }
+
+
+void FebexGui::ChannelDisabled_toggled_all(bool on)
+{
+  for(int chan=0;chan<16;++chan)
+    fChannelDisabledRadio[chan]->setChecked (on);
+}
+
+void FebexGui::Disabled_toggled (int channel, bool on)
+{
+  if (IsAutoApply () && !fBroadcasting)
+  {
+    EvaluateSlave ();
+    GOSIP_BROADCAST_ACTION(ApplyDisabled(channel, on));
+  }
+}
+
+
+void  FebexGui::ChannelDisabled_toggled_special(bool on)
+{
+  Disabled_toggled(-1,on);
+}
+
+
+void FebexGui::ChannelDisabled_toggled_00 (bool on)
+{
+  Disabled_toggled(0,on);
+}
+ void FebexGui::ChannelDisabled_toggled_01 (bool on)
+ {
+   Disabled_toggled(1,on);
+ }
+ void FebexGui::ChannelDisabled_toggled_02 (bool on)
+ {
+   Disabled_toggled(2,on);
+ }
+ void FebexGui::ChannelDisabled_toggled_03 (bool on)
+ {
+   Disabled_toggled(3,on);
+ }
+ void FebexGui::ChannelDisabled_toggled_04 (bool on)
+ {
+   Disabled_toggled(4,on);
+ }
+ void FebexGui::ChannelDisabled_toggled_05 (bool on)
+ {
+   Disabled_toggled(5,on);
+ }
+ void FebexGui::ChannelDisabled_toggled_06 (bool on)
+ {
+   Disabled_toggled(6,on);
+ }
+ void FebexGui::ChannelDisabled_toggled_07 (bool on)
+ {
+   Disabled_toggled(7,on);
+ }
+ void FebexGui::ChannelDisabled_toggled_08 (bool on)
+ {
+   Disabled_toggled(8,on);
+ }
+ void FebexGui::ChannelDisabled_toggled_09 (bool on)
+ {
+   Disabled_toggled(9,on);
+ }
+ void FebexGui::ChannelDisabled_toggled_10 (bool on)
+ {
+   Disabled_toggled(10,on);
+ }
+ void FebexGui::ChannelDisabled_toggled_11 (bool on)
+ {
+   Disabled_toggled(11,on);
+ }
+ void FebexGui::ChannelDisabled_toggled_12 (bool on)
+ {
+   Disabled_toggled(12,on);
+ }
+ void FebexGui::ChannelDisabled_toggled_13 (bool on)
+ {
+   Disabled_toggled(13,on);
+ }
+ void FebexGui::ChannelDisabled_toggled_14 (bool on)
+ {
+   Disabled_toggled(14,on);
+ }
+ void FebexGui::ChannelDisabled_toggled_15 (bool on)
+ {
+    Disabled_toggled(15,on);
+  }
+
+
+
+
+void FebexGui::ChannelSparsy_toggled_all(bool on)
+{
+  for(int chan=0;chan<16;++chan)
+    fChannelSparseRadio[chan]->setChecked (on);
+}
+
+void FebexGui::Sparsy_toggled (int channel, bool on)
+{
+  if (IsAutoApply () && !fBroadcasting)
+  {
+    EvaluateSlave ();
+    GOSIP_BROADCAST_ACTION(ApplySparsy(channel, on));
+  }
+}
+
+
+void  FebexGui::ChannelSparsy_toggled_special (bool on)
+{
+  Sparsy_toggled (-1, on);
+}
+
+
+void FebexGui::ChannelSparsy_toggled_00 (bool on)
+{
+  Sparsy_toggled (0, on);
+}
+
+void FebexGui::ChannelSparsy_toggled_01 (bool on)
+{
+  Sparsy_toggled (1, on);
+}
+void FebexGui::ChannelSparsy_toggled_02 (bool on)
+{
+  Sparsy_toggled (2, on);
+}
+void FebexGui::ChannelSparsy_toggled_03 (bool on)
+{
+  Sparsy_toggled (3, on);
+}
+void FebexGui::ChannelSparsy_toggled_04 (bool on)
+{
+  Sparsy_toggled (4, on);
+}
+void FebexGui::ChannelSparsy_toggled_05 (bool on)
+{
+  Sparsy_toggled (5, on);
+}
+void FebexGui::ChannelSparsy_toggled_06 (bool on)
+{
+  Sparsy_toggled (6, on);
+}
+void FebexGui::ChannelSparsy_toggled_07 (bool on)
+{
+  Sparsy_toggled (7, on);
+}
+void FebexGui::ChannelSparsy_toggled_08 (bool on)
+{
+  Sparsy_toggled (8, on);
+}
+void FebexGui::ChannelSparsy_toggled_09 (bool on)
+{
+  Sparsy_toggled (9, on);
+}
+void FebexGui::ChannelSparsy_toggled_10 (bool on)
+{
+  Sparsy_toggled (10, on);
+}
+void FebexGui::ChannelSparsy_toggled_11 (bool on)
+{
+  Sparsy_toggled (11, on);
+}
+void FebexGui::ChannelSparsy_toggled_12 (bool on)
+{
+  Sparsy_toggled (12, on);
+}
+void FebexGui::ChannelSparsy_toggled_13 (bool on)
+{
+  Sparsy_toggled (13, on);
+}
+void FebexGui::ChannelSparsy_toggled_14 (bool on)
+{
+  Sparsy_toggled (14, on);
+}
+void FebexGui::ChannelSparsy_toggled_15 (bool on)
+{
+  Sparsy_toggled (15, on);
+}
+
+
+
+
+
+
+void FebexGui::ChannelTrigger_toggled_all(bool on)
+{
+  for(int chan=0;chan<16;++chan)
+    fChannelTriggerRadio[chan]->setChecked (on);
+}
+
+void FebexGui::IntTrigger_toggled (int channel, bool on)
+{
+  if (IsAutoApply () && !fBroadcasting)
+  {
+    EvaluateSlave ();
+    GOSIP_BROADCAST_ACTION(ApplyIntTrigger(channel, on));
+  }
+}
+
+
+void FebexGui::ChannelTrigger_toggled_00 (bool on)
+{
+  IntTrigger_toggled(0,on);
+}
+
+ void FebexGui::ChannelTrigger_toggled_01 (bool on)
+ {
+   IntTrigger_toggled(1,on);
+ }
+ void FebexGui::ChannelTrigger_toggled_02 (bool on)
+ {
+   IntTrigger_toggled(2,on);
+ }
+ void FebexGui::ChannelTrigger_toggled_03 (bool on)
+ {
+   IntTrigger_toggled(3,on);
+ }
+ void FebexGui::ChannelTrigger_toggled_04 (bool on)
+ {
+   IntTrigger_toggled(4,on);
+ }
+ void FebexGui::ChannelTrigger_toggled_05 (bool on)
+ {
+   IntTrigger_toggled(5,on);
+ }
+ void FebexGui::ChannelTrigger_toggled_06 (bool on)
+ {
+   IntTrigger_toggled(6,on);
+ }
+ void FebexGui::ChannelTrigger_toggled_07 (bool on)
+ {
+   IntTrigger_toggled(7,on);
+ }
+ void FebexGui::ChannelTrigger_toggled_08 (bool on)
+ {
+   IntTrigger_toggled(8,on);
+ }
+ void FebexGui::ChannelTrigger_toggled_09 (bool on)
+ {
+   IntTrigger_toggled(9,on);
+ }
+ void FebexGui::ChannelTrigger_toggled_10 (bool on)
+ {
+   IntTrigger_toggled(10,on);
+ }
+ void FebexGui::ChannelTrigger_toggled_11 (bool on)
+ {
+   IntTrigger_toggled(11,on);
+ }
+ void FebexGui::ChannelTrigger_toggled_12 (bool on)
+ {
+   IntTrigger_toggled(12,on);
+ }
+ void FebexGui::ChannelTrigger_toggled_13 (bool on)
+ {
+   IntTrigger_toggled(13,on);
+ }
+ void FebexGui::ChannelTrigger_toggled_14 (bool on)
+ {
+   IntTrigger_toggled(14,on);
+ }
+ void FebexGui::ChannelTrigger_toggled_15 (bool on)
+ {
+   IntTrigger_toggled(15,on);
+ }
+
+
+
+////////////////////////////////////////////////////////////////////////7
+ ////////////////////////// TUM addon baselines:
+
 
 
  void FebexGui::DAC_spinBox_all_changed(int val)
@@ -396,10 +984,10 @@ void FebexGui::TriggerUseWindowChecked(bool checked)
 }
 
 
+
  void FebexGui::DAC_spinBox_changed (int channel, int val)
 {
-  //if (checkBox_AA->isChecked () && AssertNoBroadcast (false))
-  if (checkBox_AA->isChecked () && !fBroadcasting)
+  if (IsAutoApply() && !fBroadcasting)
   {
     EvaluateSlave ();
     GOSIP_BROADCAST_ACTION(AutoApplyRefresh(channel, val));
@@ -544,7 +1132,7 @@ int FebexGui::AcquireBaselineSample(uint8_t febexchan)
 void FebexGui::RefreshView ()
 {
 
-  std::cout << "FebexGui::RefreshView"<<std::endl;
+  //std::cout << "FebexGui::RefreshView"<<std::endl;
 // display setup structure to gui:
   QString text;
   QString pre;
@@ -553,14 +1141,14 @@ void FebexGui::RefreshView ()
 
 
   fFebexWidget->TraceLengthSpinBox->setValue(theSetup->GetTraceLength());
-  std::cout << "FebexGui::RefreshView with trace length "<< theSetup->GetTraceLength()<<std::endl;
+  //std::cout << "FebexGui::RefreshView with trace length "<< theSetup->GetTraceLength()<<std::endl;
   fFebexWidget->TrigDelayspinBox->setValue(theSetup->GetTriggerDelay());
-  std::cout << "FebexGui::RefreshView with trigger delay "<< theSetup->GetTriggerDelay()<<std::endl;
+  //std::cout << "FebexGui::RefreshView with trigger delay "<< theSetup->GetTriggerDelay()<<std::endl;
 
   fFebexWidget->PolarityCheckBox->setChecked(theSetup->IsPolarityNegative());
-  std::cout << "FebexGui::RefreshView with polarity negative  "<< theSetup->IsPolarityNegative()<<std::endl;
+  //std::cout << "FebexGui::RefreshView with polarity negative  "<< theSetup->IsPolarityNegative()<<std::endl;
   fFebexWidget->EvenOddOrCheckBox->setChecked(theSetup->IsEvenOddOr());
-  std::cout << "FebexGui::RefreshView with evenoddor "<< theSetup->IsEvenOddOr()<<std::endl;
+  //std::cout << "FebexGui::RefreshView with evenoddor "<< theSetup->IsEvenOddOr()<<std::endl;
 
 //  std::cout << "FebexGui::RefreshView with trigsuma="<< theSetup->GetTriggerSumA()<<std::endl;
 //  std::cout << "FebexGui::RefreshView with trigsumb="<< theSetup->GetTriggerSumB()<<std::endl;
@@ -580,7 +1168,7 @@ void FebexGui::RefreshView ()
   fFebexWidget->EnergyGapspinBox->setValue(theSetup->GetEnergyGap());
 
   uint8_t tm =theSetup->GetTriggerMethod();
-  printf("FebexGui::RefreshView with trigger method 0x%x\n",tm);
+  //printf("FebexGui::RefreshView with trigger method 0x%x\n",tm);
   bool usewindow (tm != 0);
   fFebexWidget->TriggerUseWindowCheckBox->setChecked(usewindow);
   if (usewindow)
@@ -603,6 +1191,30 @@ void FebexGui::RefreshView ()
   fFebexWidget->DataTraceCheckBox->setChecked(theSetup->IsSendDataTrace());
   fFebexWidget->FilterTraceCheckBox->setChecked(theSetup->IsSendFilterTrace());
   fFebexWidget->MoreThanOneHitCheckBox->setChecked(theSetup->IsSendMoreThanOneHitsOnly());
+
+  //printf("FebexGui::RefreshView with raw control 2 =  0x%x\n",theSetup->GetRawControl_2());
+  for(uint8_t channel=0; channel<16;++channel)
+       {
+            uint16_t thres=theSetup->GetThreshold(channel);
+            //std::cout << "FebexGui::RefreshView with thres("<< (int) channel<<")="<< thres<<std::endl;
+            fThresholdSpinBoxes[channel]->setValue(thres);
+            //std::cout << "FebexGui::RefreshView with disabled("<< (int) channel<<")="<< theSetup->IsChannelDisabled(channel)<<std::endl;
+            fChannelDisabledRadio[channel]->setChecked(theSetup->IsChannelDisabled(channel));
+
+            //std::cout << "FebexGui::RefreshView with sparsi("<< (int) channel<<")="<< theSetup->IsSparsifyingChannelEnabled(channel)<<std::endl;
+            fChannelSparseRadio[channel]->setChecked(theSetup->IsSparsifyingChannelEnabled(channel));
+
+            //std::cout << "FebexGui::RefreshView with trig("<< (int) channel<<")="<< theSetup->IsTriggerChannelEnabled(channel)<<std::endl;
+            fChannelTriggerRadio[channel]->setChecked(theSetup->IsTriggerChannelEnabled(channel));
+       }
+
+
+  //std::cout << "FebexGui::RefreshView special disabled:"<< theSetup->IsSpecialChannelDisabled()<<std::endl;
+  fFebexWidget->Channel_disabled_radio_special->setChecked(theSetup->IsSpecialChannelDisabled());
+
+  //std::cout << "FebexGui::RefreshView special sparsi:"<< theSetup->IsSparsifyingSpecialChannelEnabled()<<std::endl;
+  fFebexWidget->Channel_sparsifying_radio_special->setChecked(theSetup->IsSparsifyingSpecialChannelEnabled());
+
 
 
   // below for tum addon only:
@@ -635,7 +1247,7 @@ void FebexGui::EvaluateView ()
   theSetup->SetTraceLength(fFebexWidget->TraceLengthSpinBox->value());
   theSetup->SetTriggerDelay(fFebexWidget->TrigDelayspinBox->value());
 
-  printf("FebexGui::EvaluateView with raw control word before: 0x%x\n", theSetup->GetRawControl_0());
+  //printf("FebexGui::EvaluateView with raw control word before: 0x%x\n", theSetup->GetRawControl_0());
 
 
   //std::cout << "FebexGui::EvaluateView with polarity negative  "<< fFebexWidget->PolarityCheckBox->isChecked()<<std::endl;
@@ -671,17 +1283,31 @@ void FebexGui::EvaluateView ()
     // end trigger method
 
 
-    printf("FebexGui::EvaluateView with raw control word after set trigger method: 0x%x\n", theSetup->GetRawControl_0());
+    //printf("FebexGui::EvaluateView with raw control word after set trigger method: 0x%x\n", theSetup->GetRawControl_0());
 
 
 
-    theSetup->SetSendDataTrace(fFebexWidget->DataTraceCheckBox->isChecked());
-    theSetup->SetSendFilterTrace(fFebexWidget->FilterTraceCheckBox->isChecked());
-    theSetup->SetSendMoreThanOneHitsOnly(fFebexWidget->MoreThanOneHitCheckBox->isChecked());
+  theSetup->SetSendDataTrace (fFebexWidget->DataTraceCheckBox->isChecked ());
+  theSetup->SetSendFilterTrace (fFebexWidget->FilterTraceCheckBox->isChecked ());
+  theSetup->SetSendMoreThanOneHitsOnly (fFebexWidget->MoreThanOneHitCheckBox->isChecked ());
+
+  for (uint8_t channel = 0; channel < 16; ++channel)
+  {
+    uint16_t thres = fThresholdSpinBoxes[channel]->value ();
+    theSetup->SetThreshold (channel, thres);
+    theSetup->SetChannelDisabled (channel, fChannelDisabledRadio[channel]->isChecked ());
+    theSetup->SetSparsifyingChannelEnabled (channel, fChannelSparseRadio[channel]->isChecked ());
+    theSetup->SetTriggerChannelEnabled (channel, fChannelTriggerRadio[channel]->isChecked ());
+
+  }
+
+  theSetup->SetSpecialChannelDisabled (fFebexWidget->Channel_disabled_radio_special->isChecked ());
+  theSetup->SetSparsifyingSpecialChannelEnabled (fFebexWidget->Channel_sparsifying_radio_special->isChecked ());
 
 
 
-// JAM improved this by looping over spinbox references
+////// below TUM addon only!
+
   for(int channel=0; channel<16;++channel)
      {
           int permille=fDACSpinBoxes[channel]->value();
@@ -719,11 +1345,11 @@ void FebexGui::SetRegisters ()
   l_ena_trig = theSetup->GetRawControl_2 () & 0xFFFF;
 
 
-  printf("FebexGui::SetRegisters with raw control word: 0x%x\n", theSetup->GetRawControl_0());
-  printf("FebexGui::SetRegisters with evenoddor 0x%x\n",l_ev_od_or);
-  printf("FebexGui::SetRegisters with polarity 0x%x\n",l_pol);
-  printf("FebexGui::SetRegisters with trigger method 0x%x\n",l_trig_mod);
-  printf("FebexGui::SetRegisters with trigger enabled 0x%x\n",l_ena_trig);
+//  printf("FebexGui::SetRegisters with raw control word: 0x%x\n", theSetup->GetRawControl_0());
+//  printf("FebexGui::SetRegisters with evenoddor 0x%x\n",l_ev_od_or);
+//  printf("FebexGui::SetRegisters with polarity 0x%x\n",l_pol);
+//  printf("FebexGui::SetRegisters with trigger method 0x%x\n",l_trig_mod);
+  //printf("FebexGui::SetRegisters with trigger enabled 0x%x\n",l_ena_trig);
 
 
   WriteGosip (fSFP, fSlave, REG_FEB_SELF_TRIG, (l_ev_od_or<<21)|(l_pol<<20)|(l_trig_mod<<16)|l_ena_trig);
@@ -753,11 +1379,13 @@ void FebexGui::SetRegisters ()
 
   // enable/disable no hit in trace data suppression of channel
   l_dat_redu=theSetup->GetRawControl_1() & 0x1ffff;
+  //printf("FebexGui::SetRegisters with data reduction 0x%x\n",l_dat_redu);
    WriteGosip (fSFP, fSlave, REG_DATA_REDUCTION, l_dat_redu);
 
 
    // set channels used for self trigger signal
    l_dis_cha=theSetup->GetRawControl_0() & 0x1FFFF;
+   //printf("FebexGui::SetRegisters with channels disabled 0x%x\n",l_dis_cha);
    WriteGosip (fSFP, fSlave, REG_MEM_DISABLE, l_dis_cha);
 
 
@@ -807,7 +1435,7 @@ void FebexGui::GetRegisters ()
   theSetup_GET_FOR_SLAVE(FebexSetup);
   QApplication::setOverrideCursor (Qt::WaitCursor);
 
-  std::cout << "FebexGui::GetRegisters()"<<std::endl;
+  //std::cout << "FebexGui::GetRegisters()"<<std::endl;
 
   // start with basic settings:
   int dat=0;
@@ -868,6 +1496,8 @@ void FebexGui::GetRegisters ()
 
   dat= ReadGosip (fSFP, fSlave,REG_MEM_DISABLE);
   l_dis_cha = dat & 0x1FFFF;
+  //printf("FebexGui::GetRegisters with disabled channels 0x%x\n",l_dis_cha);
+
   uint32_t reg=theSetup->GetRawControl_0();
   reg = reg & ~0x1FFFF; // clear old mask first
   reg |= l_dis_cha; // activate current mask
@@ -877,20 +1507,26 @@ void FebexGui::GetRegisters ()
   l_ev_od_or = (dat >> 21) & 0x1;
   l_pol = (dat >> 20) & 0x1;
   l_trig_mod = (dat >> 16) & 0xF;
-  l_ena_trig = dat % 0xFFFF;
+  l_ena_trig = dat & 0xFFFF;
 
-  printf("FebexGui::GetRegisters with evenoddor 0x%x\n",l_ev_od_or);
-  printf("FebexGui::GetRegisters with polarity 0x%x\n",l_pol);
-  printf("FebexGui::GetRegisters with trigger method 0x%x\n",l_trig_mod);
-  printf("FebexGui::GetRegisters with trigger enabled 0x%x\n",l_ena_trig);
+//  printf("FebexGui::GetRegisters with evenoddor 0x%x\n",l_ev_od_or);
+//  printf("FebexGui::GetRegisters with polarity 0x%x\n",l_pol);
+//  printf("FebexGui::GetRegisters with trigger method 0x%x\n",l_trig_mod);
+  //printf("FebexGui::GetRegisters with trigger enabled 0x%x\n",l_ena_trig);
 
-
+  //printf("FebexGui::GetRegisters sees raw control 0: 0x%x\n",theSetup->GetRawControl_0());
   theSetup->SetPolarityNegative(l_pol);
+  //printf("FebexGui::GetRegisters sees raw control 0 after set polarity: 0x%x\n",theSetup->GetRawControl_0());
   theSetup->SetEvenOddOr(l_ev_od_or);
+  //printf("FebexGui::GetRegisters sees raw control 0 after set evenodd: 0x%x\n",theSetup->GetRawControl_0());
   theSetup->SetTriggerMethod(l_trig_mod);
+
+  //printf("FebexGui::GetRegisters sees raw control 0 after set trigger: 0x%x\n",theSetup->GetRawControl_0());
+
   theSetup->SetRawControl_2(l_ena_trig);
 
   dat = ReadGosip (fSFP, fSlave,REG_DATA_REDUCTION);
+  //printf("FebexGui::GetRegisters with data reduction 0x%x\n",dat);
   theSetup->SetRawControl_1(dat & 0x1ffff);
 
 
@@ -900,13 +1536,13 @@ void FebexGui::GetRegisters ()
         dat = ReadGosip (fSFP, fSlave, REG_FEB_STEP_SIZE);
         int channel = (dat >> 24) & 0xF; // maybe just shift register with channel masked.
         //std::cout << "FebexGui::GetRegisters with threshold("<< channel<<") = "<< (dat & 0x1FF) <<std::endl;
-        theSetup->SetThreshold(channel, dat & 0x1FF);
+        theSetup->SetThreshold(channel, dat & 0xFFF);
       }
 
 
   dat=ReadGosip (fSFP, fSlave, DATA_FILT_CONTROL_REG);
   theSetup->SetFilterControl(dat);
-  printf("FebexGui::GetRegisters with data filter control 0x%x\n",dat);
+  //printf("FebexGui::GetRegisters with data filter control 0x%x\n",dat);
 
 
 /// TODO: mode to disable tum addon!!!!!!!!!!!!!!!!!

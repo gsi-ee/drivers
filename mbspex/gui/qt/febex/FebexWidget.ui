@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>770</width>
-    <height>373</height>
+    <width>797</width>
+    <height>369</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -43,6 +43,9 @@
               </item>
               <item>
                <widget class="QSpinBox" name="TraceLengthSpinBox">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Length of trace in number of samples. maximum trace length 8000 (133 us)&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Attention&lt;/span&gt;:  CVT to set: trace length - irq latency (10us)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="minimum">
                  <number>10</number>
                 </property>
@@ -64,6 +67,9 @@
               </item>
               <item>
                <widget class="QSpinBox" name="TrigDelayspinBox">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Trigger delay in number of samples&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="minimum">
                  <number>10</number>
                 </property>
@@ -78,6 +84,9 @@
              <layout class="QVBoxLayout" name="verticalLayout_5">
               <item>
                <widget class="QCheckBox" name="PolarityCheckBox">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;signal polarity - very important info for fpga hit finder!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
                  <string>Negative polarity</string>
                 </property>
@@ -296,11 +305,1949 @@
       <attribute name="title">
        <string>Channels</string>
       </attribute>
+      <layout class="QGridLayout" name="gridLayout_10">
+       <item row="0" column="0" colspan="3">
+        <layout class="QVBoxLayout" name="verticalLayout_12">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_48">
+           <item>
+            <widget class="QFrame" name="Channels_all_frame">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>10</height>
+              </size>
+             </property>
+             <property name="frameShape">
+              <enum>QFrame::StyledPanel</enum>
+             </property>
+             <property name="frameShadow">
+              <enum>QFrame::Raised</enum>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_31">
+              <item>
+               <widget class="QCheckBox" name="checkBox_ChannelsAlll">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked all channel properties will be changed accordingly &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>All</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_30">
+                <item>
+                 <widget class="QRadioButton" name="Channel_disabled_radio_all">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
+                  <property name="toolTip">
+                   <string>Disable channel</string>
+                  </property>
+                  <property name="text">
+                   <string>Disabled</string>
+                  </property>
+                  <property name="autoExclusive">
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QRadioButton" name="Channel_sparsifying_radio_all">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
+                  <property name="toolTip">
+                   <string>Switch sparsifying on for channel</string>
+                  </property>
+                  <property name="text">
+                   <string>Sparsifying</string>
+                  </property>
+                  <property name="autoExclusive">
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QRadioButton" name="Channel_intrigger_radio_all">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
+                  <property name="toolTip">
+                   <string>Switch internal trigger mode for channel</string>
+                  </property>
+                  <property name="text">
+                   <string>Internal Trigger</string>
+                  </property>
+                  <property name="autoExclusive">
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="SpecialChannelgroupBox">
+             <property name="title">
+              <string>Special channel</string>
+             </property>
+             <property name="flat">
+              <bool>false</bool>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_9">
+              <item row="0" column="0">
+               <widget class="QRadioButton" name="Channel_disabled_radio_special">
+                <property name="toolTip">
+                 <string>Disable channel</string>
+                </property>
+                <property name="text">
+                 <string>Disabled</string>
+                </property>
+                <property name="autoExclusive">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QRadioButton" name="Channel_sparsifying_radio_special">
+                <property name="toolTip">
+                 <string>Switch sparsifying on for channel</string>
+                </property>
+                <property name="text">
+                 <string>Sparsifying</string>
+                </property>
+                <property name="autoExclusive">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <spacer name="verticalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item row="1" column="0">
+        <layout class="QVBoxLayout" name="verticalLayout_9">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_32">
+           <item>
+            <widget class="QLabel" name="Channel_label_00">
+             <property name="text">
+              <string>00</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_disabled_radio_00">
+             <property name="toolTip">
+              <string>Disable channel</string>
+             </property>
+             <property name="text">
+              <string>Disabled</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_sparsifying_radio_00">
+             <property name="toolTip">
+              <string>Switch sparsifying on for channel</string>
+             </property>
+             <property name="text">
+              <string>Sparsifying</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_intrigger_radio_00">
+             <property name="toolTip">
+              <string>Switch internal trigger mode for channel</string>
+             </property>
+             <property name="text">
+              <string>Internal Trigger</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_33">
+           <item>
+            <widget class="QLabel" name="Channel_label_01">
+             <property name="text">
+              <string>01</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_disabled_radio_01">
+             <property name="toolTip">
+              <string>Disable channel</string>
+             </property>
+             <property name="text">
+              <string>Disabled</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_sparsifying_radio_01">
+             <property name="toolTip">
+              <string>Switch sparsifying on for channel</string>
+             </property>
+             <property name="text">
+              <string>Sparsifying</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_intrigger_radio_01">
+             <property name="toolTip">
+              <string>Switch internal trigger mode for channel</string>
+             </property>
+             <property name="text">
+              <string>Internal Trigger</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_34">
+           <item>
+            <widget class="QLabel" name="Channel_label_02">
+             <property name="text">
+              <string>02</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_disabled_radio_02">
+             <property name="toolTip">
+              <string>Disable channel</string>
+             </property>
+             <property name="text">
+              <string>Disabled</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_sparsifying_radio_02">
+             <property name="toolTip">
+              <string>Switch sparsifying on for channel</string>
+             </property>
+             <property name="text">
+              <string>Sparsifying</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_intrigger_radio_02">
+             <property name="toolTip">
+              <string>Switch internal trigger mode for channel</string>
+             </property>
+             <property name="text">
+              <string>Internal Trigger</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_35">
+           <item>
+            <widget class="QLabel" name="Channel_label_03">
+             <property name="text">
+              <string>03</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_disabled_radio_03">
+             <property name="toolTip">
+              <string>Disable channel</string>
+             </property>
+             <property name="text">
+              <string>Disabled</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_sparsifying_radio_03">
+             <property name="toolTip">
+              <string>Switch sparsifying on for channel</string>
+             </property>
+             <property name="text">
+              <string>Sparsifying</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_intrigger_radio_03">
+             <property name="toolTip">
+              <string>Switch internal trigger mode for channel</string>
+             </property>
+             <property name="text">
+              <string>Internal Trigger</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_36">
+           <item>
+            <widget class="QLabel" name="Channel_label_04">
+             <property name="text">
+              <string>04</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_disabled_radio_04">
+             <property name="toolTip">
+              <string>Disable channel</string>
+             </property>
+             <property name="text">
+              <string>Disabled</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_sparsifying_radio_04">
+             <property name="toolTip">
+              <string>Switch sparsifying on for channel</string>
+             </property>
+             <property name="text">
+              <string>Sparsifying</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_intrigger_radio_04">
+             <property name="toolTip">
+              <string>Switch internal trigger mode for channel</string>
+             </property>
+             <property name="text">
+              <string>Internal Trigger</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_37">
+           <item>
+            <widget class="QLabel" name="Channel_label_05">
+             <property name="text">
+              <string>05</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_disabled_radio_05">
+             <property name="toolTip">
+              <string>Disable channel</string>
+             </property>
+             <property name="text">
+              <string>Disabled</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_sparsifying_radio_05">
+             <property name="toolTip">
+              <string>Switch sparsifying on for channel</string>
+             </property>
+             <property name="text">
+              <string>Sparsifying</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_intrigger_radio_05">
+             <property name="toolTip">
+              <string>Switch internal trigger mode for channel</string>
+             </property>
+             <property name="text">
+              <string>Internal Trigger</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_38">
+           <item>
+            <widget class="QLabel" name="Channel_label_06">
+             <property name="text">
+              <string>06</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_disabled_radio_06">
+             <property name="toolTip">
+              <string>Disable channel</string>
+             </property>
+             <property name="text">
+              <string>Disabled</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_sparsifying_radio_06">
+             <property name="toolTip">
+              <string>Switch sparsifying on for channel</string>
+             </property>
+             <property name="text">
+              <string>Sparsifying</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_intrigger_radio_06">
+             <property name="toolTip">
+              <string>Switch internal trigger mode for channel</string>
+             </property>
+             <property name="text">
+              <string>Internal Trigger</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_39">
+           <item>
+            <widget class="QLabel" name="Channel_label_07">
+             <property name="text">
+              <string>07</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_disabled_radio_07">
+             <property name="toolTip">
+              <string>Disable channel</string>
+             </property>
+             <property name="text">
+              <string>Disabled</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_sparsifying_radio_07">
+             <property name="toolTip">
+              <string>Switch sparsifying on for channel</string>
+             </property>
+             <property name="text">
+              <string>Sparsifying</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_intrigger_radio_07">
+             <property name="toolTip">
+              <string>Switch internal trigger mode for channel</string>
+             </property>
+             <property name="text">
+              <string>Internal Trigger</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item row="1" column="1">
+        <spacer name="horizontalSpacer_4">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>96</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="1" column="2">
+        <layout class="QVBoxLayout" name="verticalLayout_10">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_40">
+           <item>
+            <widget class="QLabel" name="Channel_label_08">
+             <property name="text">
+              <string>08</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_disabled_radio_08">
+             <property name="toolTip">
+              <string>Disable channel</string>
+             </property>
+             <property name="text">
+              <string>Disabled</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_sparsifying_radio_08">
+             <property name="toolTip">
+              <string>Switch sparsifying on for channel</string>
+             </property>
+             <property name="text">
+              <string>Sparsifying</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_intrigger_radio_08">
+             <property name="toolTip">
+              <string>Switch internal trigger mode for channel</string>
+             </property>
+             <property name="text">
+              <string>Internal Trigger</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_41">
+           <item>
+            <widget class="QLabel" name="Channel_label_09">
+             <property name="text">
+              <string>09</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_disabled_radio_09">
+             <property name="toolTip">
+              <string>Disable channel</string>
+             </property>
+             <property name="text">
+              <string>Disabled</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_sparsifying_radio_09">
+             <property name="toolTip">
+              <string>Switch sparsifying on for channel</string>
+             </property>
+             <property name="text">
+              <string>Sparsifying</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_intrigger_radio_09">
+             <property name="toolTip">
+              <string>Switch internal trigger mode for channel</string>
+             </property>
+             <property name="text">
+              <string>Internal Trigger</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_42">
+           <item>
+            <widget class="QLabel" name="Channel_label_10">
+             <property name="text">
+              <string>10</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_disabled_radio_10">
+             <property name="toolTip">
+              <string>Disable channel</string>
+             </property>
+             <property name="text">
+              <string>Disabled</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_sparsifying_radio_10">
+             <property name="toolTip">
+              <string>Switch sparsifying on for channel</string>
+             </property>
+             <property name="text">
+              <string>Sparsifying</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_intrigger_radio_10">
+             <property name="toolTip">
+              <string>Switch internal trigger mode for channel</string>
+             </property>
+             <property name="text">
+              <string>Internal Trigger</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_43">
+           <item>
+            <widget class="QLabel" name="Channel_label_11">
+             <property name="text">
+              <string>11</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_disabled_radio_11">
+             <property name="toolTip">
+              <string>Disable channel</string>
+             </property>
+             <property name="text">
+              <string>Disabled</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_sparsifying_radio_11">
+             <property name="toolTip">
+              <string>Switch sparsifying on for channel</string>
+             </property>
+             <property name="text">
+              <string>Sparsifying</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_intrigger_radio_11">
+             <property name="toolTip">
+              <string>Switch internal trigger mode for channel</string>
+             </property>
+             <property name="text">
+              <string>Internal Trigger</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_44">
+           <item>
+            <widget class="QLabel" name="Channel_label_12">
+             <property name="text">
+              <string>12</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_disabled_radio_12">
+             <property name="toolTip">
+              <string>Disable channel</string>
+             </property>
+             <property name="text">
+              <string>Disabled</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_sparsifying_radio_12">
+             <property name="toolTip">
+              <string>Switch sparsifying on for channel</string>
+             </property>
+             <property name="text">
+              <string>Sparsifying</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_intrigger_radio_12">
+             <property name="toolTip">
+              <string>Switch internal trigger mode for channel</string>
+             </property>
+             <property name="text">
+              <string>Internal Trigger</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_45">
+           <item>
+            <widget class="QLabel" name="Channel_label_13">
+             <property name="text">
+              <string>13</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_disabled_radio_13">
+             <property name="toolTip">
+              <string>Disable channel</string>
+             </property>
+             <property name="text">
+              <string>Disabled</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_sparsifying_radio_13">
+             <property name="toolTip">
+              <string>Switch sparsifying on for channel</string>
+             </property>
+             <property name="text">
+              <string>Sparsifying</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_intrigger_radio_13">
+             <property name="toolTip">
+              <string>Switch internal trigger mode for channel</string>
+             </property>
+             <property name="text">
+              <string>Internal Trigger</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_46">
+           <item>
+            <widget class="QLabel" name="Channel_label_14">
+             <property name="text">
+              <string>14</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_disabled_radio_14">
+             <property name="toolTip">
+              <string>Disable channel</string>
+             </property>
+             <property name="text">
+              <string>Disabled</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_sparsifying_radio_14">
+             <property name="toolTip">
+              <string>Switch sparsifying on for channel</string>
+             </property>
+             <property name="text">
+              <string>Sparsifying</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_intrigger_radio_14">
+             <property name="toolTip">
+              <string>Switch internal trigger mode for channel</string>
+             </property>
+             <property name="text">
+              <string>Internal Trigger</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_47">
+           <item>
+            <widget class="QLabel" name="Channel_label_15">
+             <property name="text">
+              <string>15</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_disabled_radio_15">
+             <property name="toolTip">
+              <string>Disable channel</string>
+             </property>
+             <property name="text">
+              <string>Disabled</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_sparsifying_radio_15">
+             <property name="toolTip">
+              <string>Switch sparsifying on for channel</string>
+             </property>
+             <property name="text">
+              <string>Sparsifying</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="Channel_intrigger_radio_15">
+             <property name="toolTip">
+              <string>Switch internal trigger mode for channel</string>
+             </property>
+             <property name="text">
+              <string>Internal Trigger</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+      </layout>
      </widget>
      <widget class="QWidget" name="Threshold_tab">
       <attribute name="title">
        <string>Thresholds</string>
       </attribute>
+      <layout class="QGridLayout" name="gridLayout_8">
+       <item row="0" column="0" colspan="2">
+        <layout class="QVBoxLayout" name="verticalLayout_11">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_29">
+           <item>
+            <widget class="QFrame" name="Thresholds_all_frame_2">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>45</height>
+              </size>
+             </property>
+             <property name="frameShape">
+              <enum>QFrame::StyledPanel</enum>
+             </property>
+             <property name="frameShadow">
+              <enum>QFrame::Raised</enum>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_7">
+              <item>
+               <widget class="QCheckBox" name="checkBox_ThresholdsAlll">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked all threshold values will changed accordingly &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>All</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSlider" name="Threshold_Slider_all">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="maximum">
+                 <number>4095</number>
+                </property>
+                <property name="singleStep">
+                 <number>10</number>
+                </property>
+                <property name="pageStep">
+                 <number>100</number>
+                </property>
+                <property name="value">
+                 <number>0</number>
+                </property>
+                <property name="sliderPosition">
+                 <number>0</number>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="tickPosition">
+                 <enum>QSlider::TicksAbove</enum>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="Threshold_spinBox_all">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="toolTip">
+                 <string>Threshold_All</string>
+                </property>
+                <property name="maximum">
+                 <number>4095</number>
+                </property>
+                <property name="singleStep">
+                 <number>1</number>
+                </property>
+                <property name="value">
+                 <number>0</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>378</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item row="1" column="0">
+        <layout class="QVBoxLayout" name="verticalLayout_7">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_1">
+           <item>
+            <widget class="QLabel" name="Threshold_label_00">
+             <property name="text">
+              <string>00</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="Threshold_Slider_00">
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="pageStep">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="sliderPosition">
+              <number>0</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksAbove</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="Threshold_spinBox_00">
+             <property name="toolTip">
+              <string>Threshold_00 </string>
+             </property>
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_8">
+           <item>
+            <widget class="QLabel" name="Threshold_label_01">
+             <property name="text">
+              <string>01</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="Threshold_Slider_01">
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="pageStep">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="sliderPosition">
+              <number>0</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksAbove</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="Threshold_spinBox_01">
+             <property name="toolTip">
+              <string>Threshold_01 </string>
+             </property>
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_9">
+           <item>
+            <widget class="QLabel" name="Threshold_label_02">
+             <property name="text">
+              <string>02</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="Threshold_Slider_02">
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="pageStep">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="sliderPosition">
+              <number>0</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksAbove</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="Threshold_spinBox_02">
+             <property name="toolTip">
+              <string>Threshold_02 </string>
+             </property>
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_10">
+           <item>
+            <widget class="QLabel" name="Threshold_label_03">
+             <property name="text">
+              <string>03</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="Threshold_Slider_03">
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="pageStep">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="sliderPosition">
+              <number>0</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksAbove</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="Threshold_spinBox_03">
+             <property name="toolTip">
+              <string>Threshold_03 </string>
+             </property>
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_17">
+           <item>
+            <widget class="QLabel" name="Threshold_label_04">
+             <property name="text">
+              <string>04</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="Threshold_Slider_04">
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="pageStep">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="sliderPosition">
+              <number>0</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksAbove</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="Threshold_spinBox_04">
+             <property name="toolTip">
+              <string>Threshold_04 </string>
+             </property>
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_18">
+           <item>
+            <widget class="QLabel" name="Threshold_label_05">
+             <property name="text">
+              <string>05</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="Threshold_Slider_05">
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="pageStep">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="sliderPosition">
+              <number>0</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksAbove</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="Threshold_spinBox_05">
+             <property name="toolTip">
+              <string>Threshold_05 </string>
+             </property>
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_19">
+           <item>
+            <widget class="QLabel" name="Threshold_label_06">
+             <property name="text">
+              <string>06</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="Threshold_Slider_06">
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="pageStep">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="sliderPosition">
+              <number>0</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksAbove</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="Threshold_spinBox_06">
+             <property name="toolTip">
+              <string>Threshold_06 </string>
+             </property>
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_20">
+           <item>
+            <widget class="QLabel" name="Threshold_label_07">
+             <property name="text">
+              <string>07</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="Threshold_Slider_07">
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="pageStep">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="sliderPosition">
+              <number>0</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksAbove</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="Threshold_spinBox_07">
+             <property name="toolTip">
+              <string>Threshold_07 </string>
+             </property>
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item row="1" column="1">
+        <layout class="QVBoxLayout" name="verticalLayout_8">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_21">
+           <item>
+            <widget class="QLabel" name="Threshold_label_08">
+             <property name="text">
+              <string>08</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="Threshold_Slider_08">
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="pageStep">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="sliderPosition">
+              <number>0</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksAbove</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="Threshold_spinBox_08">
+             <property name="toolTip">
+              <string>Threshold_08 </string>
+             </property>
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_22">
+           <item>
+            <widget class="QLabel" name="Threshold_label_09">
+             <property name="text">
+              <string>09</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="Threshold_Slider_09">
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="pageStep">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="sliderPosition">
+              <number>0</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksAbove</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="Threshold_spinBox_09">
+             <property name="toolTip">
+              <string>Threshold_09 </string>
+             </property>
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_23">
+           <item>
+            <widget class="QLabel" name="Threshold_label_10">
+             <property name="text">
+              <string>10</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="Threshold_Slider_10">
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="pageStep">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="sliderPosition">
+              <number>0</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksAbove</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="Threshold_spinBox_10">
+             <property name="toolTip">
+              <string>Threshold_10 </string>
+             </property>
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_24">
+           <item>
+            <widget class="QLabel" name="Threshold_label_11">
+             <property name="text">
+              <string>11</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="Threshold_Slider_11">
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="pageStep">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="sliderPosition">
+              <number>0</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksAbove</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="Threshold_spinBox_11">
+             <property name="toolTip">
+              <string>Threshold_11 </string>
+             </property>
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_25">
+           <item>
+            <widget class="QLabel" name="Threshold_label_12">
+             <property name="text">
+              <string>12</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="Threshold_Slider_12">
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="pageStep">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="sliderPosition">
+              <number>0</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksAbove</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="Threshold_spinBox_12">
+             <property name="toolTip">
+              <string>Threshold_12 </string>
+             </property>
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_26">
+           <item>
+            <widget class="QLabel" name="Threshold_label_13">
+             <property name="text">
+              <string>13</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="Threshold_Slider_13">
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="pageStep">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="sliderPosition">
+              <number>0</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksAbove</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="Threshold_spinBox_13">
+             <property name="toolTip">
+              <string>Threshold_13 </string>
+             </property>
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_27">
+           <item>
+            <widget class="QLabel" name="Threshold_label_14">
+             <property name="text">
+              <string>14</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="Threshold_Slider_14">
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="pageStep">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="sliderPosition">
+              <number>0</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksAbove</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="Threshold_spinBox_14">
+             <property name="toolTip">
+              <string>Threshold_14 </string>
+             </property>
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_28">
+           <item>
+            <widget class="QLabel" name="Threshold_label_15">
+             <property name="text">
+              <string>15</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="Threshold_Slider_15">
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>10</number>
+             </property>
+             <property name="pageStep">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="sliderPosition">
+              <number>0</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksAbove</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="Threshold_spinBox_15">
+             <property name="toolTip">
+              <string>Threshold_15 </string>
+             </property>
+             <property name="maximum">
+              <number>4095</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+      </layout>
      </widget>
      <widget class="QWidget" name="TUM_tab">
       <attribute name="title">
@@ -1535,12 +3482,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>161</x>
-     <y>172</y>
+     <x>148</x>
+     <y>134</y>
     </hint>
     <hint type="destinationlabel">
-     <x>221</x>
-     <y>174</y>
+     <x>212</x>
+     <y>136</y>
     </hint>
    </hints>
   </connection>
@@ -1551,12 +3498,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>221</x>
-     <y>174</y>
+     <x>212</x>
+     <y>136</y>
     </hint>
     <hint type="destinationlabel">
-     <x>161</x>
-     <y>172</y>
+     <x>148</x>
+     <y>134</y>
     </hint>
    </hints>
   </connection>
@@ -1567,12 +3514,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>161</x>
-     <y>200</y>
+     <x>148</x>
+     <y>164</y>
     </hint>
     <hint type="destinationlabel">
-     <x>221</x>
-     <y>202</y>
+     <x>212</x>
+     <y>166</y>
     </hint>
    </hints>
   </connection>
@@ -1583,12 +3530,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>221</x>
-     <y>202</y>
+     <x>212</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>161</x>
-     <y>200</y>
+     <x>148</x>
+     <y>164</y>
     </hint>
    </hints>
   </connection>
@@ -1599,12 +3546,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>161</x>
-     <y>228</y>
+     <x>158</x>
+     <y>194</y>
     </hint>
     <hint type="destinationlabel">
-     <x>221</x>
-     <y>230</y>
+     <x>222</x>
+     <y>196</y>
     </hint>
    </hints>
   </connection>
@@ -1615,12 +3562,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>221</x>
-     <y>230</y>
+     <x>222</x>
+     <y>196</y>
     </hint>
     <hint type="destinationlabel">
-     <x>161</x>
-     <y>228</y>
+     <x>158</x>
+     <y>194</y>
     </hint>
    </hints>
   </connection>
@@ -1631,12 +3578,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>161</x>
-     <y>256</y>
+     <x>158</x>
+     <y>224</y>
     </hint>
     <hint type="destinationlabel">
-     <x>221</x>
-     <y>258</y>
+     <x>222</x>
+     <y>226</y>
     </hint>
    </hints>
   </connection>
@@ -1647,12 +3594,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>221</x>
-     <y>258</y>
+     <x>222</x>
+     <y>226</y>
     </hint>
     <hint type="destinationlabel">
-     <x>161</x>
-     <y>256</y>
+     <x>158</x>
+     <y>224</y>
     </hint>
    </hints>
   </connection>
@@ -1663,12 +3610,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>161</x>
-     <y>284</y>
+     <x>158</x>
+     <y>253</y>
     </hint>
     <hint type="destinationlabel">
-     <x>221</x>
-     <y>286</y>
+     <x>222</x>
+     <y>255</y>
     </hint>
    </hints>
   </connection>
@@ -1679,12 +3626,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>221</x>
-     <y>286</y>
+     <x>222</x>
+     <y>255</y>
     </hint>
     <hint type="destinationlabel">
-     <x>161</x>
-     <y>284</y>
+     <x>158</x>
+     <y>253</y>
     </hint>
    </hints>
   </connection>
@@ -1695,12 +3642,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>161</x>
-     <y>312</y>
+     <x>158</x>
+     <y>283</y>
     </hint>
     <hint type="destinationlabel">
-     <x>221</x>
-     <y>314</y>
+     <x>222</x>
+     <y>285</y>
     </hint>
    </hints>
   </connection>
@@ -1711,12 +3658,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>221</x>
-     <y>314</y>
+     <x>222</x>
+     <y>285</y>
     </hint>
     <hint type="destinationlabel">
-     <x>161</x>
-     <y>312</y>
+     <x>158</x>
+     <y>283</y>
     </hint>
    </hints>
   </connection>
@@ -1727,12 +3674,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>161</x>
-     <y>340</y>
+     <x>158</x>
+     <y>313</y>
     </hint>
     <hint type="destinationlabel">
-     <x>221</x>
-     <y>342</y>
+     <x>222</x>
+     <y>315</y>
     </hint>
    </hints>
   </connection>
@@ -1743,12 +3690,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>221</x>
-     <y>342</y>
+     <x>222</x>
+     <y>315</y>
     </hint>
     <hint type="destinationlabel">
-     <x>161</x>
-     <y>340</y>
+     <x>158</x>
+     <y>313</y>
     </hint>
    </hints>
   </connection>
@@ -1759,12 +3706,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>161</x>
-     <y>368</y>
+     <x>158</x>
+     <y>343</y>
     </hint>
     <hint type="destinationlabel">
-     <x>221</x>
-     <y>370</y>
+     <x>222</x>
+     <y>345</y>
     </hint>
    </hints>
   </connection>
@@ -1775,12 +3722,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>221</x>
-     <y>370</y>
+     <x>222</x>
+     <y>345</y>
     </hint>
     <hint type="destinationlabel">
-     <x>161</x>
-     <y>368</y>
+     <x>158</x>
+     <y>343</y>
     </hint>
    </hints>
   </connection>
@@ -1791,12 +3738,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>526</x>
-     <y>172</y>
+     <x>516</x>
+     <y>134</y>
     </hint>
     <hint type="destinationlabel">
-     <x>586</x>
-     <y>174</y>
+     <x>580</x>
+     <y>136</y>
     </hint>
    </hints>
   </connection>
@@ -1807,12 +3754,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>174</y>
+     <x>580</x>
+     <y>136</y>
     </hint>
     <hint type="destinationlabel">
-     <x>526</x>
-     <y>172</y>
+     <x>516</x>
+     <y>134</y>
     </hint>
    </hints>
   </connection>
@@ -1823,12 +3770,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>526</x>
-     <y>228</y>
+     <x>539</x>
+     <y>194</y>
     </hint>
     <hint type="destinationlabel">
-     <x>586</x>
-     <y>230</y>
+     <x>603</x>
+     <y>196</y>
     </hint>
    </hints>
   </connection>
@@ -1839,12 +3786,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>230</y>
+     <x>603</x>
+     <y>196</y>
     </hint>
     <hint type="destinationlabel">
-     <x>526</x>
-     <y>228</y>
+     <x>539</x>
+     <y>194</y>
     </hint>
    </hints>
   </connection>
@@ -1855,12 +3802,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>526</x>
-     <y>256</y>
+     <x>539</x>
+     <y>224</y>
     </hint>
     <hint type="destinationlabel">
-     <x>586</x>
-     <y>258</y>
+     <x>603</x>
+     <y>226</y>
     </hint>
    </hints>
   </connection>
@@ -1871,12 +3818,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>258</y>
+     <x>603</x>
+     <y>226</y>
     </hint>
     <hint type="destinationlabel">
-     <x>526</x>
-     <y>256</y>
+     <x>539</x>
+     <y>224</y>
     </hint>
    </hints>
   </connection>
@@ -1887,12 +3834,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>526</x>
-     <y>284</y>
+     <x>539</x>
+     <y>253</y>
     </hint>
     <hint type="destinationlabel">
-     <x>586</x>
-     <y>286</y>
+     <x>603</x>
+     <y>255</y>
     </hint>
    </hints>
   </connection>
@@ -1903,12 +3850,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>286</y>
+     <x>603</x>
+     <y>255</y>
     </hint>
     <hint type="destinationlabel">
-     <x>526</x>
-     <y>284</y>
+     <x>539</x>
+     <y>253</y>
     </hint>
    </hints>
   </connection>
@@ -1919,12 +3866,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>526</x>
-     <y>312</y>
+     <x>539</x>
+     <y>283</y>
     </hint>
     <hint type="destinationlabel">
-     <x>586</x>
-     <y>314</y>
+     <x>603</x>
+     <y>285</y>
     </hint>
    </hints>
   </connection>
@@ -1935,12 +3882,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>314</y>
+     <x>603</x>
+     <y>285</y>
     </hint>
     <hint type="destinationlabel">
-     <x>526</x>
-     <y>312</y>
+     <x>539</x>
+     <y>283</y>
     </hint>
    </hints>
   </connection>
@@ -1951,12 +3898,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>526</x>
-     <y>340</y>
+     <x>539</x>
+     <y>313</y>
     </hint>
     <hint type="destinationlabel">
-     <x>586</x>
-     <y>342</y>
+     <x>603</x>
+     <y>315</y>
     </hint>
    </hints>
   </connection>
@@ -1967,12 +3914,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>342</y>
+     <x>603</x>
+     <y>315</y>
     </hint>
     <hint type="destinationlabel">
-     <x>526</x>
-     <y>340</y>
+     <x>539</x>
+     <y>313</y>
     </hint>
    </hints>
   </connection>
@@ -1983,12 +3930,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>526</x>
-     <y>368</y>
+     <x>539</x>
+     <y>343</y>
     </hint>
     <hint type="destinationlabel">
-     <x>586</x>
-     <y>370</y>
+     <x>603</x>
+     <y>345</y>
     </hint>
    </hints>
   </connection>
@@ -1999,12 +3946,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>370</y>
+     <x>603</x>
+     <y>345</y>
     </hint>
     <hint type="destinationlabel">
-     <x>526</x>
-     <y>368</y>
+     <x>539</x>
+     <y>343</y>
     </hint>
    </hints>
   </connection>
@@ -2015,12 +3962,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>170</x>
-     <y>130</y>
+     <x>164</x>
+     <y>81</y>
     </hint>
     <hint type="destinationlabel">
-     <x>230</x>
-     <y>132</y>
+     <x>228</x>
+     <y>83</y>
     </hint>
    </hints>
   </connection>
@@ -2031,12 +3978,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>230</x>
-     <y>132</y>
+     <x>228</x>
+     <y>83</y>
     </hint>
     <hint type="destinationlabel">
-     <x>170</x>
-     <y>130</y>
+     <x>164</x>
+     <y>81</y>
     </hint>
    </hints>
   </connection>
@@ -2048,11 +3995,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>79</x>
-     <y>132</y>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>170</x>
-     <y>130</y>
+     <x>164</x>
+     <y>81</y>
     </hint>
    </hints>
   </connection>
@@ -2064,11 +4011,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>79</x>
-     <y>132</y>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>230</x>
-     <y>132</y>
+     <x>228</x>
+     <y>83</y>
     </hint>
    </hints>
   </connection>
@@ -2079,12 +4026,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>586</x>
-     <y>202</y>
+     <x>580</x>
+     <y>166</y>
     </hint>
     <hint type="destinationlabel">
-     <x>526</x>
-     <y>200</y>
+     <x>516</x>
+     <y>164</y>
     </hint>
    </hints>
   </connection>
@@ -2095,12 +4042,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>526</x>
-     <y>200</y>
+     <x>516</x>
+     <y>164</y>
     </hint>
     <hint type="destinationlabel">
-     <x>586</x>
-     <y>202</y>
+     <x>580</x>
+     <y>166</y>
     </hint>
    </hints>
   </connection>
@@ -2111,12 +4058,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>683</x>
-     <y>129</y>
+     <x>727</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>388</x>
-     <y>174</y>
+     <x>379</x>
+     <y>135</y>
     </hint>
    </hints>
   </connection>
@@ -2127,12 +4074,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>695</x>
-     <y>131</y>
+     <x>727</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>388</x>
-     <y>202</y>
+     <x>393</x>
+     <y>165</y>
     </hint>
    </hints>
   </connection>
@@ -2143,12 +4090,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>743</x>
-     <y>132</y>
+     <x>727</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>388</x>
-     <y>230</y>
+     <x>393</x>
+     <y>195</y>
     </hint>
    </hints>
   </connection>
@@ -2159,12 +4106,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>743</x>
-     <y>132</y>
+     <x>727</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>364</x>
-     <y>252</y>
+     <x>393</x>
+     <y>225</y>
     </hint>
    </hints>
   </connection>
@@ -2175,12 +4122,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>723</x>
-     <y>126</y>
+     <x>727</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>368</x>
-     <y>286</y>
+     <x>393</x>
+     <y>255</y>
     </hint>
    </hints>
   </connection>
@@ -2191,12 +4138,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>673</x>
-     <y>125</y>
+     <x>727</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>371</x>
-     <y>310</y>
+     <x>393</x>
+     <y>284</y>
     </hint>
    </hints>
   </connection>
@@ -2207,12 +4154,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>743</x>
-     <y>132</y>
+     <x>727</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>388</x>
-     <y>342</y>
+     <x>393</x>
+     <y>314</y>
     </hint>
    </hints>
   </connection>
@@ -2223,12 +4170,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>743</x>
-     <y>132</y>
+     <x>727</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>374</x>
-     <y>367</y>
+     <x>393</x>
+     <y>344</y>
     </hint>
    </hints>
   </connection>
@@ -2239,12 +4186,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>743</x>
-     <y>132</y>
+     <x>727</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>753</x>
-     <y>174</y>
+     <x>747</x>
+     <y>135</y>
     </hint>
    </hints>
   </connection>
@@ -2255,12 +4202,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>743</x>
-     <y>132</y>
+     <x>727</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>753</x>
-     <y>202</y>
+     <x>774</x>
+     <y>165</y>
     </hint>
    </hints>
   </connection>
@@ -2271,12 +4218,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>720</x>
-     <y>127</y>
+     <x>727</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>753</x>
-     <y>230</y>
+     <x>774</x>
+     <y>195</y>
     </hint>
    </hints>
   </connection>
@@ -2287,12 +4234,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>719</x>
-     <y>132</y>
+     <x>727</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>753</x>
-     <y>258</y>
+     <x>774</x>
+     <y>225</y>
     </hint>
    </hints>
   </connection>
@@ -2303,12 +4250,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>705</x>
-     <y>122</y>
+     <x>727</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>753</x>
-     <y>286</y>
+     <x>774</x>
+     <y>255</y>
     </hint>
    </hints>
   </connection>
@@ -2319,12 +4266,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>716</x>
-     <y>132</y>
+     <x>727</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>722</x>
-     <y>307</y>
+     <x>774</x>
+     <y>284</y>
     </hint>
    </hints>
   </connection>
@@ -2335,12 +4282,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>743</x>
-     <y>132</y>
+     <x>727</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>753</x>
-     <y>342</y>
+     <x>774</x>
+     <y>314</y>
     </hint>
    </hints>
   </connection>
@@ -2351,12 +4298,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>722</x>
-     <y>131</y>
+     <x>727</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>718</x>
-     <y>370</y>
+     <x>774</x>
+     <y>344</y>
     </hint>
    </hints>
   </connection>
@@ -2367,12 +4314,636 @@
    <slot>click()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>602</x>
-     <y>123</y>
+     <x>640</x>
+     <y>83</y>
     </hint>
     <hint type="destinationlabel">
-     <x>518</x>
-     <y>123</y>
+     <x>529</x>
+     <y>85</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBox_ThresholdsAlll</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Threshold_Slider_all</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>70</x>
+     <y>73</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>315</x>
+     <y>74</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBox_ThresholdsAlll</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Threshold_spinBox_all</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>63</x>
+     <y>72</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>339</x>
+     <y>73</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_Slider_00</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_spinBox_00</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>161</x>
+     <y>141</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>357</x>
+     <y>132</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_spinBox_00</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_Slider_00</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>350</x>
+     <y>141</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>170</x>
+     <y>136</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_Slider_01</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_spinBox_01</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>55</x>
+     <y>154</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>347</x>
+     <y>154</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_spinBox_01</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_Slider_01</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>347</x>
+     <y>154</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>55</x>
+     <y>154</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_Slider_02</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_spinBox_02</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>55</x>
+     <y>183</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>347</x>
+     <y>183</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_spinBox_02</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_Slider_02</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>347</x>
+     <y>183</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>55</x>
+     <y>183</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_Slider_03</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_spinBox_03</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>55</x>
+     <y>212</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>347</x>
+     <y>212</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_spinBox_03</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_Slider_03</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>347</x>
+     <y>212</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>55</x>
+     <y>212</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_Slider_04</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_spinBox_04</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>55</x>
+     <y>241</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>347</x>
+     <y>241</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_spinBox_04</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_Slider_04</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>347</x>
+     <y>241</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>55</x>
+     <y>241</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_Slider_05</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_spinBox_05</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>55</x>
+     <y>270</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>347</x>
+     <y>270</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_spinBox_05</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_Slider_05</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>347</x>
+     <y>270</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>55</x>
+     <y>270</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_Slider_06</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_spinBox_06</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>55</x>
+     <y>299</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>347</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_spinBox_06</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_Slider_06</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>347</x>
+     <y>299</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>55</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_Slider_07</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_spinBox_07</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>55</x>
+     <y>328</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>347</x>
+     <y>328</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_spinBox_07</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_Slider_07</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>347</x>
+     <y>328</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>55</x>
+     <y>328</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_Slider_08</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_spinBox_08</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>426</x>
+     <y>125</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>717</x>
+     <y>125</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_spinBox_08</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_Slider_08</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>717</x>
+     <y>125</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>426</x>
+     <y>125</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_Slider_09</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_spinBox_09</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>426</x>
+     <y>154</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>717</x>
+     <y>154</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_spinBox_09</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_Slider_09</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>717</x>
+     <y>154</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>426</x>
+     <y>154</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_Slider_10</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_spinBox_10</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>426</x>
+     <y>183</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>717</x>
+     <y>183</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_spinBox_10</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_Slider_10</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>717</x>
+     <y>183</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>426</x>
+     <y>183</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_Slider_11</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_spinBox_11</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>426</x>
+     <y>212</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>717</x>
+     <y>212</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_spinBox_11</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_Slider_11</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>717</x>
+     <y>212</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>426</x>
+     <y>212</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_Slider_12</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_spinBox_12</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>426</x>
+     <y>241</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>717</x>
+     <y>241</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_spinBox_12</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_Slider_12</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>717</x>
+     <y>241</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>426</x>
+     <y>241</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_Slider_13</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_spinBox_13</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>426</x>
+     <y>270</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>717</x>
+     <y>270</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_spinBox_13</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_Slider_13</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>717</x>
+     <y>270</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>426</x>
+     <y>270</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_Slider_14</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_spinBox_14</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>426</x>
+     <y>299</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>717</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_spinBox_14</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_Slider_14</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>717</x>
+     <y>299</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>426</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_Slider_15</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_spinBox_15</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>426</x>
+     <y>328</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>717</x>
+     <y>328</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_spinBox_15</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_Slider_15</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>717</x>
+     <y>328</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>426</x>
+     <y>328</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_Slider_all</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_spinBox_all</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>223</x>
+     <y>74</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>379</x>
+     <y>73</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Threshold_spinBox_all</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Threshold_Slider_all</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>379</x>
+     <y>73</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>315</x>
+     <y>74</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBox_ChannelsAlll</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Channel_disabled_radio_all</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>49</x>
+     <y>66</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>122</x>
+     <y>71</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBox_ChannelsAlll</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Channel_sparsifying_radio_all</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>54</x>
+     <y>61</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>218</x>
+     <y>72</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBox_ChannelsAlll</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Channel_intrigger_radio_all</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>58</x>
+     <y>65</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>321</x>
+     <y>72</y>
     </hint>
    </hints>
   </connection>
