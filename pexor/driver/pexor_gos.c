@@ -987,15 +987,32 @@ int pexor_ioctl_request_receive_token_async (struct pexor_privdata *priv, unsign
   if (retval)
     return retval;
 
+  sfpregisters = &(priv->pexor.sfp);
 
-  // TODO: here request from all registered sfps if not already requested at previous call:
-
-
+#ifdef PEXOR_TRIGGERLESS_SEMAPHORE
+// first we have to check if any channel exceeds timeout counter limit
+// this may happen for broken or very slow sfp chains and can lead to blocking the os in case of concurrent gosipcmd
+  for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
+    {
+      if (sfpregisters->num_slaves[sfp] == 0)
+          continue;
+      if (atomic_read(&(priv->sfp_worker_haslock[sfp])) == 1) // need to check if we have locked it, not the other ones
+          {
+            if(atomic_inc_return(&(priv->sfp_lock_count[sfp]))> PEXOR_ASYNC_MAXSPINLOCKS)
+              {
+                pexor_msg(KERN_NOTICE "pexor_request_token_async_polling: semaphore for sfp %d was locked more than %d cycle times, releasing it!\n", sfp, PEXOR_ASYNC_MAXSPINLOCKS);
+                up( &(priv->sfpsem[sfp]));
+                atomic_set(&(priv->sfp_lock_count[sfp]),0);
+                atomic_set(&(priv->sfp_worker_haslock[sfp]),0);
+              }
+          }
+    }
+#endif
 
 
   ////////////////////////////////////////////////////////////
   // first loop over all registered sfps and request new data if not yet done:
-    sfpregisters = &(priv->pexor.sfp);
+
     for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
     {
       if (sfpregisters->num_slaves[sfp] == 0)
@@ -1014,6 +1031,18 @@ int pexor_ioctl_request_receive_token_async (struct pexor_privdata *priv, unsign
       //          //Read the 32-bit value (referred to as old) stored at location p. Compute (old == cmp) ? val : old and store result at location pointed by p.
       //          //The function returns old.
       //          ///////////////////////////
+
+
+ // JAM2017: try to protect the channels also here
+#ifdef PEXOR_TRIGGERLESS_SEMAPHORE
+  if(down_interruptible(&(priv->sfpsem[sfp])))
+    {
+      pexor_msg(KERN_INFO "pexor_ioctl_request_receive_token_async sfp %d sem down_interruptable is not zero.\n", sfp);
+      continue;
+    }
+  atomic_set(&(priv->sfp_worker_haslock[sfp]),1); // JAM: not really atomic together with sfpsem, but this function does never run self concurrent
+#endif
+  // JAM2017: end
 
 
       pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_receive_token_async for channel 0x%x, readflag=%d\n", (unsigned) sfp, readflag);
@@ -1060,7 +1089,6 @@ int pexor_ioctl_request_receive_token_async (struct pexor_privdata *priv, unsign
 #endif
     pexor_dbg(KERN_NOTICE "** pexor_ioctl_request_receive_token_async succeeds with reply of sfp=0x%x, next bufid=%d\n",sfp,atomic_read(&(priv->bufid[sfp])));
     atomic_set(&priv->sfpreceived[sfp],1);
-
 
   }    // for sfp second loop
 
@@ -1155,6 +1183,20 @@ ndelay(10000); // give pexor some time to evaluate tk_memsize correctly?
 
      woffset =  descriptor.offset + poff[sfp] + paddington[sfp]+ tokenmemsize; // increment dma data pointer to end of real payload
      datalensum += tokenmemsize + paddington[sfp];    // for ioremap also account possible padding space here
+
+
+// JAM2017: try to protect the channels also here
+// releae sfp semaphore no sooner than dma is completed
+#ifdef PEXOR_TRIGGERLESS_SEMAPHORE
+     up(&(priv->sfpsem[sfp]));
+     atomic_set(&(priv->sfp_lock_count[sfp]),0);
+     atomic_set(&(priv->sfp_worker_haslock[sfp]),0);
+ #endif
+// JAM2017: try to protect the channels also here
+
+
+
+
   }    // for sfp second loop dma
 
 
@@ -1491,8 +1533,14 @@ while(hasanydata==0 && (atomic_read(&(priv->triggerless_acquisition)) > 0)) // p
   }    // for sfp second loop
   //msleep(1); // polling for data
 
-  set_current_state(TASK_INTERRUPTIBLE);
-  schedule_timeout (PEXOR_ASYNC_POLLDELAY);
+#ifdef   PEXOR_ASYNC_POLLDELAY
+// JAM 4-2017: try how fast we can get without schedule here -
+if(PEXOR_ASYNC_POLLDELAY>0)
+  {
+    set_current_state(TASK_INTERRUPTIBLE);
+    schedule_timeout (PEXOR_ASYNC_POLLDELAY);
+  }
+#endif
 
 } // while(hasanydata==0)
 
@@ -1716,7 +1764,7 @@ for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
  spin_unlock( &(priv->buffers_lock));
  if (hasnobuffers) {
    // TODO: proper error handling?
-   pexor_msg(KERN_NOTICE "pexor_request_token_async_polling no more free buffers for receiving, leaving loop\n");
+   pexor_dbg(KERN_NOTICE "pexor_request_token_async_polling no more free buffers for receiving, leaving loop\n");
 // debug
 //   for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
 //     {
@@ -1805,14 +1853,29 @@ void pexor_triggerless_workfunc(struct work_struct *ws)
     spin_unlock( &(priv->buffers_lock));
     if(nomorebufs)
       {
-      set_current_state(TASK_INTERRUPTIBLE);
-      schedule_timeout (PEXOR_ASYNC_POLLDELAY);
-      continue; // wait a while until we retry for new buffers
+
+#ifdef   PEXOR_ASYNC_POLLDELAY
+// JAM 4-2017: try how fast we can get without schedule here -
+        set_current_state(TASK_INTERRUPTIBLE);
+        if(PEXOR_ASYNC_POLLDELAY>0)
+          {
+            schedule_timeout (PEXOR_ASYNC_POLLDELAY);
+          }
+        else
+        {
+            schedule_timeout (1); // minimum
+        }
+#endif
+      // wait a while until we retry for new buffers
+//      set_current_state(TASK_INTERRUPTIBLE);
+//      schedule_timeout (PEXOR_ASYNC_POLLDELAY);
+      continue;
     }
+
     if(suspended)
     {
       // this is just for debug
-      pexor_msg(KERN_NOTICE "pexor_triggerless_workfunc leaving backpressure suspend mode.\n");
+      pexor_dbg(KERN_NOTICE "pexor_triggerless_workfunc leaving backpressure suspend mode.\n");
       suspended=0;
     }
 
@@ -1823,7 +1886,7 @@ void pexor_triggerless_workfunc(struct work_struct *ws)
     }
     else if (rev==-ENOBUFS)
     {
-      pexor_msg(KERN_NOTICE "pexor_triggerless_workfunc entering backpressure suspend mode...\n");
+      pexor_dbg(KERN_NOTICE "pexor_triggerless_workfunc entering backpressure suspend mode...\n");
       suspended=1;
       continue;
     }

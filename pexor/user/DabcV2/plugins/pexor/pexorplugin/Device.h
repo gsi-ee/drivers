@@ -38,7 +38,7 @@
 //#define IMPLICIT_ASYNC_POLLING 1
 
 /** this switches to polling in asynchronous kernel worker*/
-#define IMPLICIT_ASYNC_WORKER 1
+//#define IMPLICIT_ASYNC_WORKER 1
 
 
 namespace pexorplugin

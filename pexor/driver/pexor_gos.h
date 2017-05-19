@@ -217,6 +217,8 @@
 //1000 for msleep case
 
 #define PEXOR_ASYNC_POLLDELAY HZ/100.0
+// JAM4-2017 switch off scheduling delay in kernel workqueues!
+//#define PEXOR_ASYNC_POLLDELAY 0
 
 /** maximum number of sfp spinlock counter. When exceeded, the sfp lock is released also when frontends did not respond  */
 #define PEXOR_ASYNC_MAXSPINLOCKS 2000

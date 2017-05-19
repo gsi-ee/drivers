@@ -348,11 +348,17 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
     case PEXOR_IOC_WRITE_BUS:
       pexor_dbg(KERN_NOTICE "** pexor_ioctl write bus\n");
+#ifdef PEXOR_TRIGGERLESS_SEMAPHORE
+      up(&privdata->ioctl_sem); /* do not lock ioctl here, otherwise deadlock with sfp semaphores possible!*/
+#endif
       retval = pexor_ioctl_write_bus(privdata, arg);
       break;
 
     case PEXOR_IOC_READ_BUS:
       pexor_dbg(KERN_NOTICE "** pexor_ioctl read bus\n");
+#ifdef PEXOR_TRIGGERLESS_SEMAPHORE
+      up(&privdata->ioctl_sem); /* do not lock ioctl here, otherwise deadlock with sfp semaphores possible!*/
+#endif
       retval = pexor_ioctl_read_bus(privdata, arg);
       break;
 
@@ -363,6 +369,9 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
     case PEXOR_IOC_CONFIG_BUS:
       pexor_dbg(KERN_NOTICE "** pexor_ioctl config bus\n");
+#ifdef PEXOR_TRIGGERLESS_SEMAPHORE
+      up(&privdata->ioctl_sem); /* do not lock ioctl here, otherwise deadlock with sfp semaphores possible!*/
+#endif
       retval = pexor_ioctl_configure_bus(privdata, arg);
       break;
 
@@ -935,8 +944,18 @@ for (ix = 0; ix < PEXOR_SFP_NUMBER; ++ix)
     atomic_set(&(priv->sfprequested[ix]), 0);
     atomic_set(&(priv->sfpreceived[ix]), 0);
 #ifdef PEXOR_TRIGGERLESS_SEMAPHORE
-    atomic_set(&(priv->sfp_worker_haslock[ix]),0);
+    if (atomic_read(&(priv->sfp_worker_haslock[ix])) == 1)
+    {
+      up( &(priv->sfpsem[ix]));
+      atomic_set(&(priv->sfp_worker_haslock[ix]),0);
+      atomic_set(&(priv->sfp_lock_count[ix]),0);
+
+    }
 #endif
+
+
+
+
 
   }
 

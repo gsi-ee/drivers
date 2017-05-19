@@ -14,7 +14,7 @@
 #include <linux/ioctl.h>
 
 
-#define PEXORVERSION  "2.6.1"
+#define PEXORVERSION  "2.6.2"
 
 /** identify name in dev : */
 #define PEXORNAME 		"pexor"
