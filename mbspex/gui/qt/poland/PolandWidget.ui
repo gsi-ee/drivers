@@ -83,6 +83,16 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QPushButton" name="OffsetButton">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Trigger offset measurement at channel SFP and slave DEV as set in spinbox&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>ScanOffset</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
      </item>
@@ -314,16 +324,6 @@
          </layout>
         </item>
        </layout>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="OffsetButton">
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Trigger offset measurement at channel SFP and slave DEV as set in spinbox&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="text">
-        <string>ScanOffset</string>
-       </property>
       </widget>
      </item>
     </layout>
@@ -1696,11 +1696,6 @@
            </widget>
           </item>
          </layout>
-         <zorder>FanDial</zorder>
-         <zorder>RPMLabel</zorder>
-         <zorder>Fan1_LCD</zorder>
-         <zorder>FanLocLabel</zorder>
-         <zorder>Fan4_LCD</zorder>
         </widget>
        </item>
        <item row="1" column="0" colspan="2">
