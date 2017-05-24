@@ -35,7 +35,7 @@ FebexGui::FebexGui (QWidget* parent) : GosipGui (parent)
  
  
  fImplementationName="FEBEX";
- fVersionString="Welcome to FEBEX GUI!\n\t v0.975 of 11-April-2017 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to FEBEX GUI!\n\t v0.976 of 24-May-2017 by JAM (j.adamczewski@gsi.de)";
 
 
   fFebexWidget=new FebexWidget(this);

@@ -312,13 +312,17 @@ void GosipGui::BroadcastBtn_clicked (bool checked)
     fSFPSave = SFPspinBox->value ();
     fSlaveSave = SlavespinBox->value ();
     SFPspinBox->setValue (-1);
+    SFPspinBox->setEnabled (false);
     SlavespinBox->setValue (-1);
+    SlavespinBox->setEnabled (false);
+
   }
   else
   {
+    SFPspinBox->setEnabled (true);
+    SlavespinBox->setEnabled (true);
     SFPspinBox->setValue (fSFPSave);
     SlavespinBox->setValue (fSlaveSave);
-
   }
 }
 

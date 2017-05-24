@@ -16,7 +16,7 @@ int oldchan = fSFP; \
 if (AssertNoBroadcast (false)) \
  { \
    fBroadcasting=false;\
-   X; \
+   if (AssertChainConfigured(true)) X; \
  } \
  else if (fSFP < 0) \
  { \
@@ -58,6 +58,7 @@ fBroadcasting=false;
 /** JAM2017 helper macro to cast setup structure to implementation class later.
  * Afterwards, pointer theSetup-> can be used to access special members*/
 #define theSetup_GET_FOR_SLAVE(X) \
+if (!AssertNoBroadcast(false) || !AssertChainConfigured(true)) return;\
 X* theSetup = dynamic_cast<X*>(fSetup[fSFP].at (fSlave));\
 if(theSetup==0) {\
   printm("--- Could not get setup structure X for sfp:%d slave:%d",fSFP,fSlave); \
@@ -65,6 +66,7 @@ if(theSetup==0) {\
 }
 
 #define theSetup_GET_FOR_SLAVE_RETURN(X) \
+if(!AssertNoBroadcast(false) || !AssertChainConfigured(true)) return -1;\
 X* theSetup = dynamic_cast<X*>(fSetup[fSFP].at (fSlave));\
 if(theSetup==0) {\
   printm("--- Could not get setup structure X for sfp:%d slave:%d",fSFP,fSlave); \

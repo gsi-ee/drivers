@@ -37,7 +37,8 @@ NyxorGui::NyxorGui (QWidget* parent, bool oldsetup) :
 {
 
   fImplementationName="NYXOR";
-  fVersionString="Welcome to NYXOR GUI!\n\t v0.90 of 27-March-2017 by JAM (j.adamczewski@gsi.de)";
+  fVersionString="Welcome to NYXOR GUI!\n\t v0.91 of 24-May-2017 by JAM (j.adamczewski@gsi.de)";
+  setWindowTitle(QString("%1 GUI").arg(fImplementationName));
 
   fNyxorWidget=new NyxorWidget(this);
   Settings_scrollArea->setWidget(fNyxorWidget);
