@@ -2482,16 +2482,21 @@ ssize_t pexor_sysfs_trixorregs_show (struct device *dev, struct device_attribute
 
 ssize_t pexor_sysfs_trixor_fctime_show (struct device *dev, struct device_attribute *attr, char *buf)
 {
+
   ssize_t curs = 0;
+#ifdef PEXOR_WITH_TRIXOR
      struct pexor_privdata *privdata;
      privdata = (struct pexor_privdata*) dev_get_drvdata (dev);
      curs += snprintf (buf + curs, PAGE_SIZE - curs, "%d\n", (0x10000 - readl(privdata->pexor.trix_fcti)));
      pexor_bus_delay();
+#endif
      return curs;
+
 }
 
 ssize_t pexor_sysfs_trixor_fctime_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
+#ifdef PEXOR_WITH_TRIXOR
   unsigned int val=0;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
   int rev=0;
@@ -2512,6 +2517,7 @@ ssize_t pexor_sysfs_trixor_fctime_store (struct device *dev, struct device_attri
    pexor_bus_delay();
    iowrite32 (0x10000 - val, privdata->pexor.trix_fcti);
    pexor_msg( KERN_NOTICE "PEXOR: trixor fast clear time was set to %d \n", val);
+#endif
   return count;
 }
 
@@ -2519,15 +2525,18 @@ ssize_t pexor_sysfs_trixor_fctime_store (struct device *dev, struct device_attri
 ssize_t pexor_sysfs_trixor_cvtime_show (struct device *dev, struct device_attribute *attr, char *buf)
 {
     ssize_t curs = 0;
+#ifdef PEXOR_WITH_TRIXOR
     struct pexor_privdata *privdata;
     privdata = (struct pexor_privdata*) dev_get_drvdata (dev);
     curs += snprintf (buf + curs, PAGE_SIZE - curs, "%d\n", (0x10000 - readl(privdata->pexor.trix_cvti)));
     pexor_bus_delay();
+#endif
     return curs;
 }
 
 ssize_t pexor_sysfs_trixor_cvtime_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
+#ifdef PEXOR_WITH_TRIXOR
   unsigned int val=0;
   #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
     int rev=0;
@@ -2546,6 +2555,7 @@ ssize_t pexor_sysfs_trixor_cvtime_store (struct device *dev, struct device_attri
      pexor_bus_delay();
      iowrite32 (0x10000 - val, privdata->pexor.trix_cvti);
      pexor_msg( KERN_NOTICE "PEXOR: trixor conversion time was set to %d \n", val);
+#endif
     return count;
 
 }
