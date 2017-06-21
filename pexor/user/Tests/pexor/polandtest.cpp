@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "pexor/PexorTwo.h"
 #include "pexor/Benchmark.h"
@@ -46,6 +47,13 @@
 #define QFWLOOPS 3
 #define QFWCHANS 32
 #define QFWNUM 8
+
+
+// number of polls for triggerless readout with wait for data ready:
+#define MAXPOLLS 1000000
+
+// loop wait time per cycle in microseconds:
+#define WAITCYCLE 1
 
 static int Debugmode = TESTMODE;
 static int Hexmode = 0;
@@ -106,7 +114,7 @@ void usage ()
 int init_qfw(pexor::PexorTwo* theBoard)
 {
 
-
+  BufID=0;
 
   int rev=theBoard->InitBus(Channel,Maxslaves);
   if(rev)
@@ -509,12 +517,13 @@ int main (int argc, char **argv)
   /* Test the token io*/
   if (!withtrigger)
   {
-    Trignum = 1;
+    Trignum = 10;
   }
 
   for (int i = 0; i < Trignum; ++i)
   {
-
+    pexor::DMA_Buffer* tokbuf=0;
+    int pollcounter=0;
     if (withtrigger)
     {
       printf ("**** Waiting for TRIGGER %d...\n", i);
@@ -530,14 +539,41 @@ int main (int argc, char **argv)
     int value = 0;
     bench.ClockStart ();
     bench.TimerStart ();
-    pexor::DMA_Buffer* tokbuf = board.RequestToken (Channel, BufID, true);    // synchronous dma mode here
+
     if (withtrigger)
-      board.ResetTrigger ();
-    if (tokbuf == 0)
+       {
+        tokbuf = board.RequestToken (Channel, BufID , true);    // synchronous dma mode here,
+        board.ResetTrigger ();
+       }
+    else
+    {
+
+      board.RequestToken (Channel, BufID | 2 , false, false); // asynchronous mode here, wait for data ready |2
+
+      BufID = (BufID == 0 ? 1 : 0);
+
+      do
+      {
+      tokbuf= board.WaitForToken (Channel, false, 0, 0, false);
+      pollcounter++;
+      usleep(WAITCYCLE);
+      } while (tokbuf == (pexor::DMA_Buffer*)(-1) && pollcounter<MAXPOLLS);
+
+      printf ("Polled for %d cycles of %d us, tokbuf=0x%x\n", pollcounter, WAITCYCLE, tokbuf);
+
+
+    }
+
+    if (tokbuf <=  0 || pollcounter>=MAXPOLLS)
     {
       printf ("\n\nError in Token Request\n");
       return 1;
     }
+
+
+
+
+
     double cycledelta = bench.TimerDelta ();
     double clockdelta = bench.ClockDelta ();
     printf ("\nGot token buffer of length %d ints.\n", tokbuf->Length ());
@@ -547,6 +583,10 @@ int main (int argc, char **argv)
 //				int tokensize=Maxslaves*datadepth*num_submem; //
 //				bench.ShowRate("Clock:  token read:", tokensize, clockdelta); // bytes
 //				bench.ShowRate("Cycles: token read:", tokensize , cycledelta);
+
+
+
+
 
     if (unpack_qfw (tokbuf) != 0)
     {
@@ -559,6 +599,7 @@ int main (int argc, char **argv)
   board.Free_DMA_Buffer (tokbuf);
 
 }    // for loop
+
 
 if(withtrigger && DoConfig)
   board.StopAcquisition();
