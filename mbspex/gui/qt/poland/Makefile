@@ -1,14 +1,6 @@
-QMAKE = qmake-qt4
 
-INC = $(MBSROOT)/inc
+include ../gui.mk
 
-PEX_BINPATH=/mbs/driv/mbspex_$(GSI_OS_VERSION)_DEB/bin/
-PEX_LIBPATH=/mbs/driv/mbspex_$(GSI_OS_VERSION)_DEB/lib/
-PEX_INCPATH=/mbs/driv/mbspex_$(GSI_OS_VERSION)_DEB/include
-PEX_INC = -I$(PEX_INCPATH)
-PEX_LIBA = $(PEX_LIBPATH)/libmbspex.a
-
-CFLAGS  = $(POSIX) -DLinux -Dunix -DV40 -DGSI_MBS -D$(GSI_CPU_ENDIAN) -D$(GSI_CPU_PLATFORM)
 
 GOSIPFRAME_INCPATH=../framework/
 
