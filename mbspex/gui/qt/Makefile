@@ -13,14 +13,22 @@ GUI_APFEL = apfel
 all: 
 	cd $(GUI_FRAME); make
 	cd $(GUI_POLAND); make
-	cd $(GUI_NYXOR); make
+ifdef PEXORSYS	
+	cd $(GUI_NYXOR); make gui	
+else
+	cd $(GUI_NYXOR); make 	
+endif	
 	cd $(GUI_FEBEX); make
 	cd $(GUI_APFEL); make
 	
 
-install: all
-	cd $(GUI_POLAND); make install
-	cd $(GUI_NYXOR); make install
+install: 
+	cd $(GUI_POLAND); make install	
+ifdef PEXORSYS
+	cd $(GUI_NYXOR); make installgui
+else
+    cd $(GUI_NYXOR); make install
+endif
 	cd $(GUI_FEBEX); make install
 	cd $(GUI_APFEL); make install
 

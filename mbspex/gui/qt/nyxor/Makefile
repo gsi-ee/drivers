@@ -17,7 +17,7 @@ endif
 endif
 
 
-.PHONY: all clean set gui cleanset cleangui install
+.PHONY: all clean set gui cleanset cleangui install installgui
 
 
 
@@ -60,7 +60,10 @@ cleanset:
 clean: cleanset cleangui	
 
 
-install: 
-	@echo "Installing to $(PEX_BINPATH) ..."
-	@cp -f m_set_nxy $(PEX_BINPATH)
+installgui: 
+	@echo "Installing nyxor gui to $(PEX_BINPATH) ..."
 	@ln -fs $(PWD)/NyxorGui $(PEX_BINPATH)
+
+install: installgui
+	@echo "Installing tools to $(PEX_BINPATH) ..."
+	@cp -f m_set_nxy $(PEX_BINPATH)
