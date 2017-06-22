@@ -20,6 +20,7 @@ PEXORTEST  = $(PEXORSYS)/user/Tests/pexor
 PEXORDABC =  $(PEXORSYS)/user/DabcV2/plugins/
 PEXORGO4 =  $(PEXORSYS)/user/Go4
 GOSIPCMD =  $(PEXORSYS)/user/gosipcmd
+GOSIPGUI =  $(PEXORSYS)/user/qtgui
 
 PEXORPACKAGE = PexorDriver
 PEXORPACKDABC = PexorDABC
@@ -35,7 +36,7 @@ INSTALLDIR ?= /lib/modules/$(shell uname -r)/extra
 LIBINSTALLDIR ?= /usr/lib64
 
 
-.PHONY: all clean driver lib examples dabc install uninstall driver-install driver-uninstall lib-install lib-uninstall pack
+.PHONY: all clean driver lib examples dabc gui cleangui install uninstall driver-install driver-uninstall lib-install lib-uninstall pack
 
 all: driver lib gosiplib examples gosipcmd 
 
@@ -107,6 +108,14 @@ dabc:
 	cd $(PEXORDABC)/pexor; make install
 	cd $(PEXORDABC)/explodertest; make install 
 	cd $(PEXORDABC)/poland; make install
+
+
+gui:
+	cd $(GOSIPGUI); make; make install
+
+cleangui:
+	cd $(GOSIPGUI); make clean;
+
 
 pack: clean clean-dabc
 	@mkdir -p $(PACKDIR)
