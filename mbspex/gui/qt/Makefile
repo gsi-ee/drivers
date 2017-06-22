@@ -27,7 +27,7 @@ install:
 ifdef PEXORSYS
 	cd $(GUI_NYXOR); make installgui
 else
-    cd $(GUI_NYXOR); make install
+	cd $(GUI_NYXOR); make install
 endif
 	cd $(GUI_FEBEX); make install
 	cd $(GUI_APFEL); make install

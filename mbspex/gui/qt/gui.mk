@@ -5,6 +5,7 @@ ifndef PEXORSYS
 INC = $(MBSROOT)/inc
 
 PEX_BASE=/mbs/driv/mbspex_$(GSI_OS_VERSION)_DEB
+#PEX_BASE=/daq/usr/adamczew/workspace/drivers/mbspex
 PEX_BINPATH=$(PEX_BASE)/bin/
 PEX_LIBPATH=$(PEX_BASE)/lib/
 PEX_INCPATH=$(PEX_BASE)/include
