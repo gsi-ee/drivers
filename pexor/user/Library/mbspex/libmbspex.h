@@ -19,13 +19,21 @@
  * rest is dedicated to mbs mode that we do not have here*/
 #define MBSPEX_GOSPCMD_ONLY 1
 
-/* enable this define if you link against mbs libraries */
-/*#define MBSPEX_USEMBS 1*/
-#ifdef MBSPEX_USEMBS
-#include "f_ut_printm.h"
-#else
+///* enable this define if you link against mbs libraries */
+///*#define MBSPEX_USEMBS 1*/
+//#ifdef MBSPEX_USEMBS
+//#include "f_ut_printm.h"
+//#else
+//#define printm printf
+//#endif
+
+
+#ifdef MBSPEX_NOMBS
 #define printm printf
+#else
+void printm (char *, ...); /* use mbs logger, or for gosipcmd this will be reimplemented  as printf for link time switching*/
 #endif
+
 
 
 //////////////
