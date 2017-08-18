@@ -1,0 +1,14 @@
+
+start task m_util
+load setup setup.usf 
+set trig_mod
+disable irq
+#enable irq
+start task m_read_meb "./m_read_meb"
+start task m_collector
+start task m_transport
+start task m_stream_serv
+sta ta m_daq_rate
+x "sleep 1"
+ena tcp
+sta ac
