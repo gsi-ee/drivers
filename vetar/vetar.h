@@ -64,6 +64,9 @@
 #define WINDOW_OFFSET_LOW  56
 #define WINDOW_OFFSET_HIGH 64
 
+/* new control register by Michaer Reese 2017:*/
+#define DIRECT_ACCESS_CONTROL 4
+
 #define WBM_ADD_MASK 0xFFFFFFFC
 
 #define WINDOW_HIGH 0xFFFF0000UL
@@ -78,7 +81,7 @@
 #define VME_A32_SUP_DATA_SCT 0x0d
 #define VME_CR_CSR 0x2f
 
-#define VETARVERSION     "1.1.2"
+#define VETARVERSION     "1.2.0"
 #define VETARAUTHORS     "Joern Adamczewski-Musch, Cesar Prados, GSI Darmstadt (www.gsi.de)"
 #define VETARDESC        "VETAR2 xpc/VME driver for CES RIO4 Linux"
 
@@ -192,7 +195,6 @@ struct vetar_privdata
   unsigned long ctrl_reglen;        /** contains control register length to be mapped */
   phys_addr_t ctrl_regs_phys;       /** physical bus address of control register space*/
   unsigned char sysfs_has_file;     /** mark here if sysfs has exported files*/
-  
   unsigned char init_done;          /** object is ready flag*/
 };
 
@@ -225,6 +227,14 @@ ssize_t vetar_sysfs_codeversion_show(struct device *dev,
 ssize_t vetar_sysfs_wbctrl_show (struct device *dev, struct device_attribute *attr, char *buf);
 
 ssize_t vetar_sysfs_vmecrcsr_show (struct device *dev, struct device_attribute *attr, char *buf);
+
+
+ssize_t vetar_sysfs_dactl_show (struct device *dev, struct device_attribute *attr, char *buf);
+
+ssize_t vetar_sysfs_dactl_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count);
+
+
+
 #endif
 #endif
 

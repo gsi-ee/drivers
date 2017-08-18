@@ -45,6 +45,8 @@ MODULE_PARM_DESC(lun, "Index value for VETAR card");
 static DEVICE_ATTR(codeversion, S_IRUGO, vetar_sysfs_codeversion_show, NULL);
 static DEVICE_ATTR(wbctrl, S_IRUGO, vetar_sysfs_wbctrl_show, NULL);
 static DEVICE_ATTR(vmecrcsr, S_IRUGO, vetar_sysfs_vmecrcsr_show, NULL);
+static DEVICE_ATTR(dactl, S_IWUGO | S_IRUGO, vetar_sysfs_dactl_show, vetar_sysfs_dactl_store);
+
 #endif
 #endif
 
@@ -336,9 +338,11 @@ static void vetar_cleanup_dev (struct vetar_privdata *privdata, unsigned int ind
   {
 #ifdef VETAR_SYSFS_ENABLE
 if(privdata->sysfs_has_file){
-    device_remove_file (privdata->class_dev, &dev_attr_vmecrcsr);
-    device_remove_file (privdata->class_dev, &dev_attr_wbctrl);
-    device_remove_file (privdata->class_dev, &dev_attr_codeversion);
+  
+   device_remove_file (privdata->class_dev, &dev_attr_dactl);
+   device_remove_file (privdata->class_dev, &dev_attr_vmecrcsr);
+   device_remove_file (privdata->class_dev, &dev_attr_wbctrl);
+   device_remove_file (privdata->class_dev, &dev_attr_codeversion);
 	}
 #endif
     device_destroy (vetar_class, privdata->devno);
@@ -473,6 +477,47 @@ ssize_t vetar_sysfs_vmecrcsr_show (struct device *dev, struct device_attribute *
         );
   return curs;
 }
+
+//////// NEW for directSaft mode
+
+ssize_t vetar_sysfs_dactl_show (struct device *dev, struct device_attribute *attr, char *buf)
+{
+  ssize_t curs = 0;
+  unsigned int val=0;
+    struct vetar_privdata *privdata;
+   privdata = (struct vetar_privdata*) dev_get_drvdata (dev);
+  val=vetar_read_control(privdata, DIRECT_ACCESS_CONTROL);   
+   curs += snprintf (buf + curs, PAGE_SIZE - curs, "%d\n", val);
+   return curs;
+}
+
+ssize_t vetar_sysfs_dactl_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+  unsigned int val=0;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+  int rev=0;
+#else
+  char* endp=0;
+#endif
+  struct vetar_privdata *privdata;
+  privdata = (struct vetar_privdata*) dev_get_drvdata (dev);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+  rev=kstrtouint(buf,0,&val); // this can handle both decimal, hex and octal formats if specified by prefix JAM
+  if(rev!=0) return rev;
+#else
+  val=simple_strtoul(buf,&endp, 0);
+  count= endp - buf; // do we need this?
+#endif
+   vetar_write_control(privdata, val, DIRECT_ACCESS_CONTROL);
+   vetar_msg( KERN_NOTICE "VETAR: wrote to dactl register the value 0x%x\n", val);
+  return count;
+}
+
+
+
+//////////////
+
+
 
 static struct file_operations vetar_fops = {
 #if 0
@@ -635,9 +680,10 @@ static int vetar_probe_vme (unsigned int index)
 
   // initialize private device structure:
   privdata->lun = lun[index];
-  privdata->vmebase = vmebase[index];
-  if (privdata->vmebase == 0)
-    privdata->vmebase = VETAR_REGS_ADDR;
+
+//  privdata->vmebase = vmebase[index];
+//  if (privdata->vmebase == 0)
+//    privdata->vmebase = VETAR_REGS_ADDR;
   privdata->reglen = VETAR_REGS_SIZE
   ;
   privdata->slot = slot[index];
@@ -646,8 +692,14 @@ static int vetar_probe_vme (unsigned int index)
 
   /* below as in new vme_wb_external:*/
   privdata->ctrl_vmebase = privdata->slot * 0x400;    // link control address to slot number
+  
+  
+  
   privdata->vmebase = privdata->slot * 0x10000000;    // link wishbone adress space to slot number
+  //privdata->vmebase = privdata->slot *   0x1000000;    // test modifications from Michael Reese
 
+  
+  
   // first try to map and look up configuration space if any....
   privdata->configbase = privdata->slot * VETAR_CONFIGSIZE;
   privdata->configlen = VETAR_CONFIGSIZE;
@@ -843,7 +895,7 @@ static int vetar_probe_vme (unsigned int index)
   vetar_dbg(
       KERN_NOTICE "** vetar_probe_vme mapped control register vmebase 0x%x with length 0x%lx to physical address 0x%x, am:0x%x!\n", privdata->ctrl_vmebase, privdata->ctrl_reglen, (unsigned int) privdata->ctrl_regs_phys, (unsigned) am);
   privdata->ctrl_registers = ioremap_nocache (privdata->ctrl_regs_phys, privdata->reglen);
-  if (!privdata->registers)
+  if (!privdata->ctrl_registers)
   {
     vetar_msg(KERN_ERR "** vetar_probe_vme could not ioremap_nocache at physical address 0x%x with length 0x%lx !\n",
         (unsigned int) privdata->ctrl_regs_phys, privdata->reglen);
@@ -925,6 +977,12 @@ static int vetar_probe_vme (unsigned int index)
       vetar_msg(KERN_ERR "Could not add device file node for vme config registers.\n");
     }
 
+     if (device_create_file (privdata->class_dev, &dev_attr_dactl) != 0)
+    {
+      vetar_msg(KERN_ERR "Could not add device file node for direct access control register.\n");
+    }
+    
+    
 #endif
   }
   else
