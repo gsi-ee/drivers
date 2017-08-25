@@ -8,12 +8,14 @@
 * Driver for VETAR VME board for IPV Linux
 * last changes:
 * 05.November 2015 JAM - provide MBS installation version: no ELB mapping, no interrupt handling
+* 18.August 2017   JAM - added sys filesystem handle to switch direct VME access of TLU registers
 */
 #ifndef __VETARIPV_H__
 #define __VETARIPV_H__
 
 #include <linux/firmware.h>
 
+#include <linux/workqueue.h>
 #include "wishbone.h"
 
 #include <linux/kernel.h>
@@ -103,13 +105,16 @@
 #define WINDOW_OFFSET_LOW  56
 #define WINDOW_OFFSET_HIGH 64
 
+/* new control register by Michael Reese 2017:*/
+#define DIRECT_ACCESS_CONTROL 4
+
 #define WBM_ADD_MASK 0xFFFFFFFC
 
 #define WINDOW_HIGH 0xFFFF0000UL
 #define WINDOW_LOW  0x0000FFFCUL
 
 
-#define VETARVERSION     "1.1.0"
+#define VETARVERSION     "1.2.0"
 #define VETARAUTHORS     "Joern Adamczewski-Musch, Cesar Prados, GSI Darmstadt (www.gsi.de)"
 #define VETARDESC        "VETAR2 PEV1100/VME driver for IPV Linux"
 
@@ -259,7 +264,7 @@ struct vetar_privdata {
     unsigned long ctrl_reglen; /* contains control register length to be mapped */
 
 
-    unsigned int vme_itc; /* ioport for interrupt control register of vetar*/
+      unsigned int vme_itc; /* ioport for interrupt control register of vetar*/
 	unsigned long		irqcount; /* optional irq count*/
 	unsigned char sysfs_has_file; /* mark here if sysfs has exported files*/
 	unsigned char init_done; /* object is ready flag*/
@@ -298,6 +303,14 @@ ssize_t vetar_sysfs_codeversion_show(struct device *dev,
 ssize_t vetar_sysfs_wbctrl_show (struct device *dev, struct device_attribute *attr, char *buf);
 
 ssize_t vetar_sysfs_vmecrcsr_show (struct device *dev, struct device_attribute *attr, char *buf);
+
+
+ssize_t vetar_sysfs_dactl_show (struct device *dev, struct device_attribute *attr, char *buf);
+
+ssize_t vetar_sysfs_dactl_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count);
+
+
+
 #endif
 #endif
 

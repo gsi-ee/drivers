@@ -6,7 +6,7 @@
 
 struct pev_drv *pev_drv_p;
 struct pev_dev *pev;
-uint vme_itc_reg = 0;
+//uint vme_itc_reg = 0;
 //char *vme_cpu_addr = NULL;
 
 
@@ -54,6 +54,8 @@ MODULE_PARM_DESC(lun, "Index value for VETAR card");
 static DEVICE_ATTR(codeversion, S_IRUGO, vetar_sysfs_codeversion_show, NULL);
 static DEVICE_ATTR(wbctrl, S_IRUGO, vetar_sysfs_wbctrl_show, NULL);
 static DEVICE_ATTR(vmecrcsr, S_IRUGO, vetar_sysfs_vmecrcsr_show, NULL);
+static DEVICE_ATTR(dactl, S_IWUGO | S_IRUGO, vetar_sysfs_dactl_show, vetar_sysfs_dactl_store);
+
 #endif
 #endif
 
@@ -431,18 +433,18 @@ struct vetar_privdata* get_privdata(struct file *filp)
  vec = src & 0xff;
  level = src >> 8;
 
- vetar_dbg(KERN_INFO "VME IRQ: Level: 0x%x, Vector: 0x%x \n", level, vec);
+ vetar_msg(KERN_INFO "VME IRQ: Level: 0x%x, Vector: 0x%x \n", level, vec);
 
  if(priv->vme_itc)
    outl (1<<level, priv->vme_itc + PEV_ITC_IMASK_CLEAR); // mask source of interrupt
 
 
 if(level != priv->level)
-  vetar_dbg(KERN_INFO "VME IRQ: Warning: irq Level: 0x%x does not match vetar irq level 0x%x", level, priv->level);
+  vetar_msg(KERN_INFO "VME IRQ: Warning: irq Level: 0x%x does not match vetar irq level 0x%x", level, priv->level);
 
 
  wishbone_slave_ready(&priv->wb);
- vetar_dbg(KERN_INFO "VME IRQ: wishbone_slave_ready returned.\n");
+ vetar_msg(KERN_INFO "VME IRQ: wishbone_slave_ready returned.\n");
  if(priv->vme_itc)
    outl (1<<priv->level, priv->vme_itc + PEV_ITC_IMASK_SET);
 
@@ -543,6 +545,7 @@ if(privdata->cr_csr_phys)
     {
 #ifdef VETAR_SYSFS_ENABLE
     if(privdata->sysfs_has_file){
+	  device_remove_file (privdata->class_dev, &dev_attr_dactl);
       device_remove_file (privdata->class_dev, &dev_attr_vmecrcsr);
       device_remove_file (privdata->class_dev, &dev_attr_wbctrl);
       device_remove_file(privdata->class_dev, &dev_attr_codeversion);
@@ -687,7 +690,46 @@ ssize_t vetar_sysfs_vmecrcsr_show (struct device *dev, struct device_attribute *
   return curs;
 }
 
+//////// NEW for directSaft mode
 
+ssize_t vetar_sysfs_dactl_show (struct device *dev, struct device_attribute *attr, char *buf)
+{
+  ssize_t curs = 0;
+  unsigned int val=0;
+    struct vetar_privdata *privdata;
+   privdata = (struct vetar_privdata*) dev_get_drvdata (dev);
+  val=vetar_read_control(privdata, DIRECT_ACCESS_CONTROL);
+  vetar_msg( KERN_NOTICE "VETAR: reading from dactl register the value 0x%x\n", val);
+
+   curs += snprintf (buf + curs, PAGE_SIZE - curs, "%d\n", val);
+   return curs;
+}
+
+ssize_t vetar_sysfs_dactl_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+  unsigned int val=0;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+  int rev=0;
+#else
+  char* endp=0;
+#endif
+  struct vetar_privdata *privdata;
+  privdata = (struct vetar_privdata*) dev_get_drvdata (dev);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+  rev=kstrtouint(buf,0,&val); // this can handle both decimal, hex and octal formats if specified by prefix JAM
+  if(rev!=0) return rev;
+#else
+  val=simple_strtoul(buf,&endp, 0);
+  count= endp - buf; // do we need this?
+#endif
+   vetar_write_control(privdata, val, DIRECT_ACCESS_CONTROL);
+   vetar_msg( KERN_NOTICE "VETAR: wrote to dactl register the value 0x%x\n", val);
+  return count;
+}
+
+
+
+//////////////
 
 static struct file_operations vetar_fops = {
 #if 0
@@ -827,7 +869,7 @@ char __iomem* vetar_elb_map( struct vme_board *v)
 //  vme_size =  (v->size + 0xfff) & 0x0ffff000; /* align to multiple of 4k */
 //  elb_off = v->base & 0x0ffff000;             /* align to multiple of 4k */
 //  vme_cpu_addr = ioremap( pev->elb_base + elb_off, vme_size); /* map vme base address through ELB bus */
-//  vme_cpu_addr +=  (v->base & 0x0fffffff) - elb_off;
+//  vme_cpu_addr +=  (v->base & 0x0fffffff) - elb_off
 //  if( pev->csr_ptr)
 //  {
 //    data = (vme_am << 24) | ((v->base&0xf0000000) >> 24);
@@ -849,7 +891,6 @@ char __iomem* vetar_elb_map( struct vme_board *v)
 //
 //}
 //
-
 
 
 
@@ -901,8 +942,12 @@ void vetar_setup_csr_fa(struct vetar_privdata *privdata)
     /* do address relocation for FUN0 */
     //am= VME_A32_USER_DATA_SCT; // *0x09*/
     //am=VME_A32_SUP_DATA_SCT;// 0x0D;
-    am= VME_A32_USER_MBLT; // *0x08*/
+    //am= VME_A32_USER_MBLT; // *0x08*/
     //am=0x50; // JAM compare with rio4 driver !?
+    
+     // new for balloon:
+     am = VME_A32_USER_DATA_SCT; /*0x09*/
+    
     fa[0] = (privdata->vmebase >> 24) & 0xFF;
     fa[1] = (privdata->vmebase >> 16) & 0xFF;
     fa[2] = (privdata->vmebase >> 8 ) & 0xFF;
@@ -919,9 +964,11 @@ void vetar_setup_csr_fa(struct vetar_privdata *privdata)
     /*do address relocation for FUN1, WB control mapping*/
     //am=0x39; /* JAM This is what we actually see on the vmebus monitor for (XPC_VME_ATYPE_A24 | XPC_VME_DTYPE_BLT | XPC_VME_PTYPE_USER)*/
     //am=VME_A24_SUP_DATA_SCT;
-    am = VME_A24_USER_MBLT; //0x38;
-    //am= VME_A24_USER_DATA_SCT; /*0x39*/
-    vetar_dbg(KERN_NOTICE "vetar_setup_csr_fa sets address modifier 0x%x\n",am);
+    //am = VME_A24_USER_MBLT; //0x38;
+     // new for balloon release?!:
+    am= VME_A24_USER_DATA_SCT; /*0x39*/
+    vetar_msg(KERN_NOTICE "vetar_setup_csr_fa sets control space address modifier 0x%x\n", am);
+
 
      fa[0] = (privdata->ctrl_vmebase >> 24) & 0xFF;
      fa[1] = (privdata->ctrl_vmebase >> 16) & 0xFF;
@@ -951,6 +998,9 @@ static int vetar_probe_vme(unsigned int index)
 #ifdef    VETAR_CONFIGURE_VME
   struct pev_ioctl_vme_conf pev_vme_conf;
 #endif
+#ifdef VETAR_ENABLE_IRQ 
+  int i=0;
+#endif  
   struct vetar_privdata *privdata;
   vetar_msg(KERN_NOTICE "VETAR vme driver starts probe for index %d\n",index);
   vetar_msg(KERN_NOTICE "Use parameters address 0x%x, slot number 0x%x, lun 0x%x vector 0x%x\n",
@@ -975,7 +1025,8 @@ static int vetar_probe_vme(unsigned int index)
 
   /* below as in new vme_wb_external:*/
   privdata->ctrl_vmebase=privdata->slot*0x400; // link control address to slot number
-  privdata->vmebase=privdata->slot * 0x10000000; // link wishbone adress space to slot number
+  //privdata->vmebase=privdata->slot * 0x10000000; // link wishbone adress space to slot number
+  privdata->vmebase=privdata->slot * 0x1000000; // low mapping better?
   // first try to map and look up configuration space if any....
   privdata->configbase = privdata->slot * VETAR_CONFIGSIZE;
   privdata->configlen=VETAR_CONFIGSIZE;
@@ -1125,7 +1176,7 @@ if(!vetar_is_present(privdata))
 
   // setup interrupts:
 
-//#ifdef VETAR_ENABLE_IRQ
+#ifdef VETAR_ENABLE_IRQ
 //
 //// JAM this is also done in the vme_board_register function. might do it for one virtual board region only!
 ////snprintf(privdata->irqname, 64, VETARNAMEFMT,privdata->lun);
@@ -1135,7 +1186,16 @@ if(!vetar_is_present(privdata))
 ////    }
 ////  vetar_msg(KERN_ERR "** vetar_probe_vme with irq handler, result=%d \n",result);
 //
-//#endif
+
+for( i = 1; i < 8; i++)
+ {
+   pev_irq_register( pev, EVT_SRC_VME + i,  vetar_irqhandler, privdata);
+ }
+  privdata->vme_itc = pev->io_base + pev->io_remap[0].vme_itc;
+ 
+vetar_msg(KERN_ERR "** vetar_probe_vme with irq handler.\n");
+//
+#endif
 
 
 
@@ -1370,6 +1430,12 @@ privdata->elb_am_mode=VETAR_ELB_DATA; // initialize address window mode
       vetar_msg(KERN_ERR "Could not add device file node for vme config registers.\n");
     }
 
+     if (device_create_file (privdata->class_dev, &dev_attr_dactl) != 0)
+    {
+      vetar_msg(KERN_ERR "Could not add device file node for direct access control register.\n");
+    }
+    
+    
 #endif
      }
    else
@@ -1409,7 +1475,7 @@ vetar_dbg(KERN_NOTICE "Init control registers\n");
 
 
 #ifdef VETAR_ENABLE_IRQ
-	privdata->vme_itc=vme_itc_reg;
+	//privdata->vme_itc=vme_itc_reg;
 	vetar_msg( KERN_ALERT "enable vme interupt level 0x%x, vector 0x%x \n", privdata->level, privdata->vector);
 	    outl (1<<privdata->level, privdata->vme_itc + PEV_ITC_IMASK_CLEAR);
 

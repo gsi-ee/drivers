@@ -34,7 +34,8 @@ obj-m := vetar.o wishbone.o
 KERNELDIR = /rootfs_ppc/usr/src/linux
 ARCH      = powerpc
 CROSS_COMPILE = /tools_ppc/powerpc-linux-gnuspe-
-ADD_CFLAGS=-DPPC
+ADD_CFLAGS=-DPPC -DGIT_REVISION="d5187fef4d33b62d77e1e087d8a0f148150bc5c8 2016-04-29 20:11:05"
+
 PWD := $(shell pwd)
 default:
 	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNELDIR) M=$(PWD) modules

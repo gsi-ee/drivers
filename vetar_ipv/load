@@ -5,7 +5,7 @@ modulex="vetar"
 device="vetar"
 wishmodule="wishbone_$KV"
 wishbone="wbm"
-wishboneslave="wbs"
+#wishboneslave="wbs"
 
 /sbin/insmod $wishmodule.ko
 #/sbin/insmod $module.ko slot=0x5 vmebase=0x1000000 vector=0x60 lun=0
@@ -27,8 +27,8 @@ echo "${wishbone} Major: $wbmajor"
 rm -f /dev/${wishbone}0
 mknod /dev/${wishbone}0 c $wbmajor 0
 chmod a+rw /dev/${wishbone}0
-wbslavemajor=$(awk "\$2==\"$wishboneslave\" {print \$1}" /proc/devices)
-echo "${wishboneslave} Major: $wbslavemajor"
-rm -f /dev/${wishboneslave}0
-mknod /dev/${wishboneslave}0 c $wbslavemajor 0
-chmod a+rw /dev/${wishboneslave}0
+#wbslavemajor=$(awk "\$2==\"$wishboneslave\" {print \$1}" /proc/devices)
+#echo "${wishboneslave} Major: $wbslavemajor"
+#rm -f /dev/${wishboneslave}0
+#mknod /dev/${wishboneslave}0 c $wbslavemajor 0
+#chmod a+rw /dev/${wishboneslave}0
