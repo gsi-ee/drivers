@@ -1,0 +1,18 @@
+
+start task m_util
+load setup setup.usf 
+set trig_mod
+disable irq
+#enable irq
+start task m_read_meb "./m_read_meb"
+start task m_collector
+start task m_transport
+start task m_stream_serv
+set str 1 
+sta ta m_daq_rate
+ena tcp
+x "sleep 2"
+x "sh /daq/usr/kurz/ipv/chrt/chrt_mbs_silent"
+x "sleep 1"
+ena tcp
+sta ac
