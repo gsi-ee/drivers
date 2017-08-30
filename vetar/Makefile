@@ -9,7 +9,8 @@ ifneq ("$(SUBDIRS)", "")
 obj-m := vetar.o wishbone.o
 
 # since we do not have git on build machine, use tag from latest source of wishbone.c module:
-EXTRA_CFLAGS += -DGIT_REVISION="d5187fef4d33b62d77e1e087d8a0f148150bc5c8 2016-04-29 20:11:05"
+EXTRA_CFLAGS +=  -DGIT_REVISION="598ee57 (EE-copy) 2017-02-09 11:10:54"
+
 
 EXTRA_CFLAGS += -I$(SHL_ROOTDIR)/usr/include/ces
 EXTRA_CFLAGS +=  -I$(SHL_ROOTDIR)/usr/include/ces/cesXpcLib
