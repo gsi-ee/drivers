@@ -24,8 +24,8 @@ static DEVICE_ATTR(trixorbase, S_IRUGO, pex_sysfs_trixorbase_show, NULL);
 static DEVICE_ATTR(dmaregs, S_IRUGO, pex_sysfs_dmaregs_show, NULL);
 static DEVICE_ATTR(sfpregs, S_IRUGO, pex_sysfs_sfpregs_show, NULL);
 static DEVICE_ATTR(mbspipe, S_IRUGO, pex_sysfs_pipe_show, NULL);
-static DEVICE_ATTR(gosipretries, S_IWUGO | S_IRUGO , pex_sysfs_sfp_retries_show, pex_sysfs_sfp_retries_store);
-static DEVICE_ATTR(gosipbuswait, S_IWUGO | S_IRUGO , pex_sysfs_buswait_show, pex_sysfs_buswait_store);
+static DEVICE_ATTR(gosipretries, (S_IWUSR| S_IWGRP | S_IRUGO) , pex_sysfs_sfp_retries_show, pex_sysfs_sfp_retries_store);
+static DEVICE_ATTR(gosipbuswait, (S_IWUSR| S_IWGRP | S_IRUGO) , pex_sysfs_buswait_show, pex_sysfs_buswait_store);
 
 
 ssize_t pex_sysfs_trixorregs_show (struct device *dev, struct device_attribute *attr, char *buf)
@@ -549,7 +549,11 @@ int pex_mmap (struct file *filp, struct vm_area_struct *vma)
       bufsize = barsize;
     }
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(3,7,0)
     vma->vm_flags |= (VM_RESERVED); /* TODO: do we need this?*/
+#endif
+
+
     ret = remap_pfn_range (vma, vma->vm_start, privdata->l_bar0_base >> PAGE_SHIFT, bufsize, vma->vm_page_prot);
   }
   else
@@ -573,7 +577,9 @@ int pex_mmap (struct file *filp, struct vm_area_struct *vma)
      NOTE that e820_any_mapped only checks if _any_ memory inside region is mapped
      So it is the wrong method anyway?*/
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(3,7,0)
     vma->vm_flags |= (VM_RESERVED); /* TODO: do we need this?*/
+#endif
     ret = remap_pfn_range (vma, vma->vm_start, vma->vm_pgoff, bufsize, vma->vm_page_prot);
 
   }
@@ -1052,7 +1058,26 @@ int pex_ioctl_map_pipe (struct pex_privdata *priv, unsigned long arg)
 
      /* Get the page information */
      down_read (&current->mm->mmap_sem);
+
+// port to kernel 4.9/Debian 9.0 JAM 9-2017
+// kernel 4.9.0:
+//    long get_user_pages(unsigned long start, unsigned long nr_pages,
+//             unsigned int gup_flags, struct page **pages,
+//             struct vm_area_struct **vmas)
+//
+// kernel 4.8.x :
+//     long get_user_pages(unsigned long start, unsigned long nr_pages,
+//                     int write, int force, struct page **pages,
+//                     struct vm_area_struct **vmas);
+
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
      res = get_user_pages (current, current->mm, pipedesc.addr, nr_pages, 1, 0, pages, NULL );
+#elif  LINUX_VERSION_CODE < KERNEL_VERSION(4,9,0)
+     res = get_user_pages (pipedesc.addr, nr_pages, 1, 0, pages, NULL );
+#else
+     res = get_user_pages (pipedesc.addr, nr_pages, FOLL_WRITE, pages, NULL );
+#endif
      up_read (&current->mm->mmap_sem);
 
      /* Error, not all pages mapped */
@@ -1165,7 +1190,14 @@ int pex_ioctl_map_pipe (struct pex_privdata *priv, unsigned long arg)
 
         if (!PageReserved (pages[i]))
           SetPageDirty (pages[i]);
+
+
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
         page_cache_release(pages[i]);
+#else
+        put_page(pages[i]);
+#endif
       }
       vfree (sg);
       mapbuffer_pages: vfree (pages);
@@ -1203,7 +1235,12 @@ int pex_ioctl_unmap_pipe (struct pex_privdata *priv, unsigned long arg)
        //ClearPageLocked(buf->pages[i]);
 #endif
      }
-     page_cache_release( (priv->pipe).pages[i]);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
+        page_cache_release((priv->pipe).pages[i]);
+#else
+        put_page((priv->pipe).pages[i]);
+#endif
    }
    vfree ((priv->pipe).pages);
    vfree ((priv->pipe).sg);

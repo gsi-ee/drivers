@@ -13,6 +13,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
 
 
 
@@ -20,7 +21,7 @@
 #if defined (__x86_64__) || defined(__i386__)
 /* Note: only x86 CPUs which have rdtsc instruction are supported. */
    typedef unsigned long long cycles_t;
-   inline cycles_t MbsPextest_GetCycles();
+   cycles_t MbsPextest_GetCycles();
 #elif defined(__PPC__) || defined(__PPC64__)
 /* Note: only PPC CPUs which have mftb instruction are supported. */
 /* PPC64 has mftb */

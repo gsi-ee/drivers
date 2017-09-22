@@ -7,7 +7,9 @@ mbspex-objs := pex_base.o pex_gosip.o
 INCDIR = ../include
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 PWD       := $(shell pwd)
- 
+
+#ccflags-y +=-Wno-error=date-time 
+ccflags-y +=-Wno-date-time 
 
 
 all:

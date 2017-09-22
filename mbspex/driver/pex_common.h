@@ -25,6 +25,7 @@
 #include <linux/scatterlist.h>
 #include <linux/page-flags.h>
 #include <linux/sched.h>
+#include <linux/vmalloc.h>
 
 #include <linux/wait.h>
 
@@ -57,7 +58,7 @@
 #define BOARDTYPE_KINPEX 2
 
 
-#define PEXVERSION     "1.85"
+#define PEXVERSION     "1.90"
 
 
 //#define PEX_DEBUGPRINT 1

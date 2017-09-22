@@ -30,7 +30,7 @@ $(BINDIR)/%: $(OBJDIR)/%.o
 
 $(BINDIR)/gosiptest: $(OBJDIR)/gosiptest.o $(OBJDIR)/timing.o
 	@echo -e "LD \t$@"
-	$(Q)$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(OBJDIR)/gosiptest.o $(OBJDIR)/timing.o $(PEXLIB)
+	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/gosiptest.o $(OBJDIR)/timing.o $(PEXLIB)
 #	$(Q)$(CC) $(LDINC) $(LDFLAGS) $(PEXLIB) $(CFLAGS) -o $@ $(OBJDIR)/gosiptest.o $(OBJDIR)/timing.o
 
 

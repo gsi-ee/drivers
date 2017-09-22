@@ -270,11 +270,14 @@ int goscmd_next_config_values (struct gosip_cmd* com)
   if (cmdlen > 4)
   {
     // parse optional command identifier
-    if (strcasestr (cmd[4], "setbit") != 0)
+    //if (strcasestr (cmd[4], "setbit") != 0)
+    //JAM2017 -  this was not posix standard, gcc 6.3 doesnt like it. we do workaround:
+    if ((strstr (cmd[4], "setbit") != 0) ||  (strstr (cmd[4], "SETBIT") != 0))
     {
       com->command = GOSIP_SETBIT;
     }
-    else if (strcasestr (cmd[4], "clearbit") != 0)
+    //else if (strcasestr (cmd[4], "clearbit") != 0)
+    if ((strstr (cmd[4], "clearbit") != 0) ||  (strstr (cmd[4], "CLEARBIT") != 0))
     {
       com->command = GOSIP_CLEARBIT;
     }
