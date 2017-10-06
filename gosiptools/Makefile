@@ -1,6 +1,7 @@
 # N.Kurz, GSI, 5-Feb-2004
 # N.Kurz, EE, GSI, 2-Dec-2008
 # N.Kurz, EE, GSI, 1-Mar-2013: adopted for debian linux
+# JAM, EE, GSI, 6-Oct-2017: ported for debian9 and debian7
 
 ifeq ($(GSI_OS),Linux)
 ifeq ($(GSI_OS_VERSION),4.9-64)
@@ -11,12 +12,15 @@ ifeq ($(GSI_OS_VERSION),3.2-64)
 CFLAGS = -DGSI__LINUX -g -I./ f_smem.o
 endif
 
+ifeq ($(GSI_OS_VERSION),3.2)
+CFLAGS = -DGSI__LINUX -g -I./ f_smem.o
 endif
 
-ifeq ($(GSI_OS),Linux)
+
 ifeq ($(GSI_OS_VERSION),2.6)
 CFLAGS = -DGSI__LINUX -I./ f_smem.o
 endif
+
 endif
 
 ifeq ($(GSI_OS),Lynx)
