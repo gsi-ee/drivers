@@ -6,6 +6,11 @@ ifeq ($(GSI_OS),Linux)
 ifeq ($(GSI_OS_VERSION),4.9-64)
 CFLAGS = -DGSI__LINUX -g -I./ f_smem.o
 endif
+
+ifeq ($(GSI_OS_VERSION),3.2-64)
+CFLAGS = -DGSI__LINUX -g -I./ f_smem.o
+endif
+
 endif
 
 ifeq ($(GSI_OS),Linux)
