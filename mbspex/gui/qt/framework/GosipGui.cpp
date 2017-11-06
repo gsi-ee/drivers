@@ -60,7 +60,7 @@ void GosipGui::I2c_sleep ()
  *  name 'name'.'
  */
 GosipGui::GosipGui (QWidget* parent) :
-    QWidget (parent), fDebug (false), fSaveConfig(false), fBroadcasting(false),fSFP (0), fSlave (0), fSFPSave (0), fSlaveSave (0), fConfigFile(NULL)
+    QWidget (parent), fDebug (false), fSaveConfig(false), fBroadcasting(false), fSlotGuard(false), fSFP (0), fSlave (0), fSFPSave (0), fSlaveSave (0), fConfigFile(NULL)
 {
   setupUi (this);
 #if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
@@ -69,7 +69,7 @@ GosipGui::GosipGui (QWidget* parent) :
 
 
   fImplementationName="GOSIP";
-  fVersionString="Welcome to GOSIP GUI!\n\t v0.82 of 23-March-2017 by JAM (j.adamczewski@gsi.de)";
+  fVersionString="Welcome to GOSIP GUI!\n\t v0.83 of 06-November-2017 by JAM (j.adamczewski@gsi.de)";
 
 
   fNumberBase=10;
@@ -144,14 +144,18 @@ GosipGui::~GosipGui ()
 
 void GosipGui::ShowBtn_clicked ()
 {
+
 //std::cout << "GosipGui::ShowBtn_clicked()"<< std::endl;
   EvaluateSlave ();
   GetSFPChainSetup();
 
   if(!AssertNoBroadcast(false)) return;
   if(!AssertChainConfigured()) return;
+  GOSIP_LOCK_SLOT
   GetRegisters ();
   RefreshView ();
+  GOSIP_UNLOCK_SLOT
+
 }
 
 void GosipGui::ApplyBtn_clicked ()
@@ -292,6 +296,7 @@ void GosipGui::GetRegisters ()
 
 void GosipGui::ApplyGUISettings()
 {
+     //std::cout << "GosipGui::ApplyGUISettings()"<< std::endl;
     // default behaviour, may be overwritten
     EvaluateView(); // from gui to memory
     SetRegisters(); // from memory to device

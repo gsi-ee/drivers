@@ -10,6 +10,7 @@
 
 /** JAM The following nice define handles all explicit broadcast actions depending on the currently set slave*/
 #define GOSIP_BROADCAST_ACTION(X) \
+if(fBroadcasting==false) { \
 fBroadcasting=true;  \
 int oldslave = fSlave; \
 int oldchan = fSFP; \
@@ -53,7 +54,19 @@ if (AssertNoBroadcast (false)) \
  } \
 fSlave= oldslave;\
 fSFP= oldchan; \
-fBroadcasting=false;
+fBroadcasting=false;\
+}
+
+
+#define GOSIP_LOCK_SLOT \
+if(fSlotGuard) return; \
+fSlotGuard =true;
+
+#define GOSIP_UNLOCK_SLOT \
+fSlotGuard =false;
+
+
+
 
 /** JAM2017 helper macro to cast setup structure to implementation class later.
  * Afterwards, pointer theSetup-> can be used to access special members*/
@@ -169,6 +182,11 @@ protected:
 
   /** this flag protects some slots during broadcast write mode*/
   bool fBroadcasting;
+
+
+  /** protect mutually dependent slots by this.*/
+   bool fSlotGuard;
+
 
   /** base for number display (10 or 16)*/
   int fNumberBase;

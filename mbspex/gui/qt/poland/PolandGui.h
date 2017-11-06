@@ -73,7 +73,7 @@ protected:
 
 
   /** copy sfp and slave from gui to variables*/
-  void EvaluateSlave ();
+  //void EvaluateSlave ();
 
   /** find out measurement mode from selected combobox entry.*/
   void EvaluateMode();
@@ -122,6 +122,10 @@ protected:
 
   /** Refresh view of DAC mode*/
   void RefreshDACMode();
+
+  /** Refresh widget (enable/disable) of DAC mode*/
+   void EnableDACModeWidgets(int mode);
+
 
   /** copy gui contents of DAC tab to setup structure*/
   void EvaluateDAC();

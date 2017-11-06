@@ -7,6 +7,7 @@
 GainSetup::GainSetup(): fDAC_ADC_Slope(1.0), fDAC_0(0), fDAC_min(0), fADC_min(0)
  {
    ResetCalibration();
+
  }
 
  void GainSetup::ResetCalibration(bool positive)

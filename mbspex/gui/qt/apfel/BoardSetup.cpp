@@ -6,7 +6,7 @@
 //////// the whole slave board setup:
 
 BoardSetup::BoardSetup () : GosipSetup(),
-    fUseApfel (true), fHighGainOutput (true), fStretcher (false), fRegularMapping (true), fCurrent (0.0)
+    fUseApfel (true), fHighGainOutput (true), fStretcher (false), fRegularMapping (true), fBaselineInverted(true), fCurrent (0.0)
 {
 
   for (int i = 0; i < APFEL_NUMCHIPS; ++i)
@@ -19,8 +19,11 @@ BoardSetup::BoardSetup () : GosipSetup(),
   for (int c = 0; c < APFEL_ADC_CHANNELS; ++c)
   {
     fGainSetups[c][1] = GainSetup ();
+    fGainSetups[c][1].ResetCalibration(!fBaselineInverted); // consistent with default state of board setup
     fGainSetups[c][16] = GainSetup ();
+    fGainSetups[c][16].ResetCalibration(!fBaselineInverted);
     fGainSetups[c][32] = GainSetup ();
+    fGainSetups[c][32].ResetCalibration(!fBaselineInverted);
   }
 
   SetApfelMapping (true);
@@ -107,15 +110,15 @@ int BoardSetup::EvaluateCalibration (int gain, int febexchannel, double deltaDAC
 int BoardSetup::ResetCalibration (int gain, int febexchannel)
 {
   ASSERT_FEBCHAN_VALID(febexchannel);
-  //std::cout << "ResetCalibration for channel "<<febexchannel<<", gain:"<< gain << std::endl;
+  std::cout << "ResetCalibration for channel "<<febexchannel<<", gain:"<< gain <<", baselineinvertd:"<<fBaselineInverted<< std::endl;
 
 #ifdef APFEL_GAIN1_INVERTED
   if (gain == 1)
     fGainSetups[febexchannel].at (gain).ResetCalibration (false);
   else
-    fGainSetups[febexchannel].at (gain).ResetCalibration ();
+    fGainSetups[febexchannel].at (gain).ResetCalibration (!fBaselineInverted);
 #else
-  fGainSetups[febexchannel].at(gain).ResetCalibration();
+  fGainSetups[febexchannel].at(gain).ResetCalibration(!fBaselineInverted);
 #endif
   return 0;
 }
@@ -194,11 +197,21 @@ int BoardSetup::EvaluateADCChannel (int apfel, int dac)
 int BoardSetup::EvaluateDACvalueAbsolute (int permillevalue, int febexchannel, int gain)
 {
   //std::cout<<"EvaluateDACvalueAbsolute for gain:"<<gain<<", channel:"<<febexchannel << std::endl;
-  int value = APFEL_DAC_MAXVALUE - round ((permillevalue * ((double) APFEL_DAC_MAXVALUE) / 1000.0));
+  int value = 0;
+
+  if(fBaselineInverted)
+  {
+    value = APFEL_DAC_MAXVALUE - round ((permillevalue * ((double) APFEL_DAC_MAXVALUE) / 1000.0));
+  }
+  else
+  {
+    value = round ((permillevalue * ((double) APFEL_DAC_MAXVALUE) / 1000.0));
+  }
+
   // default: linear interpolation of DAC for complete slider range, note inverted DAC polarity effect on baseline
   if (febexchannel >= 0)
   {
-    // if channel specified, use calibration from measurements:
+    // if channel specified, use calibration from measurements, inverted baseline was already applied
     value = CalculateDACValue (gain, febexchannel, permillevalue);
   }
   return value;
@@ -207,14 +220,22 @@ int BoardSetup::EvaluateDACvalueAbsolute (int permillevalue, int febexchannel, i
 /** get relative ADC slider value from given dac setting*/
 int BoardSetup::EvaluateADCvaluePermille (int value, int febexchannel, int gain)
 {
+  int permille=0;
 
-  int permille = 1000 - round (1000.0 * ((double) value / (double) APFEL_DAC_MAXVALUE));
+  if (fBaselineInverted)
+  {
+    int permille = 1000 - round (1000.0 * ((double) value / (double) APFEL_DAC_MAXVALUE));
+  }
+  else
+  {
+    int permille = round (1000.0 * ((double) value / (double) APFEL_DAC_MAXVALUE));
+  }
+
   // default: linear interpolation of DAC for complete slider range, note inverted DAC polarity effect on baseline
   if (febexchannel >= 0)
   {
-    // if channel specified, use calibration from measurements:
+    // if channel specified, use calibration from measurements, inverted baseline was already applied
     permille = CalculateADCPermille (gain, febexchannel, value);
-
   }
   return permille;
 }

@@ -39,8 +39,8 @@ int main (int argc, char *argv[])
   }    // for
 
   argc = 1; // hide all additional parameters from Qt
+  QApplication::setStyle("plastique");
   QApplication app (argc, argv);
-
   NyxorGui main (0, oldsetup);
   main.show ();
   int ret = app.exec ();

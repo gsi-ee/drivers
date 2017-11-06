@@ -17,6 +17,8 @@
 
 
 
+
+
 class ApfelGui: public GosipGui
 {
   friend class ApfelTest;
@@ -36,6 +38,7 @@ virtual GosipSetup* CreateSetup()
   
 
 protected:
+
 
 
   ApfelWidget* fApfelWidget;
@@ -192,6 +195,10 @@ protected:
   /** set apfel addon boards to inverted mount mode
    * (apfel9-12 first, apfel1-4 second) */
   void SetInverseMapping(int on);
+
+
+  /** set DAC to ADC baseline slope for gain 16/32 into inverted mode (old boards)*/
+  void SetBaselineInverted(int on);
 
 
   /** get register contents to status structure*/
@@ -586,6 +593,8 @@ public slots:
   virtual void SwitchChanged();
 
   virtual void InverseMapping_changed (int on);
+
+  virtual void BaselineInvert_changed (int on);
 
   virtual void PlotTabChanged (int num);
 

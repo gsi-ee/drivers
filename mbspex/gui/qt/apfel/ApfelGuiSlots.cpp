@@ -296,17 +296,19 @@ void ApfelGui::GainChanged_15 ()
 
 void ApfelGui::DAC_enterText (int apfel, int dac)
 {
+  GOSIP_LOCK_SLOT
   // catch signal editingFinished() from Apfel1_DAClineEdit_1 etc.
   // need to synchronize with the sliders anyway:
   int val = fDACLineEdit[apfel][dac]->text ().toUInt (0, fNumberBase);
   fDACSlider[apfel][dac]->setValue (val & 0x3FF);
 
-  std::cout << "ApfelGui::DAC_enterText=" << apfel << ", dac=" << dac << ", val=" << val << std::endl;
+  //std::cout << "ApfelGui::DAC_enterText=" << apfel << ", dac=" << dac << ", val=" << val << std::endl;
   if (checkBox_AA->isChecked () && !fBroadcasting)
   {
     EvaluateSlave ();
     GOSIP_BROADCAST_ACTION(AutoApplyDAC(apfel,dac, val));
   }
+  GOSIP_UNLOCK_SLOT
 }
 
 void ApfelGui::DAC_enterText_0_0 ()
@@ -466,6 +468,7 @@ void ApfelGui::DAC_enterText_7_3 ()
 
 void ApfelGui::DAC_changed (int apfel, int dac, int val)
 {
+  GOSIP_LOCK_SLOT
   //std::cout << "ApfelGui::DAC__changed, apfel="<<apfel<<", dac="<<dac<<", val="<<val << std::endl;
   QString text;
   QString pre;
@@ -480,6 +483,7 @@ void ApfelGui::DAC_changed (int apfel, int dac, int val)
     EvaluateSlave ();
     GOSIP_BROADCAST_ACTION(AutoApplyDAC(apfel,dac, val));
   }
+  GOSIP_UNLOCK_SLOT
 
 }
 
@@ -728,12 +732,14 @@ void ApfelGui::DAC_spinBox_all_changed (int val)
 
 void ApfelGui::DAC_spinBox_changed (int channel, int val)
 {
+  GOSIP_LOCK_SLOT
+  //std::cout << "ApfelGui::DAC_spinBox_changed, channel="<<channel<<",  val="<<val << std::endl;
   if (checkBox_AA->isChecked () && !fBroadcasting)
   {
     EvaluateSlave ();
     GOSIP_BROADCAST_ACTION(AutoApplyRefresh(channel, val));
   }
-
+ GOSIP_UNLOCK_SLOT
 }
 
 void ApfelGui::Any_spinBox00_changed (int val)
@@ -825,10 +831,28 @@ void ApfelGui::InverseMapping_changed (int on)
   if (checkBox_AA->isChecked () && !fBroadcasting)
   {
     EvaluateSlave ();
+    QApplication::setOverrideCursor (Qt::WaitCursor);
     GOSIP_BROADCAST_ACTION(SetInverseMapping(on));
+    QApplication::restoreOverrideCursor ();
   }
 
 }
+
+
+void ApfelGui::BaselineInvert_changed (int on)
+{
+  //std::cout << "BaselineInvert_changed to" <<  on << std::endl;
+
+   if (checkBox_AA->isChecked () && !fBroadcasting)
+   {
+     EvaluateSlave ();
+     GOSIP_BROADCAST_ACTION(SetBaselineInverted(!on));
+     //NOTE: "inverted" on gui means the old behaviour (pasem), in fact internally this is the non inverted state
+   }
+
+
+}
+
 
 void ApfelGui::PulseBroadcast_changed (int on)
 {

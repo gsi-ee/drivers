@@ -31,7 +31,7 @@ PolandGui::PolandGui (QWidget* parent) :
     GosipGui (parent), fTriggerOn(true)
 {
   fImplementationName="POLAND";
-  fVersionString="Welcome to POLAND GUI!\n\t v0.95 of 24 May-2017 by JAM (j.adamczewski@gsi.de)";
+  fVersionString="Welcome to POLAND GUI!\n\t v0.96 of 06-Nov-2017 by JAM (j.adamczewski@gsi.de)";
   setWindowTitle(QString("%1 GUI").arg(fImplementationName));
 
   fPolandWidget=new PolandWidget(this);
@@ -117,6 +117,7 @@ PolandGui::~PolandGui ()
 
 void PolandGui::ApplyGUISettings()
 {
+  //std::cout << "PolandGui::ApplyGUISettings()"<< std::endl;
   // depending on activated view, we either set qfw parameters or change DAC programming
 if(fPolandWidget->QFW_DAC_tabWidget->currentIndex()==0)
 {
@@ -155,25 +156,29 @@ void PolandGui::ApplyDACSettings()
 
 void PolandGui::QFW_changed ()
 {
-  //std::cout << "PolandGui::QFW_changed()"<< std::endl;
   if(!checkBox_AA->isChecked()) return;
+  GOSIP_LOCK_SLOT
+  //std::cout << "PolandGui::QFW_changed()"<< std::endl;
   EvaluateSlave ();
   GOSIP_BROADCAST_ACTION(ApplyQFWSettings());
-
+  GOSIP_UNLOCK_SLOT
 }
 
 void PolandGui::DAC_changed ()
 {
-  //std::cout << "PolandGui::DAC_changed()"<< std::endl;
   if(!checkBox_AA->isChecked()) return;
+  GOSIP_LOCK_SLOT
+  //std::cout << "PolandGui::DAC_changed()"<< std::endl;
   EvaluateSlave ();
   GOSIP_BROADCAST_ACTION(ApplyDACSettings());
+  GOSIP_UNLOCK_SLOT
 }
 
 void PolandGui::Fan_changed ()
 {
-  //std::cout << "PolandGui::Fan_changed()"<< std::endl;
   if(!checkBox_AA->isChecked()) return;
+  GOSIP_LOCK_SLOT
+  //std::cout << "PolandGui::Fan_changed()"<< std::endl;
   EvaluateSlave ();
   GOSIP_BROADCAST_ACTION(ApplyFanSettings());
 
@@ -183,6 +188,7 @@ void PolandGui::Fan_changed ()
     GetSensors();
     RefreshSensors();
   }
+  GOSIP_UNLOCK_SLOT
 }
 
 
@@ -301,6 +307,7 @@ void PolandGui::DumpSlave ()
 
 void PolandGui::DACMode_changed(int ix)
 {
+  EnableDACModeWidgets(ix+1); // just update text input widgest enable/disabled
   EvaluateSlave ();
   //std::cout << "PolandGui::DACMode_changed to index:"<< ix << std::endl;
   //std::cout << "PolandGui::DACMode_changed with sfp:"<< fSFP<<", slave:"<<fSlave << std::endl;
@@ -457,12 +464,12 @@ void PolandGui::RefreshMode()
 
 }
 
-void PolandGui::EvaluateSlave ()
-{
-  if(fBroadcasting) return;
-  fSFP = SFPspinBox->value ();
-  fSlave = SlavespinBox->value ();
-}
+//void PolandGui::EvaluateSlave ()
+//{
+//  if(fBroadcasting) return;
+//  fSFP = SFPspinBox->value ();
+//  fSlave = SlavespinBox->value ();
+//}
 
 
 
@@ -625,45 +632,22 @@ fPolandWidget->DAClineEdit_31->setText (pre+text.setNum (theSetup->fDACValue[30]
 fPolandWidget->DAClineEdit_32->setText (pre+text.setNum (theSetup->fDACValue[31], fNumberBase));
 
   // depending on DAC mode different fields are writable:
-
+int dacmode=(int) theSetup->fDACMode;
+EnableDACModeWidgets(dacmode);
   //std::cout << "!!! RefreshDAC With DAC mode="<<  (int)theSetup->fDACMode << std::endl;
-  switch((int) theSetup->fDACMode)
+
+// additionally, we update some fields depending on the mode:
+switch(dacmode)
   {
-    case 1:
-      // manual settings:
-      fPolandWidget->DACscrollArea->setEnabled(true);
-      fPolandWidget->DACCaliFrame->setEnabled(false);
-
-      break;
-    case 2:
-      // test structure
-      fPolandWidget->DACscrollArea->setEnabled(false);
-      fPolandWidget->DACCaliFrame->setEnabled(false);
-          break;
-    case 3:
+     case 3:
           // calibrate mode
-      fPolandWidget->DACscrollArea->setEnabled(false);
-      fPolandWidget->DACCaliFrame->setEnabled(true);
-      fPolandWidget->DACStartValueLineEdit->setEnabled(true);
       fPolandWidget->DACStartValueLineEdit->setText (pre+text.setNum (theSetup->fDACStartValue, fNumberBase));
-      fPolandWidget->DACOffsetLineEdit->setEnabled(true);
-      fPolandWidget->DACDeltaOffsetLineEdit->setEnabled(true);
-      fPolandWidget->DACCalibTimeLineEdit->setEnabled(true);
-
           break;
     case 4:
           // all constant
-      fPolandWidget->DACscrollArea->setEnabled(false);
-      fPolandWidget->DACCaliFrame->setEnabled(true);
-      fPolandWidget->DACStartValueLineEdit->setEnabled(true);
       fPolandWidget->DACStartValueLineEdit->setText (pre+text.setNum (theSetup->fDACAllValue, fNumberBase));
-      fPolandWidget->DACOffsetLineEdit->setEnabled(false);
-      fPolandWidget->DACDeltaOffsetLineEdit->setEnabled(false);
-      fPolandWidget->DACCalibTimeLineEdit->setEnabled(false);
-
           break;
     default:
-      std::cout << "!!! RefreshDAC Never come here - undefined DAC mode"<<  theSetup->fDACMode << std::endl;
       break;
 
   };
@@ -681,8 +665,58 @@ void PolandGui::RefreshDACMode()
 }
 
 
+void PolandGui::EnableDACModeWidgets(int mode)
+{
+  switch(mode)
+  {
+    case 1:
+      // manual settings:
+      fPolandWidget->DACscrollArea->setEnabled(true);
+      fPolandWidget->DACCaliFrame->setEnabled(false);
+
+      break;
+    case 2:
+      // test structure
+      fPolandWidget->DACscrollArea->setEnabled(false);
+      fPolandWidget->DACCaliFrame->setEnabled(false);
+          break;
+    case 3:
+          // calibrate mode
+      fPolandWidget->DACscrollArea->setEnabled(false);
+      fPolandWidget->DACCaliFrame->setEnabled(true);
+      fPolandWidget->DACStartValueLineEdit->setEnabled(true);
+      //fPolandWidget->DACStartValueLineEdit->setText (pre+text.setNum (theSetup->fDACStartValue, fNumberBase));
+      fPolandWidget->DACOffsetLineEdit->setEnabled(true);
+      fPolandWidget->DACDeltaOffsetLineEdit->setEnabled(true);
+      fPolandWidget->DACCalibTimeLineEdit->setEnabled(true);
+
+          break;
+    case 4:
+          // all constant
+      fPolandWidget->DACscrollArea->setEnabled(false);
+      fPolandWidget->DACCaliFrame->setEnabled(true);
+      fPolandWidget->DACStartValueLineEdit->setEnabled(true);
+      //fPolandWidget->DACStartValueLineEdit->setText (pre+text.setNum (theSetup->fDACAllValue, fNumberBase));
+      fPolandWidget->DACOffsetLineEdit->setEnabled(false);
+      fPolandWidget->DACDeltaOffsetLineEdit->setEnabled(false);
+      fPolandWidget->DACCalibTimeLineEdit->setEnabled(false);
+
+          break;
+    default:
+      std::cout << "!!!EnableDACModeWidgets Never come here - undefined DAC mode "<<  mode << std::endl;
+      break;
+
+  };
+
+}
+
+
+
 void PolandGui::SetRegisters ()
 {
+  //std::cout << "PolandGui::SetRegisters()"<< std::endl;
+
+
 // write register values from strucure with gosipcmd
   theSetup_GET_FOR_SLAVE(PolandSetup);
 //if (AssertNoBroadcast (false)) // NOTE: after change to broadcast action, this is always true JAM2017
@@ -775,26 +809,28 @@ GetSensors();
   void PolandGui::RefreshSensors()
   {
 
-    QString text;
-    QString pre;
-    fNumberBase==16? pre="0x" : pre="";
+    //QString text;
+    //QString pre;
+    //fNumberBase==16? pre="0x" : pre="";
     theSetup_GET_FOR_SLAVE(PolandSetup);
 
     QString idtext=QString("POLAND Firmware version: 0x%1 [YYMMDDVV]").arg(theSetup->GetVersionId(),0,16);
     fPolandWidget->FirmwareLabel->setText(idtext);
 
-    fPolandWidget->TBaseLCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
-    fPolandWidget->TLogicLCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
-    fPolandWidget->TStretchLCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
-    fPolandWidget->TPiggy1LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
-    fPolandWidget->TPiggy2LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
-    fPolandWidget->TPiggy3LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
-    fPolandWidget->TPiggy4LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
-
-    fPolandWidget->Fan1_LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
-    fPolandWidget->Fan2_LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
-    fPolandWidget->Fan3_LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
-    fPolandWidget->Fan4_LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+////////////// enable this if you still want the temperatures etc displayed in hex
+//    fPolandWidget->TBaseLCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+//    fPolandWidget->TLogicLCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+//    fPolandWidget->TStretchLCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+//    fPolandWidget->TPiggy1LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+//    fPolandWidget->TPiggy2LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+//    fPolandWidget->TPiggy3LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+//    fPolandWidget->TPiggy4LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+//
+//    fPolandWidget->Fan1_LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+//    fPolandWidget->Fan2_LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+//    fPolandWidget->Fan3_LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+//    fPolandWidget->Fan4_LCD->setMode((fNumberBase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+/////////////////////////////////////
 
     fPolandWidget->TBaseLCD->display (theSetup->GetTemp_Base());
     fPolandWidget->TLogicLCD->display (theSetup->GetTemp_LogicUnit());

@@ -35,7 +35,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.992 of 24-May-2017 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.993 of 06-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
 
   fApfelWidget=new ApfelWidget();
   Settings_scrollArea->setWidget(fApfelWidget);
@@ -244,6 +244,10 @@ ApfelGui::ApfelGui (QWidget* parent) :
   QObject::connect (fApfelWidget->BaselineLowerSlider, SIGNAL(valueChanged(int)), this, SLOT (RefreshBaselines()));
   QObject::connect (fApfelWidget->BaselineUpperSlider, SIGNAL(valueChanged(int)), this, SLOT (RefreshBaselines()));
   QObject::connect (fApfelWidget->ReadoutRadioButton, SIGNAL(toggled(bool)), this, SLOT (RefreshBaselines()));
+
+  QObject::connect (fApfelWidget->Baseline_Box_invert, SIGNAL(stateChanged(int)), this, SLOT(BaselineInvert_changed(int)));
+
+
 
   /** JAM put references to designer checkboxes into array to be handled later easily: */
   fBaselineBoxes[0] = fApfelWidget->Baseline_Box_00;
@@ -661,7 +665,7 @@ int ApfelGui::AdjustBaseline (int channel, int adctarget)
       escapecounter--;    // get us out of loop if user wants to reach value outside adc range, or if we oscillate around target value
     initial = false;
   } while (fabs (adc - adctarget) >= resolution && escapecounter);
-  //std::cout << "   ApfelGui::AdjustBaseline after loop dac:"<<validdac<<" adc:"<<adc<<", resolution:"<<resolution<< std::endl;
+  std::cout << "   ApfelGui::AdjustBaseline after loop dac:"<<validdac<<" adc:"<<adc<<", resolution:"<<resolution<< std::endl;
   return validdac;
 }
 
@@ -711,10 +715,9 @@ int ApfelGui::CalibrateADC (int channel)
 
   int valADC_max = 0, valADC_min = 0, valDAC_min = 0, valDAC_max = 0, valADC_sample = 0;
 
-  if (gain == 1)
+  if ((gain == 1) || theSetup->IsBaselineInverted())
   {
-    // special situation for gain 1: slope is inverted, need to do different procedure:
-
+    // special situation for gain 1 or new panda boards: slope is inverted, need to do different procedure:
     // get minimum ADC value by setting DAC to min:
     WriteDAC_ApfelI2c (apfel, dac, 0);
     valADC_min = AcquireBaselineSample (channel);
@@ -1624,6 +1627,8 @@ void ApfelGui::RefreshView ()
   RefreshBaselines();
 
 //////////////////////////////////////////////////////////
+
+  fApfelWidget->Baseline_Box_invert->setChecked (!theSetup->IsBaselineInverted());
 // dac relative baseline settings and adc sample:
   int apfel = 0, dac = 0;
   for (int channel = 0; channel < 16; ++channel)
@@ -1683,6 +1688,8 @@ void ApfelGui::EvaluateView ()
 
   theSetup->SetApfelMapping (!fApfelWidget->InverseMappingCheckBox->isChecked ());
 
+
+
   EvaluateIOSwitch ();
 
   if (theSetup->IsHighGain ())
@@ -1696,8 +1703,12 @@ void ApfelGui::EvaluateView ()
       }
     }
   }
-// here baseline sliders for dacs
-// todo: prevent different settings from DAC and ADC tabs; check which tab is active?
+// here baseline sliders for dacs:
+
+  // switch regular dac-baseline slope (panda) or inverted baseline (pasem)
+  theSetup->SetBaselineInverted (!fApfelWidget->Baseline_Box_invert->isChecked ());
+
+// prevent different settings from DAC and ADC tabs; check which tab is active?
   if (fApfelWidget->ApfelTabWidget->currentIndex () == 3)
   {
     // only apply the adc sliders when visible
@@ -1820,6 +1831,20 @@ void ApfelGui::SetInverseMapping (int on)
   theSetup->SetApfelMapping (!on);
 
 }
+
+
+void ApfelGui::SetBaselineInverted(int on)
+{
+  theSetup_GET_FOR_SLAVE(BoardSetup);
+  //std::cout<< "SetBaselineInverted with "<<on << std::endl;
+  theSetup->SetBaselineInverted (on);
+  for (int channel = 0; channel < 16; ++channel)
+   {
+       CalibrateResetADC (channel);
+   }
+}
+
+
 
 
 int ApfelGui::EvaluatePulserInterval (int findex)

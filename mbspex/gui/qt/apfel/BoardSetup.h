@@ -35,6 +35,9 @@ private:
   /** property for regular or inverse mounts of apfel addon boards*/
   bool fRegularMapping;
 
+  /** if true, the baseline to dac slop relation is inverted (for old hardware)*/
+  bool fBaselineInverted;
+
   /** setups of each apfel chip on board*/
   ApfelSetup fApfel[APFEL_NUMCHIPS];
 
@@ -115,6 +118,17 @@ public:
   {
     return fRegularMapping;
   }
+
+  void SetBaselineInverted(bool inverted)
+  {
+    fBaselineInverted=inverted;
+  }
+
+  bool IsBaselineInverted()
+   {
+     return fBaselineInverted;
+   }
+
 
   void SetApfelMapping (bool regular = true);
 

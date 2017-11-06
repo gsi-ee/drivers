@@ -3,7 +3,9 @@
 
 //#include "../framework/GosipGui.h"
 #include "GosipGui.h"
-// todo: put into makefile include path,
+
+#include <math.h>
+
 
 #define POLAND_REG_TRIGCOUNT 0x0
 
@@ -186,7 +188,7 @@ public:
 
   void SetStepTime(double us, int loop)
   {
-    fTimes[loop]=us/POLAND_TIME_UNIT;
+    fTimes[loop]=round(us/POLAND_TIME_UNIT);
   }
 
   /* calculate calibration time in milliseconds from register value*/
