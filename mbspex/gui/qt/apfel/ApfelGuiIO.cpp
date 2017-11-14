@@ -183,8 +183,8 @@ void ApfelGui::SetRegisters ()
 void ApfelGui::SetIOSwitch ()
 {
   theSetup_GET_FOR_SLAVE(BoardSetup);
-  //std::cout << "SetIOSwitch: apfel=" << theSetup->IsApfelInUse() <<", highgain=" << theSetup->IsHighGain() << ", stretcher="<< theSetup->IsStretcherInUse()<<")"<< std::endl;
-  SetSwitches (theSetup->IsApfelInUse (), theSetup->IsHighGain (), theSetup->IsStretcherInUse ());
+  //std::cout << "SetIOSwitch: apfel=" << theSetup->IsApfelInUse() <<", highgain=" << theSetup->IsHighGain() << ", stretcher="<< theSetup->IsStretcherInUse()<<", pandatest:"<<theSetup->IsUsePandaTestBoard()<<")"<< std::endl;
+  SetSwitches (theSetup->IsApfelInUse (), theSetup->IsHighGain (), theSetup->IsStretcherInUse (), theSetup->IsUsePandaTestBoard());
 
 }
 
@@ -228,7 +228,16 @@ void ApfelGui::GetDACs (int chip)
       AppendTextWindow ("GetDacs has error!");
       return;    // TODO error message
     }
-    theSetup->SetDACValue (chip, dac, val);
+    //  Note: value=Read Data is one word of 32-bits, where:
+      //  Read_Data [31 downto 24] - GOSIP Status register.
+      //  Read_Data [23 downto 16] - APFEL Chip ID.
+      //  Read_Data [15 downto 14] - APFEL Status Bits.
+      //  Read_Data [13 downto 10] - All bits are zeros.
+      //  Read_Data [9 downto 0]   - requested data.
+    // 2017: if status bits are invalid, disable this chip:
+    bool present= (((val >> 14) & 0x3) == 0);
+    theSetup->SetApfelPresent(chip, present); // any not responding DAQ will deactivate the chip.
+    theSetup->SetDACValue (chip, dac, (val & 0x3ff));
   }
 }
 
@@ -291,7 +300,9 @@ int ApfelGui::ReadDAC_ApfelI2c (uint8_t apfelchip, uint8_t dac)
 //  Read_Data [9 downto 0]   - requested data.
 //
 /////////////
-  return (val & APFEL_DAC_MAXVALUE);    // mask to use only data part
+
+  //return (val & APFEL_DAC_MAXVALUE);    // mask to use only data part
+  return val; // 2017: do not mask out return status bits, evaluate them above !
 }
 
 int ApfelGui::ReadADC_Apfel (uint8_t adc, uint8_t chan)
@@ -445,10 +456,15 @@ void ApfelGui::DoAutoCalibrateAll ()
 }
 
 
-void ApfelGui::SetSwitches (bool useApfel, bool useHighGain, bool useStretcher)
+void ApfelGui::SetSwitches (bool useApfel, bool useHighGain, bool useStretcher, bool isPandatest)
 {
+
   int dat = APFEL_IO_CONTROL_WR;
   int mask = 0;
+
+  if(!isPandatest)
+  {
+    // APFELSEM hardware
   if (!useApfel)
     mask |= APFEL_SW_NOINPUT;
   if (!useHighGain)
@@ -469,6 +485,32 @@ void ApfelGui::SetSwitches (bool useApfel, bool useHighGain, bool useStretcher)
     printm ("#Error SetInputSwitch(apfel=%d, high=%d, stretch=%d) - read back switch mask is 0x%x", useApfel,
         useHighGain, useStretcher, swmask);
   // todo: advanced error handling?
+
+  }
+  else
+  {
+    // new PANDATEST hardware
+    // instead of 3 bits, we use the 32 bit control register here:
+    int lo=APFEL_IO_DATA_LO_WR;
+    int hi=APFEL_IO_DATA_HI_WR;
+    hi |= (0xFFFF); // default setup: all enabled, apfel ids defined to 1,...,8
+    if(useHighGain)
+      lo |= (0x000c);
+    else
+      lo |= (0x000d);
+    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, hi);
+    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, lo);
+
+    dat |= (0x18); // default setup: all enabled
+    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat); // activate hi/lo data register with this
+
+    // TODO: may readback switche settings here?
+
+
+    // TODO: change configuration of apfel addressing here?
+
+
+  }
 
 }
 

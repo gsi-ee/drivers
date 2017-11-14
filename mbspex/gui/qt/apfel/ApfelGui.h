@@ -107,6 +107,11 @@ protected:
 
   QGroupBox* fApfelPulseGroup[APFEL_NUMCHIPS];
 
+  QGroupBox* fApfelDACGroup[APFEL_NUMCHIPS];
+
+  QGroupBox* fApfelGainGroup[APFEL_NUMCHIPS];
+
+
 
   KPlotWidget* fPlotWidget[16];
 
@@ -139,6 +144,10 @@ protected:
 
   /** update register display*/
   void RefreshView ();
+
+
+  /** change apfel address labels depending on panda or pasem hardware*/
+  void RefreshApfelLabels(bool ispandatest);
 
   /** udpate display of dac settings for apfel chip with given index */
   void RefreshDAC(int apfel);
@@ -269,8 +278,9 @@ protected:
     void UpdateAfterAutoCalibrate(uint8_t apfelchip);
 
 
-    /** set switch register of currently selected slave (apfel input on/off), gain 1 or 16/32, stretcher on/off)*/
-    void SetSwitches(bool useApfel, bool useHighGain, bool useStretcher);
+    /** set switch register of currently selected slave (apfel input on/off), gain 1 or 16/32, stretcher on/off)
+     * different behaviour depending on actual hardware (pandatest setup or pasem)*/
+    void SetSwitches(bool useApfel, bool useHighGain, bool useStretcher, bool isPandatest=false);
 
 
 

@@ -71,6 +71,15 @@
  * */
 #define APFEL_IO_CONTROL_WR 0x1b000000
 
+/** low 16bit of ioc control data word*/
+#define APFEL_IO_DATA_LO_WR 0x1c000000
+
+/** hi 16bit of ioc control data word*/
+#define APFEL_IO_DATA_HI_WR 0x1d000000
+
+
+
+
 /** read back control register bits here:*/
 #define APFEL_IO_CONTROL_RD 0x95000000
 

@@ -9,6 +9,9 @@ class ApfelSetup
 
 private:
 
+  /** true if this chip is actually present and sends response*/
+  bool fChipPresent;
+
   /** the address id of this apfel chip on the board*/
   uint8_t fAddressID;
 
@@ -26,6 +29,8 @@ private:
 
   /** True if test pulser with positive polarity. False for negative*/
   bool fTestPulsPositive;
+
+
 
 public:
 
@@ -56,6 +61,10 @@ public:
   void SetAddressID (uint8_t address);
 
   uint8_t GetAddressID ();
+
+   bool IsPresent(){return fChipPresent;}
+
+   int SetPresent(bool on){fChipPresent=on; return 0;}
 
 };
 

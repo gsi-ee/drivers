@@ -6,7 +6,7 @@
 //////// the whole slave board setup:
 
 BoardSetup::BoardSetup () : GosipSetup(),
-    fUseApfel (true), fHighGainOutput (true), fStretcher (false), fRegularMapping (true), fBaselineInverted(true), fCurrent (0.0)
+ fPandaTestBoard(false),fUseApfel (true), fHighGainOutput (true), fStretcher (false), fRegularMapping (true), fBaselineInverted(true), fCurrent (0.0)
 {
 
   for (int i = 0; i < APFEL_NUMCHIPS; ++i)
@@ -32,21 +32,31 @@ BoardSetup::BoardSetup () : GosipSetup(),
 #endif
 }
 
-void BoardSetup::SetApfelMapping (bool regular)
+void BoardSetup::SetApfelMapping (bool regular, bool pandatest)
 {
-  //std::cout << "SetApfelMapping("<<regular<<"):"<< std::endl;
+  //std::cout << "SetApfelMapping("<<regular<<","<< pandatest<<"):"<< std::endl;
   fRegularMapping = regular;
   for (int i = 0; i < APFEL_NUMCHIPS; ++i)
   {
     uint8_t add = 0;
-    if (i < 4)
+
+    if (pandatest)
     {
-      // regular mapping: indices 0..3 before 8...11
-      add = (regular ? i : i + 8);
+      // PANDA test board: ignore regular and inverted mapping. Default setup is just ids 1-8 in ascending order
+      add=i;
     }
     else
     {
-      add = (regular ? i + 4 : i - 4);
+      // apfelsem with optionally inverted addresses on mezzanine boards:
+      if (i < 4)
+      {
+        // regular mapping: indices 0..3 before 8...11
+        add = (regular ? i : i + 8);
+      }
+      else
+      {
+        add = (regular ? i + 4 : i - 4);
+      }
     }
 
     fApfel[i].SetAddressID (add + 1);    // shift to id number 1...12 already here!
@@ -238,6 +248,18 @@ int BoardSetup::EvaluateADCvaluePermille (int value, int febexchannel, int gain)
     permille = CalculateADCPermille (gain, febexchannel, value);
   }
   return permille;
+}
+
+bool  BoardSetup::IsApfelPresent (int apfel)
+{
+  ASSERT_APFEL_VALID(apfel);
+  return fApfel[apfel].IsPresent();
+}
+
+int BoardSetup::SetApfelPresent (int apfel, bool on)
+{
+  ASSERT_APFEL_VALID(apfel);
+  fApfel[apfel].SetPresent(on);
 }
 
 int BoardSetup::GetDACValue (int apfel, int dac)

@@ -35,7 +35,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.993 of 06-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.994 of 12-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
 
   fApfelWidget=new ApfelWidget();
   Settings_scrollArea->setWidget(fApfelWidget);
@@ -211,6 +211,8 @@ ApfelGui::ApfelGui (QWidget* parent) :
   QObject::connect (fApfelWidget->ApfelRadioButton, SIGNAL(toggled(bool)), this, SLOT (SwitchChanged()));
   QObject::connect (fApfelWidget->LoGainRadioButton, SIGNAL(toggled(bool)), this, SLOT (SwitchChanged()));
   QObject::connect (fApfelWidget->StretcherOnRadioButton, SIGNAL(toggled(bool)), this, SLOT (SwitchChanged()));
+  QObject::connect (fApfelWidget->PasemRadioButton, SIGNAL(toggled(bool)), this, SLOT (SwitchChanged()));
+
 
   QObject::connect (fApfelWidget->InverseMappingCheckBox, SIGNAL(stateChanged(int)), this, SLOT (InverseMapping_changed(int)));
 
@@ -418,6 +420,27 @@ ApfelGui::ApfelGui (QWidget* parent) :
   fApfelPulseGroup[5] = fApfelWidget->ApfelPulseBox_6;
   fApfelPulseGroup[6] = fApfelWidget->ApfelPulseBox_7;
   fApfelPulseGroup[7] = fApfelWidget->ApfelPulseBox_8;
+
+
+  fApfelGainGroup[0] = fApfelWidget->ApfelGainBox_1;
+  fApfelGainGroup[1] = fApfelWidget->ApfelGainBox_2;
+  fApfelGainGroup[2] = fApfelWidget->ApfelGainBox_3;
+  fApfelGainGroup[3] = fApfelWidget->ApfelGainBox_4;
+  fApfelGainGroup[4] = fApfelWidget->ApfelGainBox_5;
+  fApfelGainGroup[5] = fApfelWidget->ApfelGainBox_6;
+  fApfelGainGroup[6] = fApfelWidget->ApfelGainBox_7;
+  fApfelGainGroup[7] = fApfelWidget->ApfelGainBox_8;
+
+
+   fApfelDACGroup[0] = fApfelWidget->ApfelBox1;
+   fApfelDACGroup[1] = fApfelWidget->ApfelBox2;
+   fApfelDACGroup[2] = fApfelWidget->ApfelBox3;
+   fApfelDACGroup[3] = fApfelWidget->ApfelBox4;
+   fApfelDACGroup[4] = fApfelWidget->ApfelBox5;
+   fApfelDACGroup[5] = fApfelWidget->ApfelBox6;
+   fApfelDACGroup[6] = fApfelWidget->ApfelBox7;
+   fApfelDACGroup[7] = fApfelWidget->ApfelBox8;
+
 
   fApfelGainCombo[0][0] = fApfelWidget->gainCombo_0;
   fApfelGainCombo[0][1] = fApfelWidget->gainCombo_1;
@@ -1533,6 +1556,13 @@ void ApfelGui::RefreshDAC (int apfel)
     fDACSlider[apfel][dac]->setValue (value);
     fDACLineEdit[apfel][dac]->setText (pre + text.setNum (value, fNumberBase));
   }
+
+  // 2017: disable DAC widget if DAC has not responded last request
+  fApfelPulseGroup[apfel]->setEnabled(theSetup->IsApfelPresent(apfel));
+  fApfelDACGroup[apfel]->setEnabled(theSetup->IsApfelPresent(apfel));
+  fApfelGainGroup[apfel]->setEnabled(theSetup->IsApfelPresent(apfel));
+
+
 }
 
 void ApfelGui::RefreshADC_channel (int channel, int gain)
@@ -1565,6 +1595,59 @@ void ApfelGui::RefreshADC_Apfel (int apfelchip, int dac)
 
 }
 
+
+void ApfelGui::RefreshApfelLabels(bool ispandatest)
+{
+  // for panda test mode, we may change text on DAC adresses:
+
+
+  if(ispandatest)
+  {
+      fApfelWidget->ApfelDACTabset->setTabText(1,"APFEL 5-8");
+      fApfelWidget->ApfelBox5->setTitle("APFEL 5");
+      fApfelWidget->ApfelBox6->setTitle("APFEL 6");
+      fApfelWidget->ApfelBox7->setTitle("APFEL 7");
+      fApfelWidget->ApfelBox8->setTitle("APFEL 8");
+
+      fApfelWidget->ApfelGainBox_5->setTitle("APFEL 5");
+      fApfelWidget->ApfelGainBox_6->setTitle("APFEL 6");
+      fApfelWidget->ApfelGainBox_7->setTitle("APFEL 7");
+      fApfelWidget->ApfelGainBox_8->setTitle("APFEL 8");
+
+      fApfelWidget->ApfelPulseBox_5->setTitle("APFEL 5");
+      fApfelWidget->ApfelPulseBox_6->setTitle("APFEL 6");
+      fApfelWidget->ApfelPulseBox_7->setTitle("APFEL 7");
+      fApfelWidget->ApfelPulseBox_8->setTitle("APFEL 8");
+
+
+
+
+  }
+  else
+  {
+    fApfelWidget->ApfelDACTabset->setTabText(1,"APFEL 9-12");
+    fApfelWidget->ApfelBox5->setTitle("APFEL 9");
+    fApfelWidget->ApfelBox6->setTitle("APFEL 10");
+    fApfelWidget->ApfelBox7->setTitle("APFEL 11");
+    fApfelWidget->ApfelBox8->setTitle("APFEL 12");
+
+    fApfelWidget->ApfelGainBox_5->setTitle("APFEL 9");
+    fApfelWidget->ApfelGainBox_6->setTitle("APFEL 10");
+    fApfelWidget->ApfelGainBox_7->setTitle("APFEL 11");
+    fApfelWidget->ApfelGainBox_8->setTitle("APFEL 12");
+
+    fApfelWidget->ApfelPulseBox_5->setTitle("APFEL 9");
+    fApfelWidget->ApfelPulseBox_6->setTitle("APFEL 10");
+    fApfelWidget->ApfelPulseBox_7->setTitle("APFEL 11");
+    fApfelWidget->ApfelPulseBox_8->setTitle("APFEL 12");
+
+  }
+
+  fApfelWidget->InverseMappingCheckBox->setEnabled(!ispandatest);
+
+}
+
+
 void ApfelGui::RefreshView ()
 {
 // display setup structure to gui:
@@ -1574,7 +1657,14 @@ void ApfelGui::RefreshView ()
   theSetup_GET_FOR_SLAVE(BoardSetup);
 
 //////////////////////////////////////////////////////
-// first io configuration and gain:
+// io configuration and gain:
+
+  bool ispandatestboard=theSetup->IsUsePandaTestBoard();
+
+  fApfelWidget->PandaRadioButton->setChecked (ispandatestboard);
+  RefreshApfelLabels(ispandatestboard);
+
+
   fApfelWidget->ApfelRadioButton->setChecked (theSetup->IsApfelInUse ());
   fApfelWidget->PolandRadioButton->setChecked (!theSetup->IsApfelInUse ());    // probably we do not need this because of autoExclusive flag
   fApfelWidget->LoGainRadioButton->setChecked (!theSetup->IsHighGain ());
@@ -1674,9 +1764,15 @@ void ApfelGui::EvaluateIOSwitch ()
 {
   theSetup_GET_FOR_SLAVE(BoardSetup);
   // get io config from gui
+
+  theSetup->SetApfelMapping (!fApfelWidget->InverseMappingCheckBox->isChecked (), fApfelWidget->PandaRadioButton->isChecked ());
+
+  theSetup->SetUsePandaTestBoard(fApfelWidget->PandaRadioButton->isChecked());
   theSetup->SetApfelInUse (fApfelWidget->ApfelRadioButton->isChecked ());
   theSetup->SetHighGain (fApfelWidget->HiGainRadioButton->isChecked ());
   theSetup->SetStretcherInUse (fApfelWidget->StretcherOnRadioButton->isChecked ());
+
+  RefreshApfelLabels(fApfelWidget->PandaRadioButton->isChecked ());
 
 }
 
@@ -1685,10 +1781,6 @@ void ApfelGui::EvaluateView ()
   // here the current gui display is just copied to setup structure in local memory
   theSetup_GET_FOR_SLAVE(BoardSetup);
 //std::cout<<"ApfelGui::EvaluateView ()" << std::endl;
-
-  theSetup->SetApfelMapping (!fApfelWidget->InverseMappingCheckBox->isChecked ());
-
-
 
   EvaluateIOSwitch ();
 

@@ -23,6 +23,10 @@ class BoardSetup : public GosipSetup
 
 private:
 #include <stdint.h>
+
+  /** if true, hardware is PANDA testboard. If false, use PASEM hardware*/
+  bool fPandaTestBoard;
+
   /** enable apfel input */
   bool fUseApfel;
 
@@ -129,8 +133,18 @@ public:
      return fBaselineInverted;
    }
 
+  void SetUsePandaTestBoard(bool on)
+  {
+    fPandaTestBoard=on;
+  }
 
-  void SetApfelMapping (bool regular = true);
+  bool IsUsePandaTestBoard()
+  {
+    return fPandaTestBoard;
+  }
+
+
+  void SetApfelMapping (bool regular = true, bool pandatest=false);
 
   /** access to test result structure for gain and apfel id.
    * Todo: separate setters and getters?*/
@@ -172,6 +186,12 @@ public:
 
   /** get relative ADC slider value from given dac setting*/
   int EvaluateADCvaluePermille (int value, int febexchannel = -1, int gain = 1);
+
+  /** check chip presence flag evaluated from last request*/
+  bool IsApfelPresent (int apfel);
+
+  /** mark the apfel chip as active */
+  int SetApfelPresent (int apfel, bool on);
 
   int GetDACValue (int apfel, int dac);
 

@@ -6,7 +6,7 @@
 //////// the setup data class of a single apfel chip:
 
 ApfelSetup::ApfelSetup () :
-    fAddressID (0)
+fChipPresent(true), fAddressID (0)
 {
   for (int c = 0; c < APFEL_NUMDACS; ++c)
   {
@@ -35,7 +35,7 @@ int ApfelSetup::SetDACValue (int dac, uint16_t value)
 {
   ASSERT_DAC_VALID(dac)
   fDACValueSet[dac] = (value & 0x3FF);
-  //std::cout << "SetDACValue ("<<dac<<")="<< (int)(fDACValueSet[dac])<<", val="<<(int) value<< std::endl;
+  //std::cout << "SetDACValue ("<<dac<<")="<< (int)(fDACValueSet[dac])<<", val="<<(int) (value  & 0x3FF)<< std::endl;
   return 0;
 }
 
