@@ -35,7 +35,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.994 of 14-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.995 of 16-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
 
   fApfelWidget=new ApfelWidget();
   Settings_scrollArea->setWidget(fApfelWidget);
@@ -688,7 +688,7 @@ int ApfelGui::AdjustBaseline (int channel, int adctarget)
       escapecounter--;    // get us out of loop if user wants to reach value outside adc range, or if we oscillate around target value
     initial = false;
   } while (fabs (adc - adctarget) >= resolution && escapecounter);
-  std::cout << "   ApfelGui::AdjustBaseline after loop dac:"<<validdac<<" adc:"<<adc<<", resolution:"<<resolution<< std::endl;
+  //std::cout << "   ApfelGui::AdjustBaseline after loop dac:"<<validdac<<" adc:"<<adc<<", resolution:"<<resolution<< std::endl;
   return validdac;
 }
 
@@ -710,9 +710,16 @@ int ApfelGui::CalibrateADC (int channel)
 {
 
   theSetup_GET_FOR_SLAVE_RETURN(BoardSetup);
-
+  printm ("Calibrate baseline slider for ADC channel %d ...", channel);
   int apfel = 0, dac = 0;
   theSetup->EvaluateDACIndices (channel, apfel, dac);
+
+  // 2017: check if apfel is present before doing some calibration procedures:
+  if(!theSetup->IsApfelPresent(apfel))
+  {
+    printm ("Skipping not connected APFEL chip of ID %d", theSetup->GetApfelID(apfel));
+    return -1;
+  }
 
   // DO NOT first autocalibrate DAC that belongs to selected channel
   // we decouple chip autocalibration from channel calibration curve now
@@ -738,7 +745,11 @@ int ApfelGui::CalibrateADC (int channel)
 
   int valADC_max = 0, valADC_min = 0, valDAC_min = 0, valDAC_max = 0, valADC_sample = 0;
 
-  if ((gain == 1) || theSetup->IsBaselineInverted())
+#ifdef APFEL_GAIN1_INVERTED
+  if (((gain != 1) && theSetup->IsBaselineInverted()) || ((gain == 1) && !theSetup->IsBaselineInverted()))
+#else
+  if (theSetup->IsBaselineInverted())
+#endif
   {
     // special situation for gain 1 or new panda boards: slope is inverted, need to do different procedure:
     // get minimum ADC value by setting DAC to min:
@@ -1464,9 +1475,14 @@ void ApfelGui::AutoApplyDAC (int apfel, int dac, int val)
 {
   // keep setup structure always consistent:
   theSetup_GET_FOR_SLAVE(BoardSetup);
+
   theSetup->SetDACValue (apfel, dac, val);
-  WriteDAC_ApfelI2c (apfel, dac, theSetup->GetDACValue (apfel, dac));
-  RefreshADC_Apfel (apfel, dac);
+  if (theSetup->IsApfelPresent (apfel))
+  {
+    // only access chip if it is connected
+    WriteDAC_ApfelI2c (apfel, dac, theSetup->GetDACValue (apfel, dac));
+    RefreshADC_Apfel (apfel, dac);
+  }
 }
 
 
@@ -1486,6 +1502,9 @@ int ApfelGui::autoApply (int channel, int permillevalue)
   int apfel = 0, dac = 0;
   theSetup_GET_FOR_SLAVE_RETURN(BoardSetup);
   theSetup->EvaluateDACIndices (channel, apfel, dac);
+  if(!theSetup->IsApfelPresent(apfel)) return -1; // exlude not connected dacs
+
+
   int gain = theSetup->GetGain (apfel, dac);
   //int value=theSetup->EvaluateDACvalueAbsolute(permillevalue,-1,gain);
   int value = theSetup->EvaluateDACvalueAbsolute (permillevalue, channel, gain);

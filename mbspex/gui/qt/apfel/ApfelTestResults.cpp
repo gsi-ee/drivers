@@ -6,7 +6,7 @@
     Reset();
   }
 
-  void ApfelTestResults::Reset()
+  void ApfelTestResults::Reset(bool invertedslope)
   {
     fValid=false;
     fAddressID=0;
@@ -20,7 +20,7 @@
           fSigma[dac]=APFEL_NOVALUE;
           fMinValue[dac]=0;
           fMaxValue[dac]=0;
-          fDAC_ADC_Gain[dac].ResetCalibration();
+          fDAC_ADC_Gain[dac].ResetCalibration(!invertedslope);
           fDAC_Curve[dac].Reset();
           fPeaks[dac].clear();
           fNegativePeaks[dac]=false;

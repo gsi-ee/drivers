@@ -52,89 +52,148 @@ void ApfelGui::ResetSlave ()
   sleep (1);
 
 #ifdef DO_APFEL_INIT
-  WriteGosip (fSFP, fSlave, DATA_FILT_CONTROL_REG, 0x00);
+  WriteGosip (fSFP, fSlave, DATA_FILT_CONTROL_REG, DATA_FILT_CONTROL_RST);
   usleep (4000);
 
-//        // disable test data length
-  WriteGosip (fSFP, fSlave, REG_DATA_LEN, 0x10000000);
+#ifdef USE_FEBEX4
+  // new: configure ADCs first:
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x22000010); // set SPI speed
+  // Activating of SPI core with accss to both ADCs:
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x2100008f);
+  // Both ADCs in standby:
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x23000803);
+  usleep (2000);
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x23000800);
+  usleep (1000);
+  // Write fixed code into ADC's: (needed?)
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, ADC_FIX_CODE);
+  usleep (1000);
+  // ADC's coding to binary output mode (write):
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x23001400);
+  usleep (1000);
+  // SPI access to ADC0:
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x21000083);
+  // For ADC0 - phase of DCO to data:
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, ADC0_CLK_PHASE);
+  usleep (1000);
+  // SPI access to ADC1:
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x2100008c);
+  // For ADC1 - phase of DCO to data:
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, ADC1_CLK_PHASE);
+  usleep (1000);
+  // SPI access to both ADCs:
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x2100008f);
+  // Serial output data control - DDR two-lane, bitwise:
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x23002120);
 
-//        // specify trace length in slices
-  WriteGosip (fSFP, fSlave, REG_FEB_TRACE_LEN, FEB_TRACE_LEN);
-  // note: we skip verify read here to let this work in broadcast mode!
+  usleep (1000);
+  // Resolution/sample rate override - 14 bits / 105 MSPS (command 1):
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x23010055);
+  usleep (1000);
+  // Resolution/sample rate override - 14 bits / 105 MSPS (command 2):
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x2300ff01);
+  usleep (1000);
 
-//        // specify trigger delay in slices
-  WriteGosip (fSFP, fSlave, REG_FEB_TRIG_DELAY, FEB_TRIG_DELAY);
-  // note: we skip verify read here to let this work in broadcast mode!
+  // For both ADCs - chip run:
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, 0x23000800);
+  usleep (1000);
+  //SPI de-activating:
+  WriteGosip (fSFP, fSlave,  GOS_I2C_DWR, 0x21000000);
 
-  //        // disable trigger acceptance in febex
-  WriteGosip (fSFP, fSlave, REG_FEB_CTRL, 0);
 
-  //        // enable trigger acceptance in febex
-  WriteGosip (fSFP, fSlave, REG_FEB_CTRL, 1);
 
-//        // set channels used for self trigger signal
+#endif
 
-  // JAM: the following is reduced version of mbs sample code. instead of arrays for each slave, we just
-  // take settings for first device at sfp 0. Should be sufficient for baseline setup until mbs configures all?
-  long l_sfp0_feb_ctrl0 = 0x01000000;
-  long l_sfp0_feb_ctrl1 = 0x0;
-  long l_sfp0_feb_ctrl2 = 0xffff;
-  long l_ev_od_or = (l_sfp0_feb_ctrl0 >> 20) & 0x1;
-  long l_pol = (l_sfp0_feb_ctrl0 >> 28) & 0x1;
-  long l_trig_mod = (l_sfp0_feb_ctrl0 >> 24) & 0xf;
-  long l_dis_cha = l_sfp0_feb_ctrl0 & 0x1ffff;
-  long l_dat_redu = l_sfp0_feb_ctrl1 & 0x1ffff;
-  long l_ena_trig = l_sfp0_feb_ctrl2 & 0xffff;
-
-  int trigenabchan = ((l_ev_od_or << 21) | (l_pol << 20) | (l_trig_mod << 16) | l_ena_trig);
-  WriteGosip (fSFP, fSlave, REG_FEB_SELF_TRIG, trigenabchan);
-
-//        // set the step size for self trigger and data reduction
-  long l_thresh = 0x1ff;
-  for (int l_k = 0; l_k < APFEL_ADC_CHANNELS; l_k++)
-  {
-    WriteGosip (fSFP, fSlave, REG_FEB_STEP_SIZE, (l_k << 24) | l_thresh);
-  }
-
-  //
-//        // reset the time stamp and set the clock source for time stamp counter
-  if (fSFP == 0 && fSlave == 0)    // assume clock source at first slave on first chain here
-  {
-    WriteGosip (fSFP, fSlave, REG_FEB_TIME, 0x0);
-    WriteGosip (fSFP, fSlave, REG_FEB_TIME, 0x7);
-  }
-  else
-  {
-    WriteGosip (fSFP, fSlave, REG_FEB_TIME, 0x0);
-    WriteGosip (fSFP, fSlave, REG_FEB_TIME, 0x5);
-  }
-
-  //
-//        // enable/disable no hit in trace data suppression of channel
-  WriteGosip (fSFP, fSlave, REG_DATA_REDUCTION, l_dat_redu);
-
-//        // set channels used for self trigger signal
-  WriteGosip (fSFP, fSlave, REG_MEM_DISABLE, l_dis_cha);
-
-//        // write SFP id for channel header
-
-  WriteGosip (fSFP, fSlave, REG_HEADER, fSFP);
-
-//        // set trapez parameters for trigger/hit finding
-  WriteGosip (fSFP, fSlave, TRIG_SUM_A_REG, TRIG_SUM_A);
-  WriteGosip (fSFP, fSlave, TRIG_GAP_REG, TRIG_SUM_A + TRIG_GAP);
-  WriteGosip (fSFP, fSlave, TRIG_SUM_B_REG, TRIG_SUM_A + TRIG_GAP + TRIG_SUM_B);
-
-#ifdef ENABLE_ENERGY_FILTER
-#ifdef TRAPEZ
+///////////// old init for febex/tum gui. to be replaced by febex4 adc inits:
+////        // disable test data length
+//  WriteGosip (fSFP, fSlave, REG_DATA_LEN, 0x10000000);
 //
-//        // set trapez parameters for energy estimation
-  WriteGosip (fSFP, fSlave, ENERGY_SUM_A_REG, ENERGY_SUM_A);
-  WriteGosip (fSFP, fSlave, ENERGY_GAP_REG, ENERGY_SUM_A + ENERGY_GAP);
-  WriteGosip (fSFP, fSlave, ENERGY_SUM_B_REG, ENERGY_SUM_A + ENERGY_GAP + ENERGY_SUM_B);
+////        // specify trace length in slices
+//  WriteGosip (fSFP, fSlave, REG_FEB_TRACE_LEN, FEB_TRACE_LEN);
+//  // note: we skip verify read here to let this work in broadcast mode!
+//
+////        // specify trigger delay in slices
+//  WriteGosip (fSFP, fSlave, REG_FEB_TRIG_DELAY, FEB_TRIG_DELAY);
+//  // note: we skip verify read here to let this work in broadcast mode!
+//
+//  //        // disable trigger acceptance in febex
+//  WriteGosip (fSFP, fSlave, REG_FEB_CTRL, 0);
+//
+//  //        // enable trigger acceptance in febex
+//  WriteGosip (fSFP, fSlave, REG_FEB_CTRL, 1);
+//
+//
+//
+//
+//
 
-#endif // TRAPEZ
-#endif // ENABLE_ENERGY_FILTER
+  //        // set channels used for self trigger signal
+
+// JAM: the following is reduced version of mbs sample code. instead of arrays for each slave, we just
+// take settings for first device at sfp 0. Should be sufficient for baseline setup until mbs configures all?
+//  long l_sfp0_feb_ctrl0 = 0x01000000;
+//  long l_sfp0_feb_ctrl1 = 0x0;
+//  long l_sfp0_feb_ctrl2 = 0xffff;
+//  long l_ev_od_or = (l_sfp0_feb_ctrl0 >> 20) & 0x1;
+//  long l_pol = (l_sfp0_feb_ctrl0 >> 28) & 0x1;
+//  long l_trig_mod = (l_sfp0_feb_ctrl0 >> 24) & 0xf;
+//  long l_dis_cha = l_sfp0_feb_ctrl0 & 0x1ffff;
+//  long l_dat_redu = l_sfp0_feb_ctrl1 & 0x1ffff;
+//  long l_ena_trig = l_sfp0_feb_ctrl2 & 0xffff;
+//
+//  int trigenabchan = ((l_ev_od_or << 21) | (l_pol << 20) | (l_trig_mod << 16) | l_ena_trig);
+//  WriteGosip (fSFP, fSlave, REG_FEB_SELF_TRIG, trigenabchan);
+//
+////        // set the step size for self trigger and data reduction
+//  long l_thresh = 0x1ff;
+//  for (int l_k = 0; l_k < APFEL_ADC_CHANNELS; l_k++)
+//  {
+//    WriteGosip (fSFP, fSlave, REG_FEB_STEP_SIZE, (l_k << 24) | l_thresh);
+//  }
+//
+//  //
+////        // reset the time stamp and set the clock source for time stamp counter
+//  if (fSFP == 0 && fSlave == 0)    // assume clock source at first slave on first chain here
+//  {
+//    WriteGosip (fSFP, fSlave, REG_FEB_TIME, 0x0);
+//    WriteGosip (fSFP, fSlave, REG_FEB_TIME, 0x7);
+//  }
+//  else
+//  {
+//    WriteGosip (fSFP, fSlave, REG_FEB_TIME, 0x0);
+//    WriteGosip (fSFP, fSlave, REG_FEB_TIME, 0x5);
+//  }
+//
+//  //
+////        // enable/disable no hit in trace data suppression of channel
+//  WriteGosip (fSFP, fSlave, REG_DATA_REDUCTION, l_dat_redu);
+//
+////        // set channels used for self trigger signal
+//  WriteGosip (fSFP, fSlave, REG_MEM_DISABLE, l_dis_cha);
+//
+////        // write SFP id for channel header
+//
+//  WriteGosip (fSFP, fSlave, REG_HEADER, fSFP);
+//
+////        // set trapez parameters for trigger/hit finding
+//  WriteGosip (fSFP, fSlave, TRIG_SUM_A_REG, TRIG_SUM_A);
+//  WriteGosip (fSFP, fSlave, TRIG_GAP_REG, TRIG_SUM_A + TRIG_GAP);
+//  WriteGosip (fSFP, fSlave, TRIG_SUM_B_REG, TRIG_SUM_A + TRIG_GAP + TRIG_SUM_B);
+//
+//#ifdef ENABLE_ENERGY_FILTER
+//#ifdef TRAPEZ
+////
+////        // set trapez parameters for energy estimation
+//  WriteGosip (fSFP, fSlave, ENERGY_SUM_A_REG, ENERGY_SUM_A);
+//  WriteGosip (fSFP, fSlave, ENERGY_GAP_REG, ENERGY_SUM_A + ENERGY_GAP);
+//  WriteGosip (fSFP, fSlave, ENERGY_SUM_B_REG, ENERGY_SUM_A + ENERGY_GAP + ENERGY_SUM_B);
+//
+//#endif // TRAPEZ
+//#endif // ENABLE_ENERGY_FILTER
+
+
+
+
   usleep (50);
 // enabling after "ini" of all registers (Ivan - 16.01.2013):
   WriteGosip (fSFP, fSlave, DATA_FILT_CONTROL_REG, DATA_FILT_CONTROL_DAT);
@@ -143,6 +202,11 @@ void ApfelGui::ResetSlave ()
 #else
   printm("Did NOT Initializing APFEL for SFP %d Slave %d, feature is disabled!",fSFP,fSlave);
 #endif
+
+
+
+
+
 }
 
 

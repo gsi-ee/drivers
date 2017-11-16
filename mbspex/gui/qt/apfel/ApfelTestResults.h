@@ -87,7 +87,7 @@ public:
   ApfelTestResults();
 
   /** clear the previous results*/
-  void Reset();
+  void Reset(bool invertedslope=false);
 
   /** reset previous results and mark start time*/
   void Begin();

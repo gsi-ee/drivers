@@ -80,7 +80,8 @@ void BoardSetup::ResetGain1Calibration ()
   // workaround to account inverse polarity of gain 1 dac-adc by default
   for (int ch = 0; ch < APFEL_ADC_CHANNELS; ++ch)
   {
-    fGainSetups[ch].at (1).ResetCalibration (false);
+    //fGainSetups[ch].at (1).ResetCalibration (false);
+    fGainSetups[ch].at (1).ResetCalibration (fBaselineInverted); // 2017: take into account inverted state?
   }
 }
 
@@ -120,11 +121,11 @@ int BoardSetup::EvaluateCalibration (int gain, int febexchannel, double deltaDAC
 int BoardSetup::ResetCalibration (int gain, int febexchannel)
 {
   ASSERT_FEBCHAN_VALID(febexchannel);
-  std::cout << "ResetCalibration for channel "<<febexchannel<<", gain:"<< gain <<", baselineinvertd:"<<fBaselineInverted<< std::endl;
+  //std::cout << "ResetCalibration for channel "<<febexchannel<<", gain:"<< gain <<", baselineinvertd:"<<fBaselineInverted<< std::endl;
 
 #ifdef APFEL_GAIN1_INVERTED
   if (gain == 1)
-    fGainSetups[febexchannel].at (gain).ResetCalibration (false);
+    fGainSetups[febexchannel].at (gain).ResetCalibration (fBaselineInverted);
   else
     fGainSetups[febexchannel].at (gain).ResetCalibration (!fBaselineInverted);
 #else

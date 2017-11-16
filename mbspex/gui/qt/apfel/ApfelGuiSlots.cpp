@@ -1145,8 +1145,8 @@ void ApfelGui::ChangeReferenceDataPressed(QAbstractButton* but)
     }
   else if (but == fApfelWidget->ReferenceLoadButtonBox->button (QDialogButtonBox::RestoreDefaults))
    {
-    fApfelWidget->ReferenceLineEdit->setText("buildin defaults");
-      fBenchmark.InitReferenceValues();
+      fApfelWidget->ReferenceLineEdit->setText("buildin defaults");
+      fBenchmark.InitReferenceValues(!fApfelWidget->Baseline_Box_invert->isChecked());
    }
 
 

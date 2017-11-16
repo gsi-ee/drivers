@@ -55,7 +55,7 @@ public:
   ApfelTestResults& GetReferenceValues(int gain);
 
   /** set reference values for test results. Either from memory or database*/
-  void InitReferenceValues();
+  void InitReferenceValues(bool invertedslope=true);
 
   /** get reference values from file*/
   void LoadReferenceValues(const QString& file);

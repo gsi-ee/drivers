@@ -15,6 +15,10 @@
 /** uncomment this to initialize apfel frontends with some example config:*/
 #define DO_APFEL_INIT 1
 
+/** enable initialization sequence for febex4 ADCs. Works only if DO_APFEL_INIT is set*/
+#define USE_FEBEX4 1
+
+
 #define GOS_I2C_DWR  0x208010  // i2c data write reg.   addr
 #define GOS_I2C_DRR1 0x208020  // i2c data read  reg. 1 addr
 /** number of apfel chips on each slave board*/
@@ -134,6 +138,7 @@
 
 /** comment the following if apfel gain 1 dac is not inverted anymore TODO!*/
 #define APFEL_GAIN1_INVERTED 1
+// note that we can always hanlde inverted slope with button on gui now :)
 
 
 /** number of samples read out for each channel*/
@@ -206,6 +211,20 @@
 // (0x84 E,t summery always +  data trace                 if > 1 hit
 // (0x86 E,t summery always + (data trace + filter trace) if > 1 hit
 // Trigger/Hit finder filter
+
+
+// new for febex4:
+
+#define DATA_FILT_CONTROL_DAT       0x000080
+
+#define ADC0_CLK_PHASE          0x23001607
+#define ADC1_CLK_PHASE          0x23001607
+
+#define DATA_FILT_CONTROL_RST       0x000000
+
+#define ADC_FIX_CODE       0x23000d00
+
+///////////////
 
 #define TRIG_SUM_A_REG    0x2080D0
 #define TRIG_GAP_REG      0x2080E0
