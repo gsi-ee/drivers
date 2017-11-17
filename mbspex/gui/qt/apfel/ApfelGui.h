@@ -111,7 +111,12 @@ protected:
 
   QGroupBox* fApfelGainGroup[APFEL_NUMCHIPS];
 
+  QCheckBox* fApfelPowerCheckbox[APFEL_NUMCHIPS];
 
+  //QGroupBox* fApfelPowerGroup[APFEL_NUMCHIPS];
+  QLabel* fApfelPowerLabel[APFEL_NUMCHIPS];
+
+  QLineEdit* fApfelSerialLineEdit[APFEL_NUMCHIPS];
 
   KPlotWidget* fPlotWidget[16];
 
@@ -283,7 +288,8 @@ protected:
     void SetSwitches(bool useApfel, bool useHighGain, bool useStretcher, bool isPandatest=false);
 
 
-
+    /** set power state after apfel chip index on/off bitmask. take into account the current board gain setting*/
+    void SetPower (int powermask, bool highgain);
 
    /** Initialize febex after power up*/
    void ResetSlave();
@@ -348,6 +354,14 @@ protected:
  /** slot forward when change of pulser settings on gui*/
   void PulserChanged(int apfel);
 
+
+  /** apply chip power connection settings directly
+     * This function is capable of usage in APFEL_BROADCAST_ACTION macro*/
+   void AutoApplyPower(int apfel, int state);
+
+  /** slot forward when change of power button checkbox on gui*/
+  void PowerChanged(int apfel, int state);
+
   /** apply gain settings directly
       * This function is capable of usage in APFEL_BROADCAST_ACTION macro*/
   void AutoApplyGain(int apfel, int channel);
@@ -355,6 +369,9 @@ protected:
 
   /** slot forward when change of pulser settings on gui*/
    void GainChanged(int apfel, int channel);
+
+
+
 
 
    /** apply absolute DAC value val directly
@@ -599,6 +616,17 @@ public slots:
   virtual void GainChanged_13();
   virtual void GainChanged_14();
   virtual void GainChanged_15();
+
+
+  virtual void PowerChanged_0(int checkstate);
+  virtual void PowerChanged_1(int checkstate);
+  virtual void PowerChanged_2(int checkstate);
+  virtual void PowerChanged_3(int checkstate);
+  virtual void PowerChanged_4(int checkstate);
+  virtual void PowerChanged_5(int checkstate);
+  virtual void PowerChanged_6(int checkstate);
+  virtual void PowerChanged_7(int checkstate);
+
 
   virtual void SwitchChanged();
 

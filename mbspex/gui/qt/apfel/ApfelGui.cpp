@@ -35,7 +35,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.995 of 16-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.996 of 17-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
 
   fApfelWidget=new ApfelWidget();
   Settings_scrollArea->setWidget(fApfelWidget);
@@ -248,6 +248,17 @@ ApfelGui::ApfelGui (QWidget* parent) :
   QObject::connect (fApfelWidget->ReadoutRadioButton, SIGNAL(toggled(bool)), this, SLOT (RefreshBaselines()));
 
   QObject::connect (fApfelWidget->Baseline_Box_invert, SIGNAL(stateChanged(int)), this, SLOT(BaselineInvert_changed(int)));
+
+
+  QObject::connect (fApfelWidget->PowerCheckBox_1, SIGNAL(stateChanged(int)), this, SLOT (PowerChanged_0(int)));
+  QObject::connect (fApfelWidget->PowerCheckBox_2, SIGNAL(stateChanged(int)), this, SLOT (PowerChanged_1(int)));
+  QObject::connect (fApfelWidget->PowerCheckBox_3, SIGNAL(stateChanged(int)), this, SLOT (PowerChanged_2(int)));
+  QObject::connect (fApfelWidget->PowerCheckBox_4, SIGNAL(stateChanged(int)), this, SLOT (PowerChanged_3(int)));
+  QObject::connect (fApfelWidget->PowerCheckBox_5, SIGNAL(stateChanged(int)), this, SLOT (PowerChanged_4(int)));
+  QObject::connect (fApfelWidget->PowerCheckBox_6, SIGNAL(stateChanged(int)), this, SLOT (PowerChanged_5(int)));
+  QObject::connect (fApfelWidget->PowerCheckBox_7, SIGNAL(stateChanged(int)), this, SLOT (PowerChanged_6(int)));
+  QObject::connect (fApfelWidget->PowerCheckBox_8, SIGNAL(stateChanged(int)), this, SLOT (PowerChanged_7(int)));
+
 
 
 
@@ -509,6 +520,48 @@ ApfelGui::ApfelGui (QWidget* parent) :
   fSamplingSigmaLineEdit[13] = fApfelWidget->ADC_SampleSigma_13;
   fSamplingSigmaLineEdit[14] = fApfelWidget->ADC_SampleSigma_14;
   fSamplingSigmaLineEdit[15] = fApfelWidget->ADC_SampleSigma_15;
+
+//  fApfelPowerGroup[0]=fApfelWidget->PowerGroupBox_1;
+//  fApfelPowerGroup[1]=fApfelWidget->PowerGroupBox_2;
+//  fApfelPowerGroup[2]=fApfelWidget->PowerGroupBox_3;
+//  fApfelPowerGroup[3]=fApfelWidget->PowerGroupBox_4;
+//  fApfelPowerGroup[4]=fApfelWidget->PowerGroupBox_5;
+//  fApfelPowerGroup[5]=fApfelWidget->PowerGroupBox_6;
+//  fApfelPowerGroup[6]=fApfelWidget->PowerGroupBox_7;
+//  fApfelPowerGroup[7]=fApfelWidget->PowerGroupBox_8;
+
+  fApfelPowerLabel[0]=fApfelWidget->ApfelAdressLabel_1;
+  fApfelPowerLabel[1]=fApfelWidget->ApfelAdressLabel_2;
+  fApfelPowerLabel[2]=fApfelWidget->ApfelAdressLabel_3;
+  fApfelPowerLabel[3]=fApfelWidget->ApfelAdressLabel_4;
+  fApfelPowerLabel[4]=fApfelWidget->ApfelAdressLabel_5;
+  fApfelPowerLabel[5]=fApfelWidget->ApfelAdressLabel_6;
+  fApfelPowerLabel[6]=fApfelWidget->ApfelAdressLabel_7;
+  fApfelPowerLabel[7]=fApfelWidget->ApfelAdressLabel_8;
+
+
+
+  fApfelPowerCheckbox[0]=fApfelWidget->PowerCheckBox_1;
+  fApfelPowerCheckbox[1]=fApfelWidget->PowerCheckBox_2;
+  fApfelPowerCheckbox[2]=fApfelWidget->PowerCheckBox_3;
+  fApfelPowerCheckbox[3]=fApfelWidget->PowerCheckBox_4;
+  fApfelPowerCheckbox[4]=fApfelWidget->PowerCheckBox_5;
+  fApfelPowerCheckbox[5]=fApfelWidget->PowerCheckBox_6;
+  fApfelPowerCheckbox[6]=fApfelWidget->PowerCheckBox_7;
+  fApfelPowerCheckbox[7]=fApfelWidget->PowerCheckBox_8;
+
+
+
+   fApfelSerialLineEdit[0]=fApfelWidget->ApfelSerialNum_1;
+   fApfelSerialLineEdit[1]=fApfelWidget->ApfelSerialNum_2;
+   fApfelSerialLineEdit[2]=fApfelWidget->ApfelSerialNum_3;
+   fApfelSerialLineEdit[3]=fApfelWidget->ApfelSerialNum_4;
+   fApfelSerialLineEdit[4]=fApfelWidget->ApfelSerialNum_5;
+   fApfelSerialLineEdit[5]=fApfelWidget->ApfelSerialNum_6;
+   fApfelSerialLineEdit[6]=fApfelWidget->ApfelSerialNum_7;
+   fApfelSerialLineEdit[7]=fApfelWidget->ApfelSerialNum_8;
+
+
 
   fPlotWidget[0] = fApfelWidget->PlotWidget_0;
   fPlotWidget[1] = fApfelWidget->PlotWidget_1;
@@ -1486,6 +1539,29 @@ void ApfelGui::AutoApplyDAC (int apfel, int dac, int val)
 }
 
 
+void ApfelGui::AutoApplyPower(int apfel, int state)
+{
+  theSetup_GET_FOR_SLAVE(BoardSetup);
+  if(!theSetup->IsUsePandaTestBoard()) return;
+  //std::cout << "AutoApplyPower apfel=" << apfel << ", state=" << state << std::endl;
+  theSetup->SetApfelPowered(apfel, (state>0));
+
+  // here we have to keep all other apfel power states as indicated in setup!
+  int powermask=0;
+  for(int a=0; a<APFEL_NUMCHIPS; ++a)
+  {
+    if(theSetup->HasApfelPower(a)) powermask |= (1 << a);
+  }
+
+  SetPower(powermask, theSetup->IsHighGain());
+
+  // check if we still have connection to the apfel and display non connected ones:
+  GetRegisters();
+  RefreshView();
+  // todo: only use required calls for this?
+}
+
+
 void ApfelGui::AutoApplyRefresh (int channel, int dac)
 {
   QString text;
@@ -1581,6 +1657,22 @@ void ApfelGui::RefreshDAC (int apfel)
   fApfelDACGroup[apfel]->setEnabled(theSetup->IsApfelPresent(apfel));
   fApfelGainGroup[apfel]->setEnabled(theSetup->IsApfelPresent(apfel));
 
+  // TODO: change color of adress label depending on chip presence:
+       // red: power off
+       // yellow: not present
+       // gree: power on and present
+
+       // change color of label instead of
+       //  QString labelprefix="<html><head/><body><p>Trigger";
+       //   QString labelstate = fTriggerOn ? " <span style=\" font-weight:600; color:#00ff00;\">ON </span></p></body></html>" :
+       //       " <span style=\" font-weight:600; color:#ff0000;\">OFF</span></p></body></html>" ;
+       //   fPolandWidget->TriggerLabel->setText(labelprefix+labelstate);
+       //
+
+
+
+  fApfelPowerLabel[apfel]->setEnabled(theSetup->IsApfelPresent(apfel));
+
 
 }
 
@@ -1638,6 +1730,15 @@ void ApfelGui::RefreshApfelLabels(bool ispandatest)
       fApfelWidget->ApfelPulseBox_7->setTitle("APFEL 7");
       fApfelWidget->ApfelPulseBox_8->setTitle("APFEL 8");
 
+      fApfelWidget->ApfelAdressLabel_5->setText("APFEL  5");
+      fApfelWidget->ApfelAdressLabel_6->setText("APFEL  6");
+      fApfelWidget->ApfelAdressLabel_7->setText("APFEL  7");
+      fApfelWidget->ApfelAdressLabel_8->setText("APFEL  8");
+
+
+
+
+
 
 
 
@@ -1645,20 +1746,25 @@ void ApfelGui::RefreshApfelLabels(bool ispandatest)
   else
   {
     fApfelWidget->ApfelDACTabset->setTabText(1,"APFEL 9-12");
-    fApfelWidget->ApfelBox5->setTitle("APFEL 9");
+    fApfelWidget->ApfelBox5->setTitle("APFEL  9");
     fApfelWidget->ApfelBox6->setTitle("APFEL 10");
     fApfelWidget->ApfelBox7->setTitle("APFEL 11");
     fApfelWidget->ApfelBox8->setTitle("APFEL 12");
 
-    fApfelWidget->ApfelGainBox_5->setTitle("APFEL 9");
+    fApfelWidget->ApfelGainBox_5->setTitle("APFEL  9");
     fApfelWidget->ApfelGainBox_6->setTitle("APFEL 10");
     fApfelWidget->ApfelGainBox_7->setTitle("APFEL 11");
     fApfelWidget->ApfelGainBox_8->setTitle("APFEL 12");
 
-    fApfelWidget->ApfelPulseBox_5->setTitle("APFEL 9");
+    fApfelWidget->ApfelPulseBox_5->setTitle("APFEL  9");
     fApfelWidget->ApfelPulseBox_6->setTitle("APFEL 10");
     fApfelWidget->ApfelPulseBox_7->setTitle("APFEL 11");
     fApfelWidget->ApfelPulseBox_8->setTitle("APFEL 12");
+
+    fApfelWidget->ApfelAdressLabel_5->setText("APFEL  9");
+    fApfelWidget->ApfelAdressLabel_6->setText("APFEL 10");
+    fApfelWidget->ApfelAdressLabel_7->setText("APFEL 11");
+    fApfelWidget->ApfelAdressLabel_8->setText("APFEL 12");
 
   }
 

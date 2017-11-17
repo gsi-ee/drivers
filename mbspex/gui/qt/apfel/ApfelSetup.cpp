@@ -6,7 +6,7 @@
 //////// the setup data class of a single apfel chip:
 
 ApfelSetup::ApfelSetup () :
-fChipPresent(true), fAddressID (0)
+fChipPresent(true), fPoweredOn(true), fAddressID (0)
 {
   for (int c = 0; c < APFEL_NUMDACS; ++c)
   {

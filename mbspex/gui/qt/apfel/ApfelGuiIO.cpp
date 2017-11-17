@@ -558,6 +558,7 @@ void ApfelGui::SetSwitches (bool useApfel, bool useHighGain, bool useStretcher, 
     int lo=APFEL_IO_DATA_LO_WR;
     int hi=APFEL_IO_DATA_HI_WR;
     hi |= (0xFFFF); // default setup: all enabled, apfel ids defined to 1,...,8
+    // TODO: check here which apfels should be enabled!
     if(useHighGain)
       lo |= (0x000c);
     else
@@ -575,6 +576,56 @@ void ApfelGui::SetSwitches (bool useApfel, bool useHighGain, bool useStretcher, 
 
 
   }
+
+}
+
+void ApfelGui::SetPower (int powermask, bool highgain)
+{
+//printf("SetPower mask:0x%x, highgain:%d \n",powermask, highgain);
+
+// this switching only works for new pandatest hardware
+
+int dat = APFEL_IO_CONTROL_WR;
+int mask = 0;
+int lo=APFEL_IO_DATA_LO_WR;
+int hi=APFEL_IO_DATA_HI_WR;
+
+// following words of high control word:
+int sel_VddAsic=0; // 8bit
+int sel_InExt=0;   // 8bit
+
+// following words of low control word:
+int sel_DataASIC=0; // 8bit
+int chipID=0; // 4bit
+
+
+
+sel_InExt=0xFF; // all externals to ground
+
+// note that we have to preserve the complete state of power switches here
+sel_VddAsic |=powermask;
+sel_DataASIC  &= ~powermask;
+
+// the common part:
+hi |= (sel_VddAsic & 0xFF) <<8;
+hi |= sel_InExt & 0xFF;
+lo |=(sel_DataASIC & 0xFF) <<8;
+
+// lsb for gain setup
+if(highgain)
+  lo |= (0x000c);
+else
+  lo |= (0x000d);
+
+
+
+WriteGosip (fSFP, fSlave, GOS_I2C_DWR, hi);
+WriteGosip (fSFP, fSlave, GOS_I2C_DWR, lo);
+
+ dat |= (0x18); // default setup: all enabled
+ WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
+
+
 
 }
 

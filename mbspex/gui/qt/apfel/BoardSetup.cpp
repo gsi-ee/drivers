@@ -260,8 +260,21 @@ bool  BoardSetup::IsApfelPresent (int apfel)
 int BoardSetup::SetApfelPresent (int apfel, bool on)
 {
   ASSERT_APFEL_VALID(apfel);
-  fApfel[apfel].SetPresent(on);
+  return (fApfel[apfel].SetPresent(on));
 }
+
+
+bool BoardSetup::HasApfelPower (int apfel)
+  {
+    ASSERT_APFEL_VALID(apfel);
+    return fApfel[apfel].HasPower();
+  }
+
+int BoardSetup::SetApfelPowered (int apfel, bool on)
+  {
+    ASSERT_APFEL_VALID(apfel);
+    return fApfel[apfel].SetPower(on);
+  }
 
 int BoardSetup::GetDACValue (int apfel, int dac)
 {

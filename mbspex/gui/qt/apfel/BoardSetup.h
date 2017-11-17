@@ -193,6 +193,13 @@ public:
   /** mark the apfel chip as active */
   int SetApfelPresent (int apfel, bool on);
 
+  /** check chip power on flag set after last switching on/off*/
+   bool HasApfelPower (int apfel);
+
+   /** mark that apfel chip at this slot has been switched on/off */
+   int SetApfelPowered (int apfel, bool on);
+
+
   int GetDACValue (int apfel, int dac);
 
   int SetDACValue (int apfel, int dac, uint16_t value);

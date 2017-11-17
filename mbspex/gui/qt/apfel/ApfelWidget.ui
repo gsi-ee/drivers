@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1264</width>
-    <height>517</height>
+    <width>1393</width>
+    <height>530</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>APFEL Widget</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_3">
+  <layout class="QGridLayout" name="gridLayout_41">
    <item row="0" column="0">
     <widget class="QTabWidget" name="ApfelTabWidget">
      <property name="currentIndex">
@@ -23,40 +23,609 @@
       <attribute name="title">
        <string>IO Config</string>
       </attribute>
-      <layout class="QGridLayout" name="gridLayout_4">
+      <layout class="QFormLayout" name="formLayout_4">
        <item row="0" column="0">
-        <widget class="QGroupBox" name="SetupSelectBox">
+        <layout class="QGridLayout" name="gridLayout_26">
+         <item row="0" column="0">
+          <widget class="QGroupBox" name="SetupSelectBox">
+           <property name="title">
+            <string>Hardware</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_28">
+            <item row="0" column="0">
+             <widget class="QRadioButton" name="PasemRadioButton">
+              <property name="text">
+               <string>APFELSEM</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QRadioButton" name="PandaRadioButton">
+              <property name="text">
+               <string>PANDA Test</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QGroupBox" name="InputSelectBox">
+           <property name="title">
+            <string>Input</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_16">
+            <item row="0" column="0">
+             <widget class="QRadioButton" name="ApfelRadioButton">
+              <property name="text">
+               <string>Use APFEL</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QRadioButton" name="PolandRadioButton">
+              <property name="text">
+               <string>Use POLAND</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QGroupBox" name="StretcherSelectBox">
+           <property name="title">
+            <string>Output stretcher</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_27">
+            <item row="0" column="0">
+             <widget class="QRadioButton" name="StretcherOnRadioButton">
+              <property name="text">
+               <string>Use Stretcher</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QRadioButton" name="StretcherOffRadioButton">
+              <property name="text">
+               <string>NO  Stretcher</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="0" column="1">
+        <layout class="QGridLayout" name="gridLayout_30">
+         <item row="0" column="0">
+          <widget class="QCheckBox" name="PowerCheckBox_all">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="toolTip">
+            <string>Switch power of APFEL in ALL mounting positions</string>
+           </property>
+           <property name="text">
+            <string>Power ALL</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="1" column="0" colspan="2">
+          <layout class="QGridLayout" name="gridLayout_5">
+           <item row="0" column="0">
+            <widget class="QGroupBox" name="PowerGroupBox_1">
+             <property name="title">
+              <string>Position 1</string>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_4">
+              <item>
+               <widget class="QCheckBox" name="PowerCheckBox_1">
+                <property name="toolTip">
+                 <string>Switch power of APFEL in this mounting position</string>
+                </property>
+                <property name="text">
+                 <string>Power</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="ApfelAdressLabel_1">
+                <property name="toolTip">
+                 <string>Addres ID of APFEL in this mounting position</string>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
+                </property>
+                <property name="text">
+                 <string>APFEL  1</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="ApfelSerialNum_1">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="readOnly">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="ScanSerialPushButton_1">
+                <property name="toolTip">
+                 <string>Press this button to get APFEL serial number from QRCODE scanner</string>
+                </property>
+                <property name="text">
+                 <string>Scan ID</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QGroupBox" name="PowerGroupBox_5">
+             <property name="title">
+              <string>Position 5</string>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_99">
+              <item>
+               <widget class="QCheckBox" name="PowerCheckBox_5">
+                <property name="toolTip">
+                 <string>Switch power of APFEL in this mounting position</string>
+                </property>
+                <property name="text">
+                 <string>Power</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="ApfelAdressLabel_5">
+                <property name="toolTip">
+                 <string>Addres ID of APFEL in this mounting position</string>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
+                </property>
+                <property name="text">
+                 <string>APFEL  9</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="ApfelSerialNum_5">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="readOnly">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="ScanSerialPushButton_5">
+                <property name="toolTip">
+                 <string>Press this button to get APFEL serial number from QRCODE scanner</string>
+                </property>
+                <property name="text">
+                 <string>Scan ID</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QGroupBox" name="PowerGroupBox_2">
+             <property name="title">
+              <string>Position 2</string>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_96">
+              <item>
+               <widget class="QCheckBox" name="PowerCheckBox_2">
+                <property name="toolTip">
+                 <string>Switch power of APFEL in this mounting position</string>
+                </property>
+                <property name="text">
+                 <string>Power</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="ApfelAdressLabel_2">
+                <property name="toolTip">
+                 <string>Addres ID of APFEL in this mounting position</string>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
+                </property>
+                <property name="text">
+                 <string>APFEL  2</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="ApfelSerialNum_2">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="readOnly">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="ScanSerialPushButton_2">
+                <property name="toolTip">
+                 <string>Press this button to get APFEL serial number from QRCODE scanner</string>
+                </property>
+                <property name="text">
+                 <string>Scan ID</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QGroupBox" name="PowerGroupBox_6">
+             <property name="title">
+              <string>Position 6</string>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_100">
+              <item>
+               <widget class="QCheckBox" name="PowerCheckBox_6">
+                <property name="toolTip">
+                 <string>Switch power of APFEL in this mounting position</string>
+                </property>
+                <property name="text">
+                 <string>Power</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="ApfelAdressLabel_6">
+                <property name="toolTip">
+                 <string>Addres ID of APFEL in this mounting position</string>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
+                </property>
+                <property name="text">
+                 <string>APFEL 10</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="ApfelSerialNum_6">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="readOnly">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="ScanSerialPushButton_6">
+                <property name="toolTip">
+                 <string>Press this button to get APFEL serial number from QRCODE scanner</string>
+                </property>
+                <property name="text">
+                 <string>Scan ID</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QGroupBox" name="PowerGroupBox_3">
+             <property name="title">
+              <string>Position 3</string>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_97">
+              <item>
+               <widget class="QCheckBox" name="PowerCheckBox_3">
+                <property name="toolTip">
+                 <string>Switch power of APFEL in this mounting position</string>
+                </property>
+                <property name="text">
+                 <string>Power</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="ApfelAdressLabel_3">
+                <property name="toolTip">
+                 <string>Addres ID of APFEL in this mounting position</string>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
+                </property>
+                <property name="text">
+                 <string>APFEL  3</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="ApfelSerialNum_3">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="readOnly">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="ScanSerialPushButton_3">
+                <property name="toolTip">
+                 <string>Press this button to get APFEL serial number from QRCODE scanner</string>
+                </property>
+                <property name="text">
+                 <string>Scan ID</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QGroupBox" name="PowerGroupBox_7">
+             <property name="title">
+              <string>Position 7</string>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_101">
+              <item>
+               <widget class="QCheckBox" name="PowerCheckBox_7">
+                <property name="toolTip">
+                 <string>Switch power of APFEL in this mounting position</string>
+                </property>
+                <property name="text">
+                 <string>Power</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="ApfelAdressLabel_7">
+                <property name="toolTip">
+                 <string>Addres ID of APFEL in this mounting position</string>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
+                </property>
+                <property name="text">
+                 <string>APFEL 11</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="ApfelSerialNum_7">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="readOnly">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="ScanSerialPushButton_7">
+                <property name="toolTip">
+                 <string>Press this button to get APFEL serial number from QRCODE scanner</string>
+                </property>
+                <property name="text">
+                 <string>Scan ID</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QGroupBox" name="PowerGroupBox_4">
+             <property name="title">
+              <string>Position 4</string>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_98">
+              <item>
+               <widget class="QCheckBox" name="PowerCheckBox_4">
+                <property name="toolTip">
+                 <string>Switch power of APFEL in this mounting position</string>
+                </property>
+                <property name="text">
+                 <string>Power</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="ApfelAdressLabel_4">
+                <property name="toolTip">
+                 <string>Addres ID of APFEL in this mounting position</string>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
+                </property>
+                <property name="text">
+                 <string>APFEL  4</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="ApfelSerialNum_4">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="readOnly">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="ScanSerialPushButton_4">
+                <property name="toolTip">
+                 <string>Press this button to get APFEL serial number from QRCODE scanner</string>
+                </property>
+                <property name="text">
+                 <string>Scan ID</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QGroupBox" name="PowerGroupBox_8">
+             <property name="title">
+              <string>Position 8</string>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_102">
+              <item>
+               <widget class="QCheckBox" name="PowerCheckBox_8">
+                <property name="toolTip">
+                 <string>Switch power of APFEL in this mounting position</string>
+                </property>
+                <property name="text">
+                 <string>Power</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="ApfelAdressLabel_8">
+                <property name="toolTip">
+                 <string>Addres ID of APFEL in this mounting position</string>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
+                </property>
+                <property name="text">
+                 <string>APFEL 12</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="ApfelSerialNum_8">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="readOnly">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="ScanSerialPushButton_8">
+                <property name="toolTip">
+                 <string>Press this button to get APFEL serial number from QRCODE scanner</string>
+                </property>
+                <property name="text">
+                 <string>Scan ID</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_23">
+      <attribute name="title">
+       <string>Gain</string>
+      </attribute>
+      <layout class="QFormLayout" name="formLayout_3">
+       <item row="0" column="0">
+        <widget class="QGroupBox" name="OutputSelectBox">
          <property name="title">
-          <string>Hardware</string>
+          <string>Output gain</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout_28">
+         <layout class="QGridLayout" name="gridLayout_4">
           <item row="0" column="0">
-           <widget class="QRadioButton" name="PasemRadioButton">
+           <widget class="QRadioButton" name="LoGainRadioButton">
             <property name="text">
-             <string>APFELSEM</string>
+             <string>Gain 1 </string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QRadioButton" name="HiGainRadioButton">
+            <property name="text">
+             <string>Gain 16 or 32</string>
             </property>
             <property name="checked">
              <bool>true</bool>
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QRadioButton" name="PandaRadioButton">
-            <property name="text">
-             <string>PANDA Test</string>
-            </property>
-           </widget>
-          </item>
          </layout>
         </widget>
        </item>
-       <item row="0" column="1" rowspan="3">
+       <item row="0" column="1">
         <widget class="QGroupBox" name="OutputChannelBox">
          <property name="title">
           <string>Channel gain</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout_26">
-          <item row="0" column="0" colspan="4">
+         <layout class="QGridLayout" name="gridLayout_17">
+          <item row="0" column="0" colspan="2">
            <layout class="QHBoxLayout" name="horizontalLayout_68">
             <item>
              <widget class="QLabel" name="gainalllabel">
@@ -568,97 +1137,6 @@
           </item>
          </layout>
         </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QGroupBox" name="OutputSelectBox">
-         <property name="title">
-          <string>Output gain</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_17">
-          <item row="0" column="0">
-           <widget class="QRadioButton" name="LoGainRadioButton">
-            <property name="text">
-             <string>Gain 1 </string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QRadioButton" name="HiGainRadioButton">
-            <property name="text">
-             <string>Gain 16 or 32</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QGroupBox" name="InputSelectBox">
-         <property name="title">
-          <string>Input</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_16">
-          <item row="0" column="0">
-           <widget class="QRadioButton" name="ApfelRadioButton">
-            <property name="text">
-             <string>Use APFEL</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QRadioButton" name="PolandRadioButton">
-            <property name="text">
-             <string>Use POLAND</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QGroupBox" name="StretcherSelectBox">
-         <property name="title">
-          <string>Output stretcher</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_27">
-          <item row="0" column="0">
-           <widget class="QRadioButton" name="StretcherOnRadioButton">
-            <property name="text">
-             <string>Use Stretcher</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QRadioButton" name="StretcherOffRadioButton">
-            <property name="text">
-             <string>NO  Stretcher</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <spacer name="horizontalSpacer_12">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>326</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
        </item>
       </layout>
      </widget>
@@ -6728,138 +7206,83 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tab_24">
+      <attribute name="title">
+       <string>Addresses</string>
+      </attribute>
+      <layout class="QFormLayout" name="formLayout_2">
+       <property name="fieldGrowthPolicy">
+        <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+       </property>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_25">
+      <attribute name="title">
+       <string>Current</string>
+      </attribute>
+      <layout class="QFormLayout" name="formLayout">
+       <item row="0" column="0">
+        <widget class="QGroupBox" name="PowerGroupBox">
+         <property name="title">
+          <string>Power supply</string>
+         </property>
+         <property name="checkable">
+          <bool>false</bool>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_74">
+          <item row="3" column="0">
+           <widget class="QDoubleSpinBox" name="CurrentDoubleSpinBox">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="toolTip">
+             <string>Current from power supply for device</string>
+            </property>
+            <property name="suffix">
+             <string> mA</string>
+            </property>
+            <property name="maximum">
+             <double>5000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QDoubleSpinBox" name="VoltageDoubleSpinBox">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="toolTip">
+             <string>Voltage of power supply for device</string>
+            </property>
+            <property name="suffix">
+             <string> V</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="AutoPowerscanCheckBox">
+            <property name="toolTip">
+             <string>Check to evaluate automatically via serial connection</string>
+            </property>
+            <property name="text">
+             <string>Scan from device</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="tab_22">
       <attribute name="title">
        <string>Characterization</string>
       </attribute>
-      <layout class="QGridLayout" name="gridLayout_77">
-       <item row="0" column="0" rowspan="2">
-        <layout class="QVBoxLayout" name="verticalLayout_23">
-         <item>
-          <widget class="QGroupBox" name="IDgroupBox">
-           <property name="title">
-            <string>Board IDs</string>
-           </property>
-           <layout class="QGridLayout" name="gridLayout_72">
-            <item row="0" column="0">
-             <widget class="QCheckBox" name="AutoBoardIDScanCheckBox">
-              <property name="toolTip">
-               <string>Check to evaluate automatically via serial connection</string>
-              </property>
-              <property name="text">
-               <string>Scan Barcode</string>
-              </property>
-              <property name="checked">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <layout class="QHBoxLayout" name="horizontalLayout_95">
-              <item>
-               <layout class="QVBoxLayout" name="verticalLayout_17">
-                <item>
-                 <widget class="QLabel" name="ApfelIDLabel">
-                  <property name="text">
-                   <string>APFEL ID 1</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="ApfelIDLabel_2">
-                  <property name="text">
-                   <string>APFEL ID 2</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <layout class="QVBoxLayout" name="verticalLayout_16">
-                <item>
-                 <widget class="QLineEdit" name="ApfelID1_lineEdit">
-                  <property name="toolTip">
-                   <string>Please type primary Apfel id of selected device</string>
-                  </property>
-                  <property name="readOnly">
-                   <bool>false</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLineEdit" name="ApfelID2_lineEdit">
-                  <property name="toolTip">
-                   <string>Please type secondary id</string>
-                  </property>
-                  <property name="readOnly">
-                   <bool>false</bool>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-             </layout>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QGroupBox" name="PowerGroupBox">
-           <property name="title">
-            <string>Power supply</string>
-           </property>
-           <property name="checkable">
-            <bool>false</bool>
-           </property>
-           <layout class="QGridLayout" name="gridLayout_74">
-            <item row="3" column="0">
-             <widget class="QDoubleSpinBox" name="CurrentDoubleSpinBox">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="toolTip">
-               <string>Current from power supply for device</string>
-              </property>
-              <property name="suffix">
-               <string> mA</string>
-              </property>
-              <property name="maximum">
-               <double>5000.000000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
-             <widget class="QDoubleSpinBox" name="VoltageDoubleSpinBox">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="toolTip">
-               <string>Voltage of power supply for device</string>
-              </property>
-              <property name="suffix">
-               <string> V</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QCheckBox" name="AutoPowerscanCheckBox">
-              <property name="toolTip">
-               <string>Check to evaluate automatically via serial connection</string>
-              </property>
-              <property name="text">
-               <string>Scan from device</string>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="0" column="1">
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="0" column="0">
         <widget class="QGroupBox" name="BenchmarkControlgroupBox">
          <property name="title">
           <string>Control</string>
@@ -6963,7 +7386,7 @@
          </layout>
         </widget>
        </item>
-       <item row="0" column="2" rowspan="3">
+       <item row="0" column="1" rowspan="3">
         <widget class="KPlotWidget" name="BenchmarkPlotwidget">
          <property name="minimumSize">
           <size>
@@ -6999,7 +7422,7 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
+       <item row="1" column="0">
         <spacer name="verticalSpacer_5">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -7007,12 +7430,12 @@
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>86</height>
+           <height>112</height>
           </size>
          </property>
         </spacer>
        </item>
-       <item row="2" column="0" colspan="2">
+       <item row="2" column="0">
         <widget class="QGroupBox" name="TestgroupBox">
          <property name="title">
           <string>Benchmarks</string>
@@ -7386,22 +7809,6 @@
  <resources/>
  <connections>
   <connection>
-   <sender>LoGainRadioButton</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>OutputChannelBox</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>121</x>
-     <y>324</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>290</x>
-     <y>145</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>DAC_Slider_00</sender>
    <signal>valueChanged(int)</signal>
    <receiver>DAC_spinBox_00</receiver>
@@ -7498,22 +7905,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>DAC_Slider_03</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>DAC_spinBox_03</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>231</x>
-     <y>202</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>339</x>
-     <y>204</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>DAC_spinBox_03</sender>
    <signal>valueChanged(int)</signal>
    <receiver>DAC_Slider_03</receiver>
@@ -7526,6 +7917,22 @@
     <hint type="destinationlabel">
      <x>231</x>
      <y>202</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_Slider_03</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_03</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>231</x>
+     <y>202</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>339</x>
+     <y>204</y>
     </hint>
    </hints>
   </connection>
@@ -7594,6 +8001,22 @@
    </hints>
   </connection>
   <connection>
+   <sender>DAC_Slider_07</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_07</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>231</x>
+     <y>314</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>339</x>
+     <y>316</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
    <sender>DAC_Slider_06</sender>
    <signal>valueChanged(int)</signal>
    <receiver>DAC_spinBox_06</receiver>
@@ -7626,18 +8049,34 @@
    </hints>
   </connection>
   <connection>
-   <sender>DAC_Slider_07</sender>
+   <sender>DAC_spinBox_08</sender>
    <signal>valueChanged(int)</signal>
-   <receiver>DAC_spinBox_07</receiver>
+   <receiver>DAC_Slider_08</receiver>
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>231</x>
-     <y>314</y>
+     <x>1048</x>
+     <y>131</y>
     </hint>
     <hint type="destinationlabel">
-     <x>339</x>
-     <y>316</y>
+     <x>889</x>
+     <y>118</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DAC_Slider_08</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>DAC_spinBox_08</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>889</x>
+     <y>118</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1048</x>
+     <y>131</y>
     </hint>
    </hints>
   </connection>
@@ -7658,34 +8097,34 @@
    </hints>
   </connection>
   <connection>
-   <sender>DAC_Slider_08</sender>
+   <sender>DAC_spinBox_all</sender>
    <signal>valueChanged(int)</signal>
-   <receiver>DAC_spinBox_08</receiver>
+   <receiver>DAC_Slider_all</receiver>
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>889</x>
-     <y>118</y>
+     <x>318</x>
+     <y>86</y>
     </hint>
     <hint type="destinationlabel">
-     <x>953</x>
-     <y>120</y>
+     <x>148</x>
+     <y>73</y>
     </hint>
    </hints>
   </connection>
   <connection>
-   <sender>DAC_spinBox_08</sender>
+   <sender>DAC_spinBox_10</sender>
    <signal>valueChanged(int)</signal>
-   <receiver>DAC_Slider_08</receiver>
+   <receiver>DAC_Slider_10</receiver>
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>953</x>
-     <y>120</y>
+     <x>1048</x>
+     <y>187</y>
     </hint>
     <hint type="destinationlabel">
      <x>889</x>
-     <y>118</y>
+     <y>174</y>
     </hint>
    </hints>
   </connection>
@@ -7700,24 +8139,8 @@
      <y>174</y>
     </hint>
     <hint type="destinationlabel">
-     <x>953</x>
-     <y>176</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>DAC_spinBox_10</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>DAC_Slider_10</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>953</x>
-     <y>176</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>889</x>
-     <y>174</y>
+     <x>1048</x>
+     <y>187</y>
     </hint>
    </hints>
   </connection>
@@ -7732,8 +8155,8 @@
      <y>202</y>
     </hint>
     <hint type="destinationlabel">
-     <x>953</x>
-     <y>204</y>
+     <x>1048</x>
+     <y>215</y>
     </hint>
    </hints>
   </connection>
@@ -7744,8 +8167,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>953</x>
-     <y>204</y>
+     <x>1048</x>
+     <y>215</y>
     </hint>
     <hint type="destinationlabel">
      <x>889</x>
@@ -7764,8 +8187,8 @@
      <y>230</y>
     </hint>
     <hint type="destinationlabel">
-     <x>953</x>
-     <y>232</y>
+     <x>1048</x>
+     <y>243</y>
     </hint>
    </hints>
   </connection>
@@ -7776,8 +8199,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>953</x>
-     <y>232</y>
+     <x>1048</x>
+     <y>243</y>
     </hint>
     <hint type="destinationlabel">
      <x>889</x>
@@ -7796,8 +8219,8 @@
      <y>258</y>
     </hint>
     <hint type="destinationlabel">
-     <x>953</x>
-     <y>260</y>
+     <x>1048</x>
+     <y>271</y>
     </hint>
    </hints>
   </connection>
@@ -7808,8 +8231,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>953</x>
-     <y>260</y>
+     <x>1048</x>
+     <y>271</y>
     </hint>
     <hint type="destinationlabel">
      <x>889</x>
@@ -7828,8 +8251,8 @@
      <y>286</y>
     </hint>
     <hint type="destinationlabel">
-     <x>953</x>
-     <y>288</y>
+     <x>1048</x>
+     <y>299</y>
     </hint>
    </hints>
   </connection>
@@ -7840,8 +8263,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>953</x>
-     <y>288</y>
+     <x>1048</x>
+     <y>299</y>
     </hint>
     <hint type="destinationlabel">
      <x>889</x>
@@ -7860,8 +8283,8 @@
      <y>314</y>
     </hint>
     <hint type="destinationlabel">
-     <x>953</x>
-     <y>316</y>
+     <x>1048</x>
+     <y>327</y>
     </hint>
    </hints>
   </connection>
@@ -7872,8 +8295,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>953</x>
-     <y>316</y>
+     <x>1048</x>
+     <y>327</y>
     </hint>
     <hint type="destinationlabel">
      <x>889</x>
@@ -7892,24 +8315,8 @@
      <y>73</y>
     </hint>
     <hint type="destinationlabel">
-     <x>212</x>
-     <y>75</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>DAC_spinBox_all</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>DAC_Slider_all</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>212</x>
-     <y>75</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>148</x>
-     <y>73</y>
+     <x>318</x>
+     <y>86</y>
     </hint>
    </hints>
   </connection>
@@ -7940,8 +8347,8 @@
      <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>212</x>
-     <y>75</y>
+     <x>318</x>
+     <y>86</y>
     </hint>
    </hints>
   </connection>
@@ -7952,8 +8359,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>953</x>
-     <y>148</y>
+     <x>1048</x>
+     <y>159</y>
     </hint>
     <hint type="destinationlabel">
      <x>889</x>
@@ -7972,8 +8379,8 @@
      <y>146</y>
     </hint>
     <hint type="destinationlabel">
-     <x>953</x>
-     <y>148</y>
+     <x>1048</x>
+     <y>159</y>
     </hint>
    </hints>
   </connection>
@@ -7984,12 +8391,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1231</x>
-     <y>74</y>
+     <x>1358</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>626</x>
-     <y>119</y>
+     <x>690</x>
+     <y>130</y>
     </hint>
    </hints>
   </connection>
@@ -8000,12 +8407,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1231</x>
-     <y>74</y>
+     <x>1358</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>626</x>
-     <y>147</y>
+     <x>690</x>
+     <y>158</y>
     </hint>
    </hints>
   </connection>
@@ -8016,12 +8423,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1231</x>
-     <y>74</y>
+     <x>1358</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>626</x>
-     <y>175</y>
+     <x>690</x>
+     <y>186</y>
     </hint>
    </hints>
   </connection>
@@ -8032,12 +8439,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1231</x>
-     <y>74</y>
+     <x>1358</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>626</x>
-     <y>203</y>
+     <x>690</x>
+     <y>214</y>
     </hint>
    </hints>
   </connection>
@@ -8048,12 +8455,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1231</x>
-     <y>74</y>
+     <x>1358</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>626</x>
-     <y>231</y>
+     <x>690</x>
+     <y>242</y>
     </hint>
    </hints>
   </connection>
@@ -8064,12 +8471,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1231</x>
-     <y>74</y>
+     <x>1358</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>626</x>
-     <y>259</y>
+     <x>690</x>
+     <y>270</y>
     </hint>
    </hints>
   </connection>
@@ -8080,12 +8487,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1231</x>
-     <y>74</y>
+     <x>1358</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>626</x>
-     <y>287</y>
+     <x>690</x>
+     <y>298</y>
     </hint>
    </hints>
   </connection>
@@ -8096,12 +8503,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1231</x>
-     <y>74</y>
+     <x>1358</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>626</x>
-     <y>315</y>
+     <x>690</x>
+     <y>326</y>
     </hint>
    </hints>
   </connection>
@@ -8112,12 +8519,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1231</x>
-     <y>74</y>
+     <x>1358</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1240</x>
-     <y>119</y>
+     <x>1367</x>
+     <y>130</y>
     </hint>
    </hints>
   </connection>
@@ -8128,12 +8535,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1231</x>
-     <y>74</y>
+     <x>1358</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1240</x>
-     <y>147</y>
+     <x>1367</x>
+     <y>158</y>
     </hint>
    </hints>
   </connection>
@@ -8144,12 +8551,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1231</x>
-     <y>74</y>
+     <x>1358</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1240</x>
-     <y>175</y>
+     <x>1367</x>
+     <y>186</y>
     </hint>
    </hints>
   </connection>
@@ -8160,12 +8567,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1231</x>
-     <y>74</y>
+     <x>1358</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1240</x>
-     <y>203</y>
+     <x>1367</x>
+     <y>214</y>
     </hint>
    </hints>
   </connection>
@@ -8176,12 +8583,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1231</x>
-     <y>74</y>
+     <x>1358</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1240</x>
-     <y>231</y>
+     <x>1367</x>
+     <y>242</y>
     </hint>
    </hints>
   </connection>
@@ -8192,12 +8599,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1231</x>
-     <y>74</y>
+     <x>1358</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1240</x>
-     <y>259</y>
+     <x>1367</x>
+     <y>270</y>
     </hint>
    </hints>
   </connection>
@@ -8208,28 +8615,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1231</x>
-     <y>74</y>
+     <x>1358</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1240</x>
-     <y>287</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>Baseline_Box_all</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>Baseline_Box_15</receiver>
-   <slot>setChecked(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1231</x>
-     <y>74</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1240</x>
-     <y>315</y>
+     <x>1367</x>
+     <y>298</y>
     </hint>
    </hints>
   </connection>
@@ -8240,268 +8631,28 @@
    <slot>click()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1144</x>
-     <y>75</y>
+     <x>1271</x>
+     <y>86</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1039</x>
-     <y>77</y>
+     <x>1155</x>
+     <y>88</y>
     </hint>
    </hints>
   </connection>
   <connection>
-   <sender>gainCombo_all</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>gainCombo_0</receiver>
-   <slot>setCurrentIndex(int)</slot>
+   <sender>Baseline_Box_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Baseline_Box_15</receiver>
+   <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>333</x>
-     <y>123</y>
+     <x>1358</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
-     <x>418</x>
-     <y>217</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>gainCombo_all</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>gainCombo_1</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>333</x>
-     <y>123</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>418</x>
-     <y>250</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>gainCombo_all</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>gainCombo_2</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>333</x>
-     <y>123</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>685</x>
-     <y>217</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>gainCombo_all</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>gainCombo_3</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>333</x>
-     <y>123</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>685</x>
-     <y>250</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>gainCombo_all</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>gainCombo_4</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>333</x>
-     <y>123</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>953</x>
-     <y>217</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>gainCombo_all</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>gainCombo_5</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>333</x>
-     <y>123</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>953</x>
-     <y>250</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>gainCombo_all</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>gainCombo_6</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>333</x>
-     <y>123</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1220</x>
-     <y>217</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>gainCombo_all</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>gainCombo_7</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>333</x>
-     <y>123</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1220</x>
-     <y>250</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>gainCombo_all</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>gainCombo_8</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>333</x>
-     <y>123</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>418</x>
-     <y>320</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>gainCombo_all</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>gainCombo_9</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>333</x>
-     <y>123</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>418</x>
-     <y>354</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>gainCombo_all</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>gainCombo_10</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>333</x>
-     <y>123</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>685</x>
-     <y>320</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>gainCombo_all</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>gainCombo_11</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>333</x>
-     <y>123</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>685</x>
-     <y>354</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>gainCombo_all</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>gainCombo_12</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>333</x>
-     <y>123</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>953</x>
-     <y>320</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>gainCombo_all</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>gainCombo_13</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>333</x>
-     <y>123</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>953</x>
-     <y>354</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>gainCombo_all</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>gainCombo_14</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>333</x>
-     <y>123</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1220</x>
-     <y>320</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>gainCombo_all</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>gainCombo_15</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>333</x>
-     <y>123</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1220</x>
-     <y>354</y>
+     <x>1367</x>
+     <y>326</y>
     </hint>
    </hints>
   </connection>
@@ -8772,8 +8923,8 @@
      <y>112</y>
     </hint>
     <hint type="destinationlabel">
-     <x>327</x>
-     <y>379</y>
+     <x>328</x>
+     <y>400</y>
     </hint>
    </hints>
   </connection>
@@ -8788,8 +8939,8 @@
      <y>112</y>
     </hint>
     <hint type="destinationlabel">
-     <x>327</x>
-     <y>442</y>
+     <x>328</x>
+     <y>466</y>
     </hint>
    </hints>
   </connection>
@@ -8804,24 +8955,8 @@
      <y>112</y>
     </hint>
     <hint type="destinationlabel">
-     <x>527</x>
-     <y>379</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>PulserCheckBox_all</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>PulserCheckBox_11</receiver>
-   <slot>setChecked(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>107</x>
-     <y>112</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>527</x>
-     <y>442</y>
+     <x>528</x>
+     <y>400</y>
     </hint>
    </hints>
   </connection>
@@ -8836,8 +8971,8 @@
      <y>112</y>
     </hint>
     <hint type="destinationlabel">
-     <x>727</x>
-     <y>379</y>
+     <x>728</x>
+     <y>400</y>
     </hint>
    </hints>
   </connection>
@@ -8852,8 +8987,24 @@
      <y>112</y>
     </hint>
     <hint type="destinationlabel">
-     <x>727</x>
-     <y>442</y>
+     <x>728</x>
+     <y>466</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PulserCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PulserCheckBox_11</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>107</x>
+     <y>112</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>528</x>
+     <y>466</y>
     </hint>
    </hints>
   </connection>
@@ -8868,8 +9019,8 @@
      <y>112</y>
     </hint>
     <hint type="destinationlabel">
-     <x>927</x>
-     <y>379</y>
+     <x>928</x>
+     <y>400</y>
     </hint>
    </hints>
   </connection>
@@ -8884,8 +9035,8 @@
      <y>112</y>
     </hint>
     <hint type="destinationlabel">
-     <x>927</x>
-     <y>442</y>
+     <x>928</x>
+     <y>466</y>
     </hint>
    </hints>
   </connection>
@@ -8964,8 +9115,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>421</x>
-     <y>306</y>
+     <x>464</x>
+     <y>325</y>
     </hint>
    </hints>
   </connection>
@@ -8980,8 +9131,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>421</x>
-     <y>363</y>
+     <x>464</x>
+     <y>385</y>
     </hint>
    </hints>
   </connection>
@@ -8996,8 +9147,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>421</x>
-     <y>421</y>
+     <x>464</x>
+     <y>444</y>
     </hint>
    </hints>
   </connection>
@@ -9012,8 +9163,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>421</x>
-     <y>478</y>
+     <x>464</x>
+     <y>504</y>
     </hint>
    </hints>
   </connection>
@@ -9028,8 +9179,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>831</x>
-     <y>75</y>
+     <x>916</x>
+     <y>87</y>
     </hint>
    </hints>
   </connection>
@@ -9044,8 +9195,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>831</x>
-     <y>133</y>
+     <x>916</x>
+     <y>147</y>
     </hint>
    </hints>
   </connection>
@@ -9060,8 +9211,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>831</x>
-     <y>190</y>
+     <x>916</x>
+     <y>206</y>
     </hint>
    </hints>
   </connection>
@@ -9076,8 +9227,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>831</x>
-     <y>248</y>
+     <x>916</x>
+     <y>266</y>
     </hint>
    </hints>
   </connection>
@@ -9092,8 +9243,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>831</x>
-     <y>306</y>
+     <x>916</x>
+     <y>325</y>
     </hint>
    </hints>
   </connection>
@@ -9108,8 +9259,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>831</x>
-     <y>363</y>
+     <x>916</x>
+     <y>385</y>
     </hint>
    </hints>
   </connection>
@@ -9124,8 +9275,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>831</x>
-     <y>421</y>
+     <x>916</x>
+     <y>444</y>
     </hint>
    </hints>
   </connection>
@@ -9140,8 +9291,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>831</x>
-     <y>478</y>
+     <x>916</x>
+     <y>504</y>
     </hint>
    </hints>
   </connection>
@@ -9284,8 +9435,8 @@
      <y>113</y>
     </hint>
     <hint type="destinationlabel">
-     <x>387</x>
-     <y>380</y>
+     <x>388</x>
+     <y>401</y>
     </hint>
    </hints>
   </connection>
@@ -9300,8 +9451,8 @@
      <y>113</y>
     </hint>
     <hint type="destinationlabel">
-     <x>387</x>
-     <y>443</y>
+     <x>388</x>
+     <y>467</y>
     </hint>
    </hints>
   </connection>
@@ -9316,24 +9467,8 @@
      <y>113</y>
     </hint>
     <hint type="destinationlabel">
-     <x>587</x>
-     <y>380</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>PulserAmpSpinBox_all</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>PulserAmpSpinBox_11</receiver>
-   <slot>setValue(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>185</x>
-     <y>113</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>587</x>
-     <y>443</y>
+     <x>588</x>
+     <y>401</y>
     </hint>
    </hints>
   </connection>
@@ -9348,8 +9483,24 @@
      <y>113</y>
     </hint>
     <hint type="destinationlabel">
-     <x>787</x>
-     <y>380</y>
+     <x>788</x>
+     <y>401</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PulserAmpSpinBox_all</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>PulserAmpSpinBox_11</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>185</x>
+     <y>113</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>588</x>
+     <y>467</y>
     </hint>
    </hints>
   </connection>
@@ -9364,8 +9515,8 @@
      <y>113</y>
     </hint>
     <hint type="destinationlabel">
-     <x>787</x>
-     <y>443</y>
+     <x>788</x>
+     <y>467</y>
     </hint>
    </hints>
   </connection>
@@ -9380,8 +9531,8 @@
      <y>113</y>
     </hint>
     <hint type="destinationlabel">
-     <x>987</x>
-     <y>380</y>
+     <x>988</x>
+     <y>401</y>
     </hint>
    </hints>
   </connection>
@@ -9396,8 +9547,8 @@
      <y>113</y>
     </hint>
     <hint type="destinationlabel">
-     <x>987</x>
-     <y>443</y>
+     <x>988</x>
+     <y>467</y>
     </hint>
    </hints>
   </connection>
@@ -9408,8 +9559,8 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>180</x>
-     <y>342</y>
+     <x>205</x>
+     <y>368</y>
     </hint>
     <hint type="destinationlabel">
      <x>375</x>
@@ -9424,8 +9575,8 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>342</y>
+     <x>213</x>
+     <y>368</y>
     </hint>
     <hint type="destinationlabel">
      <x>550</x>
@@ -9440,8 +9591,8 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>342</y>
+     <x>213</x>
+     <y>368</y>
     </hint>
     <hint type="destinationlabel">
      <x>725</x>
@@ -9456,12 +9607,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>157</x>
-     <y>367</y>
+     <x>182</x>
+     <y>393</y>
     </hint>
     <hint type="destinationlabel">
-     <x>364</x>
-     <y>347</y>
+     <x>491</x>
+     <y>373</y>
     </hint>
    </hints>
   </connection>
@@ -9472,12 +9623,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>367</y>
+     <x>213</x>
+     <y>393</y>
     </hint>
     <hint type="destinationlabel">
-     <x>539</x>
-     <y>347</y>
+     <x>666</x>
+     <y>373</y>
     </hint>
    </hints>
   </connection>
@@ -9488,28 +9639,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>367</y>
+     <x>213</x>
+     <y>393</y>
     </hint>
     <hint type="destinationlabel">
-     <x>714</x>
-     <y>347</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>AllTesttSigmaCheckBox</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>Gain1TestSigmaCheckBox</receiver>
-   <slot>setChecked(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>188</x>
-     <y>392</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>364</x>
-     <y>376</y>
+     <x>841</x>
+     <y>373</y>
     </hint>
    </hints>
   </connection>
@@ -9520,12 +9655,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>392</y>
+     <x>213</x>
+     <y>418</y>
     </hint>
     <hint type="destinationlabel">
-     <x>539</x>
-     <y>376</y>
+     <x>666</x>
+     <y>402</y>
     </hint>
    </hints>
   </connection>
@@ -9536,12 +9671,28 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>392</y>
+     <x>213</x>
+     <y>418</y>
     </hint>
     <hint type="destinationlabel">
-     <x>714</x>
-     <y>376</y>
+     <x>841</x>
+     <y>402</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>AllTesttSigmaCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Gain1TestSigmaCheckBox</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>213</x>
+     <y>418</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>491</x>
+     <y>402</y>
     </hint>
    </hints>
   </connection>
@@ -9552,12 +9703,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>169</x>
-     <y>417</y>
+     <x>194</x>
+     <y>443</y>
     </hint>
     <hint type="destinationlabel">
-     <x>364</x>
-     <y>405</y>
+     <x>491</x>
+     <y>431</y>
     </hint>
    </hints>
   </connection>
@@ -9568,28 +9719,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>154</x>
-     <y>417</y>
+     <x>179</x>
+     <y>443</y>
     </hint>
     <hint type="destinationlabel">
-     <x>539</x>
-     <y>405</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>AllTestBaselineCheckBox</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>Gain32TestBaselineCheckBox</receiver>
-   <slot>setChecked(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>143</x>
-     <y>417</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>714</x>
-     <y>405</y>
+     <x>666</x>
+     <y>431</y>
     </hint>
    </hints>
   </connection>
@@ -9600,12 +9735,28 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>442</y>
+     <x>213</x>
+     <y>468</y>
     </hint>
     <hint type="destinationlabel">
-     <x>364</x>
-     <y>434</y>
+     <x>491</x>
+     <y>460</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>AllTestBaselineCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Gain32TestBaselineCheckBox</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>168</x>
+     <y>443</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>841</x>
+     <y>431</y>
     </hint>
    </hints>
   </connection>
@@ -9616,12 +9767,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>539</x>
-     <y>434</y>
+     <x>666</x>
+     <y>460</y>
     </hint>
     <hint type="destinationlabel">
-     <x>539</x>
-     <y>434</y>
+     <x>666</x>
+     <y>460</y>
     </hint>
    </hints>
   </connection>
@@ -9632,12 +9783,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>442</y>
+     <x>213</x>
+     <y>468</y>
     </hint>
     <hint type="destinationlabel">
-     <x>714</x>
-     <y>434</y>
+     <x>841</x>
+     <y>460</y>
     </hint>
    </hints>
   </connection>
@@ -9648,76 +9799,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>165</x>
-     <y>442</y>
+     <x>190</x>
+     <y>468</y>
     </hint>
     <hint type="destinationlabel">
-     <x>539</x>
-     <y>434</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>AutoPowerscanCheckBox</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>VoltageDoubleSpinBox</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>126</x>
-     <y>201</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>130</x>
-     <y>227</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>AutoPowerscanCheckBox</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>CurrentDoubleSpinBox</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>204</x>
-     <y>201</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>169</x>
-     <y>253</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>AutoBoardIDScanCheckBox</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>ApfelID1_lineEdit</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>115</x>
-     <y>84</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>247</x>
-     <y>112</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>AutoBoardIDScanCheckBox</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>ApfelID2_lineEdit</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>94</x>
-     <y>84</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>259</x>
-     <y>138</y>
+     <x>666</x>
+     <y>460</y>
     </hint>
    </hints>
   </connection>
@@ -9732,8 +9819,8 @@
      <y>119</y>
     </hint>
     <hint type="destinationlabel">
-     <x>90</x>
-     <y>177</y>
+     <x>97</x>
+     <y>240</y>
     </hint>
    </hints>
   </connection>
@@ -9748,8 +9835,152 @@
      <y>119</y>
     </hint>
     <hint type="destinationlabel">
-     <x>66</x>
-     <y>445</y>
+     <x>69</x>
+     <y>337</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PowerCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PowerCheckBox_1</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>188</x>
+     <y>69</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>203</x>
+     <y>115</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PowerCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PowerCheckBox_2</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>162</x>
+     <y>52</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>174</x>
+     <y>172</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PowerCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PowerCheckBox_3</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>162</x>
+     <y>52</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>174</x>
+     <y>238</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PowerCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PowerCheckBox_4</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>162</x>
+     <y>52</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>174</x>
+     <y>304</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PowerCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PowerCheckBox_5</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>162</x>
+     <y>52</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>780</x>
+     <y>106</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PowerCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PowerCheckBox_6</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>162</x>
+     <y>52</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>780</x>
+     <y>172</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PowerCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PowerCheckBox_7</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>162</x>
+     <y>52</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>780</x>
+     <y>238</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>PowerCheckBox_all</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>PowerCheckBox_8</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>162</x>
+     <y>52</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>780</x>
+     <y>304</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>LoGainRadioButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>OutputChannelBox</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>69</x>
+     <y>104</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>214</x>
+     <y>65</y>
     </hint>
    </hints>
   </connection>

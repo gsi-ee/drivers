@@ -12,6 +12,9 @@ private:
   /** true if this chip is actually present and sends response*/
   bool fChipPresent;
 
+  /** true if power to apfel chip has been switched on*/
+  bool fPoweredOn;
+
   /** the address id of this apfel chip on the board*/
   uint8_t fAddressID;
 
@@ -65,6 +68,11 @@ public:
    bool IsPresent(){return fChipPresent;}
 
    int SetPresent(bool on){fChipPresent=on; return 0;}
+
+
+   bool HasPower(){return fPoweredOn;}
+
+   int SetPower(bool on){fPoweredOn=on; return 0;}
 
 };
 

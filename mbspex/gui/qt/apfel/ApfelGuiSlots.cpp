@@ -294,6 +294,68 @@ void ApfelGui::GainChanged_15 ()
   GainChanged (7, 1);
 }
 
+
+
+
+
+void ApfelGui::PowerChanged(int apfel, int checkstate)
+{
+  //std::cout <<"PowerChanged slot, apfel="<<apfel<<", state="<<checkstate  <<std::endl;
+
+  if (checkBox_AA->isChecked () && !fBroadcasting)
+   {
+     EvaluateSlave ();
+     GOSIP_BROADCAST_ACTION(AutoApplyPower(apfel,checkstate));
+   }
+}
+
+
+
+void ApfelGui::PowerChanged_0(int checkstate)
+{
+  PowerChanged(0,checkstate);
+}
+void ApfelGui::PowerChanged_1(int checkstate)
+{
+  PowerChanged(1,checkstate);
+}
+void ApfelGui::PowerChanged_2(int checkstate)
+{
+  PowerChanged(2,checkstate);
+}
+void ApfelGui::PowerChanged_3(int checkstate)
+{
+  PowerChanged(3,checkstate);
+}
+void ApfelGui::PowerChanged_4(int checkstate)
+{
+  PowerChanged(4,checkstate);
+}
+void ApfelGui::PowerChanged_5(int checkstate)
+{
+  PowerChanged(5,checkstate);
+}
+void ApfelGui::PowerChanged_6(int checkstate)
+{
+  PowerChanged(6,checkstate);
+}
+void ApfelGui::PowerChanged_7(int checkstate)
+{
+  PowerChanged(7,checkstate);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 void ApfelGui::DAC_enterText (int apfel, int dac)
 {
   GOSIP_LOCK_SLOT
@@ -946,8 +1008,13 @@ void ApfelGui::StartBenchmarkPressed ()
 {
   theSetup_GET_FOR_SLAVE(BoardSetup);
   printm ("Benchmark Timer has been started!");
-  QString apfel1 = fApfelWidget->ApfelID1_lineEdit->text ();
-  QString apfel2 = fApfelWidget->ApfelID2_lineEdit->text ();
+  //QString apfel1 = fApfelWidget->ApfelID1_lineEdit->text ();
+  //QString apfel2 = fApfelWidget->ApfelID2_lineEdit->text ();
+
+
+  // TODO: change for all 8 serial numbers in case of pandatest. For pasem, take only first ids of 4er groups
+  QString apfel1 = fApfelWidget->ApfelSerialNum_1->text ();
+  QString apfel2 = fApfelWidget->ApfelSerialNum_5->text ();
   if (apfel1.isEmpty () || apfel2.isEmpty ())
   {
     printm ("Please specify full id information!");
@@ -1104,9 +1171,13 @@ void ApfelGui::ContinueBenchmarkPressed ()
 
 void ApfelGui::SaveBenchmarkPressed ()
 {
-  QString apfel1 = fApfelWidget->ApfelID1_lineEdit->text ();
-  QString apfel2 = fApfelWidget->ApfelID2_lineEdit->text ();
-  QString filename = apfel1.append ("_").append (apfel2).append (".apf");
+  //QString apfel1 = fApfelWidget->ApfelID1_lineEdit->text ();
+  //QString apfel2 = fApfelWidget->ApfelID2_lineEdit->text ();
+  // TODO: change for all 8 serial numbers in case of pandatest. For pasem, take only first ids of 4er groups
+   QString apfel1 = fApfelWidget->ApfelSerialNum_1->text ();
+   QString apfel2 = fApfelWidget->ApfelSerialNum_5->text ();
+
+   QString filename = apfel1.append ("_").append (apfel2).append (".apf");
   DoSaveConfig(filename.toLatin1 ().constData ());
 }
 
