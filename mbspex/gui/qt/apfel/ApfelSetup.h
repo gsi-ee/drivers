@@ -3,6 +3,9 @@
 
 #include "ApfelDefines.h"
 
+#include <QString>
+
+
 /** this is a class (structure) to remember the setup of individual APFEL chip*/
 class ApfelSetup
 {
@@ -14,6 +17,9 @@ private:
 
   /** true if power to apfel chip has been switched on*/
   bool fPoweredOn;
+
+  /** the chip id as taken from QR code tag*/
+  QString fChipID;
 
   /** the address id of this apfel chip on the board*/
   uint8_t fAddressID;
@@ -33,6 +39,14 @@ private:
   /** True if test pulser with positive polarity. False for negative*/
   bool fTestPulsPositive;
 
+  /** most recent measurment of asic current*/
+  double fCurrentAsic;
+
+  /** most recent measurment of HVcurrent*/
+  double fCurrentHV;
+
+  /** most recent measurment of diode current*/
+  double fCurrentDiode;
 
 
 public:
@@ -73,6 +87,27 @@ public:
    bool HasPower(){return fPoweredOn;}
 
    int SetPower(bool on){fPoweredOn=on; return 0;}
+
+   const QString& GetChipID() {return fChipID;}
+
+   int SetChipID(const QString& tag){fChipID=tag; return 0;}
+
+    void SetCurrentASIC(double val){fCurrentAsic=val;}
+
+   double GetCurrentASIC(){return fCurrentAsic;}
+
+   void SetCurrentHV(double val){fCurrentHV=val;}
+
+   double GetCurrentHV(){return fCurrentHV;}
+
+   void SetCurrentDiode(double val){fCurrentDiode=val;}
+
+   double GetCurrentDiode(){return fCurrentDiode;}
+
+
+
+
+
 
 };
 

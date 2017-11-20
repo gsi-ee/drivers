@@ -27,17 +27,31 @@ private:
 
   /** the label of the board containing this chip. Will correspond to the barcode value
    * sticked to the hardware*/
-  std::string fBoardLabel;
+  QString fChipLabel;
 
 
   /** external power supply voltage*/
-  double fVoltage;
+ // double fVoltage;
 
   /** external power supply current*/
-  double fCurrent;
+  //double fCurrent;
+
+  /** Current for ASIC measured by Keithley */
+  double fCurrentASIC;
+
+  /** Current for HV measured by Keithley */
+  double fCurrentHV;
+
+  /** Current for Diode mode measured by Keithley */
+  double fCurrentDiode;
+
+
+
 
   /** the address id of this apfel chip on the board*/
    uint8_t fAddressID;
+
+
 
    /** the absolute values of the APFEL dacs after autocalibration*/
    uint16_t fDACValueCalibrate[APFEL_NUMDACS];
@@ -108,17 +122,38 @@ public:
   QString GetEndTime();
 
 
-  void SetBoardDescriptor(const std::string& label);
+  void SetChipDescriptor(const QString& label)
+  {
+    fChipLabel=label;
+  }
 
-  const std::string& GetBoardDescriptor();
+  const QString& GetChipDescriptor()
+  {
+    return  fChipLabel;
+  }
 
-  void SetVoltage(double volts){fVoltage=volts;}
 
-  double GetVoltage(){return fVoltage;}
 
-  void SetCurrent(double amps){fCurrent=amps;}
 
-  double GetCurrent(){return fCurrent;}
+
+//  void SetVoltage(double volts){fVoltage=volts;}
+//
+//  double GetVoltage(){return fVoltage;}
+//
+//  void SetCurrent(double amps){fCurrent=amps;}
+//
+//  double GetCurrent(){return fCurrent;}
+
+  void SetCurrentASIC(double amps){fCurrentASIC=amps;}
+  void SetCurrentHV(double amps){fCurrentHV=amps;}
+  void SetCurrentDiode(double amps){fCurrentDiode=amps;}
+
+
+  double GetCurrentASIC(){return fCurrentASIC;}
+  double GetCurrentHV(){return fCurrentHV;}
+  double GetCurrentDiode(){return fCurrentDiode;}
+
+
 
   /** set local address id of this chip on the board*/
   void SetAddressId(uint8_t ad);

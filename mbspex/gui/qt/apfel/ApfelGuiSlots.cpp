@@ -1008,24 +1008,47 @@ void ApfelGui::StartBenchmarkPressed ()
 {
   theSetup_GET_FOR_SLAVE(BoardSetup);
   printm ("Benchmark Timer has been started!");
-  //QString apfel1 = fApfelWidget->ApfelID1_lineEdit->text ();
-  //QString apfel2 = fApfelWidget->ApfelID2_lineEdit->text ();
 
 
-  // TODO: change for all 8 serial numbers in case of pandatest. For pasem, take only first ids of 4er groups
-  QString apfel1 = fApfelWidget->ApfelSerialNum_1->text ();
-  QString apfel2 = fApfelWidget->ApfelSerialNum_5->text ();
-  if (apfel1.isEmpty () || apfel2.isEmpty ())
+
+  if(theSetup->IsUsePandaTestBoard())
   {
-    printm ("Please specify full id information!");
-    return;
+    // pandatest mode: indiviual chip ids, must all be delivered
+  for(int a=0; a< APFEL_NUMCHIPS; ++a)
+  {
+
+    QString tag=fApfelSerialLineEdit[a]->text ();
+    if (tag.isEmpty ())
+     {
+       printm ("Missing chip id for position %d. Please specify full id information!",a);
+       return;
+     }
+    theSetup->SetChipID (a,tag);
+  }
+  }
+  else
+  {
+    // For pasem mode, take only first ids of 4er groups
+    for(int a=0; a< APFEL_NUMCHIPS; ++a)
+    {
+      QString tag;
+      if(a<4)  tag=fApfelSerialLineEdit[0]->text ();
+      else tag= fApfelSerialLineEdit[4]->text ();
+      if (tag.isEmpty ())
+        {
+            printm ("Missing chip id for position %d. Please specify full id information!",a);
+            return;
+        }
+      theSetup->SetChipID (a,tag);
+    }
+
+
+
   }
 
 
 
-  theSetup->SetBoardID (0, apfel1);
-  theSetup->SetBoardID (1, apfel2);
-
+#ifdef   APFEL_USE_TOELLNER_POWER
   double current=0, voltage=0;
   // here put automatic evaluation of power supply via serial connection:
   if(fApfelWidget->AutoPowerscanCheckBox->isChecked())
@@ -1042,18 +1065,27 @@ void ApfelGui::StartBenchmarkPressed ()
      voltage = fApfelWidget->VoltageDoubleSpinBox->value ();
   }
 
-
-
   // JAM for test of toellner only, we just skip rest of benchmark:
   //return;
 
+   theSetup->SetCurrentASIC (current);
+  //theSetup->SetVoltage(voltage);
 
-  theSetup->SetCurrent (current);
-  theSetup->SetVoltage(voltage);
+#endif
+
+
+
+
+
+  //2017 TODO: take into account different current test benchmarks
+
+
+
+
 
   printm ("Benchmark has been started for sfp %d slave %d", fSFP, fSlave);
-  printm ("Board 1:%s Board2:%s Current=%f A Voltage=%f V", apfel1.toLatin1 ().constData (), apfel2.toLatin1 ().constData (),
-      current, voltage);
+//  printm ("Board 1:%s Board2:%s Current=%f A Voltage=%f V", apfel1.toLatin1 ().constData (), apfel2.toLatin1 ().constData (),
+//      current, voltage);
 
   // here we evaluate a to do list that the timer should process:
   fBenchmark.SetSetup (theSetup);
@@ -1064,6 +1096,14 @@ void ApfelGui::StartBenchmarkPressed ()
 
 
   fBenchmark.ResetSequencerList ();
+
+  // TODO: put sequencer test for current and adressing here
+  // for the moment, we rely that this has been done before
+
+
+
+
+
   if (fApfelWidget->Gain1groupBox->isChecked ())
   {
 
@@ -1171,13 +1211,28 @@ void ApfelGui::ContinueBenchmarkPressed ()
 
 void ApfelGui::SaveBenchmarkPressed ()
 {
-  //QString apfel1 = fApfelWidget->ApfelID1_lineEdit->text ();
-  //QString apfel2 = fApfelWidget->ApfelID2_lineEdit->text ();
-  // TODO: change for all 8 serial numbers in case of pandatest. For pasem, take only first ids of 4er groups
-   QString apfel1 = fApfelWidget->ApfelSerialNum_1->text ();
-   QString apfel2 = fApfelWidget->ApfelSerialNum_5->text ();
+  theSetup_GET_FOR_SLAVE(BoardSetup);
+  // 2017 todo: this only works if only one slave is tested. for broadcast mode, ids should not be part of the filename!
 
-   QString filename = apfel1.append ("_").append (apfel2).append (".apf");
+  //
+   QString filename ="APFELSEM";
+   if(theSetup->IsUsePandaTestBoard())
+     filename ="PANDAtest";
+   QString tag="";
+   theSetup->GetChipID (0,tag);
+   filename = filename.append("_").append(tag);
+   // count number of valid chips:
+   int a=0;
+   for(a=0; a< APFEL_NUMCHIPS; ++a)
+    {
+      theSetup->GetChipID (a,tag); // we assume that chip id has been specified before benchmark
+      if (tag.isEmpty ()) break;
+    }
+   filename.append("_%1").arg(a);
+   filename.append (".apf");
+
+
+
   DoSaveConfig(filename.toLatin1 ().constData ());
 }
 

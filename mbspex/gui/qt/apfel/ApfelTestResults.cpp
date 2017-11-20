@@ -10,7 +10,7 @@
   {
     fValid=false;
     fAddressID=0;
-    fBoardLabel="NONE";
+    fChipLabel="";
     for(int dac=0; dac<APFEL_NUMDACS; ++dac)
         {
           fDACValueCalibrate[dac]=0;
@@ -54,15 +54,8 @@
     }
 
 
-  void ApfelTestResults::SetBoardDescriptor(const std::string& label)
-  {
-    fBoardLabel=label;
-  }
 
-  const std::string& ApfelTestResults::GetBoardDescriptor()
-    {
-      return fBoardLabel;
-    }
+
 
 
   void ApfelTestResults::SetAddressId(uint8_t ad)

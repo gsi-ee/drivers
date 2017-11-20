@@ -302,28 +302,28 @@ bool ApfelTest::ProcessBenchmark ()
           ApfelTestResults& theResults = fCurrentSetup->AccessTestResults (fCurrentGain, apfel);
           theResults.Begin ();    // make sure that we do not mix up results from 2 different runs!
 
+
+
           // additionally, we save here the appropriate envrionment descriptors:
           theResults.SetAddressId(fCurrentSetup->GetApfelID(apfel));
 
-          // additionally, we save here the appropriate envrionment descriptors:
-          theResults.SetAddressId (fCurrentSetup->GetApfelID (apfel));
 
-          theResults.SetCurrent (fCurrentSetup->GetCurrent ());
-          theResults.SetVoltage (fCurrentSetup->GetVoltage ());
-          int boardindex;
-          if (fCurrentSetup->IsRegularMapping ())
-          {
-            boardindex = (apfel < 4 ? 0 : 1);
-          }
-          else
-          {
-            boardindex = (apfel < 4 ? 1 : 0);
-          }
-          std::string descriptor = fCurrentSetup->GetBoardID (boardindex).toStdString ();
-          theResults.SetBoardDescriptor (descriptor);
+          //theResults.SetCurrent (fCurrentSetup->GetCurrent ());
+          //theResults.SetVoltage (fCurrentSetup->GetVoltage ());
 
-          printm ("Recorded Board id %s - Power supply: U=%f V, I=%fV.", descriptor.c_str (),
-              fCurrentSetup->GetVoltage (), fCurrentSetup->GetCurrent ());
+          QString descriptor;
+          fCurrentSetup->GetChipID(apfel, descriptor);
+          theResults.SetChipDescriptor(descriptor);
+
+          //////////////////////////////////////
+
+//          printm ("Recorded Board id %s - Power supply: U=%f V, I=%fV.", descriptor.c_str (),
+//              fCurrentSetup->GetVoltage (), fCurrentSetup->GetCurrent ());
+
+          printm ("Recorded Slot %d, Chip id %s ", apfel, descriptor.toLatin1 ().constData ());
+
+        //////////// change for new current scan results
+
         }
       }
       break;

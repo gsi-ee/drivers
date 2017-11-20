@@ -6,7 +6,7 @@
 //////// the whole slave board setup:
 
 BoardSetup::BoardSetup () : GosipSetup(),
- fPandaTestBoard(false),fUseApfel (true), fHighGainOutput (true), fStretcher (false), fRegularMapping (true), fBaselineInverted(true), fCurrent (0.0)
+ fPandaTestBoard(false),fUseApfel (true), fHighGainOutput (true), fStretcher (false), fRegularMapping (true), fBaselineInverted(true)
 {
 
   for (int i = 0; i < APFEL_NUMCHIPS; ++i)
@@ -275,6 +275,64 @@ int BoardSetup::SetApfelPowered (int apfel, bool on)
     ASSERT_APFEL_VALID(apfel);
     return fApfel[apfel].SetPower(on);
   }
+
+
+int BoardSetup::SetChipID (int apfel, const QString& val)
+{
+  ASSERT_APFEL_VALID(apfel);
+  return (fApfel[apfel].SetChipID(val));
+}
+
+int BoardSetup::GetChipID (int apfel, QString& val)
+{
+  ASSERT_APFEL_VALID(apfel);
+  val=fApfel[apfel].GetChipID();
+  return 0;
+}
+
+
+
+int  BoardSetup::SetCurrentASIC(int apfel, double val)
+{
+  ASSERT_APFEL_VALID(apfel);
+  fApfel[apfel].SetCurrentASIC(val);
+  return 0;
+}
+
+double BoardSetup::GetCurrentASIC(int apfel)
+{
+  ASSERT_APFEL_VALID(apfel)
+  return (fApfel[apfel].GetCurrentASIC());
+}
+
+int  BoardSetup::SetCurrentHV(int apfel, double val)
+{
+  ASSERT_APFEL_VALID(apfel);
+  fApfel[apfel].SetCurrentHV(val);
+   return 0;
+}
+
+double  BoardSetup::GetCurrentHV(int apfel)
+{
+  ASSERT_APFEL_VALID(apfel);
+  return (fApfel[apfel].GetCurrentHV());
+}
+
+int  BoardSetup::SetCurrentDiode(int apfel, double val)
+{
+  ASSERT_APFEL_VALID(apfel);
+  fApfel[apfel].SetCurrentDiode(val);
+  return 0;
+}
+double  BoardSetup::GetCurrentDiode(int apfel)
+{
+    ASSERT_APFEL_VALID(apfel);
+    return (fApfel[apfel].GetCurrentDiode());
+ }
+
+
+
+
 
 int BoardSetup::GetDACValue (int apfel, int dac)
 {

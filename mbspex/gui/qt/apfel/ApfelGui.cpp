@@ -35,7 +35,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.996 of 17-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.997 of 20-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
 
   fApfelWidget=new ApfelWidget();
   Settings_scrollArea->setWidget(fApfelWidget);
@@ -530,14 +530,14 @@ ApfelGui::ApfelGui (QWidget* parent) :
 //  fApfelPowerGroup[6]=fApfelWidget->PowerGroupBox_7;
 //  fApfelPowerGroup[7]=fApfelWidget->PowerGroupBox_8;
 
-  fApfelPowerLabel[0]=fApfelWidget->ApfelAdressLabel_1;
-  fApfelPowerLabel[1]=fApfelWidget->ApfelAdressLabel_2;
-  fApfelPowerLabel[2]=fApfelWidget->ApfelAdressLabel_3;
-  fApfelPowerLabel[3]=fApfelWidget->ApfelAdressLabel_4;
-  fApfelPowerLabel[4]=fApfelWidget->ApfelAdressLabel_5;
-  fApfelPowerLabel[5]=fApfelWidget->ApfelAdressLabel_6;
-  fApfelPowerLabel[6]=fApfelWidget->ApfelAdressLabel_7;
-  fApfelPowerLabel[7]=fApfelWidget->ApfelAdressLabel_8;
+  fApfelAddressLabel[0]=fApfelWidget->ApfelAdressLabel_1;
+  fApfelAddressLabel[1]=fApfelWidget->ApfelAdressLabel_2;
+  fApfelAddressLabel[2]=fApfelWidget->ApfelAdressLabel_3;
+  fApfelAddressLabel[3]=fApfelWidget->ApfelAdressLabel_4;
+  fApfelAddressLabel[4]=fApfelWidget->ApfelAdressLabel_5;
+  fApfelAddressLabel[5]=fApfelWidget->ApfelAdressLabel_6;
+  fApfelAddressLabel[6]=fApfelWidget->ApfelAdressLabel_7;
+  fApfelAddressLabel[7]=fApfelWidget->ApfelAdressLabel_8;
 
 
 
@@ -551,6 +551,17 @@ ApfelGui::ApfelGui (QWidget* parent) :
   fApfelPowerCheckbox[7]=fApfelWidget->PowerCheckBox_8;
 
 
+  fApfelPowerLabel[0]=fApfelWidget->OnLabel_1;
+  fApfelPowerLabel[1]=fApfelWidget->OnLabel_2;
+  fApfelPowerLabel[2]=fApfelWidget->OnLabel_3;
+  fApfelPowerLabel[3]=fApfelWidget->OnLabel_4;
+  fApfelPowerLabel[4]=fApfelWidget->OnLabel_5;
+  fApfelPowerLabel[5]=fApfelWidget->OnLabel_6;
+  fApfelPowerLabel[6]=fApfelWidget->OnLabel_7;
+  fApfelPowerLabel[7]=fApfelWidget->OnLabel_8;
+
+
+
 
    fApfelSerialLineEdit[0]=fApfelWidget->ApfelSerialNum_1;
    fApfelSerialLineEdit[1]=fApfelWidget->ApfelSerialNum_2;
@@ -560,6 +571,67 @@ ApfelGui::ApfelGui (QWidget* parent) :
    fApfelSerialLineEdit[5]=fApfelWidget->ApfelSerialNum_6;
    fApfelSerialLineEdit[6]=fApfelWidget->ApfelSerialNum_7;
    fApfelSerialLineEdit[7]=fApfelWidget->ApfelSerialNum_8;
+
+
+   fApfelCurrentASICLabel[0]=fApfelWidget->CurrentASIC_Label_1;
+   fApfelCurrentASICLabel[1]=fApfelWidget->CurrentASIC_Label_2;
+   fApfelCurrentASICLabel[2]=fApfelWidget->CurrentASIC_Label_3;
+   fApfelCurrentASICLabel[3]=fApfelWidget->CurrentASIC_Label_4;
+   fApfelCurrentASICLabel[4]=fApfelWidget->CurrentASIC_Label_5;
+   fApfelCurrentASICLabel[5]=fApfelWidget->CurrentASIC_Label_6;
+   fApfelCurrentASICLabel[6]=fApfelWidget->CurrentASIC_Label_7;
+   fApfelCurrentASICLabel[7]=fApfelWidget->CurrentASIC_Label_8;
+
+
+
+
+   fApfelCurrentHVLabel[0]=fApfelWidget->CurrentHV_Label_1;
+   fApfelCurrentHVLabel[1]=fApfelWidget->CurrentHV_Label_2;
+   fApfelCurrentHVLabel[2]=fApfelWidget->CurrentHV_Label_3;
+   fApfelCurrentHVLabel[3]=fApfelWidget->CurrentHV_Label_4;
+   fApfelCurrentHVLabel[4]=fApfelWidget->CurrentHV_Label_5;
+   fApfelCurrentHVLabel[5]=fApfelWidget->CurrentHV_Label_6;
+   fApfelCurrentHVLabel[6]=fApfelWidget->CurrentHV_Label_7;
+   fApfelCurrentHVLabel[7]=fApfelWidget->CurrentHV_Label_8;
+
+
+   fApfelCurrentDiodeLabel[0]=fApfelWidget->CurrentDiode_Label_1;
+   fApfelCurrentDiodeLabel[1]=fApfelWidget->CurrentDiode_Label_2;
+   fApfelCurrentDiodeLabel[2]=fApfelWidget->CurrentDiode_Label_3;
+   fApfelCurrentDiodeLabel[3]=fApfelWidget->CurrentDiode_Label_4;
+   fApfelCurrentDiodeLabel[4]=fApfelWidget->CurrentDiode_Label_5;
+   fApfelCurrentDiodeLabel[5]=fApfelWidget->CurrentDiode_Label_6;
+   fApfelCurrentDiodeLabel[6]=fApfelWidget->CurrentDiode_Label_7;
+   fApfelCurrentDiodeLabel[7]=fApfelWidget->CurrentDiode_Label_8;
+
+   fApfelCurrentASICSpin[0]=fApfelWidget->CurrentASIC_DoubleSpinBox_1;
+   fApfelCurrentASICSpin[1]=fApfelWidget->CurrentASIC_DoubleSpinBox_2;
+   fApfelCurrentASICSpin[2]=fApfelWidget->CurrentASIC_DoubleSpinBox_3;
+   fApfelCurrentASICSpin[3]=fApfelWidget->CurrentASIC_DoubleSpinBox_4;
+   fApfelCurrentASICSpin[4]=fApfelWidget->CurrentASIC_DoubleSpinBox_5;
+   fApfelCurrentASICSpin[5]=fApfelWidget->CurrentASIC_DoubleSpinBox_6;
+   fApfelCurrentASICSpin[6]=fApfelWidget->CurrentASIC_DoubleSpinBox_7;
+   fApfelCurrentASICSpin[7]=fApfelWidget->CurrentASIC_DoubleSpinBox_8;
+
+   fApfelCurrentHVSpin[0]=fApfelWidget->CurrentHV_DoubleSpinBox_1;
+   fApfelCurrentHVSpin[1]=fApfelWidget->CurrentHV_DoubleSpinBox_2;
+   fApfelCurrentHVSpin[2]=fApfelWidget->CurrentHV_DoubleSpinBox_3;
+   fApfelCurrentHVSpin[3]=fApfelWidget->CurrentHV_DoubleSpinBox_4;
+   fApfelCurrentHVSpin[4]=fApfelWidget->CurrentHV_DoubleSpinBox_5;
+   fApfelCurrentHVSpin[5]=fApfelWidget->CurrentHV_DoubleSpinBox_6;
+   fApfelCurrentHVSpin[6]=fApfelWidget->CurrentHV_DoubleSpinBox_7;
+   fApfelCurrentHVSpin[7]=fApfelWidget->CurrentHV_DoubleSpinBox_8;
+
+   fApfelCurrentDiodeSpin[0]=fApfelWidget->CurrentDiode_DoubleSpinBox_1;
+   fApfelCurrentDiodeSpin[1]=fApfelWidget->CurrentDiode_DoubleSpinBox_2;
+   fApfelCurrentDiodeSpin[2]=fApfelWidget->CurrentDiode_DoubleSpinBox_3;
+   fApfelCurrentDiodeSpin[3]=fApfelWidget->CurrentDiode_DoubleSpinBox_4;
+   fApfelCurrentDiodeSpin[4]=fApfelWidget->CurrentDiode_DoubleSpinBox_5;
+   fApfelCurrentDiodeSpin[5]=fApfelWidget->CurrentDiode_DoubleSpinBox_6;
+   fApfelCurrentDiodeSpin[6]=fApfelWidget->CurrentDiode_DoubleSpinBox_7;
+   fApfelCurrentDiodeSpin[7]=fApfelWidget->CurrentDiode_DoubleSpinBox_8;
+
+
 
 
 
@@ -1657,24 +1729,145 @@ void ApfelGui::RefreshDAC (int apfel)
   fApfelDACGroup[apfel]->setEnabled(theSetup->IsApfelPresent(apfel));
   fApfelGainGroup[apfel]->setEnabled(theSetup->IsApfelPresent(apfel));
 
-  // TODO: change color of adress label depending on chip presence:
+
+
+
+
+  //change color of adress label depending on chip presence:
        // red: power off
        // yellow: not present
        // gree: power on and present
+  // default: green
+  //QString labelstate= " <html><head/><body><p> <span style=\" font-weight:600; color:#00cc00;\"> ON </span></p></body></html>" ;
+  // if not responding and power: yellow
+  QString labelstate="ON ";
+  ApfelTextColor_t color=apfel_green_background;
+  if(!theSetup->IsApfelPresent(apfel))
+    {
+      color=apfel_yellow_background;
+      labelstate="NC ";
+    }
+    //labelstate=" <html><head/><body><p> <span style=\" font-weight:600; color:#cccc00;\"> NC </span></p></body></html>" ;
 
-       // change color of label instead of
-       //  QString labelprefix="<html><head/><body><p>Trigger";
-       //   QString labelstate = fTriggerOn ? " <span style=\" font-weight:600; color:#00ff00;\">ON </span></p></body></html>" :
-       //       " <span style=\" font-weight:600; color:#ff0000;\">OFF</span></p></body></html>" ;
-       //   fPolandWidget->TriggerLabel->setText(labelprefix+labelstate);
-       //
+    // if no power: red
+  if(!theSetup->HasApfelPower(apfel))
+  {
+    //labelstate=" <html><head/><body><p> <span style=\" font-weight:600; color:#ff0000;\"> OFF</span></p></body></html>" ;
+    color=apfel_red_background;
+    labelstate="OFF";
+  }
+    //fApfelPowerLabel[apfel]->setText(labelstate);
+
+  RefreshColouredLabel(fApfelPowerLabel[apfel],labelstate,color);
+
+
+  fApfelAddressLabel[apfel]->setEnabled(theSetup->IsApfelPresent(apfel));
 
 
 
-  fApfelPowerLabel[apfel]->setEnabled(theSetup->IsApfelPresent(apfel));
+
+
+
 
 
 }
+
+
+void ApfelGui::RefreshCurrents (int apfel)
+{
+  theSetup_GET_FOR_SLAVE(BoardSetup);
+  QString asicstate= " I ASIC :";
+  QString hvstate=   " I HV   :";
+  QString diodestate=" I DIODE:";
+  if(!theSetup->IsApfelPresent(apfel))
+    {
+      RefreshColouredLabel(fApfelCurrentASICLabel[apfel],asicstate,apfel_yellow_background);
+      RefreshColouredLabel(fApfelCurrentHVLabel[apfel],hvstate,apfel_yellow_background);
+      RefreshColouredLabel(fApfelCurrentDiodeLabel[apfel],diodestate,apfel_yellow_background);
+    }
+  else
+  {
+    // todo: set red or green depending on alarm level. for the moment, we put it red:
+
+    ApfelTextColor_t color=apfel_red_background;
+//    RefreshColouredLabel(fApfelCurrentASICLabel[apfel],asicstate,apfel_red_background);
+//    RefreshColouredLabel(fApfelCurrentHVLabel[apfel],hvstate,apfel_red_background);
+//    RefreshColouredLabel(fApfelCurrentDiodeLabel[apfel],diodestate,apfel_red_background);
+
+// if present, refresh also measured values:
+  double iasic=theSetup->GetCurrentASIC(apfel);
+  fApfelCurrentASICSpin[apfel]->setValue(iasic);
+  if((iasic>fApfelWidget->CurrentASIC_DoubleSpinBox_Min->value()) &&
+        (iasic<fApfelWidget->CurrentASIC_DoubleSpinBox_Max->value()))
+      color=apfel_green_background;
+  else
+      color=apfel_red_background;
+  RefreshColouredLabel(fApfelCurrentASICLabel[apfel],asicstate,color);
+
+
+  double ihv=theSetup->GetCurrentHV(apfel);
+   fApfelCurrentHVSpin[apfel]->setValue(ihv);
+   if((ihv>fApfelWidget->CurrentHV_DoubleSpinBox_Min->value()) &&
+         (ihv<fApfelWidget->CurrentHV_DoubleSpinBox_Max->value()))
+       color=apfel_green_background;
+   else
+       color=apfel_red_background;
+   RefreshColouredLabel(fApfelCurrentHVLabel[apfel],hvstate,color);
+
+
+   double idiode=theSetup->GetCurrentDiode(apfel);
+     fApfelCurrentDiodeSpin[apfel]->setValue(idiode);
+     if((idiode>fApfelWidget->CurrentDiode_DoubleSpinBox_Min->value()) &&
+           (idiode<fApfelWidget->CurrentDiode_DoubleSpinBox_Max->value()))
+         color=apfel_green_background;
+     else
+         color=apfel_red_background;
+     RefreshColouredLabel(fApfelCurrentDiodeLabel[apfel],diodestate,color);
+
+
+
+  }
+
+}
+
+void ApfelGui::RefreshColouredLabel(QLabel* label, const QString text, ApfelTextColor_t color)
+{
+  if(label==0) return;
+  QString labeltext=" <html><head/><body><p> <span style=\" font-weight:600;";
+  switch (color)
+  {
+    case apfel_red:
+      labeltext.append(" color:#ff0000;\"> ");
+      break;
+    case apfel_green:
+      labeltext.append(" color:#00cc00;\"> ");
+      break;
+    case apfel_yellow:
+      labeltext.append(" color:#cccc00;\"> ");
+      break;
+    case apfel_red_background:
+      labeltext.append(" background-color:#ff0000;\"> ");
+      break;
+    case apfel_green_background:
+      labeltext.append(" background-color:#00cc00;\"> ");
+      break;
+    case apfel_yellow_background:
+      labeltext.append(" background-color:#cccc00;\"> ");
+      break;
+    case apfel_black:
+    default:
+      labeltext.append(" color:#ffffff;\"> ");
+      break;
+
+  }
+
+  labeltext.append(text);
+  labeltext.append(" </span></p></body></html>");
+  label->setText(labeltext);
+
+}
+
+
 
 void ApfelGui::RefreshADC_channel (int channel, int gain)
 {
@@ -1821,6 +2014,7 @@ void ApfelGui::RefreshView ()
   for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
   {
     RefreshDAC (apfel);
+    RefreshCurrents(apfel); // show most recent current measurments
   }
 
 ///////////////////////////////////////////////////////
@@ -2158,12 +2352,12 @@ void ApfelGui::SaveTestResults ()
   WriteTestFile(QString("# This is an APFEL Test result file saved with ApfelGui on "));
   WriteTestFile(tstamp);
   WriteTestFile(QString("\n"));
-  WriteTestFile(QString("#   developed for FAIR/PASEM project 2016 by JAM (j.adamczewski@gsi.de), GSI Experiment Electronics department \n"));
+  WriteTestFile(QString("#   developed for FAIR/PASEM project and PANDA 2016-2017 by JAM (j.adamczewski@gsi.de), GSI Experiment Electronics department \n"));
   WriteTestFile(QString("#\n"));
 
   // format
   WriteTestFile (
-      QString ("# BoardID \tGain \tAPFEL \tDAC \tCalibSet \tBaseline \tSigma  \tBaseLow \tBaseUp \tdDAC/dADC \tDAC0 \tDACmin \tDACmax \tADCmin"));
+      QString ("# ChipID \tGain \tAPFEL \tDAC \tCalibSet \tBaseline \tSigma  \tBaseLow \tBaseUp \tdDAC/dADC \tDAC0 \tDACmin \tDACmax \tADCmin"));
   for (int i = 0; i < APFEL_DAC_CURVEPOINTS; ++i)
   {
     WriteTestFile (QString ("\tDAC_%1 \tADC_%2").arg (i).arg (i));
@@ -2175,7 +2369,7 @@ void ApfelGui::SaveTestResults ()
       WriteTestFile (QString ("\tPeakPos_%1 \tPeakHeight_%2").arg (i).arg (i));
     }
 
-  WriteTestFile (QString ("\tCurrent(A) \tVoltage(V) \tStartDate \t StartTime \tStopDate \tStopTime"));
+  WriteTestFile (QString ("\tI_ASIC(A) \tI_HV(A)  \tI_Diode(A) \tStartDate \t StartTime \tStopDate \tStopTime"));
   WriteTestFile (QString ("\n"));
   // loopp over gain:
   for (int gain = 1; gain < 40; gain += 15)
@@ -2184,11 +2378,10 @@ void ApfelGui::SaveTestResults ()
       gain = 32;    // :)
     for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
     {
-      //int apfeladdress = theSetup->GetApfelID (apfel);    // index to address id, depends on setup!
       ApfelTestResults& theResult = theSetup->AccessTestResults (gain, apfel);
       for (int dac = 0; dac < APFEL_NUMDACS; ++dac)
       {
-        QString boardid=QString(theResult.GetBoardDescriptor().c_str());
+        QString chipid=theResult.GetChipDescriptor();
         int apfeladdress=theResult.GetAddressId();
         int dacval = theResult.GetDacValueCalibrate (dac,true); // when saving, we assure that test was really done
         int baseline = theResult.GetAdcSampleMean (dac,true);
@@ -2200,8 +2393,9 @@ void ApfelGui::SaveTestResults ()
         double dacmin = theResult.GetDACmin (dac,true);
         double dacmax = theResult.GetDACmax (dac,true);
         double adcmin = theResult.GetADCmin (dac,true);
-        double current = theResult.GetCurrent();
-        double voltage = theResult.GetVoltage();
+        double currentasic = theResult.GetCurrentASIC();
+        double currenthv = theResult.GetCurrentHV();
+        double currentdiode = theResult.GetCurrentDiode();
 
         // here we should supress/mark as invalid the results that are not meaningful for the selected gain:
 
@@ -2218,8 +2412,10 @@ void ApfelGui::SaveTestResults ()
             dacmin = APFEL_NOVALUE;
             dacmax = APFEL_NOVALUE;
             adcmin = APFEL_NOVALUE;
-            current = APFEL_NOVALUE;
-            voltage = APFEL_NOVALUE;
+//            current = APFEL_NOVALUE;
+//            voltage = APFEL_NOVALUE;
+
+
           }
 
         }
@@ -2236,8 +2432,8 @@ void ApfelGui::SaveTestResults ()
             dacmin = APFEL_NOVALUE;
             dacmax = APFEL_NOVALUE;
             adcmin = APFEL_NOVALUE;
-            current = APFEL_NOVALUE;
-            voltage = APFEL_NOVALUE;
+//            current = APFEL_NOVALUE;
+//            voltage = APFEL_NOVALUE;
           }
 
         }
@@ -2247,7 +2443,7 @@ void ApfelGui::SaveTestResults ()
 
 
         QString line = "\t";
-        line.append(boardid);
+        line.append(chipid);
         line.append(QString ("\t\t%1 \t\t%2 \t\t%3 \t\t%4 \t\t%5 \t\t%6 \t\t%7 \t\t%8 \t\t%9").arg (gain).arg (apfeladdress).arg (dac).arg (dacval).arg (baseline).arg (sigma).arg(startbase).arg(stopbase).arg (slope));
         line.append (QString ("\t\t%1 \t\t%2 \t\t%3 \t\t%4").arg (dac0).arg (dacmin).arg (dacmax).arg (adcmin));
 
@@ -2278,7 +2474,7 @@ void ApfelGui::SaveTestResults ()
                   line.append (QString ("\t%1 \t%2").arg (pos).arg (max));
                 }
 
-        line.append(QString ("\t%1 \t%2 \t").arg(current).arg(voltage));
+        line.append(QString ("\t%1 \t%2 \t%3\t").arg(currentasic).arg(currenthv).arg(currentdiode));
         line.append(theResult.GetStartTime());
         line.append("\t");
         line.append(theResult.GetEndTime());

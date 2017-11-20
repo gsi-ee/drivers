@@ -54,46 +54,55 @@ private:
   std::map<int, ApfelTestResults> fTestResults[APFEL_NUMCHIPS];
 
   /** board id tag*/
-  QString fBoardID[2];
+  //QString fBoardID[2];
 
   /** current in A for DUT*/
-  double fCurrent;
-
-  /** voltage in V for DUT*/
-  double fVoltage;
+//  double fCurrent;
+//
+//  /** voltage in V for DUT*/
+//  double fVoltage;
 
 public:
 
   BoardSetup ();
 
-  void SetBoardID (int ix, const QString& val)
-  {
-    fBoardID[ix] = val;
-  }
+//  void SetBoardID (int ix, const QString& val)
+//  {
+//    fBoardID[ix] = val;
+//  }
+//
+//  const QString& GetBoardID (int ix)
+//  {
+//    return fBoardID[ix];
+//  }
 
-  const QString& GetBoardID (int ix)
-  {
-    return fBoardID[ix];
-  }
 
-  void SetCurrent (double val)
-  {
-    fCurrent = val;
-  }
 
-  double GetCurrent ()
-  {
-    return fCurrent;
-  }
-  void SetVoltage (double val)
-   {
-     fVoltage = val;
-   }
 
-   double GetVoltage ()
-   {
-     return fVoltage;
-   }
+
+//  void SetCurrent (double val)
+//  {
+//    fCurrent = val;
+//  }
+//
+//  double GetCurrent ()
+//  {
+//    return fCurrent;
+//  }
+//  void SetVoltage (double val)
+//   {
+//     fVoltage = val;
+//   }
+//
+//   double GetVoltage ()
+//   {
+//     return fVoltage;
+//   }
+//
+
+
+
+
   bool IsApfelInUse ()
   {
     return fUseApfel;
@@ -228,7 +237,29 @@ public:
 
   int GetTestPulsePositive (int apfel);
 
+  // apfel bus address id as configured
   int GetApfelID (int apfel);
+
+
+  int SetChipID (int apfel, const QString& val);
+
+  // apfel chip id as taken from tag sticker. passes description as string val. Returns -1 in case of error.
+  int GetChipID (int apfel,  QString& val);
+
+
+  int SetCurrentASIC(int apfel, double val);
+
+  double GetCurrentASIC(int apfel);
+
+  int SetCurrentHV(int apfel, double val);
+
+  double GetCurrentHV(int apfel);
+
+  int SetCurrentDiode(int apfel, double val);
+
+  double GetCurrentDiode(int apfel);
+
+
 
   /** evaluate gain factor from setup. returns 1, 16 or 32*/
   int GetGain (int apfel, int dac);

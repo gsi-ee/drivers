@@ -37,6 +37,20 @@ virtual GosipSetup* CreateSetup()
      }
   
 
+enum ApfelTextColor_t
+{
+  apfel_black,
+  apfel_red,
+  apfel_green,
+  apfel_yellow,
+  apfel_blue,
+  apfel_red_background,
+  apfel_green_background,
+  apfel_yellow_background,
+  apfel_blue_background
+};
+
+
 protected:
 
 
@@ -113,10 +127,23 @@ protected:
 
   QCheckBox* fApfelPowerCheckbox[APFEL_NUMCHIPS];
 
-  //QGroupBox* fApfelPowerGroup[APFEL_NUMCHIPS];
   QLabel* fApfelPowerLabel[APFEL_NUMCHIPS];
 
+
+
+
+  //QGroupBox* fApfelPowerGroup[APFEL_NUMCHIPS];
+  QLabel* fApfelAddressLabel[APFEL_NUMCHIPS];
+
   QLineEdit* fApfelSerialLineEdit[APFEL_NUMCHIPS];
+
+  QLabel* fApfelCurrentASICLabel[APFEL_NUMCHIPS];
+  QLabel* fApfelCurrentHVLabel[APFEL_NUMCHIPS];
+  QLabel* fApfelCurrentDiodeLabel[APFEL_NUMCHIPS];
+
+  QDoubleSpinBox* fApfelCurrentASICSpin[APFEL_NUMCHIPS];
+  QDoubleSpinBox* fApfelCurrentHVSpin[APFEL_NUMCHIPS];
+  QDoubleSpinBox* fApfelCurrentDiodeSpin[APFEL_NUMCHIPS];
 
   KPlotWidget* fPlotWidget[16];
 
@@ -157,6 +184,11 @@ protected:
   /** udpate display of dac settings for apfel chip with given index */
   void RefreshDAC(int apfel);
 
+  /** udpate display of current measurements for apfel chip with given index */
+   void RefreshCurrents(int apfel);
+
+
+
   /** udpate display of adc value of channel. specify gain to set relative dac slider from calibration */
    void RefreshADC_channel(int channel, int gain);
 
@@ -171,6 +203,11 @@ protected:
 
    /** show the sample maxima for febexchannel in table*/
    void RefreshSampleMaxima(int febexchannel);
+
+
+
+   /** helper function to put coloured text into any label on gui.*/
+   void RefreshColouredLabel(QLabel* label, const QString text, ApfelTextColor_t color=apfel_black);
 
 
    /** apply configuration from file*/
@@ -467,6 +504,9 @@ protected:
 
     /** read voltage and current via serial connection from toellner power supply*/
     void ReadToellnerPower(double& u, double& i);
+
+    /** Read current via serial connection from keithley device*/
+    double ReadKeithleyCurrent();
 
     /** calculate mean and sigma of sampled baseline for channel.
      * Baseline region may be cut with gui elements*/

@@ -630,10 +630,22 @@ WriteGosip (fSFP, fSlave, GOS_I2C_DWR, lo);
 }
 
 
+double ApfelGui::ReadKeithleyCurrent()
+{
+
+
+
+return -1.0;
+}
+
+
 
 
 void ApfelGui::ReadToellnerPower(double& u, double& i)
 {
+#ifdef   APFEL_USE_TOELLNER_POWER
+
+
 
 #ifdef  TOELLNER_POWER_USE_SCRIPT
   // we just use Peters skripts for the moment
@@ -737,6 +749,8 @@ void ApfelGui::ReadToellnerPower(double& u, double& i)
      printm("ReadToellnerPower answer was %s",answer.toLatin1 ().constData ());
 
      printm("ReadToellnerPower gets Voltage=%f V, Current=%f A",u, i);
+#endif
+
 #endif
 
 }

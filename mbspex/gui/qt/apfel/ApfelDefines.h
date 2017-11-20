@@ -8,6 +8,10 @@
 #include <iostream>
 
 
+/** enable this for old toellner power mode*/
+//#define APFEL_USE_TOELLNER_POWER 1
+
+
 
 /** uncomment this if we need to explicitely enable i2c before settings apfel registers*/
 #define APFEL_NEED_ENABLEI2C 1
