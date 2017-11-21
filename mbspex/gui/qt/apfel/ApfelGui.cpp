@@ -35,7 +35,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.997 of 20-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.9975 of 21-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
 
   fApfelWidget=new ApfelWidget();
   Settings_scrollArea->setWidget(fApfelWidget);
@@ -258,6 +258,12 @@ ApfelGui::ApfelGui (QWidget* parent) :
   QObject::connect (fApfelWidget->PowerCheckBox_6, SIGNAL(stateChanged(int)), this, SLOT (PowerChanged_5(int)));
   QObject::connect (fApfelWidget->PowerCheckBox_7, SIGNAL(stateChanged(int)), this, SLOT (PowerChanged_6(int)));
   QObject::connect (fApfelWidget->PowerCheckBox_8, SIGNAL(stateChanged(int)), this, SLOT (PowerChanged_7(int)));
+
+
+  QObject::connect (fApfelWidget->MeasureCurrentsPushButton, SIGNAL (clicked ()), this, SLOT (MeasureCurrentsPushButton_clicked ()));
+  QObject::connect (fApfelWidget->InitKeithleyPushButton, SIGNAL (clicked ()), this, SLOT (InitKeithleyPushButton_clicked ()));
+
+  QObject::connect (fApfelWidget->AddressScanPushButton, SIGNAL (clicked ()), this, SLOT (AddressScanPushButton_clicked ()));
 
 
 
@@ -583,6 +589,36 @@ ApfelGui::ApfelGui (QWidget* parent) :
    fApfelCurrentASICLabel[7]=fApfelWidget->CurrentASIC_Label_8;
 
 
+
+
+   fApfelIDScanLabel[0]=fApfelWidget->AdressIDScan_Label_1;
+   fApfelIDScanLabel[1]=fApfelWidget->AdressIDScan_Label_2;
+   fApfelIDScanLabel[2]=fApfelWidget->AdressIDScan_Label_3;
+   fApfelIDScanLabel[3]=fApfelWidget->AdressIDScan_Label_4;
+   fApfelIDScanLabel[4]=fApfelWidget->AdressIDScan_Label_5;
+   fApfelIDScanLabel[5]=fApfelWidget->AdressIDScan_Label_6;
+   fApfelIDScanLabel[6]=fApfelWidget->AdressIDScan_Label_7;
+   fApfelIDScanLabel[7]=fApfelWidget->AdressIDScan_Label_8;
+
+   fApfelGeneralCallLabel[0]=fApfelWidget->AdressGeneralCall_Label_1;
+   fApfelGeneralCallLabel[1]=fApfelWidget->AdressGeneralCall_Label_2;
+   fApfelGeneralCallLabel[2]=fApfelWidget->AdressGeneralCall_Label_3;
+   fApfelGeneralCallLabel[3]=fApfelWidget->AdressGeneralCall_Label_4;
+   fApfelGeneralCallLabel[4]=fApfelWidget->AdressGeneralCall_Label_5;
+   fApfelGeneralCallLabel[5]=fApfelWidget->AdressGeneralCall_Label_6;
+   fApfelGeneralCallLabel[6]=fApfelWidget->AdressGeneralCall_Label_7;
+   fApfelGeneralCallLabel[7]=fApfelWidget->AdressGeneralCall_Label_8;
+
+
+
+   fApfelReverseIDScanLabel[0]=fApfelWidget->AdressReverseID_Label_1;
+   fApfelReverseIDScanLabel[1]=fApfelWidget->AdressReverseID_Label_2;
+   fApfelReverseIDScanLabel[2]=fApfelWidget->AdressReverseID_Label_3;
+   fApfelReverseIDScanLabel[3]=fApfelWidget->AdressReverseID_Label_4;
+   fApfelReverseIDScanLabel[4]=fApfelWidget->AdressReverseID_Label_5;
+   fApfelReverseIDScanLabel[5]=fApfelWidget->AdressReverseID_Label_6;
+   fApfelReverseIDScanLabel[6]=fApfelWidget->AdressReverseID_Label_7;
+   fApfelReverseIDScanLabel[7]=fApfelWidget->AdressReverseID_Label_8;
 
 
    fApfelCurrentHVLabel[0]=fApfelWidget->CurrentHV_Label_1;
@@ -1830,6 +1866,47 @@ void ApfelGui::RefreshCurrents (int apfel)
 
 }
 
+
+void ApfelGui::RefreshIDScan(int apfel)
+{
+
+  theSetup_GET_FOR_SLAVE(BoardSetup);
+  QString idscan=    "ID Scan________";
+  QString general=   "General Call___";
+  QString reverse=   "Reverse ID Scan";
+
+  ApfelTextColor_t idcolor=apfel_red_background;
+  ApfelTextColor_t gencolor=apfel_red_background;
+  ApfelTextColor_t revcolor=apfel_red_background;
+
+// TODO: after id scan the presenc info is not preserved.
+//  if(!theSetup->IsApfelPresent(apfel))
+//    {
+//    idcolor=apfel_yellow_background;
+//    gencolor=apfel_yellow_background;
+//    revcolor=apfel_yellow_background;
+//    }
+//  else
+  {
+    if(theSetup->IsIDScanOK(apfel))
+      idcolor=apfel_green_background;
+
+    if(theSetup->IsGeneralScanOK(apfel))
+      gencolor=apfel_green_background;
+
+    if(theSetup->IsReverseIDScanOK(apfel))
+         revcolor=apfel_green_background;
+  }
+
+  RefreshColouredLabel(fApfelIDScanLabel[apfel],idscan, idcolor);
+  RefreshColouredLabel(fApfelGeneralCallLabel[apfel],general, gencolor);
+  RefreshColouredLabel(fApfelReverseIDScanLabel[apfel],reverse , revcolor);
+
+
+}
+
+
+
 void ApfelGui::RefreshColouredLabel(QLabel* label, const QString text, ApfelTextColor_t color)
 {
   if(label==0) return;
@@ -2014,6 +2091,7 @@ void ApfelGui::RefreshView ()
   for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
   {
     RefreshDAC (apfel);
+    RefreshIDScan(apfel);
     RefreshCurrents(apfel); // show most recent current measurments
   }
 
@@ -2306,6 +2384,15 @@ void ApfelGui::RefreshBaselines()
 }
 
 
+void ApfelGui::DoIdScan()
+{
+  for(int a=0; a<APFEL_NUMCHIPS; ++a)
+  {
+    ExecuteIDScanTest(a);
+    RefreshIDScan(a);
+  }
+
+}
 
 
 void ApfelGui::LoadBenchmarkReferences()

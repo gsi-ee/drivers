@@ -1287,3 +1287,29 @@ void ApfelGui::PlotTabChanged (int num)
 }
 
 
+void ApfelGui::MeasureCurrentsPushButton_clicked ()
+{
+  std::cout << "MeasureCurrentsPushButton_clicked" << std::endl;
+
+
+
+}
+
+void ApfelGui::InitKeithleyPushButton_clicked ()
+{
+  std::cout << "InitKeithleyPushButton_clicked" << std::endl;
+  InitKeithley();
+}
+
+
+void ApfelGui::AddressScanPushButton_clicked ()
+{
+  //std::cout << "AddressScanPushButton_clicked" << std::endl;
+  if(!fBroadcasting)
+  {
+    EvaluateSlave ();
+    GOSIP_BROADCAST_ACTION(DoIdScan());
+  }
+}
+
+

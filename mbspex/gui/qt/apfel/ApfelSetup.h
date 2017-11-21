@@ -48,6 +48,16 @@ private:
   /** most recent measurment of diode current*/
   double fCurrentDiode;
 
+  /** true if ID scan test has passed. false for failed or not yet done.*/
+  bool fIDScanOK;
+
+  /** true if general call  test has passed. false for failed or not yet done.*/
+   bool fGeneralScanOK;
+
+   /** true if general call  test has passed. false for failed or not yet done.*/
+   bool fIDReverseScanOK;
+
+
 
 public:
 
@@ -104,7 +114,13 @@ public:
 
    double GetCurrentDiode(){return fCurrentDiode;}
 
+bool IsIDScanOK(){return fIDScanOK;}
+bool IsGeneralCallScanOK(){return fGeneralScanOK;}
+bool IsReverseIDScanOK(){return fIDReverseScanOK;}
 
+void SetIDScan(bool ok){fIDScanOK=ok;}
+void SetGeneralCallScan(bool ok){fGeneralScanOK=ok;}
+void SetReverseIDScan(bool ok){fIDReverseScanOK=ok;}
 
 
 

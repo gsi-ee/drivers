@@ -145,6 +145,12 @@ protected:
   QDoubleSpinBox* fApfelCurrentHVSpin[APFEL_NUMCHIPS];
   QDoubleSpinBox* fApfelCurrentDiodeSpin[APFEL_NUMCHIPS];
 
+
+  QLabel* fApfelIDScanLabel[APFEL_NUMCHIPS];
+  QLabel* fApfelGeneralCallLabel[APFEL_NUMCHIPS];
+  QLabel* fApfelReverseIDScanLabel[APFEL_NUMCHIPS];
+
+
   KPlotWidget* fPlotWidget[16];
 
 
@@ -187,7 +193,8 @@ protected:
   /** udpate display of current measurements for apfel chip with given index */
    void RefreshCurrents(int apfel);
 
-
+   /** udpate display of  id scans for apfel chip with given index */
+   void RefreshIDScan(int apfel);
 
   /** udpate display of adc value of channel. specify gain to set relative dac slider from calibration */
    void RefreshADC_channel(int channel, int gain);
@@ -273,11 +280,18 @@ protected:
   uint8_t GetApfelId(int sfp, int slave, uint8_t apfelchip);
 
 
-  /** Write value to i2c bus address of currently selected slave. apfel chip id and local dac id are specified*/
+  /** Write value to i2c bus address of currently selected slave. apfel slot index  and local dac id are specified*/
     int WriteDAC_ApfelI2c (uint8_t apfelchip, uint8_t dac, uint16_t value);
 
-    /** Read value to i2c bus address of currently selected slave. apfel id and local dac id are specified*/
+
+    /** Write value to i2c bus address of currently selected slave. apfel address id and local dac id are specified*/
+    int WriteDAC_ApfelI2c_ToID (uint8_t apid, uint8_t dac, uint16_t value);
+
+    /** Read value to i2c bus address of currently selected slave. apfel slot index position and local dac id are specified*/
     int ReadDAC_ApfelI2c (uint8_t apfelchip, uint8_t dac);
+
+    /** Read value to i2c bus address of currently selected slave. Use specified apfel bus address id and local dac id are specified*/
+    int ReadDAC_ApfelI2c_FromID (uint8_t apid, uint8_t dac);
 
 
     /** evaluate i2c channel adress offset on apfel for given channel number*/
@@ -505,12 +519,28 @@ protected:
     /** read voltage and current via serial connection from toellner power supply*/
     void ReadToellnerPower(double& u, double& i);
 
+
+    /** init keithley multimeter*/
+    void InitKeithley();
+
     /** Read current via serial connection from keithley device*/
     double ReadKeithleyCurrent();
 
     /** calculate mean and sigma of sampled baseline for channel.
      * Baseline region may be cut with gui elements*/
     void EvaluateBaseline(int channel);
+
+
+    /** loop over all connected apfel chips and perform address scan.*/
+    void DoIdScan();
+
+    /** Perform ID Scan for apfel chip at given slot */
+    void ExecuteIDScanTest(int apfel);
+
+
+    /** Enable single chip communication and set local id*/
+    void SetSingleChipCommID(int apfel, int id);
+
 
 
  
@@ -697,6 +727,14 @@ public slots:
   virtual void MaximaCellDoubleClicked(int row, int column);
 
   virtual void RefreshBaselines();
+
+
+
+  virtual void MeasureCurrentsPushButton_clicked ();
+  virtual void InitKeithleyPushButton_clicked ();
+  virtual void AddressScanPushButton_clicked ();
+
+
 
 };
 

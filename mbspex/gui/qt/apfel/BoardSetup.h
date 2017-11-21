@@ -260,6 +260,16 @@ public:
   double GetCurrentDiode(int apfel);
 
 
+  int IsIDScanOK(int apfel);
+  int IsGeneralScanOK(int apfel);
+  int IsReverseIDScanOK(int apfel);
+
+  int SetIDScan(int apfel, bool ok);
+  int SetGeneralScan(int apfel, bool ok);
+  int SetReverseIDScan(int apfel, bool ok);
+
+
+
 
   /** evaluate gain factor from setup. returns 1, 16 or 32*/
   int GetGain (int apfel, int dac);

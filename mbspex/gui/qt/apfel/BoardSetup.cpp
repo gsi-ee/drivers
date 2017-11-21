@@ -331,7 +331,43 @@ double  BoardSetup::GetCurrentDiode(int apfel)
  }
 
 
+int  BoardSetup::IsIDScanOK(int apfel)
+{
+  ASSERT_APFEL_VALID(apfel);
+  return (fApfel[apfel].IsIDScanOK() ? 1 :0);
 
+}
+ int  BoardSetup::IsGeneralScanOK(int apfel)
+ {
+   ASSERT_APFEL_VALID(apfel);
+     return (fApfel[apfel].IsGeneralCallScanOK() ? 1 :0);
+ }
+ int  BoardSetup::IsReverseIDScanOK(int apfel)
+ {
+   ASSERT_APFEL_VALID(apfel);
+   return (fApfel[apfel].IsReverseIDScanOK() ? 1 :0);
+ }
+
+ int  BoardSetup::SetIDScan(int apfel, bool ok)
+ {
+   ASSERT_APFEL_VALID(apfel);
+   fApfel[apfel].SetIDScan(ok);
+   return 0;
+ }
+
+ int  BoardSetup::SetGeneralScan(int apfel, bool ok)
+ {
+   ASSERT_APFEL_VALID(apfel);
+     fApfel[apfel].SetGeneralCallScan(ok);
+     return 0;
+ }
+
+ int  BoardSetup::SetReverseIDScan(int apfel, bool ok)
+ {
+   ASSERT_APFEL_VALID(apfel);
+   fApfel[apfel].SetReverseIDScan(ok);
+   return 0;
+ }
 
 
 int BoardSetup::GetDACValue (int apfel, int dac)

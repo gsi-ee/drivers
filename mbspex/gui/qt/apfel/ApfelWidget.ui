@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>APFEL Widget</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_70">
+  <layout class="QGridLayout" name="gridLayout_74">
    <item row="0" column="0">
     <widget class="QTabWidget" name="ApfelTabWidget">
      <property name="toolTip">
@@ -7287,10 +7287,562 @@
       <attribute name="title">
        <string>Addresses</string>
       </attribute>
-      <layout class="QFormLayout" name="formLayout_2">
-       <property name="fieldGrowthPolicy">
-        <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-       </property>
+      <layout class="QFormLayout" name="formLayout_4">
+       <item row="0" column="0" colspan="2">
+        <layout class="QGridLayout" name="gridLayout_70">
+         <item row="0" column="0">
+          <widget class="QGroupBox" name="AdressGroupBox_1">
+           <property name="title">
+            <string>Position 1</string>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_140">
+            <item>
+             <widget class="QLabel" name="AdressIDScan_Label_1">
+              <property name="toolTip">
+               <string>Shows status of Address ID scan test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>ID Scan</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressGeneralCall_Label_1">
+              <property name="toolTip">
+               <string>Shows status of Address General Call (broadcast ) test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>General Call</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressReverseID_Label_1">
+              <property name="toolTip">
+               <string>Shows status of Reverse Address ID scan test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>Reverse ID Scan</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QGroupBox" name="AdressGroupBox_5">
+           <property name="title">
+            <string>Position 5</string>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_144">
+            <item>
+             <widget class="QLabel" name="AdressIDScan_Label_5">
+              <property name="toolTip">
+               <string>Shows status of Address ID scan test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>ID Scan</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressGeneralCall_Label_5">
+              <property name="toolTip">
+               <string>Shows status of Address General Call (broadcast ) test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>General Call</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressReverseID_Label_5">
+              <property name="toolTip">
+               <string>Shows status of Reverse Address ID scan test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>Reverse ID Scan</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QGroupBox" name="AdressGroupBox_2">
+           <property name="title">
+            <string>Position 2</string>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_141">
+            <item>
+             <widget class="QLabel" name="AdressIDScan_Label_2">
+              <property name="toolTip">
+               <string>Shows status of Address ID scan test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>ID Scan</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressGeneralCall_Label_2">
+              <property name="toolTip">
+               <string>Shows status of Address General Call (broadcast ) test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>General Call</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressReverseID_Label_2">
+              <property name="toolTip">
+               <string>Shows status of Reverse Address ID scan test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>Reverse ID Scan</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QGroupBox" name="AdressGroupBox_6">
+           <property name="title">
+            <string>Position 6</string>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_145">
+            <item>
+             <widget class="QLabel" name="AdressIDScan_Label_6">
+              <property name="toolTip">
+               <string>Shows status of Address ID scan test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>ID Scan</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressGeneralCall_Label_6">
+              <property name="toolTip">
+               <string>Shows status of Address General Call (broadcast ) test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>General Call</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressReverseID_Label_6">
+              <property name="toolTip">
+               <string>Shows status of Reverse Address ID scan test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>Reverse ID Scan</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QGroupBox" name="AdressGroupBox_3">
+           <property name="title">
+            <string>Position 3</string>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_142">
+            <item>
+             <widget class="QLabel" name="AdressIDScan_Label_3">
+              <property name="toolTip">
+               <string>Shows status of Address ID scan test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>ID Scan</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressGeneralCall_Label_3">
+              <property name="toolTip">
+               <string>Shows status of Address General Call (broadcast ) test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>General Call</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressReverseID_Label_3">
+              <property name="toolTip">
+               <string>Shows status of Reverse Address ID scan test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>Reverse ID Scan</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QGroupBox" name="AdressGroupBox_7">
+           <property name="title">
+            <string>Position 7</string>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_146">
+            <item>
+             <widget class="QLabel" name="AdressIDScan_Label_7">
+              <property name="toolTip">
+               <string>Shows status of Address ID scan test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>ID Scan</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressGeneralCall_Label_7">
+              <property name="toolTip">
+               <string>Shows status of Address General Call (broadcast ) test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>General Call</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressReverseID_Label_7">
+              <property name="toolTip">
+               <string>Shows status of Reverse Address ID scan test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>Reverse ID Scan</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QGroupBox" name="AdressGroupBox_4">
+           <property name="title">
+            <string>Position 4</string>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_143">
+            <item>
+             <widget class="QLabel" name="AdressIDScan_Label_4">
+              <property name="toolTip">
+               <string>Shows status of Address ID scan test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>ID Scan</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressGeneralCall_Label_4">
+              <property name="toolTip">
+               <string>Shows status of Address General Call (broadcast ) test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>General Call</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressReverseID_Label_4">
+              <property name="toolTip">
+               <string>Shows status of Reverse Address ID scan test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>Reverse ID Scan</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QGroupBox" name="AdressGroupBox_8">
+           <property name="title">
+            <string>Position 8</string>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_147">
+            <item>
+             <widget class="QLabel" name="AdressIDScan_Label_8">
+              <property name="toolTip">
+               <string>Shows status of Address ID scan test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>ID Scan</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressGeneralCall_Label_8">
+              <property name="toolTip">
+               <string>Shows status of Address General Call (broadcast ) test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>General Call</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressReverseID_Label_8">
+              <property name="toolTip">
+               <string>Shows status of Reverse Address ID scan test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>Reverse ID Scan</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="1" column="0">
+        <widget class="QPushButton" name="AddressScanPushButton">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;push for Address ID Scan of all connected APFEL chips&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>Start Test</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <spacer name="horizontalSpacer_19">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>1269</width>
+           <height>21</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="tab_25">
@@ -8608,14 +9160,28 @@
         </layout>
        </item>
        <item row="2" column="0">
-        <widget class="QPushButton" name="MeasureCurrentsPushButton">
-         <property name="toolTip">
-          <string>push for measurement procedure to get currents from keithley device</string>
-         </property>
-         <property name="text">
-          <string>Measure Currents</string>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="horizontalLayout_148">
+         <item>
+          <widget class="QPushButton" name="MeasureCurrentsPushButton">
+           <property name="toolTip">
+            <string>push for measurement procedure to get currents from keithley device</string>
+           </property>
+           <property name="text">
+            <string>Measure Currents</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="InitKeithleyPushButton">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;push to initialize keithley device&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>Init Keithley</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item row="2" column="1">
         <spacer name="horizontalSpacer_12">
@@ -8624,8 +9190,8 @@
          </property>
          <property name="sizeHint" stdset="0">
           <size>
-           <width>1222</width>
-           <height>21</height>
+           <width>1133</width>
+           <height>23</height>
           </size>
          </property>
         </spacer>
@@ -9410,8 +9976,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1048</x>
-     <y>131</y>
+     <x>1050</x>
+     <y>120</y>
     </hint>
     <hint type="destinationlabel">
      <x>889</x>
@@ -9430,8 +9996,8 @@
      <y>118</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1048</x>
-     <y>131</y>
+     <x>1050</x>
+     <y>120</y>
     </hint>
    </hints>
   </connection>
@@ -9458,8 +10024,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>318</x>
-     <y>86</y>
+     <x>320</x>
+     <y>75</y>
     </hint>
     <hint type="destinationlabel">
      <x>148</x>
@@ -9474,8 +10040,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1048</x>
-     <y>187</y>
+     <x>1050</x>
+     <y>176</y>
     </hint>
     <hint type="destinationlabel">
      <x>889</x>
@@ -9494,8 +10060,8 @@
      <y>174</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1048</x>
-     <y>187</y>
+     <x>1050</x>
+     <y>176</y>
     </hint>
    </hints>
   </connection>
@@ -9510,8 +10076,8 @@
      <y>202</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1048</x>
-     <y>215</y>
+     <x>1050</x>
+     <y>204</y>
     </hint>
    </hints>
   </connection>
@@ -9522,8 +10088,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1048</x>
-     <y>215</y>
+     <x>1050</x>
+     <y>204</y>
     </hint>
     <hint type="destinationlabel">
      <x>889</x>
@@ -9542,8 +10108,8 @@
      <y>230</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1048</x>
-     <y>243</y>
+     <x>1050</x>
+     <y>232</y>
     </hint>
    </hints>
   </connection>
@@ -9554,8 +10120,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1048</x>
-     <y>243</y>
+     <x>1050</x>
+     <y>232</y>
     </hint>
     <hint type="destinationlabel">
      <x>889</x>
@@ -9574,8 +10140,8 @@
      <y>258</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1048</x>
-     <y>271</y>
+     <x>1050</x>
+     <y>260</y>
     </hint>
    </hints>
   </connection>
@@ -9586,8 +10152,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1048</x>
-     <y>271</y>
+     <x>1050</x>
+     <y>260</y>
     </hint>
     <hint type="destinationlabel">
      <x>889</x>
@@ -9606,8 +10172,8 @@
      <y>286</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1048</x>
-     <y>299</y>
+     <x>1050</x>
+     <y>288</y>
     </hint>
    </hints>
   </connection>
@@ -9618,8 +10184,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1048</x>
-     <y>299</y>
+     <x>1050</x>
+     <y>288</y>
     </hint>
     <hint type="destinationlabel">
      <x>889</x>
@@ -9638,8 +10204,8 @@
      <y>314</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1048</x>
-     <y>327</y>
+     <x>1050</x>
+     <y>316</y>
     </hint>
    </hints>
   </connection>
@@ -9650,8 +10216,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1048</x>
-     <y>327</y>
+     <x>1050</x>
+     <y>316</y>
     </hint>
     <hint type="destinationlabel">
      <x>889</x>
@@ -9670,8 +10236,8 @@
      <y>73</y>
     </hint>
     <hint type="destinationlabel">
-     <x>318</x>
-     <y>86</y>
+     <x>320</x>
+     <y>75</y>
     </hint>
    </hints>
   </connection>
@@ -9702,8 +10268,8 @@
      <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>318</x>
-     <y>86</y>
+     <x>320</x>
+     <y>75</y>
     </hint>
    </hints>
   </connection>
@@ -9714,8 +10280,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1048</x>
-     <y>159</y>
+     <x>1050</x>
+     <y>148</y>
     </hint>
     <hint type="destinationlabel">
      <x>889</x>
@@ -9734,8 +10300,8 @@
      <y>146</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1048</x>
-     <y>159</y>
+     <x>1050</x>
+     <y>148</y>
     </hint>
    </hints>
   </connection>
@@ -9746,12 +10312,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1358</x>
-     <y>85</y>
+     <x>1360</x>
+     <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>690</x>
-     <y>130</y>
+     <x>691</x>
+     <y>119</y>
     </hint>
    </hints>
   </connection>
@@ -9762,12 +10328,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1358</x>
-     <y>85</y>
+     <x>1360</x>
+     <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>690</x>
-     <y>158</y>
+     <x>691</x>
+     <y>147</y>
     </hint>
    </hints>
   </connection>
@@ -9778,12 +10344,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1358</x>
-     <y>85</y>
+     <x>1360</x>
+     <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>690</x>
-     <y>186</y>
+     <x>691</x>
+     <y>175</y>
     </hint>
    </hints>
   </connection>
@@ -9794,12 +10360,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1358</x>
-     <y>85</y>
+     <x>1360</x>
+     <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>690</x>
-     <y>214</y>
+     <x>691</x>
+     <y>203</y>
     </hint>
    </hints>
   </connection>
@@ -9810,12 +10376,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1358</x>
-     <y>85</y>
+     <x>1360</x>
+     <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>690</x>
-     <y>242</y>
+     <x>691</x>
+     <y>231</y>
     </hint>
    </hints>
   </connection>
@@ -9826,12 +10392,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1358</x>
-     <y>85</y>
+     <x>1360</x>
+     <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>690</x>
-     <y>270</y>
+     <x>691</x>
+     <y>259</y>
     </hint>
    </hints>
   </connection>
@@ -9842,12 +10408,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1358</x>
-     <y>85</y>
+     <x>1360</x>
+     <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>690</x>
-     <y>298</y>
+     <x>691</x>
+     <y>287</y>
     </hint>
    </hints>
   </connection>
@@ -9858,12 +10424,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1358</x>
-     <y>85</y>
+     <x>1360</x>
+     <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>690</x>
-     <y>326</y>
+     <x>691</x>
+     <y>315</y>
     </hint>
    </hints>
   </connection>
@@ -9874,12 +10440,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1358</x>
-     <y>85</y>
+     <x>1360</x>
+     <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1367</x>
-     <y>130</y>
+     <x>1369</x>
+     <y>119</y>
     </hint>
    </hints>
   </connection>
@@ -9890,12 +10456,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1358</x>
-     <y>85</y>
+     <x>1360</x>
+     <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1367</x>
-     <y>158</y>
+     <x>1369</x>
+     <y>147</y>
     </hint>
    </hints>
   </connection>
@@ -9906,12 +10472,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1358</x>
-     <y>85</y>
+     <x>1360</x>
+     <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1367</x>
-     <y>186</y>
+     <x>1369</x>
+     <y>175</y>
     </hint>
    </hints>
   </connection>
@@ -9922,12 +10488,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1358</x>
-     <y>85</y>
+     <x>1360</x>
+     <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1367</x>
-     <y>214</y>
+     <x>1369</x>
+     <y>203</y>
     </hint>
    </hints>
   </connection>
@@ -9938,12 +10504,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1358</x>
-     <y>85</y>
+     <x>1360</x>
+     <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1367</x>
-     <y>242</y>
+     <x>1369</x>
+     <y>231</y>
     </hint>
    </hints>
   </connection>
@@ -9954,12 +10520,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1358</x>
-     <y>85</y>
+     <x>1360</x>
+     <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1367</x>
-     <y>270</y>
+     <x>1369</x>
+     <y>259</y>
     </hint>
    </hints>
   </connection>
@@ -9970,12 +10536,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1358</x>
-     <y>85</y>
+     <x>1360</x>
+     <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1367</x>
-     <y>298</y>
+     <x>1369</x>
+     <y>287</y>
     </hint>
    </hints>
   </connection>
@@ -9986,12 +10552,12 @@
    <slot>click()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1271</x>
-     <y>86</y>
+     <x>1273</x>
+     <y>75</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1155</x>
-     <y>88</y>
+     <x>1157</x>
+     <y>77</y>
     </hint>
    </hints>
   </connection>
@@ -10002,12 +10568,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1358</x>
-     <y>85</y>
+     <x>1360</x>
+     <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1367</x>
-     <y>326</y>
+     <x>1369</x>
+     <y>315</y>
     </hint>
    </hints>
   </connection>
@@ -10278,8 +10844,8 @@
      <y>112</y>
     </hint>
     <hint type="destinationlabel">
-     <x>328</x>
-     <y>400</y>
+     <x>327</x>
+     <y>387</y>
     </hint>
    </hints>
   </connection>
@@ -10294,8 +10860,8 @@
      <y>112</y>
     </hint>
     <hint type="destinationlabel">
-     <x>328</x>
-     <y>466</y>
+     <x>327</x>
+     <y>453</y>
     </hint>
    </hints>
   </connection>
@@ -10310,8 +10876,8 @@
      <y>112</y>
     </hint>
     <hint type="destinationlabel">
-     <x>528</x>
-     <y>400</y>
+     <x>527</x>
+     <y>387</y>
     </hint>
    </hints>
   </connection>
@@ -10326,8 +10892,8 @@
      <y>112</y>
     </hint>
     <hint type="destinationlabel">
-     <x>728</x>
-     <y>400</y>
+     <x>727</x>
+     <y>387</y>
     </hint>
    </hints>
   </connection>
@@ -10342,8 +10908,8 @@
      <y>112</y>
     </hint>
     <hint type="destinationlabel">
-     <x>728</x>
-     <y>466</y>
+     <x>727</x>
+     <y>453</y>
     </hint>
    </hints>
   </connection>
@@ -10358,8 +10924,8 @@
      <y>112</y>
     </hint>
     <hint type="destinationlabel">
-     <x>528</x>
-     <y>466</y>
+     <x>527</x>
+     <y>453</y>
     </hint>
    </hints>
   </connection>
@@ -10374,8 +10940,8 @@
      <y>112</y>
     </hint>
     <hint type="destinationlabel">
-     <x>928</x>
-     <y>400</y>
+     <x>927</x>
+     <y>387</y>
     </hint>
    </hints>
   </connection>
@@ -10390,8 +10956,8 @@
      <y>112</y>
     </hint>
     <hint type="destinationlabel">
-     <x>928</x>
-     <y>466</y>
+     <x>927</x>
+     <y>453</y>
     </hint>
    </hints>
   </connection>
@@ -10471,7 +11037,7 @@
     </hint>
     <hint type="destinationlabel">
      <x>464</x>
-     <y>325</y>
+     <y>312</y>
     </hint>
    </hints>
   </connection>
@@ -10487,7 +11053,7 @@
     </hint>
     <hint type="destinationlabel">
      <x>464</x>
-     <y>385</y>
+     <y>371</y>
     </hint>
    </hints>
   </connection>
@@ -10503,7 +11069,7 @@
     </hint>
     <hint type="destinationlabel">
      <x>464</x>
-     <y>444</y>
+     <y>430</y>
     </hint>
    </hints>
   </connection>
@@ -10519,7 +11085,7 @@
     </hint>
     <hint type="destinationlabel">
      <x>464</x>
-     <y>504</y>
+     <y>490</y>
     </hint>
    </hints>
   </connection>
@@ -10534,8 +11100,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>916</x>
-     <y>87</y>
+     <x>917</x>
+     <y>76</y>
     </hint>
    </hints>
   </connection>
@@ -10550,8 +11116,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>916</x>
-     <y>147</y>
+     <x>917</x>
+     <y>135</y>
     </hint>
    </hints>
   </connection>
@@ -10566,8 +11132,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>916</x>
-     <y>206</y>
+     <x>917</x>
+     <y>194</y>
     </hint>
    </hints>
   </connection>
@@ -10582,8 +11148,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>916</x>
-     <y>266</y>
+     <x>917</x>
+     <y>254</y>
     </hint>
    </hints>
   </connection>
@@ -10598,8 +11164,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>916</x>
-     <y>325</y>
+     <x>917</x>
+     <y>312</y>
     </hint>
    </hints>
   </connection>
@@ -10614,8 +11180,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>916</x>
-     <y>385</y>
+     <x>917</x>
+     <y>371</y>
     </hint>
    </hints>
   </connection>
@@ -10630,8 +11196,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>916</x>
-     <y>444</y>
+     <x>917</x>
+     <y>430</y>
     </hint>
    </hints>
   </connection>
@@ -10646,8 +11212,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>916</x>
-     <y>504</y>
+     <x>917</x>
+     <y>490</y>
     </hint>
    </hints>
   </connection>
@@ -10790,8 +11356,8 @@
      <y>113</y>
     </hint>
     <hint type="destinationlabel">
-     <x>388</x>
-     <y>401</y>
+     <x>387</x>
+     <y>388</y>
     </hint>
    </hints>
   </connection>
@@ -10806,8 +11372,8 @@
      <y>113</y>
     </hint>
     <hint type="destinationlabel">
-     <x>388</x>
-     <y>467</y>
+     <x>387</x>
+     <y>454</y>
     </hint>
    </hints>
   </connection>
@@ -10822,8 +11388,8 @@
      <y>113</y>
     </hint>
     <hint type="destinationlabel">
-     <x>588</x>
-     <y>401</y>
+     <x>587</x>
+     <y>388</y>
     </hint>
    </hints>
   </connection>
@@ -10838,8 +11404,8 @@
      <y>113</y>
     </hint>
     <hint type="destinationlabel">
-     <x>788</x>
-     <y>401</y>
+     <x>787</x>
+     <y>388</y>
     </hint>
    </hints>
   </connection>
@@ -10854,8 +11420,8 @@
      <y>113</y>
     </hint>
     <hint type="destinationlabel">
-     <x>588</x>
-     <y>467</y>
+     <x>587</x>
+     <y>454</y>
     </hint>
    </hints>
   </connection>
@@ -10870,8 +11436,8 @@
      <y>113</y>
     </hint>
     <hint type="destinationlabel">
-     <x>788</x>
-     <y>467</y>
+     <x>787</x>
+     <y>454</y>
     </hint>
    </hints>
   </connection>
@@ -10886,8 +11452,8 @@
      <y>113</y>
     </hint>
     <hint type="destinationlabel">
-     <x>988</x>
-     <y>401</y>
+     <x>987</x>
+     <y>388</y>
     </hint>
    </hints>
   </connection>
@@ -10902,8 +11468,8 @@
      <y>113</y>
     </hint>
     <hint type="destinationlabel">
-     <x>988</x>
-     <y>467</y>
+     <x>987</x>
+     <y>454</y>
     </hint>
    </hints>
   </connection>
@@ -10914,8 +11480,8 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>205</x>
-     <y>368</y>
+     <x>204</x>
+     <y>353</y>
     </hint>
     <hint type="destinationlabel">
      <x>375</x>
@@ -10930,8 +11496,8 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>213</x>
-     <y>368</y>
+     <x>212</x>
+     <y>353</y>
     </hint>
     <hint type="destinationlabel">
      <x>550</x>
@@ -10946,8 +11512,8 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>213</x>
-     <y>368</y>
+     <x>212</x>
+     <y>353</y>
     </hint>
     <hint type="destinationlabel">
      <x>725</x>
@@ -10962,12 +11528,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>182</x>
-     <y>393</y>
+     <x>181</x>
+     <y>378</y>
     </hint>
     <hint type="destinationlabel">
-     <x>491</x>
-     <y>373</y>
+     <x>432</x>
+     <y>358</y>
     </hint>
    </hints>
   </connection>
@@ -10978,12 +11544,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>213</x>
-     <y>393</y>
+     <x>212</x>
+     <y>378</y>
     </hint>
     <hint type="destinationlabel">
-     <x>666</x>
-     <y>373</y>
+     <x>607</x>
+     <y>358</y>
     </hint>
    </hints>
   </connection>
@@ -10994,12 +11560,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>213</x>
-     <y>393</y>
+     <x>212</x>
+     <y>378</y>
     </hint>
     <hint type="destinationlabel">
-     <x>841</x>
-     <y>373</y>
+     <x>782</x>
+     <y>358</y>
     </hint>
    </hints>
   </connection>
@@ -11010,12 +11576,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>213</x>
-     <y>418</y>
+     <x>212</x>
+     <y>403</y>
     </hint>
     <hint type="destinationlabel">
-     <x>666</x>
-     <y>402</y>
+     <x>607</x>
+     <y>387</y>
     </hint>
    </hints>
   </connection>
@@ -11026,12 +11592,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>213</x>
-     <y>418</y>
+     <x>212</x>
+     <y>403</y>
     </hint>
     <hint type="destinationlabel">
-     <x>841</x>
-     <y>402</y>
+     <x>782</x>
+     <y>387</y>
     </hint>
    </hints>
   </connection>
@@ -11042,12 +11608,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>213</x>
-     <y>418</y>
+     <x>212</x>
+     <y>403</y>
     </hint>
     <hint type="destinationlabel">
-     <x>491</x>
-     <y>402</y>
+     <x>432</x>
+     <y>387</y>
     </hint>
    </hints>
   </connection>
@@ -11058,12 +11624,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>194</x>
-     <y>443</y>
+     <x>193</x>
+     <y>428</y>
     </hint>
     <hint type="destinationlabel">
-     <x>491</x>
-     <y>431</y>
+     <x>432</x>
+     <y>416</y>
     </hint>
    </hints>
   </connection>
@@ -11074,12 +11640,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>179</x>
-     <y>443</y>
+     <x>178</x>
+     <y>428</y>
     </hint>
     <hint type="destinationlabel">
-     <x>666</x>
-     <y>431</y>
+     <x>607</x>
+     <y>416</y>
     </hint>
    </hints>
   </connection>
@@ -11090,12 +11656,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>213</x>
-     <y>468</y>
+     <x>212</x>
+     <y>453</y>
     </hint>
     <hint type="destinationlabel">
-     <x>491</x>
-     <y>460</y>
+     <x>432</x>
+     <y>445</y>
     </hint>
    </hints>
   </connection>
@@ -11106,12 +11672,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>168</x>
-     <y>443</y>
+     <x>167</x>
+     <y>428</y>
     </hint>
     <hint type="destinationlabel">
-     <x>841</x>
-     <y>431</y>
+     <x>782</x>
+     <y>416</y>
     </hint>
    </hints>
   </connection>
@@ -11122,12 +11688,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>666</x>
-     <y>460</y>
+     <x>607</x>
+     <y>445</y>
     </hint>
     <hint type="destinationlabel">
-     <x>666</x>
-     <y>460</y>
+     <x>607</x>
+     <y>445</y>
     </hint>
    </hints>
   </connection>
@@ -11138,12 +11704,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>213</x>
-     <y>468</y>
+     <x>212</x>
+     <y>453</y>
     </hint>
     <hint type="destinationlabel">
-     <x>841</x>
-     <y>460</y>
+     <x>782</x>
+     <y>445</y>
     </hint>
    </hints>
   </connection>
@@ -11154,12 +11720,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>190</x>
-     <y>468</y>
+     <x>189</x>
+     <y>453</y>
     </hint>
     <hint type="destinationlabel">
-     <x>666</x>
-     <y>460</y>
+     <x>607</x>
+     <y>445</y>
     </hint>
    </hints>
   </connection>
@@ -11170,12 +11736,12 @@
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>85</x>
-     <y>119</y>
+     <x>84</x>
+     <y>106</y>
     </hint>
     <hint type="destinationlabel">
-     <x>97</x>
-     <y>240</y>
+     <x>96</x>
+     <y>218</y>
     </hint>
    </hints>
   </connection>
@@ -11186,12 +11752,12 @@
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>85</x>
-     <y>119</y>
+     <x>84</x>
+     <y>106</y>
     </hint>
     <hint type="destinationlabel">
-     <x>69</x>
-     <y>337</y>
+     <x>68</x>
+     <y>310</y>
     </hint>
    </hints>
   </connection>
@@ -11202,12 +11768,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>69</y>
+     <x>187</x>
+     <y>58</y>
     </hint>
     <hint type="destinationlabel">
-     <x>203</x>
-     <y>115</y>
+     <x>202</x>
+     <y>102</y>
     </hint>
    </hints>
   </connection>
@@ -11238,8 +11804,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>174</x>
-     <y>238</y>
+     <x>173</x>
+     <y>217</y>
     </hint>
    </hints>
   </connection>
@@ -11254,8 +11820,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>174</x>
-     <y>304</y>
+     <x>173</x>
+     <y>279</y>
     </hint>
    </hints>
   </connection>
@@ -11270,8 +11836,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>780</x>
-     <y>106</y>
+     <x>490</x>
+     <y>93</y>
     </hint>
    </hints>
   </connection>
@@ -11286,8 +11852,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>780</x>
-     <y>172</y>
+     <x>490</x>
+     <y>155</y>
     </hint>
    </hints>
   </connection>
@@ -11302,8 +11868,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>780</x>
-     <y>238</y>
+     <x>490</x>
+     <y>217</y>
     </hint>
    </hints>
   </connection>
@@ -11318,8 +11884,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>780</x>
-     <y>304</y>
+     <x>490</x>
+     <y>279</y>
     </hint>
    </hints>
   </connection>
@@ -11330,8 +11896,8 @@
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>69</x>
-     <y>104</y>
+     <x>68</x>
+     <y>93</y>
     </hint>
     <hint type="destinationlabel">
      <x>214</x>
@@ -11339,5 +11905,116 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_0</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>270</x>
+     <y>77</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>394</x>
+     <y>136</y>
+    </hint>
+   </hints>
+  </connection>
+  
+  
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_1</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_2</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_3</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_4</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_5</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_6</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_7</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   </connection>
+   
+    <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_8</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_9</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_10</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_11</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_12</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_13</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   </connection>
+  <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_14</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   </connection>
+   <connection>
+   <sender>gainCombo_all</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>gainCombo_15</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   </connection>
+   
+   
  </connections>
 </ui>

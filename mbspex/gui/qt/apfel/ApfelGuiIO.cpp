@@ -332,14 +332,20 @@ void ApfelGui::GetRegisters ()
 
 int ApfelGui::ReadDAC_ApfelI2c (uint8_t apfelchip, uint8_t dac)
 {
-  int val = 0;
+//  int val = 0;
   if (apfelchip >= APFEL_NUMCHIPS)
   {
     AppendTextWindow ("#Error: ReadDAC_ApfelI2c with illegal chip number!");
     return -1;
   }
   int apid = GetApfelId (fSFP, fSlave, apfelchip);
+  return (ReadDAC_ApfelI2c_FromID(apid,dac));
+}
 
+
+int ApfelGui::ReadDAC_ApfelI2c_FromID (uint8_t apid, uint8_t dac)
+{
+  int val = 0;
   // first: read transfer request from apfel chip with id to core register
   int dat = APFEL_TRANSFER_BASE_RD + (dac + 1) * APFEL_TRANSFER_DAC_OFFSET + (apid & 0xFF);
   // mind that dac index starts with 0 for dac1 here!
@@ -368,6 +374,10 @@ int ApfelGui::ReadDAC_ApfelI2c (uint8_t apfelchip, uint8_t dac)
   //return (val & APFEL_DAC_MAXVALUE);    // mask to use only data part
   return val; // 2017: do not mask out return status bits, evaluate them above !
 }
+
+
+
+
 
 int ApfelGui::ReadADC_Apfel (uint8_t adc, uint8_t chan)
 {
@@ -409,18 +419,21 @@ int ApfelGui::WriteDAC_ApfelI2c (uint8_t apfelchip, uint8_t dac, uint16_t value)
     return -1;
   }
   int apfelid = GetApfelId (fSFP, fSlave, apfelchip);
+  return (WriteDAC_ApfelI2c_ToID (apfelid, dac, value));
+}
 
-  // first write value to core register:
-  int dat = APFEL_CORE_REQUEST_BASE_WR + dac * APFEL_CORE_REQUEST_DAC_OFFSET;
-  dat |= (value & 0x3FF);
-  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
+int  ApfelGui::WriteDAC_ApfelI2c_ToID (uint8_t apfelid, uint8_t dac, uint16_t value)
+{
+// first write value to core register:
+int dat = APFEL_CORE_REQUEST_BASE_WR + dac * APFEL_CORE_REQUEST_DAC_OFFSET;
+dat |= (value & 0x3FF);
+WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 
-  // then request for data transfer:
-  dat = APFEL_TRANSFER_BASE_WR + (dac + 1) * APFEL_TRANSFER_DAC_OFFSET + (apfelid & 0xFF);
-  // mind that dac index starts with 0 for dac1 here!
-  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
-
-  return 0;
+// then request for data transfer:
+dat = APFEL_TRANSFER_BASE_WR + (dac + 1) * APFEL_TRANSFER_DAC_OFFSET + (apfelid & 0xFF);
+// mind that dac index starts with 0 for dac1 here!
+WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
+return 0;
 }
 
 void ApfelGui::SetGain (uint8_t apfelchip, uint8_t chan, bool useGain16)
@@ -630,8 +643,55 @@ WriteGosip (fSFP, fSlave, GOS_I2C_DWR, lo);
 }
 
 
+void ApfelGui::InitKeithley()
+{
+  printm ("InitKeithley access of /dev/ttyS0...");
+  QString askconnect("*IDN?;\n");
+  QString reset("*RST;\n");
+  QString clearstatus("*CLS;\n");
+  QString aborttrigger(":INIT:CONT OFF; :ABOR;\n");
+  QString trigset_1(":TRIG:SOUR IMM;\n");
+  QString trigset_2(":TRIG:COUN INF;\n");
+  QString trigset_3(":TRIG:DEL:AUTO OFF;\n");
+  QString trigset_4(":TRIG:DEL0.000000;\n");
+  QString triggeron(":INIT:CONT ON;\n");
+
+  QFile file("/dev/ttyS0");
+  if (!file.open(QIODevice::WriteOnly))
+    {
+        printm ("InitKeithley error when opening /dev/ttyS0 for writing");
+        return;
+    }
+  QFile infile("/dev/ttyS0");
+  if (!infile.open(QIODevice::ReadOnly))// | QIODevice::Unbuffered ))// | QIODevice::Text))
+  {
+    printm ("InitKeithley error when opening /dev/ttyS0 for reading");
+    return;
+  }
+
+      QTextStream tty(&file);
+      tty << askconnect;
+      tty.flush();
+      sleep(1);
+           //usleep(1000);
+      printm ("InitKeithley has send:%s",askconnect.toLatin1 ().constData ());
+      QString answer("");
+      answer=infile.readLine();
+      infile.readLine(); // skip blank line after value!
+      printm("InitKeithley answer was:%s", answer.toLatin1 ().constData ());
+
+      // TODO: error handling if not connected
+      // TODO: send init procedure
+
+
+
+}
+
+
+
 double ApfelGui::ReadKeithleyCurrent()
 {
+  printm ("ReadKeithleyCurrent access of /dev/ttyS0...");
 
 
 
@@ -754,4 +814,148 @@ void ApfelGui::ReadToellnerPower(double& u, double& i)
 #endif
 
 }
+
+
+void ApfelGui::SetSingleChipCommID(int apfel, int id)
+{
+
+  // TODO
+
+  theSetup_GET_FOR_SLAVE(BoardSetup);
+  int dat = APFEL_IO_CONTROL_WR;
+  int mask = 0;
+  int lo=APFEL_IO_DATA_LO_WR;
+  int hi=APFEL_IO_DATA_HI_WR;
+
+  // following words of high control word:
+  int sel_VddAsic=0; // 8bit
+  int sel_InExt=0;   // 8bit
+
+  // following words of low control word:
+  int sel_DataASIC=0xFF; // 8bit
+  int chipID=id & 0xF; // 4bit
+
+
+
+  sel_InExt=0xFF; // all externals to ground
+
+
+  // note that we have to preserve the complete state of power switches here
+  sel_VddAsic |= (apfel << 1);
+  sel_DataASIC  &= ~(apfel << 1);
+
+  // the common part:
+  hi |= (sel_VddAsic & 0xFF) <<8;
+  hi |= sel_InExt & 0xFF;
+  lo |=(sel_DataASIC & 0xFF) <<8;
+  lo |= (chipID & 0xF) << 4;
+
+  // lsb for gain setup, this time we also activate bit 1 - SelIDAsic
+  if(theSetup->IsHighGain())
+    lo |= (0x000e);
+  else
+    lo |= (0x000f);
+
+
+
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, hi);
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, lo);
+
+   dat |= (0x18); // default setup: all enabled
+   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
+
+
+}
+
+
+
+
+  /** Perform ID Scan for apfel chip at given slot */
+  void ApfelGui::ExecuteIDScanTest(int apfel)
+  {
+    theSetup_GET_FOR_SLAVE(BoardSetup);
+    if(!theSetup->IsApfelPresent(apfel)) return;
+
+    printm("Starting Address Scan tests for position %d ...",apfel);
+    QApplication::setOverrideCursor (Qt::WaitCursor);
+    // set connection only to the given one:
+
+
+
+
+    // TODO
+    bool idscanok=true;
+    for(int id=0; id<16; ++id)
+    {
+      SetSingleChipCommID(apfel, id);
+      printm("Starting ID Scan for position %d with assigned id:%d",apfel,id);
+      int val=0x010 | (id & 0xF);
+      WriteDAC_ApfelI2c_ToID (id, 0, val);
+      int rev= (ReadDAC_ApfelI2c_FromID (id, 0) & APFEL_DAC_MAXVALUE);
+      if(rev!=val)
+        {
+          idscanok=false;
+          printm("!! Failure reading back from apfel%d, assigned id:%d - wrote value 0x%x, read: 0x%x",apfel,id, val, rev);
+        }
+
+    }
+    theSetup->SetIDScan(apfel,idscanok);
+
+    bool generalscanok=true;
+  for (int id = 0; id < 16; ++id)
+  {
+    SetSingleChipCommID (apfel, id);
+    printm ("Starting General call test for position %d with assigned id:%d ", apfel, id);
+    int val = 0x310 | (id & 0xF);
+    WriteDAC_ApfelI2c_ToID (0xFF, 0, val);    // broadcast to id 0xFF
+    int rev = (ReadDAC_ApfelI2c_FromID (id, 0) & APFEL_DAC_MAXVALUE);
+    if (rev != val)
+    {
+      generalscanok = false;
+      printm ("!! Failure reading back from apfel%d, assigned id:%d - wrote value 0x%x, read: 0x%x", apfel, id, val,
+          rev);
+    }
+
+  }
+  theSetup->SetGeneralScan(apfel, generalscanok);
+
+
+
+ bool reverseidscanok=true;
+ for (int id = 0; id < 16; ++id)
+ {
+   SetSingleChipCommID (apfel, id);
+   printm("Starting reverse id scan test for position %d with assigned id:%d",apfel);
+   int val = 0x2f0 | (id & 0xF);
+
+   WriteDAC_ApfelI2c_ToID (id, 0, val);   // test value to our device
+
+   for (int other = 0; other < 16; ++other)
+   {
+     if(other==id) continue;
+     int otherval= 0x00 | (other & 0xF);
+     WriteDAC_ApfelI2c_ToID (other, 0, otherval);   // try writing something to other address
+   }
+   int rev = (ReadDAC_ApfelI2c_FromID (id, 0)  & APFEL_DAC_MAXVALUE);
+   if (rev != val)
+   {
+     reverseidscanok= false;
+     printm ("!! Failure reading back from apfel%d, assigned id:%d - wrote value 0x%x, read: 0x%x", apfel, id, val,
+         rev);
+   }
+
+ }
+ theSetup->SetReverseIDScan(apfel, reverseidscanok);
+
+
+
+     printm("Starting register access  test for position %d ...",apfel);
+             // TODO
+
+
+    QApplication::restoreOverrideCursor ();
+    RefreshIDScan(apfel);
+  }
+
+
 
