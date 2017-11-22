@@ -324,6 +324,13 @@ bool ApfelTest::ProcessBenchmark ()
 
         //////////// change for new current scan results
 
+
+
+         // also put here results of address scans:
+
+
+
+
         }
       }
       break;

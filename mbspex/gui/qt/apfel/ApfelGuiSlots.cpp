@@ -1291,7 +1291,7 @@ void ApfelGui::MeasureCurrentsPushButton_clicked ()
 {
   std::cout << "MeasureCurrentsPushButton_clicked" << std::endl;
 
-
+  printm ("Have read momentary current:%f", ReadKeithleyCurrent());
 
 }
 

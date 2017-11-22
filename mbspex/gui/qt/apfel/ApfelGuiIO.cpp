@@ -652,12 +652,17 @@ void ApfelGui::InitKeithley()
   QString askconnect("*IDN?;\n");
   QString reset("*RST;\n");
   QString clearstatus("*CLS;\n");
-  QString aborttrigger(":INIT:CONT OFF; :ABOR;\n");
-  QString trigset_1(":TRIG:SOUR IMM;\n");
-  QString trigset_2(":TRIG:COUN INF;\n");
-  QString trigset_3(":TRIG:DEL:AUTO OFF;\n");
-  QString trigset_4(":TRIG:DEL0.000000;\n");
-  QString triggeron(":INIT:CONT ON;\n");
+
+  std::vector<QString> trigsetup;
+    //init device:
+
+
+  trigsetup.push_back(QString (":INIT:CONT OFF; :ABOR;\n"));
+  trigsetup.push_back(QString (":TRIG:SOUR IMM;\n"));
+  trigsetup.push_back(QString (":TRIG:COUN INF;\n"));
+  trigsetup.push_back(QString (":TRIG:DEL:AUTO OFF;\n"));
+  trigsetup.push_back(QString (":TRIG:DEL0.000000;\n"));
+  trigsetup.push_back(QString (":INIT:CONT ON;\n"));
 
   QFile file("/dev/ttyS0");
   if (!file.open(QIODevice::WriteOnly))
@@ -673,11 +678,11 @@ void ApfelGui::InitKeithley()
   }
 
       QTextStream tty(&file);
+      printm ("InitKeithley will send:%s",askconnect.toLatin1 ().constData ());
       tty << askconnect;
       tty.flush();
-      sleep(1);
-           //usleep(1000);
-      printm ("InitKeithley has send:%s",askconnect.toLatin1 ().constData ());
+      usleep(50000);
+
       QString answer("");
       answer=infile.readLine();
       infile.readLine(); // skip blank line after value!
@@ -685,6 +690,25 @@ void ApfelGui::InitKeithley()
 
       // TODO: error handling if not connected
       // TODO: send init procedure
+
+      printm ("InitKeithley will send:%s",reset.toLatin1 ().constData ());
+      tty << reset;
+      tty.flush();
+      sleep(1);
+
+      printm ("InitKeithley will send:%s",clearstatus.toLatin1 ().constData ());
+      tty << clearstatus;
+      tty.flush();
+      sleep(1);
+
+      for(int i=0; i<trigsetup.size(); ++i)
+           {
+              QString com=trigsetup[i];
+              printm("sending %s",com.toLatin1 ().constData ());
+              tty << com;
+              tty.flush();
+              usleep(50000);
+           }
 
 
 
@@ -695,10 +719,65 @@ void ApfelGui::InitKeithley()
 double ApfelGui::ReadKeithleyCurrent()
 {
   printm ("ReadKeithleyCurrent access of /dev/ttyS0...");
+  double rev=-1.0;
+  std::vector<QString> setup;
+  //init device:
+  setup.push_back(QString (":FUNC 'CURR:DC';\n"));
+  setup.push_back(QString (":CURR:DC:DIG 7;\n"));
+  setup.push_back(QString (":CURR:DC:NPLC 1.000000;\n"));
+  setup.push_back(QString (":CURR:DC:RANG:AUTO ON;\n"));
+  setup.push_back(QString (":CURR:DC:AVER:STAT OFF;\n"));
+  setup.push_back(QString (":CURR:DC:REF:STAT OFF;\n"));
+
+  // output format
+  setup.push_back(QString (":FORM ASC;\n"));
+  setup.push_back(QString (":FORM:ELEM READ,UNIT,CHAN;\n"));
+
+
+  //Read a Measurement:
+  QString getData(":SENS:DATA? \n");
 
 
 
-return -1.0;
+
+  QFile file("/dev/ttyS0");
+   if (!file.open(QIODevice::WriteOnly))
+     {
+         printm ("InitKeithley error when opening /dev/ttyS0 for writing");
+         return -12.0;;
+     }
+   QFile infile("/dev/ttyS0");
+   if (!infile.open(QIODevice::ReadOnly))// | QIODevice::Unbuffered ))// | QIODevice::Text))
+   {
+     printm ("InitKeithley error when opening /dev/ttyS0 for reading");
+     return -13.0;
+   }
+
+       QTextStream tty(&file);
+       for(int i=0; i<setup.size(); ++i)
+       {
+          QString com=setup[i];
+          printm("sending %s",com.toLatin1 ().constData ());
+          tty << com;
+          tty.flush();
+          usleep(50000);
+       }
+
+
+
+
+       usleep(50000);
+       printm ("sending:%s",getData.toLatin1 ().constData ());
+       tty << getData;
+       tty.flush();
+       usleep(50000);
+
+       QString answer("");
+       answer=infile.readLine();
+       infile.readLine(); // skip blank line after value!
+       rev=answer.toDouble();
+       printm("Got answer:%s - %e A", answer.toLatin1 ().constData (), rev);
+       return rev;
 }
 
 

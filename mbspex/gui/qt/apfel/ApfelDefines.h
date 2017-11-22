@@ -265,7 +265,7 @@
 #define APFEL_RESULT_TIMEFORMAT "dd.MM.yyyy hh:mm:ss.zzz"
 
 
-#define APFEL_ADDRESSTEST_SLEEP usleep(10);
+#define APFEL_ADDRESSTEST_SLEEP usleep(1);
 //usleep(50000);
 
 
