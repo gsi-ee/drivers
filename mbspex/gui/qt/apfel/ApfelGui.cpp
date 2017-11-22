@@ -35,7 +35,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.9975 of 21-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.9976 of 22-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
 
   fApfelWidget=new ApfelWidget();
   Settings_scrollArea->setWidget(fApfelWidget);
@@ -1654,19 +1654,34 @@ void ApfelGui::AutoApplyPower(int apfel, int state)
   //std::cout << "AutoApplyPower apfel=" << apfel << ", state=" << state << std::endl;
   theSetup->SetApfelPowered(apfel, (state>0));
 
+  SetDefaultIOConfig();
   // here we have to keep all other apfel power states as indicated in setup!
-  int powermask=0;
-  for(int a=0; a<APFEL_NUMCHIPS; ++a)
-  {
-    if(theSetup->HasApfelPower(a)) powermask |= (1 << a);
-  }
-
-  SetPower(powermask, theSetup->IsHighGain());
+//  int powermask=0;
+//  for(int a=0; a<APFEL_NUMCHIPS; ++a)
+//  {
+//    if(theSetup->HasApfelPower(a)) powermask |= (1 << a);
+//  }
+//
+//  SetPower(powermask, theSetup->IsHighGain());
 
   // check if we still have connection to the apfel and display non connected ones:
   GetRegisters();
   RefreshView();
   // todo: only use required calls for this?
+}
+
+
+void ApfelGui::SetDefaultIOConfig()
+{
+    theSetup_GET_FOR_SLAVE(BoardSetup);
+  // here we have to keep all other apfel power states as indicated in setup!
+    int powermask=0;
+    for(int a=0; a<APFEL_NUMCHIPS; ++a)
+    {
+      if(theSetup->HasApfelPower(a)) powermask |= (1 << a);
+    }
+    SetPower(powermask, theSetup->IsHighGain());
+
 }
 
 
@@ -1867,8 +1882,10 @@ void ApfelGui::RefreshCurrents (int apfel)
 }
 
 
-void ApfelGui::RefreshIDScan(int apfel)
+void ApfelGui::RefreshIDScan(int apfel, bool reset)
 {
+
+
 
   theSetup_GET_FOR_SLAVE(BoardSetup);
   QString idscan=    "ID Scan________";
@@ -1879,14 +1896,19 @@ void ApfelGui::RefreshIDScan(int apfel)
   ApfelTextColor_t gencolor=apfel_red_background;
   ApfelTextColor_t revcolor=apfel_red_background;
 
-// TODO: after id scan the presenc info is not preserved.
-//  if(!theSetup->IsApfelPresent(apfel))
-//    {
-//    idcolor=apfel_yellow_background;
-//    gencolor=apfel_yellow_background;
-//    revcolor=apfel_yellow_background;
-//    }
-//  else
+   if(!theSetup->IsApfelPresent(apfel))
+    {
+    idcolor=apfel_yellow_background;
+    gencolor=apfel_yellow_background;
+    revcolor=apfel_yellow_background;
+    }
+  else if(reset)
+  {
+     idcolor=apfel_blue_background;
+     gencolor=apfel_blue_background;
+     revcolor=apfel_blue_background;
+  }
+  else
   {
     if(theSetup->IsIDScanOK(apfel))
       idcolor=apfel_green_background;
@@ -1922,6 +1944,9 @@ void ApfelGui::RefreshColouredLabel(QLabel* label, const QString text, ApfelText
     case apfel_yellow:
       labeltext.append(" color:#cccc00;\"> ");
       break;
+    case apfel_blue:
+      labeltext.append(" color:#0000cc;\"> ");
+      break;
     case apfel_red_background:
       labeltext.append(" background-color:#ff0000;\"> ");
       break;
@@ -1931,9 +1956,14 @@ void ApfelGui::RefreshColouredLabel(QLabel* label, const QString text, ApfelText
     case apfel_yellow_background:
       labeltext.append(" background-color:#cccc00;\"> ");
       break;
+    case apfel_blue_background:
+      labeltext.append(" background-color:#0000dd;\"> ");
+      break;
+
+
     case apfel_black:
     default:
-      labeltext.append(" color:#ffffff;\"> ");
+      labeltext.append(" background-color:#000000;\"> ");
       break;
 
   }
@@ -2387,10 +2417,16 @@ void ApfelGui::RefreshBaselines()
 void ApfelGui::DoIdScan()
 {
   for(int a=0; a<APFEL_NUMCHIPS; ++a)
+   {
+      RefreshIDScan(a,true); // reset colors
+   }
+
+  for(int a=0; a<APFEL_NUMCHIPS; ++a)
   {
     ExecuteIDScanTest(a);
     RefreshIDScan(a);
   }
+  SetDefaultIOConfig(); // back to normal operation
 
 }
 

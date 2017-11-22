@@ -265,6 +265,9 @@
 #define APFEL_RESULT_TIMEFORMAT "dd.MM.yyyy hh:mm:ss.zzz"
 
 
+#define APFEL_ADDRESSTEST_SLEEP usleep(10);
+//usleep(50000);
+
 
 /** this define will switch between direct call of mbspex lib or external shell call of gosipcmd*
  * note: we need to call "make nombspex" if we disable this define here!

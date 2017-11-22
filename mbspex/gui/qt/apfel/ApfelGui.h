@@ -193,8 +193,8 @@ protected:
   /** udpate display of current measurements for apfel chip with given index */
    void RefreshCurrents(int apfel);
 
-   /** udpate display of  id scans for apfel chip with given index */
-   void RefreshIDScan(int apfel);
+   /** udpate display of  id scans for apfel chip with given index. if reset is true, put startup colors */
+   void RefreshIDScan(int apfel, bool reset=false);
 
   /** udpate display of adc value of channel. specify gain to set relative dac slider from calibration */
    void RefreshADC_channel(int channel, int gain);
@@ -341,6 +341,10 @@ protected:
 
     /** set power state after apfel chip index on/off bitmask. take into account the current board gain setting*/
     void SetPower (int powermask, bool highgain);
+
+    /** back to default config after the address tests.*/
+    void SetDefaultIOConfig();
+
 
    /** Initialize febex after power up*/
    void ResetSlave();

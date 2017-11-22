@@ -352,13 +352,15 @@ int ApfelGui::ReadDAC_ApfelI2c_FromID (uint8_t apid, uint8_t dac)
 
   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
   // note that WriteGosip already contains i2csleep
-
+  I2c_sleep (); // give additional delay for apfel?
   // second: read request from core registers
   dat = APFEL_DAC_REQUEST_BASE_RD + (dac) * APFEL_CORE_REQUEST_DAC_OFFSET;
   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
-
+  I2c_sleep (); // give additional delay for apfel?
+  I2c_sleep ();
   // third: actually read requested value
   val = ReadGosip (fSFP, fSlave, GOS_I2C_DRR1);    // read out the value
+  I2c_sleep (); // give additional delay for apfel?
   if (val < 0)
     return val;    // error case, propagate it upwards
 ///////////
@@ -428,11 +430,12 @@ int  ApfelGui::WriteDAC_ApfelI2c_ToID (uint8_t apfelid, uint8_t dac, uint16_t va
 int dat = APFEL_CORE_REQUEST_BASE_WR + dac * APFEL_CORE_REQUEST_DAC_OFFSET;
 dat |= (value & 0x3FF);
 WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
-
+I2c_sleep (); // give additional delay for apfel?
 // then request for data transfer:
 dat = APFEL_TRANSFER_BASE_WR + (dac + 1) * APFEL_TRANSFER_DAC_OFFSET + (apfelid & 0xFF);
 // mind that dac index starts with 0 for dac1 here!
 WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
+I2c_sleep (); // give additional delay for apfel?
 return 0;
 }
 
@@ -513,7 +516,7 @@ void ApfelGui::DoAutoCalibrate (uint8_t apfelchip)
   // transfer to apfel chip- not neceesary here!
 //   dat=APFEL_TRANSFER_BASE_WR | apfelid;
 //   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
-  usleep (8000);
+ APFEL_ADDRESSTEST_SLEEP
   printm ("...done!\n");
   //Note: The auto calibration of the APFELchip takes not more that 8 ms.
   UpdateAfterAutoCalibrate (apfelchip);
@@ -528,7 +531,7 @@ void ApfelGui::DoAutoCalibrateAll ()
   int apfelid = 0xFF;
   int dat = APFEL_AUTOCALIBRATE_BASE_WR | apfelid;
   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
-  usleep (8000);
+ APFEL_ADDRESSTEST_SLEEP
   QApplication::restoreOverrideCursor ();
 }
 
@@ -841,8 +844,8 @@ void ApfelGui::SetSingleChipCommID(int apfel, int id)
 
 
   // note that we have to preserve the complete state of power switches here
-  sel_VddAsic |= (apfel << 1);
-  sel_DataASIC  &= ~(apfel << 1);
+  sel_VddAsic |= (1 << apfel);
+  sel_DataASIC  &= ~(1 << apfel);
 
   // the common part:
   hi |= (sel_VddAsic & 0xFF) <<8;
@@ -863,8 +866,9 @@ void ApfelGui::SetSingleChipCommID(int apfel, int id)
 
    dat |= (0x18); // default setup: all enabled
    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
+   APFEL_ADDRESSTEST_SLEEP
 
-
+   //sleep(1);
 }
 
 
@@ -891,6 +895,7 @@ void ApfelGui::SetSingleChipCommID(int apfel, int id)
       printm("Starting ID Scan for position %d with assigned id:%d",apfel,id);
       int val=0x010 | (id & 0xF);
       WriteDAC_ApfelI2c_ToID (id, 0, val);
+     APFEL_ADDRESSTEST_SLEEP
       int rev= (ReadDAC_ApfelI2c_FromID (id, 0) & APFEL_DAC_MAXVALUE);
       if(rev!=val)
         {
@@ -899,6 +904,7 @@ void ApfelGui::SetSingleChipCommID(int apfel, int id)
         }
 
     }
+    APFEL_ADDRESSTEST_SLEEP
     theSetup->SetIDScan(apfel,idscanok);
 
     bool generalscanok=true;
@@ -908,6 +914,7 @@ void ApfelGui::SetSingleChipCommID(int apfel, int id)
     printm ("Starting General call test for position %d with assigned id:%d ", apfel, id);
     int val = 0x310 | (id & 0xF);
     WriteDAC_ApfelI2c_ToID (0xFF, 0, val);    // broadcast to id 0xFF
+   APFEL_ADDRESSTEST_SLEEP
     int rev = (ReadDAC_ApfelI2c_FromID (id, 0) & APFEL_DAC_MAXVALUE);
     if (rev != val)
     {
@@ -917,6 +924,7 @@ void ApfelGui::SetSingleChipCommID(int apfel, int id)
     }
 
   }
+  APFEL_ADDRESSTEST_SLEEP
   theSetup->SetGeneralScan(apfel, generalscanok);
 
 
@@ -929,12 +937,13 @@ void ApfelGui::SetSingleChipCommID(int apfel, int id)
    int val = 0x2f0 | (id & 0xF);
 
    WriteDAC_ApfelI2c_ToID (id, 0, val);   // test value to our device
-
+  APFEL_ADDRESSTEST_SLEEP
    for (int other = 0; other < 16; ++other)
    {
      if(other==id) continue;
      int otherval= 0x00 | (other & 0xF);
      WriteDAC_ApfelI2c_ToID (other, 0, otherval);   // try writing something to other address
+    APFEL_ADDRESSTEST_SLEEP
    }
    int rev = (ReadDAC_ApfelI2c_FromID (id, 0)  & APFEL_DAC_MAXVALUE);
    if (rev != val)
@@ -945,13 +954,16 @@ void ApfelGui::SetSingleChipCommID(int apfel, int id)
    }
 
  }
+ APFEL_ADDRESSTEST_SLEEP
  theSetup->SetReverseIDScan(apfel, reverseidscanok);
 
 
 
-     printm("Starting register access  test for position %d ...",apfel);
+     //printm("Starting register access  test for position %d ...",apfel);
              // TODO
 
+
+  printm("Done for position %d ...",apfel);
 
     QApplication::restoreOverrideCursor ();
     RefreshIDScan(apfel);
