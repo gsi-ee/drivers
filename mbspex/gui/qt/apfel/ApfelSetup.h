@@ -58,6 +58,9 @@ private:
    bool fIDReverseScanOK;
 
 
+   /** true if register scan test has passed. false for failed or not yet done.*/
+   bool fRegisterScanOK;
+
 
 public:
 
@@ -117,10 +120,11 @@ public:
 bool IsIDScanOK(){return fIDScanOK;}
 bool IsGeneralCallScanOK(){return fGeneralScanOK;}
 bool IsReverseIDScanOK(){return fIDReverseScanOK;}
-
+bool IsRegisterScanOK(){return fRegisterScanOK;}
 void SetIDScan(bool ok){fIDScanOK=ok;}
 void SetGeneralCallScan(bool ok){fGeneralScanOK=ok;}
 void SetReverseIDScan(bool ok){fIDReverseScanOK=ok;}
+void SetRegisterScan(bool ok){fRegisterScanOK=ok;}
 
 
 

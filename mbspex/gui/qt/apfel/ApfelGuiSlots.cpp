@@ -1293,6 +1293,14 @@ void ApfelGui::MeasureCurrentsPushButton_clicked ()
 
   printm ("Have read momentary current:%f", ReadKeithleyCurrent());
 
+  return; // DEBUG
+  // later we do the procedure
+  if(!fBroadcasting)
+  {
+    EvaluateSlave ();
+    GOSIP_BROADCAST_ACTION(DoCurrentScan());
+  }
+
 }
 
 void ApfelGui::InitKeithleyPushButton_clicked ()

@@ -149,7 +149,7 @@ protected:
   QLabel* fApfelIDScanLabel[APFEL_NUMCHIPS];
   QLabel* fApfelGeneralCallLabel[APFEL_NUMCHIPS];
   QLabel* fApfelReverseIDScanLabel[APFEL_NUMCHIPS];
-
+  QLabel* fApfelRegisterTestLabel[APFEL_NUMCHIPS];
 
   KPlotWidget* fPlotWidget[16];
 
@@ -546,6 +546,12 @@ protected:
     void SetSingleChipCommID(int apfel, int id);
 
 
+
+    /** loop over all connected apfel chips and perform current scan with keithley.*/
+      void DoCurrentScan();
+
+      /** Perform ampere Scan for apfel chip at given slot */
+      void ExecuteCurrentScan(int apfel);
 
  
 

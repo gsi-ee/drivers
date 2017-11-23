@@ -348,6 +348,13 @@ int  BoardSetup::IsIDScanOK(int apfel)
    return (fApfel[apfel].IsReverseIDScanOK() ? 1 :0);
  }
 
+
+ int  BoardSetup::IsRegisterScanOK(int apfel)
+ {
+   ASSERT_APFEL_VALID(apfel);
+   return (fApfel[apfel].IsRegisterScanOK() ? 1 :0);
+ }
+
  int  BoardSetup::SetIDScan(int apfel, bool ok)
  {
    ASSERT_APFEL_VALID(apfel);
@@ -368,6 +375,14 @@ int  BoardSetup::IsIDScanOK(int apfel)
    fApfel[apfel].SetReverseIDScan(ok);
    return 0;
  }
+
+ int  BoardSetup::SetRegisterScan(int apfel, bool ok)
+ {
+   ASSERT_APFEL_VALID(apfel);
+   fApfel[apfel].SetRegisterScan(ok);
+   return 0;
+ }
+
 
 
 int BoardSetup::GetDACValue (int apfel, int dac)

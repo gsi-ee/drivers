@@ -263,11 +263,12 @@ public:
   int IsIDScanOK(int apfel);
   int IsGeneralScanOK(int apfel);
   int IsReverseIDScanOK(int apfel);
+  int IsRegisterScanOK(int apfel);
 
   int SetIDScan(int apfel, bool ok);
   int SetGeneralScan(int apfel, bool ok);
   int SetReverseIDScan(int apfel, bool ok);
-
+  int SetRegisterScan(int apfel, bool ok);
 
 
 

@@ -611,7 +611,7 @@ int sel_VddAsic=0; // 8bit
 int sel_InExt=0;   // 8bit
 
 // following words of low control word:
-int sel_DataASIC=0; // 8bit
+int sel_DataASIC=0xFF; // 8bit - high is off
 int chipID=0; // 4bit
 
 
@@ -711,15 +711,9 @@ void ApfelGui::InitKeithley()
            }
 
 
-
-}
-
+    // put all  initialization stuff here:
 
 
-double ApfelGui::ReadKeithleyCurrent()
-{
-  printm ("ReadKeithleyCurrent access of /dev/ttyS0...");
-  double rev=-1.0;
   std::vector<QString> setup;
   //init device:
   setup.push_back(QString (":FUNC 'CURR:DC';\n"));
@@ -733,40 +727,40 @@ double ApfelGui::ReadKeithleyCurrent()
   setup.push_back(QString (":FORM ASC;\n"));
   setup.push_back(QString (":FORM:ELEM READ,UNIT,CHAN;\n"));
 
+  for(int i=0; i<setup.size(); ++i)
+        {
+           QString com=setup[i];
+           printm("sending %s",com.toLatin1 ().constData ());
+           tty << com;
+           tty.flush();
+           usleep(50000);
+        }
 
-  //Read a Measurement:
+}
+
+
+
+double ApfelGui::ReadKeithleyCurrent()
+{
+  printm ("ReadKeithleyCurrent access of /dev/ttyS0...");
+  double rev=-1.0;
+
+  //Read a single Measurement:
   QString getData(":SENS:DATA? \n");
-
-
-
-
   QFile file("/dev/ttyS0");
    if (!file.open(QIODevice::WriteOnly))
      {
-         printm ("InitKeithley error when opening /dev/ttyS0 for writing");
+         printm ("ReadKeithleyCurrent error when opening /dev/ttyS0 for writing");
          return -12.0;;
      }
    QFile infile("/dev/ttyS0");
    if (!infile.open(QIODevice::ReadOnly))// | QIODevice::Unbuffered ))// | QIODevice::Text))
    {
-     printm ("InitKeithley error when opening /dev/ttyS0 for reading");
+     printm ("ReadKeithleyCurrent error when opening /dev/ttyS0 for reading");
      return -13.0;
    }
 
        QTextStream tty(&file);
-       for(int i=0; i<setup.size(); ++i)
-       {
-          QString com=setup[i];
-          printm("sending %s",com.toLatin1 ().constData ());
-          tty << com;
-          tty.flush();
-          usleep(50000);
-       }
-
-
-
-
-       usleep(50000);
        printm ("sending:%s",getData.toLatin1 ().constData ());
        tty << getData;
        tty.flush();
@@ -954,12 +948,12 @@ void ApfelGui::SetSingleChipCommID(int apfel, int id)
 
 
   /** Perform ID Scan for apfel chip at given slot */
-  void ApfelGui::ExecuteIDScanTest(int apfel)
+void ApfelGui::ExecuteIDScanTest(int apfel)
   {
     theSetup_GET_FOR_SLAVE(BoardSetup);
     if(!theSetup->IsApfelPresent(apfel)) return;
-
-    printm("Starting Address Scan tests for position %d ...",apfel);
+    int position=apfel+1; // same numbering as on gui
+    printm("Starting Address Scan tests for position %d ...",position);
     QApplication::setOverrideCursor (Qt::WaitCursor);
     // set connection only to the given one:
 
@@ -990,7 +984,7 @@ void ApfelGui::SetSingleChipCommID(int apfel, int id)
   for (int id = 0; id < 16; ++id)
   {
     SetSingleChipCommID (apfel, id);
-    printm ("Starting General call test for position %d with assigned id:%d ", apfel, id);
+    printm ("Starting General call test for position %d with assigned id:%d ", position, id);
     int val = 0x310 | (id & 0xF);
     WriteDAC_ApfelI2c_ToID (0xFF, 0, val);    // broadcast to id 0xFF
    APFEL_ADDRESSTEST_SLEEP
@@ -1012,7 +1006,7 @@ void ApfelGui::SetSingleChipCommID(int apfel, int id)
  for (int id = 0; id < 16; ++id)
  {
    SetSingleChipCommID (apfel, id);
-   printm("Starting reverse id scan test for position %d with assigned id:%d",apfel);
+   printm("Starting reverse id scan test for position %d with assigned id:%d",position, id);
    int val = 0x2f0 | (id & 0xF);
 
    WriteDAC_ApfelI2c_ToID (id, 0, val);   // test value to our device
@@ -1028,7 +1022,7 @@ void ApfelGui::SetSingleChipCommID(int apfel, int id)
    if (rev != val)
    {
      reverseidscanok= false;
-     printm ("!! Failure reading back from apfel%d, assigned id:%d - wrote value 0x%x, read: 0x%x", apfel, id, val,
+     printm ("!! Failure reading back from apfel %d, assigned id:%d - wrote value 0x%x, read: 0x%x", apfel, id, val,
          rev);
    }
 
@@ -1038,15 +1032,84 @@ void ApfelGui::SetSingleChipCommID(int apfel, int id)
 
 
 
-     //printm("Starting register access  test for position %d ...",apfel);
-             // TODO
+ printm("Starting register access  test for position %d ...",position);
+ bool registertestok=true;
+ SetSingleChipCommID (apfel, 0); // use first id only
+ std::vector<int> firstvals;
+ firstvals.push_back(0x15c);
+ firstvals.push_back(0x155);
+ firstvals.push_back(0x15a);
+ firstvals.push_back(0x153);
+ std::vector<int> secondvals;
+ secondvals.push_back(0x2a3);
+ secondvals.push_back(0x2aa);
+ secondvals.push_back(0x2a5);
+ secondvals.push_back(0x2ac);
+
+ for(int dac=0; dac<APFEL_NUMDACS; ++dac)
+ {
+   WriteDAC_ApfelI2c_ToID (0, dac, firstvals[dac]);
+   APFEL_ADDRESSTEST_SLEEP
+ }
+
+ for(int dac=0; dac<APFEL_NUMDACS; ++dac)
+  {
+
+   int rev = (ReadDAC_ApfelI2c_FromID (0, dac)  & APFEL_DAC_MAXVALUE);
+   if (rev != firstvals[dac])
+     {
+     registertestok= false;
+       printm ("!! Registertest Failure reading back from apfel %d - wrote value 0x%x, read: 0x%x", apfel, firstvals[dac],
+           rev);
+     }
+
+    APFEL_ADDRESSTEST_SLEEP
+  }
+
+ for(int dac=0; dac<APFEL_NUMDACS; ++dac)
+  {
+    WriteDAC_ApfelI2c_ToID (0, dac, secondvals[dac]);
+    APFEL_ADDRESSTEST_SLEEP
+  }
+
+ for(int dac=0; dac<APFEL_NUMDACS; ++dac)
+   {
+
+    int rev = (ReadDAC_ApfelI2c_FromID (0, dac)  & APFEL_DAC_MAXVALUE);
+    if (rev != secondvals[dac])
+      {
+      registertestok= false;
+        printm ("!! Registertest Failure reading back from apfel %d - wrote value 0x%x, read: 0x%x", apfel, firstvals[dac],
+            rev);
+      }
+     APFEL_ADDRESSTEST_SLEEP
+   }
 
 
-  printm("Done for position %d ...",apfel);
+
+  theSetup->SetRegisterScan(apfel, registertestok);
+
+
+  printm("Everything is done for position %d ...",position);
 
     QApplication::restoreOverrideCursor ();
     RefreshIDScan(apfel);
   }
 
 
+void ApfelGui::ExecuteCurrentScan(int apfel)
+      {
+  theSetup_GET_FOR_SLAVE(BoardSetup);
+      if(!theSetup->IsApfelPresent(apfel)) return;
+      int position=apfel+1; // same numbering as on gui
+      printm("Starting Address Scan tests for position %d ...",position);
+      QApplication::setOverrideCursor (Qt::WaitCursor);
 
+
+
+
+
+      printm("Everything is done for position %d ...",position);
+      QApplication::restoreOverrideCursor ();
+      RefreshCurrents(apfel);
+      }

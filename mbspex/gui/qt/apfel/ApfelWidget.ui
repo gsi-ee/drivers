@@ -670,6 +670,9 @@
        <string>Gain</string>
       </attribute>
       <layout class="QFormLayout" name="formLayout_3">
+       <property name="fieldGrowthPolicy">
+        <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+       </property>
        <item row="0" column="0">
         <widget class="QGroupBox" name="OutputSelectBox">
          <property name="title">
@@ -7287,7 +7290,7 @@
       <attribute name="title">
        <string>Addresses</string>
       </attribute>
-      <layout class="QFormLayout" name="formLayout_4">
+      <layout class="QFormLayout" name="formLayout_2">
        <item row="0" column="0" colspan="2">
         <layout class="QGridLayout" name="gridLayout_70">
          <item row="0" column="0">
@@ -7350,6 +7353,25 @@
               </property>
               <property name="text">
                <string>Reverse ID Scan</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressRegisterTest_Label_1">
+              <property name="toolTip">
+               <string>Shows status of Register io test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>Register Test</string>
               </property>
              </widget>
             </item>
@@ -7419,6 +7441,25 @@
               </property>
              </widget>
             </item>
+            <item>
+             <widget class="QLabel" name="AdressRegisterTest_Label_5">
+              <property name="toolTip">
+               <string>Shows status of Register io test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>Register Test</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>
@@ -7482,6 +7523,25 @@
               </property>
               <property name="text">
                <string>Reverse ID Scan</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressRegisterTest_Label_2">
+              <property name="toolTip">
+               <string>Shows status of Register io test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>Register Test</string>
               </property>
              </widget>
             </item>
@@ -7551,6 +7611,25 @@
               </property>
              </widget>
             </item>
+            <item>
+             <widget class="QLabel" name="AdressRegisterTest_Label_6">
+              <property name="toolTip">
+               <string>Shows status of Register io test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>Register Test</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>
@@ -7614,6 +7693,25 @@
               </property>
               <property name="text">
                <string>Reverse ID Scan</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressRegisterTest_Label_3">
+              <property name="toolTip">
+               <string>Shows status of Register io test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>Register Test</string>
               </property>
              </widget>
             </item>
@@ -7683,6 +7781,25 @@
               </property>
              </widget>
             </item>
+            <item>
+             <widget class="QLabel" name="AdressRegisterTest_Label_7">
+              <property name="toolTip">
+               <string>Shows status of Register io test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>Register Test</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>
@@ -7746,6 +7863,25 @@
               </property>
               <property name="text">
                <string>Reverse ID Scan</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="AdressRegisterTest_Label_4">
+              <property name="toolTip">
+               <string>Shows status of Register io test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>Register Test</string>
               </property>
              </widget>
             </item>
@@ -7815,6 +7951,25 @@
               </property>
              </widget>
             </item>
+            <item>
+             <widget class="QLabel" name="AdressRegisterTest_Label_8">
+              <property name="toolTip">
+               <string>Shows status of Register io test</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Sunken</enum>
+              </property>
+              <property name="lineWidth">
+               <number>2</number>
+              </property>
+              <property name="text">
+               <string>Register Test</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>
@@ -7844,6 +7999,16 @@
         </spacer>
        </item>
       </layout>
+      <zorder>AdressGroupBox_5</zorder>
+      <zorder>AdressGroupBox_2</zorder>
+      <zorder>AdressGroupBox_6</zorder>
+      <zorder>AdressGroupBox_3</zorder>
+      <zorder>AdressGroupBox_7</zorder>
+      <zorder>AdressGroupBox_4</zorder>
+      <zorder>AdressGroupBox_8</zorder>
+      <zorder>AddressScanPushButton</zorder>
+      <zorder>AdressGroupBox_1</zorder>
+      <zorder>horizontalSpacer_19</zorder>
      </widget>
      <widget class="QWidget" name="tab_25">
       <attribute name="title">
@@ -11921,100 +12086,245 @@
     </hint>
    </hints>
   </connection>
-  
-  
   <connection>
    <sender>gainCombo_all</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>gainCombo_1</receiver>
    <slot>setCurrentIndex(int)</slot>
-   </connection>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
   <connection>
    <sender>gainCombo_all</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>gainCombo_2</receiver>
    <slot>setCurrentIndex(int)</slot>
-   </connection>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
   <connection>
    <sender>gainCombo_all</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>gainCombo_3</receiver>
    <slot>setCurrentIndex(int)</slot>
-   </connection>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
   <connection>
    <sender>gainCombo_all</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>gainCombo_4</receiver>
    <slot>setCurrentIndex(int)</slot>
-   </connection>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
   <connection>
    <sender>gainCombo_all</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>gainCombo_5</receiver>
    <slot>setCurrentIndex(int)</slot>
-   </connection>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
   <connection>
    <sender>gainCombo_all</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>gainCombo_6</receiver>
    <slot>setCurrentIndex(int)</slot>
-   </connection>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
   <connection>
    <sender>gainCombo_all</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>gainCombo_7</receiver>
    <slot>setCurrentIndex(int)</slot>
-   </connection>
-   
-    <connection>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
    <sender>gainCombo_all</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>gainCombo_8</receiver>
    <slot>setCurrentIndex(int)</slot>
-   </connection>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
   <connection>
    <sender>gainCombo_all</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>gainCombo_9</receiver>
    <slot>setCurrentIndex(int)</slot>
-   </connection>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
   <connection>
    <sender>gainCombo_all</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>gainCombo_10</receiver>
    <slot>setCurrentIndex(int)</slot>
-   </connection>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
   <connection>
    <sender>gainCombo_all</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>gainCombo_11</receiver>
    <slot>setCurrentIndex(int)</slot>
-   </connection>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
   <connection>
    <sender>gainCombo_all</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>gainCombo_12</receiver>
    <slot>setCurrentIndex(int)</slot>
-   </connection>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
   <connection>
    <sender>gainCombo_all</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>gainCombo_13</receiver>
    <slot>setCurrentIndex(int)</slot>
-   </connection>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
   <connection>
    <sender>gainCombo_all</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>gainCombo_14</receiver>
    <slot>setCurrentIndex(int)</slot>
-   </connection>
-   <connection>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
    <sender>gainCombo_all</sender>
    <signal>currentIndexChanged(int)</signal>
    <receiver>gainCombo_15</receiver>
    <slot>setCurrentIndex(int)</slot>
-   </connection>
-   
-   
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
 </ui>

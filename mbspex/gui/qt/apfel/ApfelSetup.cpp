@@ -8,7 +8,7 @@
 ApfelSetup::ApfelSetup () :
 fChipPresent(true), fPoweredOn(true), fAddressID (0),
 fCurrentAsic(1.0), fCurrentHV(1.0), fCurrentDiode(1.0),
-fIDScanOK(false), fGeneralScanOK(false),fIDReverseScanOK(false)
+fIDScanOK(false), fGeneralScanOK(false),fIDReverseScanOK(false),fRegisterScanOK(false)
 
 {
   for (int c = 0; c < APFEL_NUMDACS; ++c)

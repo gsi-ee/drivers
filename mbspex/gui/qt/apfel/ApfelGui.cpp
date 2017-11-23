@@ -35,7 +35,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.9977 of 22-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.9978 of 23-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
 
   fApfelWidget=new ApfelWidget();
   Settings_scrollArea->setWidget(fApfelWidget);
@@ -619,6 +619,16 @@ ApfelGui::ApfelGui (QWidget* parent) :
    fApfelReverseIDScanLabel[5]=fApfelWidget->AdressReverseID_Label_6;
    fApfelReverseIDScanLabel[6]=fApfelWidget->AdressReverseID_Label_7;
    fApfelReverseIDScanLabel[7]=fApfelWidget->AdressReverseID_Label_8;
+
+
+   fApfelRegisterTestLabel[0]=fApfelWidget->AdressRegisterTest_Label_1;
+   fApfelRegisterTestLabel[1]=fApfelWidget->AdressRegisterTest_Label_2;
+   fApfelRegisterTestLabel[2]=fApfelWidget->AdressRegisterTest_Label_3;
+   fApfelRegisterTestLabel[3]=fApfelWidget->AdressRegisterTest_Label_4;
+   fApfelRegisterTestLabel[4]=fApfelWidget->AdressRegisterTest_Label_5;
+   fApfelRegisterTestLabel[5]=fApfelWidget->AdressRegisterTest_Label_6;
+   fApfelRegisterTestLabel[6]=fApfelWidget->AdressRegisterTest_Label_7;
+   fApfelRegisterTestLabel[7]=fApfelWidget->AdressRegisterTest_Label_8;
 
 
    fApfelCurrentHVLabel[0]=fApfelWidget->CurrentHV_Label_1;
@@ -1891,22 +1901,26 @@ void ApfelGui::RefreshIDScan(int apfel, bool reset)
   QString idscan=    "ID Scan________";
   QString general=   "General Call___";
   QString reverse=   "Reverse ID Scan";
+  QString reg=       "Register Test__";
 
   ApfelTextColor_t idcolor=apfel_red_background;
   ApfelTextColor_t gencolor=apfel_red_background;
   ApfelTextColor_t revcolor=apfel_red_background;
+  ApfelTextColor_t regcolor=apfel_red_background;
 
    if(!theSetup->IsApfelPresent(apfel))
     {
     idcolor=apfel_yellow_background;
     gencolor=apfel_yellow_background;
     revcolor=apfel_yellow_background;
+    regcolor=apfel_yellow_background;
     }
   else if(reset)
   {
      idcolor=apfel_blue_background;
      gencolor=apfel_blue_background;
      revcolor=apfel_blue_background;
+     regcolor=apfel_blue_background;
   }
   else
   {
@@ -1918,12 +1932,15 @@ void ApfelGui::RefreshIDScan(int apfel, bool reset)
 
     if(theSetup->IsReverseIDScanOK(apfel))
          revcolor=apfel_green_background;
+
+    if(theSetup->IsRegisterScanOK(apfel))
+        regcolor=apfel_green_background;
   }
 
   RefreshColouredLabel(fApfelIDScanLabel[apfel],idscan, idcolor);
   RefreshColouredLabel(fApfelGeneralCallLabel[apfel],general, gencolor);
   RefreshColouredLabel(fApfelReverseIDScanLabel[apfel],reverse , revcolor);
-
+  RefreshColouredLabel(fApfelRegisterTestLabel[apfel],reg , regcolor);
 
 }
 
@@ -2429,6 +2446,28 @@ void ApfelGui::DoIdScan()
   SetDefaultIOConfig(); // back to normal operation
 
 }
+
+
+
+void ApfelGui::DoCurrentScan ()
+{
+
+  // TODO reset to blue
+//  for(int a=0; a<APFEL_NUMCHIPS; ++a)
+//     {
+//        RefreshCurrents(a,true); // reset colors
+//     }
+
+  for (int a = 0; a < APFEL_NUMCHIPS; ++a)
+  {
+    ExecuteCurrentScan (a);
+    RefreshCurrents (a);
+  }
+  SetDefaultIOConfig ();    // back to normal operation
+}
+
+
+
 
 
 void ApfelGui::LoadBenchmarkReferences()
