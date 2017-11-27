@@ -17,6 +17,8 @@
 #include <QTextStream>
 #include <QFile>
 
+#include "Qt/qtcpsocket.h"
+
 // following will use external scripts to read toellner power supply
 //#define TOELLNER_POWER_USE_SCRIPT 1
 
@@ -648,14 +650,19 @@ WriteGosip (fSFP, fSlave, GOS_I2C_DWR, lo);
 
 void ApfelGui::InitKeithley()
 {
-  printm ("InitKeithley access of /dev/ttyS0...");
+ 
   QString askconnect("*IDN?;\n");
   QString reset("*RST;\n");
   QString clearstatus("*CLS;\n");
 
   std::vector<QString> trigsetup;
     //init device:
-
+  QTextStream tty;
+  QFile file;
+  QFile infile;
+  QTcpSocket sock;
+  bool useSerial=fApfelWidget->CurrentSerialCheckBox->isChecked();
+  bool useSocket=fApfelWidget->CurrentSocketCheckBox->isChecked();
 
   trigsetup.push_back(QString (":INIT:CONT OFF; :ABOR;\n"));
   trigsetup.push_back(QString (":TRIG:SOUR IMM;\n"));
@@ -663,29 +670,66 @@ void ApfelGui::InitKeithley()
   trigsetup.push_back(QString (":TRIG:DEL:AUTO OFF;\n"));
   trigsetup.push_back(QString (":TRIG:DEL0.000000;\n"));
   trigsetup.push_back(QString (":INIT:CONT ON;\n"));
-
-  QFile file("/dev/ttyS0");
+  if(useSerial)
+  {
+  printm ("InitKeithley access of /dev/ttyS0...");
+  file.setFileName("/dev/ttyS0");
   if (!file.open(QIODevice::WriteOnly))
     {
         printm ("InitKeithley error when opening /dev/ttyS0 for writing");
         return;
     }
-  QFile infile("/dev/ttyS0");
+  infile.setFileName("/dev/ttyS0");
   if (!infile.open(QIODevice::ReadOnly))// | QIODevice::Unbuffered ))// | QIODevice::Text))
   {
     printm ("InitKeithley error when opening /dev/ttyS0 for reading");
     return;
+  } 
+  tty.setDevice(&file);
+  }
+  else if(useSocket)
+  {
+
+  // todo: switches and configurable names instead of defines
+  //QString host("eegpibenet02.gsi.de");
+   //quint16 port=1234;
+   QString host=fApfelWidget->CurrentNodeName->text();
+   quint16 port=fApfelWidget->CurrentPortSpinBox->value();
+
+   printm ("InitKeithley access of %s:%d...",host.toLatin1 ().constData (),port);
+   sock.connectToHost(host, port, QIODevice::ReadWrite | QIODevice::Text);
+   if (sock.waitForConnected(1000))
+   {
+       printm("Connected!");
+   }
+   else
+   {
+     printm("Could not reach device! Error: %d", sock.error());
+     return;
+   }
+   tty.setDevice(&sock);
+
+
+  }
+  else
+  {
+    return; // fake mode
   }
 
-      QTextStream tty(&file);
+     
       printm ("InitKeithley will send:%s",askconnect.toLatin1 ().constData ());
       tty << askconnect;
       tty.flush();
       usleep(50000);
 
       QString answer("");
-      answer=infile.readLine();
-      infile.readLine(); // skip blank line after value!
+      if(useSerial)
+        answer=infile.readLine();
+      //infile.readLine(); // skip blank line after value! ???
+        else
+          answer=sock.readLine();
+      
+      
       printm("InitKeithley answer was:%s", answer.toLatin1 ().constData ());
 
       // TODO: error handling if not connected
@@ -743,37 +787,76 @@ void ApfelGui::InitKeithley()
 double ApfelGui::ReadKeithleyCurrent()
 {
 
-
-
-
-
-  printm ("ReadKeithleyCurrent access of /dev/ttyS0...");
-  double rev=-1.0;
-
+ double rev=-1.0;
+ QTextStream tty;
+ QFile file;
+ QFile infile;
+ QTcpSocket sock;
+ bool useSerial=fApfelWidget->CurrentSerialCheckBox->isChecked();
+ bool useSocket=fApfelWidget->CurrentSocketCheckBox->isChecked();
   //Read a single Measurement:
   QString getData(":SENS:DATA? \n");
-  QFile file("/dev/ttyS0");
+  if(useSerial)
+   {
+
+  printm ("ReadKeithleyCurrent access of /dev/ttyS0...");
+ 
+  file.setFileName("/dev/ttyS0");
    if (!file.open(QIODevice::WriteOnly))
      {
          printm ("ReadKeithleyCurrent error when opening /dev/ttyS0 for writing");
          return -12.0;;
      }
-   QFile infile("/dev/ttyS0");
+   infile.setFileName("/dev/ttyS0");
    if (!infile.open(QIODevice::ReadOnly))// | QIODevice::Unbuffered ))// | QIODevice::Text))
    {
      printm ("ReadKeithleyCurrent error when opening /dev/ttyS0 for reading");
      return -13.0;
    }
 
-       QTextStream tty(&file);
+       tty.setDevice(&file);
+   }
+  else if(useSocket)
+   {
+
+	// todo: switches and configurable names instead of defines
+  //QString host("eegpibenet02.gsi.de");
+  //quint16 port=1234;
+  QString host=fApfelWidget->CurrentNodeName->text();
+  quint16 port=fApfelWidget->CurrentPortSpinBox->value();
+
+   printm ("ReadKeithleyCurrent access of %s:%d...",host.toLatin1 ().constData (),port);
+   sock.connectToHost(host, port); //  QIODevice::ReadWrite | QIODevice::Text
+   if (sock.waitForConnected(1000))
+     {
+         printm("Connected!");
+     }
+     else
+     {
+       printm("Could not reach device! Error: %d", sock.error());
+       return -11.0;
+     }
+
+   tty.setDevice(&sock);
+
+   }
+  else
+  {
+    return -22; // fake mode nop
+
+  }
        printm ("sending:%s",getData.toLatin1 ().constData ());
        tty << getData;
        tty.flush();
        usleep(50000);
 
        QString answer("");
+if(useSerial)
        answer=infile.readLine();
-       infile.readLine(); // skip blank line after value!
+      //infile.readLine(); // skip blank line after value! ???
+  else
+    answer=sock.readLine();
+          
        rev=answer.toDouble();
        printm("Got answer:%s - %e A", answer.toLatin1 ().constData (), rev);
        return rev;

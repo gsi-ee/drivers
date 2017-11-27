@@ -14,7 +14,7 @@
    <string>APFEL Widget</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_77">
-   <item row="0" column="0">
+   <item row="1" column="0">
     <widget class="QTabWidget" name="ApfelTabWidget">
      <property name="toolTip">
       <string>Push this button to start measurement from keithly</string>
@@ -8033,7 +8033,7 @@
       <attribute name="title">
        <string>Current</string>
       </attribute>
-      <layout class="QFormLayout" name="formLayout">
+      <layout class="QFormLayout" name="formLayout_4">
        <item row="0" column="0" colspan="2">
         <widget class="QGroupBox" name="CurrentAlarmGroupBox">
          <property name="title">
@@ -9479,7 +9479,7 @@
         </layout>
        </item>
        <item row="2" column="0">
-        <layout class="QHBoxLayout" name="horizontalLayout_148">
+        <layout class="QVBoxLayout" name="verticalLayout_16">
          <item>
           <widget class="QPushButton" name="MeasureCurrentsPushButton">
            <property name="toolTip">
@@ -9500,30 +9500,85 @@
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QCheckBox" name="CurrentTestCheckBox">
-           <property name="toolTip">
-            <string>Check to use fake currents without multimeter IO to test scan output</string>
-           </property>
-           <property name="text">
-            <string>Fake Mode</string>
-           </property>
-          </widget>
-         </item>
         </layout>
        </item>
        <item row="2" column="1">
-        <spacer name="horizontalSpacer_12">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+        <widget class="QGroupBox" name="CurrentModeBox">
+         <property name="title">
+          <string>Measurement mode</string>
          </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>1133</width>
-           <height>23</height>
-          </size>
-         </property>
-        </spacer>
+         <layout class="QFormLayout" name="formLayout">
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="CurrentSerialCheckBox">
+            <property name="toolTip">
+             <string>Check to use fake currents without multimeter IO to test scan output</string>
+            </property>
+            <property name="text">
+             <string>Use Serial line</string>
+            </property>
+            <property name="autoExclusive">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="CurrentTestCheckBox">
+            <property name="toolTip">
+             <string>Check to use fake currents without multimeter IO to test scan output</string>
+            </property>
+            <property name="text">
+             <string>Fake Mode</string>
+            </property>
+            <property name="autoExclusive">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0" colspan="2">
+           <layout class="QHBoxLayout" name="horizontalLayout_150">
+            <item>
+             <widget class="QCheckBox" name="CurrentSocketCheckBox">
+              <property name="toolTip">
+               <string>Check to use fake currents without multimeter IO to test scan output</string>
+              </property>
+              <property name="text">
+               <string>Use Socket</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+              <property name="autoExclusive">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="CurrentNodeName">
+              <property name="toolTip">
+               <string>Specify node name of gpbi socket device</string>
+              </property>
+              <property name="text">
+               <string>eegpibenet02.gsi.de</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="CurrentPortSpinBox">
+              <property name="toolTip">
+               <string>Port number of GPIB socket</string>
+              </property>
+              <property name="maximum">
+               <number>9998</number>
+              </property>
+              <property name="value">
+               <number>1234</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -11894,8 +11949,8 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>204</x>
-     <y>353</y>
+     <x>188</x>
+     <y>355</y>
     </hint>
     <hint type="destinationlabel">
      <x>375</x>
@@ -11910,8 +11965,8 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>212</x>
-     <y>353</y>
+     <x>188</x>
+     <y>355</y>
     </hint>
     <hint type="destinationlabel">
      <x>550</x>
@@ -11926,8 +11981,8 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>212</x>
-     <y>353</y>
+     <x>188</x>
+     <y>355</y>
     </hint>
     <hint type="destinationlabel">
      <x>725</x>
@@ -11946,8 +12001,8 @@
      <y>378</y>
     </hint>
     <hint type="destinationlabel">
-     <x>432</x>
-     <y>358</y>
+     <x>407</x>
+     <y>360</y>
     </hint>
    </hints>
   </connection>
@@ -11958,8 +12013,8 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>212</x>
-     <y>378</y>
+     <x>188</x>
+     <y>380</y>
     </hint>
     <hint type="destinationlabel">
      <x>607</x>
@@ -11974,8 +12029,8 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>212</x>
-     <y>378</y>
+     <x>188</x>
+     <y>380</y>
     </hint>
     <hint type="destinationlabel">
      <x>782</x>
@@ -11990,8 +12045,8 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>212</x>
-     <y>403</y>
+     <x>188</x>
+     <y>405</y>
     </hint>
     <hint type="destinationlabel">
      <x>607</x>
@@ -12006,8 +12061,8 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>212</x>
-     <y>403</y>
+     <x>188</x>
+     <y>405</y>
     </hint>
     <hint type="destinationlabel">
      <x>782</x>
@@ -12022,12 +12077,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>212</x>
-     <y>403</y>
+     <x>188</x>
+     <y>405</y>
     </hint>
     <hint type="destinationlabel">
-     <x>432</x>
-     <y>387</y>
+     <x>407</x>
+     <y>389</y>
     </hint>
    </hints>
   </connection>
@@ -12038,12 +12093,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>193</x>
-     <y>428</y>
+     <x>188</x>
+     <y>430</y>
     </hint>
     <hint type="destinationlabel">
-     <x>432</x>
-     <y>416</y>
+     <x>407</x>
+     <y>418</y>
     </hint>
    </hints>
   </connection>
@@ -12070,12 +12125,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>212</x>
-     <y>453</y>
+     <x>188</x>
+     <y>455</y>
     </hint>
     <hint type="destinationlabel">
-     <x>432</x>
-     <y>445</y>
+     <x>407</x>
+     <y>447</y>
     </hint>
    </hints>
   </connection>
@@ -12118,8 +12173,8 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>212</x>
-     <y>453</y>
+     <x>188</x>
+     <y>455</y>
     </hint>
     <hint type="destinationlabel">
      <x>782</x>
@@ -12134,8 +12189,8 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>189</x>
-     <y>453</y>
+     <x>188</x>
+     <y>455</y>
     </hint>
     <hint type="destinationlabel">
      <x>607</x>
@@ -12218,8 +12273,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>173</x>
-     <y>217</y>
+     <x>234</x>
+     <y>237</y>
     </hint>
    </hints>
   </connection>
@@ -12234,8 +12289,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>173</x>
-     <y>279</y>
+     <x>234</x>
+     <y>299</y>
     </hint>
    </hints>
   </connection>
@@ -12250,8 +12305,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>490</x>
-     <y>93</y>
+     <x>551</x>
+     <y>113</y>
     </hint>
    </hints>
   </connection>
@@ -12266,8 +12321,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>490</x>
-     <y>155</y>
+     <x>551</x>
+     <y>175</y>
     </hint>
    </hints>
   </connection>
@@ -12282,8 +12337,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>490</x>
-     <y>217</y>
+     <x>551</x>
+     <y>237</y>
     </hint>
    </hints>
   </connection>
@@ -12298,8 +12353,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>490</x>
-     <y>279</y>
+     <x>551</x>
+     <y>299</y>
     </hint>
    </hints>
   </connection>
@@ -12342,12 +12397,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
+     <x>258</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
+     <x>322</x>
+     <y>158</y>
     </hint>
    </hints>
   </connection>
@@ -12358,12 +12413,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
+     <x>258</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
+     <x>623</x>
+     <y>130</y>
     </hint>
    </hints>
   </connection>
@@ -12374,12 +12429,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
+     <x>258</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
+     <x>623</x>
+     <y>158</y>
     </hint>
    </hints>
   </connection>
@@ -12390,12 +12445,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
+     <x>258</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
+     <x>923</x>
+     <y>130</y>
     </hint>
    </hints>
   </connection>
@@ -12406,12 +12461,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
+     <x>258</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
+     <x>923</x>
+     <y>158</y>
     </hint>
    </hints>
   </connection>
@@ -12422,12 +12477,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
+     <x>258</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
+     <x>1223</x>
+     <y>130</y>
     </hint>
    </hints>
   </connection>
@@ -12438,12 +12493,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
+     <x>258</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
+     <x>1223</x>
+     <y>158</y>
     </hint>
    </hints>
   </connection>
@@ -12454,12 +12509,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
+     <x>258</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
+     <x>322</x>
+     <y>222</y>
     </hint>
    </hints>
   </connection>
@@ -12470,12 +12525,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
+     <x>258</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
+     <x>322</x>
+     <y>250</y>
     </hint>
    </hints>
   </connection>
@@ -12486,12 +12541,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
+     <x>258</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
+     <x>623</x>
+     <y>222</y>
     </hint>
    </hints>
   </connection>
@@ -12502,12 +12557,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
+     <x>258</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
+     <x>623</x>
+     <y>250</y>
     </hint>
    </hints>
   </connection>
@@ -12518,12 +12573,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
+     <x>258</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
+     <x>923</x>
+     <y>222</y>
     </hint>
    </hints>
   </connection>
@@ -12534,12 +12589,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
+     <x>258</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
+     <x>923</x>
+     <y>250</y>
     </hint>
    </hints>
   </connection>
@@ -12550,12 +12605,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
+     <x>258</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
+     <x>1223</x>
+     <y>222</y>
     </hint>
    </hints>
   </connection>
@@ -12566,12 +12621,44 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
+     <x>258</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
+     <x>1223</x>
+     <y>250</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>CurrentSocketCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>CurrentNodeName</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>211</x>
+     <y>425</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>429</x>
+     <y>424</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>CurrentSocketCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>CurrentPortSpinBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>237</x>
+     <y>419</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1319</x>
+     <y>421</y>
     </hint>
    </hints>
   </connection>

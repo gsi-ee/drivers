@@ -11,6 +11,8 @@
 /** enable this for old toellner power mode*/
 //#define APFEL_USE_TOELLNER_POWER 1
 
+/** enable to read current via serial rs323 /dev/ttyS0*/
+//#define APFEL_USE_SERIAL_DEVICE 1
 
 
 /** uncomment this if we need to explicitely enable i2c before settings apfel registers*/
