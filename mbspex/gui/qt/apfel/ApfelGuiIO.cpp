@@ -352,15 +352,15 @@ int ApfelGui::ReadDAC_ApfelI2c_FromID (uint8_t apid, uint8_t dac)
 
   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
   // note that WriteGosip already contains i2csleep
-  I2c_sleep (); // give additional delay for apfel?
+  //I2c_sleep (); // give additional delay for apfel?
   // second: read request from core registers
   dat = APFEL_DAC_REQUEST_BASE_RD + (dac) * APFEL_CORE_REQUEST_DAC_OFFSET;
   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
-  I2c_sleep (); // give additional delay for apfel?
-  I2c_sleep ();
+  //I2c_sleep (); // give additional delay for apfel?
+  //I2c_sleep ();
   // third: actually read requested value
   val = ReadGosip (fSFP, fSlave, GOS_I2C_DRR1);    // read out the value
-  I2c_sleep (); // give additional delay for apfel?
+  //I2c_sleep (); // give additional delay for apfel?
   if (val < 0)
     return val;    // error case, propagate it upwards
 ///////////
@@ -430,12 +430,12 @@ int  ApfelGui::WriteDAC_ApfelI2c_ToID (uint8_t apfelid, uint8_t dac, uint16_t va
 int dat = APFEL_CORE_REQUEST_BASE_WR + dac * APFEL_CORE_REQUEST_DAC_OFFSET;
 dat |= (value & 0x3FF);
 WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
-I2c_sleep (); // give additional delay for apfel?
+//I2c_sleep (); // give additional delay for apfel?
 // then request for data transfer:
 dat = APFEL_TRANSFER_BASE_WR + (dac + 1) * APFEL_TRANSFER_DAC_OFFSET + (apfelid & 0xFF);
 // mind that dac index starts with 0 for dac1 here!
 WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
-I2c_sleep (); // give additional delay for apfel?
+//I2c_sleep (); // give additional delay for apfel?
 return 0;
 }
 
@@ -742,6 +742,11 @@ void ApfelGui::InitKeithley()
 
 double ApfelGui::ReadKeithleyCurrent()
 {
+
+
+
+
+
   printm ("ReadKeithleyCurrent access of /dev/ttyS0...");
   double rev=-1.0;
 
@@ -894,9 +899,6 @@ void ApfelGui::ReadToellnerPower(double& u, double& i)
 
 void ApfelGui::SetSingleChipCommID(int apfel, int id)
 {
-
-  // TODO
-
   theSetup_GET_FOR_SLAVE(BoardSetup);
   int dat = APFEL_IO_CONTROL_WR;
   int mask = 0;
@@ -946,6 +948,65 @@ void ApfelGui::SetSingleChipCommID(int apfel, int id)
 
 
 
+void ApfelGui::SetSingleChipCurrentMode(int apfel, bool selectHV, bool selectDiode)
+
+{
+
+  theSetup_GET_FOR_SLAVE(BoardSetup);
+  int dat = APFEL_IO_CONTROL_WR;
+  int mask = 0;
+  int lo=APFEL_IO_DATA_LO_WR;
+  int hi=APFEL_IO_DATA_HI_WR;
+
+  // following words of high control word:
+  int sel_VddAsic=0; // 8bit
+  int sel_InExt=0xFF;   // 8bit - all to ground except for this apfel
+
+  // following words of low control word:
+  int sel_DataASIC=0xFF; // 8bit
+  int chipID=0; // 4bit, not used
+
+
+
+  sel_InExt &=~(1 << apfel); // enable only this apfel
+
+
+  sel_VddAsic |= (1 << apfel);
+  sel_DataASIC  &= ~(1 << apfel);
+
+  // the common part:
+  hi |= (sel_VddAsic & 0xFF) <<8;
+  hi |= sel_InExt & 0xFF;
+  lo |=(sel_DataASIC & 0xFF) <<8;
+  lo |= (chipID & 0xF) << 4;
+
+  // lsb for gain setup, this time we do not use bit 1 - SelIDAsic, so just hard coded ids
+  if(theSetup->IsHighGain())
+    lo |= (0x000c);
+  else
+    lo |= (0x000d);
+
+
+  // finally set the hv/diode switches:
+  char selHV= selectHV ? 0x1 : 0x0;
+  char selDiode=selectDiode ? 0x1: 0x0;
+  lo |= ((selHV << 3) & 0xF);
+  lo |= ((selDiode << 2) & 0xF);
+
+
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, hi);
+  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, lo);
+
+   dat |= (0x18); // default setup: all enabled
+   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
+   APFEL_ADDRESSTEST_SLEEP
+
+}
+
+
+
+
+
 
   /** Perform ID Scan for apfel chip at given slot */
 void ApfelGui::ExecuteIDScanTest(int apfel)
@@ -955,12 +1016,6 @@ void ApfelGui::ExecuteIDScanTest(int apfel)
     int position=apfel+1; // same numbering as on gui
     printm("Starting Address Scan tests for position %d ...",position);
     QApplication::setOverrideCursor (Qt::WaitCursor);
-    // set connection only to the given one:
-
-
-
-
-    // TODO
     bool idscanok=true;
     for(int id=0; id<16; ++id)
     {
@@ -1097,19 +1152,35 @@ void ApfelGui::ExecuteIDScanTest(int apfel)
   }
 
 
-void ApfelGui::ExecuteCurrentScan(int apfel)
-      {
+void ApfelGui::ExecuteCurrentScan (int apfel)
+{
   theSetup_GET_FOR_SLAVE(BoardSetup);
-      if(!theSetup->IsApfelPresent(apfel)) return;
-      int position=apfel+1; // same numbering as on gui
-      printm("Starting Address Scan tests for position %d ...",position);
-      QApplication::setOverrideCursor (Qt::WaitCursor);
+  if (!theSetup->IsApfelPresent (apfel))
+    return;
+  int position = apfel + 1;    // same numbering as on gui
+  double val=-1;
+  QApplication::setOverrideCursor (Qt::WaitCursor);
+  bool fake=fApfelWidget->CurrentTestCheckBox->isChecked();
+  printm ("Starting %s ASIC current measurement  for position %d ...", (fake ? "FAKE" : "Multimeter") ,position);
+  SetSingleChipCurrentMode (apfel, true, true);    // hv bit on, diode bit on  -> enable asic switch
+  val = (fake ? (position * 1.0E-3) : ReadKeithleyCurrent ());
+  printm ("          - got %E A", val);
+  theSetup->SetCurrentASIC (apfel, val);
+  SetDefaultIOConfig ();    // back to normal operation
 
+  printm ("Starting %s HV current measurement for position %d ...", (fake ? "FAKE" : "Multimeter"), position);
+  SetSingleChipCurrentMode (apfel, false, true);    // hv bit off, diode bit on      -> enable HV switch
+  val = (fake ? (position * 1.0E-9) : ReadKeithleyCurrent ());
+  printm ("          - got %E A", val);
+  theSetup->SetCurrentHV(apfel, val);
+  SetDefaultIOConfig ();    // back to normal operation
 
-
-
-
-      printm("Everything is done for position %d ...",position);
-      QApplication::restoreOverrideCursor ();
-      RefreshCurrents(apfel);
-      }
+  printm ("Starting %s Diode current measurement for position %d ...", (fake ? "FAKE" : "Multimeter"), position);
+  SetSingleChipCurrentMode (apfel, false, false);    // hv bit off, diode bit off     -> enable Diode switch
+  val = (fake ? (position * 1.0E-6) : ReadKeithleyCurrent ());
+  printm ("          - got %E A", val);
+  theSetup->SetCurrentDiode(apfel, val);
+  SetDefaultIOConfig ();    // back to normal operation
+  QApplication::restoreOverrideCursor ();
+  RefreshCurrents (apfel);
+}

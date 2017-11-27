@@ -190,11 +190,13 @@ protected:
   /** udpate display of dac settings for apfel chip with given index */
   void RefreshDAC(int apfel);
 
-  /** udpate display of current measurements for apfel chip with given index */
-   void RefreshCurrents(int apfel);
+  /** udpate display of current measurements for apfel chip with given index.
+   * Return value is false if any of the tests shows a failure */
+   bool RefreshCurrents(int apfel);
 
-   /** udpate display of  id scans for apfel chip with given index. if reset is true, put startup colors */
-   void RefreshIDScan(int apfel, bool reset=false);
+   /** udpate display of  id scans for apfel chip with given index. if reset is true, put startup colors.
+    *  Return value is false if any of the tests shows a failure*/
+   bool RefreshIDScan(int apfel, bool reset=false);
 
   /** udpate display of adc value of channel. specify gain to set relative dac slider from calibration */
    void RefreshADC_channel(int channel, int gain);
@@ -544,6 +546,12 @@ protected:
 
     /** Enable single chip communication and set local id*/
     void SetSingleChipCommID(int apfel, int id);
+
+
+    /** Activate single chip and set the switch bits for different current measurements */
+    void SetSingleChipCurrentMode(int apfel, bool selectHV, bool selectDiode);
+
+
 
 
 

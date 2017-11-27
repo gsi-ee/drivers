@@ -1007,40 +1007,58 @@ void ApfelGui::BenchmarkTimerCallback ()
 void ApfelGui::StartBenchmarkPressed ()
 {
   theSetup_GET_FOR_SLAVE(BoardSetup);
-  printm ("Benchmark Timer has been started!");
 
 
 
-  if(theSetup->IsUsePandaTestBoard())
+
+  if (theSetup->IsUsePandaTestBoard ())
   {
+    // pandatest mode: remember carrier board id
+
+    QString carrier= fApfelWidget->CarrierSerialNum->text ();
+    if (carrier.isEmpty ())
+          {
+            printm ("Missing carrier board id! Please specify full label information with QR code reader!");
+            return;
+          }
+
+    theSetup->SetBoardID(carrier);
+
     // pandatest mode: indiviual chip ids, must all be delivered
-  for(int a=0; a< APFEL_NUMCHIPS; ++a)
-  {
+    for (int a = 0; a < APFEL_NUMCHIPS; ++a)
+    {
 
-    QString tag=fApfelSerialLineEdit[a]->text ();
-    if (tag.isEmpty ())
-     {
-       printm ("Missing chip id for position %d. Please specify full id information!",a);
-       return;
-     }
-    theSetup->SetChipID (a,tag);
-  }
+      QString tag = fApfelSerialLineEdit[a]->text ();
+      if (tag.isEmpty ())
+      {
+        printm ("Missing chip id for position %d. Please specify full id information with QR code reader!", a);
+        return;
+      }
+      theSetup->SetChipID (a, tag);
+    }
+
+
+
+
   }
   else
   {
     // For pasem mode, take only first ids of 4er groups
-    for(int a=0; a< APFEL_NUMCHIPS; ++a)
+    for (int a = 0; a < APFEL_NUMCHIPS; ++a)
     {
       QString tag;
-      if(a<4)  tag=fApfelSerialLineEdit[0]->text ();
-      else tag= fApfelSerialLineEdit[4]->text ();
+      if (a < 4)
+        tag = fApfelSerialLineEdit[0]->text ();
+      else
+        tag = fApfelSerialLineEdit[4]->text ();
       if (tag.isEmpty ())
-        {
-            printm ("Missing chip id for position %d. Please specify full id information!",a);
-            return;
-        }
-      theSetup->SetChipID (a,tag);
+      {
+        printm ("Missing chip id for position %d. Please specify full id information!", a);
+        return;
+      }
+      theSetup->SetChipID (a, tag);
     }
+
 
 
 
@@ -1097,9 +1115,18 @@ void ApfelGui::StartBenchmarkPressed ()
 
   fBenchmark.ResetSequencerList ();
 
-  // TODO: put sequencer test for current and adressing here
-  // for the moment, we rely that this has been done before
+  // first execute put sequencer test for current and adressing here
+  if(fApfelWidget->AddressTestCheckBox->isChecked())
+   {
+     for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
+           fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_ADDRESS_SCAN, apfel));
+   }
 
+   if(fApfelWidget->CurrentMeasurementCheckBox->isChecked())
+    {
+      for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
+            fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_CURRENT_MEASUEREMENT, apfel));
+    }
 
 
 
@@ -1191,6 +1218,8 @@ void ApfelGui::StartBenchmarkPressed ()
 
   }
 
+
+
   fBenchmark.FinalizeSequencerList ();
   fSequencerStopwatch.start ();
   fSequencerTimer->start ();
@@ -1219,7 +1248,9 @@ void ApfelGui::SaveBenchmarkPressed ()
    if(theSetup->IsUsePandaTestBoard())
      filename ="PANDAtest";
    QString tag="";
-   theSetup->GetChipID (0,tag);
+   tag=theSetup->GetBoardID(); // carrier board
+   filename = filename.append("_").append(tag);
+   theSetup->GetChipID (0,tag); // first apfel chip id
    filename = filename.append("_").append(tag);
    // count number of valid chips:
    int a=0;
@@ -1228,7 +1259,7 @@ void ApfelGui::SaveBenchmarkPressed ()
       theSetup->GetChipID (a,tag); // we assume that chip id has been specified before benchmark
       if (tag.isEmpty ()) break;
     }
-   filename.append("_%1").arg(a);
+   filename.append(QString("_%1").arg(a)); // number of first connected chips
    filename.append (".apf");
 
 
@@ -1289,11 +1320,11 @@ void ApfelGui::PlotTabChanged (int num)
 
 void ApfelGui::MeasureCurrentsPushButton_clicked ()
 {
-  std::cout << "MeasureCurrentsPushButton_clicked" << std::endl;
+  //std::cout << "MeasureCurrentsPushButton_clicked" << std::endl;
 
-  printm ("Have read momentary current:%f", ReadKeithleyCurrent());
-
-  return; // DEBUG
+//  printm ("Have read momentary current:%f", ReadKeithleyCurrent());
+//
+//  return; // DEBUG
   // later we do the procedure
   if(!fBroadcasting)
   {
@@ -1305,7 +1336,7 @@ void ApfelGui::MeasureCurrentsPushButton_clicked ()
 
 void ApfelGui::InitKeithleyPushButton_clicked ()
 {
-  std::cout << "InitKeithleyPushButton_clicked" << std::endl;
+  //std::cout << "InitKeithleyPushButton_clicked" << std::endl;
   InitKeithley();
 }
 

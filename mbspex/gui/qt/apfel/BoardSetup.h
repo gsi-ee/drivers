@@ -53,52 +53,27 @@ private:
   /** This structure contains the test results for comparison. mapped to gain 1,16,32*/
   std::map<int, ApfelTestResults> fTestResults[APFEL_NUMCHIPS];
 
-  /** board id tag*/
-  //QString fBoardID[2];
+  /** carrier board id tag*/
+  QString fBoardID;
 
-  /** current in A for DUT*/
-//  double fCurrent;
-//
-//  /** voltage in V for DUT*/
-//  double fVoltage;
 
 public:
 
   BoardSetup ();
 
-//  void SetBoardID (int ix, const QString& val)
-//  {
-//    fBoardID[ix] = val;
-//  }
-//
-//  const QString& GetBoardID (int ix)
-//  {
-//    return fBoardID[ix];
-//  }
+  void SetBoardID (const QString& val)
+  {
+    fBoardID = val;
+  }
+
+  const QString& GetBoardID ()
+  {
+    return fBoardID;
+  }
 
 
 
 
-
-//  void SetCurrent (double val)
-//  {
-//    fCurrent = val;
-//  }
-//
-//  double GetCurrent ()
-//  {
-//    return fCurrent;
-//  }
-//  void SetVoltage (double val)
-//   {
-//     fVoltage = val;
-//   }
-//
-//   double GetVoltage ()
-//   {
-//     return fVoltage;
-//   }
-//
 
 
 

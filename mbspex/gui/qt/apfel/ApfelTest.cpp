@@ -308,17 +308,35 @@ bool ApfelTest::ProcessBenchmark ()
           theResults.SetAddressId(fCurrentSetup->GetApfelID(apfel));
 
 
-          //theResults.SetCurrent (fCurrentSetup->GetCurrent ());
-          //theResults.SetVoltage (fCurrentSetup->GetVoltage ());
+          // copy here the most recent current scan tests - TODO? current scan in sequencer?
+          theResults.SetCurrentASIC(fCurrentSetup->GetCurrentASIC(apfel));
+          theResults.SetCurrentHV(fCurrentSetup->GetCurrentHV(apfel));
+          theResults.SetCurrentDiode(fCurrentSetup->GetCurrentDiode(apfel));
 
+
+          // copy here the most recent addressing scan tests - TODO? id scan in sequencer?
+          theResults.SetIDScan(fCurrentSetup->IsIDScanOK(apfel));
+          theResults.SetGeneralCallScan(fCurrentSetup->IsGeneralScanOK(apfel));
+          theResults.SetReverseIDScan(fCurrentSetup->IsReverseIDScanOK(apfel));
+          theResults.SetRegisterScan(fCurrentSetup->IsRegisterScanOK(apfel));
+
+
+          // qr tag for single chip:
           QString descriptor;
           fCurrentSetup->GetChipID(apfel, descriptor);
           theResults.SetChipDescriptor(descriptor);
 
+          // qr tag for carrier board:
+          theResults.SetCarrierBoardDescriptor(fCurrentSetup->GetBoardID());
+
+
           //////////////////////////////////////
 
-//          printm ("Recorded Board id %s - Power supply: U=%f V, I=%fV.", descriptor.c_str (),
-//              fCurrentSetup->GetVoltage (), fCurrentSetup->GetCurrent ());
+
+
+
+
+
 
           printm ("Recorded Slot %d, Chip id %s ", apfel, descriptor.toLatin1 ().constData ());
 
@@ -331,7 +349,7 @@ bool ApfelTest::ProcessBenchmark ()
 
 
 
-        }
+        } // apfel
       }
       break;
     case SEQ_FINALIZE:
@@ -482,13 +500,29 @@ bool ApfelTest::ProcessBenchmark ()
       break;
 
     case SEQ_CURVE:
-      // to do
       printm("Benchmark Timer is evaluating DAC curve of channel %d", febexchannel);
       fOwner->ScanDACCurve(fCurrentGain, febexchannel);
 
 
 
       break;
+
+    case SEQ_ADDRESS_SCAN:
+      // note that we misuse febexchannel parameter here to work on specific apfelchip. todo: change paramter name
+      printm("Benchmark Timer is evaluating address scan for apfel chip %d", febexchannel);
+      fOwner->ExecuteIDScanTest(febexchannel);
+      // for the moment address scan results are kept in board setup and not in gain specific ApfelTestResults.
+
+      break;
+
+    case SEQ_CURRENT_MEASUEREMENT:
+      // note that we misuse febexchannel parameter here to work on specific apfelchip. todo: change paramter name
+      printm("Benchmark Timer is evaluating current measurement scan for apfel ch   ip %d", febexchannel);
+      fOwner->ExecuteCurrentScan(febexchannel);
+      // for the moment address scan results are kept in board setup and not in gain specific ApfelTestResults.
+      break;
+
+
     default:
       printm("Benchmark Timer will NOT execute unknown command %d for channel %d",com.GetAction(), com.GetChannel());
       return false;

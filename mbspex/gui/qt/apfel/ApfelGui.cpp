@@ -35,7 +35,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.9978 of 23-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.9980 of 27-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
 
   fApfelWidget=new ApfelWidget();
   Settings_scrollArea->setWidget(fApfelWidget);
@@ -1834,9 +1834,10 @@ void ApfelGui::RefreshDAC (int apfel)
 }
 
 
-void ApfelGui::RefreshCurrents (int apfel)
+bool ApfelGui::RefreshCurrents (int apfel)
 {
-  theSetup_GET_FOR_SLAVE(BoardSetup);
+  bool rev=true;
+  theSetup_GET_FOR_SLAVE_RETURN(BoardSetup);
   QString asicstate= " I ASIC :";
   QString hvstate=   " I HV   :";
   QString diodestate=" I DIODE:";
@@ -1845,68 +1846,85 @@ void ApfelGui::RefreshCurrents (int apfel)
       RefreshColouredLabel(fApfelCurrentASICLabel[apfel],asicstate,apfel_yellow_background);
       RefreshColouredLabel(fApfelCurrentHVLabel[apfel],hvstate,apfel_yellow_background);
       RefreshColouredLabel(fApfelCurrentDiodeLabel[apfel],diodestate,apfel_yellow_background);
+
     }
   else
   {
-    // todo: set red or green depending on alarm level. for the moment, we put it red:
+    //  set red or green depending on alarm level.
 
     ApfelTextColor_t color=apfel_red_background;
-//    RefreshColouredLabel(fApfelCurrentASICLabel[apfel],asicstate,apfel_red_background);
-//    RefreshColouredLabel(fApfelCurrentHVLabel[apfel],hvstate,apfel_red_background);
-//    RefreshColouredLabel(fApfelCurrentDiodeLabel[apfel],diodestate,apfel_red_background);
 
 // if present, refresh also measured values:
   double iasic=theSetup->GetCurrentASIC(apfel);
+  iasic *= 1.0e+3; // displayed units: mA
+  //std::cout<< "Refresh Currents for apfel "<<apfel<<" gets Iasic="<<iasic << std::endl;
   fApfelCurrentASICSpin[apfel]->setValue(iasic);
+
   if((iasic>fApfelWidget->CurrentASIC_DoubleSpinBox_Min->value()) &&
         (iasic<fApfelWidget->CurrentASIC_DoubleSpinBox_Max->value()))
+  {
       color=apfel_green_background;
+  }
   else
+  {
       color=apfel_red_background;
+      rev=false;
+  }
   RefreshColouredLabel(fApfelCurrentASICLabel[apfel],asicstate,color);
 
 
   double ihv=theSetup->GetCurrentHV(apfel);
+  ihv *= 1.0e+9; // displayed units: nA
+  //std::cout<< "Refresh Currents for apfel "<<apfel<<" gets Ihv="<<ihv << std::endl;
    fApfelCurrentHVSpin[apfel]->setValue(ihv);
    if((ihv>fApfelWidget->CurrentHV_DoubleSpinBox_Min->value()) &&
          (ihv<fApfelWidget->CurrentHV_DoubleSpinBox_Max->value()))
+   {
        color=apfel_green_background;
+   }
    else
+   {
        color=apfel_red_background;
+       rev=false;
+   }
    RefreshColouredLabel(fApfelCurrentHVLabel[apfel],hvstate,color);
 
 
    double idiode=theSetup->GetCurrentDiode(apfel);
+   idiode *= 1.0e+6; // displayed units: microAmpere
+   //std::cout<< "Refresh Currents for apfel "<<apfel<<" gets Idiode="<<idiode << std::endl;
      fApfelCurrentDiodeSpin[apfel]->setValue(idiode);
      if((idiode>fApfelWidget->CurrentDiode_DoubleSpinBox_Min->value()) &&
            (idiode<fApfelWidget->CurrentDiode_DoubleSpinBox_Max->value()))
+     {
          color=apfel_green_background;
+     }
      else
+     {
          color=apfel_red_background;
+         rev=false;
+     }
      RefreshColouredLabel(fApfelCurrentDiodeLabel[apfel],diodestate,color);
-
-
-
   }
-
+  return rev;
 }
 
 
-void ApfelGui::RefreshIDScan(int apfel, bool reset)
+bool ApfelGui::RefreshIDScan(int apfel, bool reset)
 {
 
 
-
-  theSetup_GET_FOR_SLAVE(BoardSetup);
+  bool rev=true;
+  theSetup_GET_FOR_SLAVE_RETURN(BoardSetup);
   QString idscan=    "ID Scan________";
   QString general=   "General Call___";
   QString reverse=   "Reverse ID Scan";
   QString reg=       "Register Test__";
 
-  ApfelTextColor_t idcolor=apfel_red_background;
-  ApfelTextColor_t gencolor=apfel_red_background;
-  ApfelTextColor_t revcolor=apfel_red_background;
-  ApfelTextColor_t regcolor=apfel_red_background;
+  ApfelTextColor_t idcolor=apfel_green_background;
+  ApfelTextColor_t gencolor=apfel_green_background;
+  ApfelTextColor_t revcolor=apfel_green_background;
+  ApfelTextColor_t regcolor=apfel_green_background;
 
    if(!theSetup->IsApfelPresent(apfel))
     {
@@ -1921,20 +1939,32 @@ void ApfelGui::RefreshIDScan(int apfel, bool reset)
      gencolor=apfel_blue_background;
      revcolor=apfel_blue_background;
      regcolor=apfel_blue_background;
+     RefreshColouredLabel(fApfelWidget->AdressTestLabel_All,"NOT DONE", apfel_blue_background);
   }
   else
   {
-    if(theSetup->IsIDScanOK(apfel))
-      idcolor=apfel_green_background;
+    if(!theSetup->IsIDScanOK(apfel))
+    {
+      idcolor=apfel_red_background;
+      rev=false;
+    }
+    if(!theSetup->IsGeneralScanOK(apfel))
+    {
+      gencolor=apfel_red_background;
+      rev=false;
+    }
 
-    if(theSetup->IsGeneralScanOK(apfel))
-      gencolor=apfel_green_background;
+    if(!theSetup->IsReverseIDScanOK(apfel))
+    {
+      revcolor=apfel_red_background;
+      rev=false;
+    }
 
-    if(theSetup->IsReverseIDScanOK(apfel))
-         revcolor=apfel_green_background;
-
-    if(theSetup->IsRegisterScanOK(apfel))
-        regcolor=apfel_green_background;
+    if(!theSetup->IsRegisterScanOK(apfel))
+    {
+      regcolor=apfel_red_background;
+      rev=false;
+    }
   }
 
   RefreshColouredLabel(fApfelIDScanLabel[apfel],idscan, idcolor);
@@ -1942,6 +1972,7 @@ void ApfelGui::RefreshIDScan(int apfel, bool reset)
   RefreshColouredLabel(fApfelReverseIDScanLabel[apfel],reverse , revcolor);
   RefreshColouredLabel(fApfelRegisterTestLabel[apfel],reg , regcolor);
 
+  return rev;
 }
 
 
@@ -2133,14 +2164,36 @@ void ApfelGui::RefreshView ()
   }
 
 ///////////////////////////////////////////////////////
-// show DAC values:
+// show DAC and test result values:
 
+  int idfails=0;
+  int currentfails=0;
   for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
   {
     RefreshDAC (apfel);
-    RefreshIDScan(apfel);
-    RefreshCurrents(apfel); // show most recent current measurments
+    if(!RefreshIDScan(apfel)) idfails++;
+    if(!RefreshCurrents(apfel)) currentfails++; // show most recent current measurments
   }
+  if(idfails==0)
+  {
+    RefreshColouredLabel(fApfelWidget->AdressTestLabel_All,"PASSED", apfel_green_background);
+  }
+  else
+  {
+    QString fails= QString("FAILED %1 chips").arg(idfails);
+    RefreshColouredLabel(fApfelWidget->AdressTestLabel_All,fails, apfel_red_background);
+  }
+
+  if(currentfails==0)
+   {
+     RefreshColouredLabel(fApfelWidget->CurrentMeasurementsLabel_All,"PASSED", apfel_green_background);
+   }
+   else
+   {
+     QString fails= QString("FAILED %1 chips").arg(currentfails);
+     RefreshColouredLabel(fApfelWidget->CurrentMeasurementsLabel_All, fails, apfel_red_background);
+   }
+
 
 ///////////////////////////////////////////////////////
 //show pulser setup:
@@ -2519,7 +2572,7 @@ void ApfelGui::SaveTestResults ()
 
   // format
   WriteTestFile (
-      QString ("# ChipID \tGain \tAPFEL \tDAC \tCalibSet \tBaseline \tSigma  \tBaseLow \tBaseUp \tdDAC/dADC \tDAC0 \tDACmin \tDACmax \tADCmin"));
+      QString ("#  CarrierBoardID\t ChipID \tGain \tAPFEL \tDAC \tCalibSet \tBaseline \tSigma  \tBaseLow \tBaseUp \tdDAC/dADC \tDAC0 \tDACmin \tDACmax \tADCmin"));
   for (int i = 0; i < APFEL_DAC_CURVEPOINTS; ++i)
   {
     WriteTestFile (QString ("\tDAC_%1 \tADC_%2").arg (i).arg (i));
@@ -2531,9 +2584,9 @@ void ApfelGui::SaveTestResults ()
       WriteTestFile (QString ("\tPeakPos_%1 \tPeakHeight_%2").arg (i).arg (i));
     }
 
-  WriteTestFile (QString ("\tI_ASIC(A) \tI_HV(A)  \tI_Diode(A) \tStartDate \t StartTime \tStopDate \tStopTime"));
+  WriteTestFile (QString ("\tI_ASIC(A) \tI_HV(A)  \tI_Diode(A) \tIDScan \tGeneralCall \tReverseID \tRegIO \t \t\tStartDate \t StartTime \tStopDate \tStopTime"));
   WriteTestFile (QString ("\n"));
-  // loopp over gain:
+  // loop over gain:
   for (int gain = 1; gain < 40; gain += 15)
   {
     if (gain == 31)
@@ -2543,21 +2596,26 @@ void ApfelGui::SaveTestResults ()
       ApfelTestResults& theResult = theSetup->AccessTestResults (gain, apfel);
       for (int dac = 0; dac < APFEL_NUMDACS; ++dac)
       {
-        QString chipid=theResult.GetChipDescriptor();
-        int apfeladdress=theResult.GetAddressId();
-        int dacval = theResult.GetDacValueCalibrate (dac,true); // when saving, we assure that test was really done
-        int baseline = theResult.GetAdcSampleMean (dac,true);
-        int sigma = theResult.GetAdcSampleSigma (dac,true);
-        int startbase=theResult.GetAdcBaselineLowerBound(dac,true);
-        int stopbase=theResult.GetAdcBaselineUpperBound(dac,true);
-        double slope = theResult.GetSlope (dac,true);
-        double dac0 = theResult.GetD0 (dac,true);
-        double dacmin = theResult.GetDACmin (dac,true);
-        double dacmax = theResult.GetDACmax (dac,true);
-        double adcmin = theResult.GetADCmin (dac,true);
-        double currentasic = theResult.GetCurrentASIC();
-        double currenthv = theResult.GetCurrentHV();
-        double currentdiode = theResult.GetCurrentDiode();
+        QString carrierid = theResult.GetCarrierBoardDescriptor ();
+        QString chipid = theResult.GetChipDescriptor ();
+        int apfeladdress = theResult.GetAddressId ();
+        int dacval = theResult.GetDacValueCalibrate (dac, true);    // when saving, we assure that test was really done
+        int baseline = theResult.GetAdcSampleMean (dac, true);
+        int sigma = theResult.GetAdcSampleSigma (dac, true);
+        int startbase = theResult.GetAdcBaselineLowerBound (dac, true);
+        int stopbase = theResult.GetAdcBaselineUpperBound (dac, true);
+        double slope = theResult.GetSlope (dac, true);
+        double dac0 = theResult.GetD0 (dac, true);
+        double dacmin = theResult.GetDACmin (dac, true);
+        double dacmax = theResult.GetDACmax (dac, true);
+        double adcmin = theResult.GetADCmin (dac, true);
+        double currentasic = theResult.GetCurrentASIC ();
+        double currenthv = theResult.GetCurrentHV ();
+        double currentdiode = theResult.GetCurrentDiode ();
+        bool idscanok=theResult.IsIDScanOK();
+        bool generalcallok=theResult.IsGeneralCallScanOK();
+        bool reverseidok=theResult.IsReverseIDScanOK();
+        bool registerok=theResult.IsRegisterScanOK();
 
         // here we should supress/mark as invalid the results that are not meaningful for the selected gain:
 
@@ -2605,6 +2663,8 @@ void ApfelGui::SaveTestResults ()
 
 
         QString line = "\t";
+        line.append(carrierid);
+        line.append("\t");
         line.append(chipid);
         line.append(QString ("\t\t%1 \t\t%2 \t\t%3 \t\t%4 \t\t%5 \t\t%6 \t\t%7 \t\t%8 \t\t%9").arg (gain).arg (apfeladdress).arg (dac).arg (dacval).arg (baseline).arg (sigma).arg(startbase).arg(stopbase).arg (slope));
         line.append (QString ("\t\t%1 \t\t%2 \t\t%3 \t\t%4").arg (dac0).arg (dacmin).arg (dacmax).arg (adcmin));
@@ -2637,6 +2697,8 @@ void ApfelGui::SaveTestResults ()
                 }
 
         line.append(QString ("\t%1 \t%2 \t%3\t").arg(currentasic).arg(currenthv).arg(currentdiode));
+        line.append(QString ("\t%1 \t%2 \t%3 \t%4 \t").arg(idscanok).arg(generalcallok).arg(reverseidok).arg(registerok));
+
         line.append(theResult.GetStartTime());
         line.append("\t");
         line.append(theResult.GetEndTime());

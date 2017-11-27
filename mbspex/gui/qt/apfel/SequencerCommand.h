@@ -16,7 +16,9 @@ enum SequencerAction
   SEQ_AUTOCALIB,
   SEQ_NOISESAMPLE,
   SEQ_BASELINE,
-  SEQ_CURVE
+  SEQ_CURVE,
+  SEQ_ADDRESS_SCAN,
+  SEQ_CURRENT_MEASUEREMENT
 };
 
 /** command token to be put into the test sequencer list*/
@@ -27,7 +29,7 @@ private:
   /** action command id to be executed*/
   SequencerAction fAction;
 
-  /** optional channel number. used to explictely execute loops with low command granularity in timer*/
+  /** optional channel (or chip) number. used to explictely execute loops with low command granularity in timer*/
   int fChannel;
 
 public:

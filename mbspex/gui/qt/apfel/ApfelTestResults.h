@@ -25,16 +25,13 @@ private:
   /** mark the test results of this chip valid or not.*/
   bool fValid;
 
-  /** the label of the board containing this chip. Will correspond to the barcode value
+  /** the label of the chip. Will correspond to the barcode value
    * sticked to the hardware*/
   QString fChipLabel;
 
-
-  /** external power supply voltage*/
- // double fVoltage;
-
-  /** external power supply current*/
-  //double fCurrent;
+  /** the label of the test board carrying this chip. Will correspond to the barcode value
+     * sticked to the hardware*/
+  QString fCarrierBoardLabel;
 
   /** Current for ASIC measured by Keithley */
   double fCurrentASIC;
@@ -45,6 +42,17 @@ private:
   /** Current for Diode mode measured by Keithley */
   double fCurrentDiode;
 
+  bool fIDScanOK;
+
+  /** true if general call  test has passed. false for failed or not yet done.*/
+  bool fGeneralScanOK;
+
+   /** true if general call  test has passed. false for failed or not yet done.*/
+  bool fIDReverseScanOK;
+
+
+   /** true if register scan test has passed. false for failed or not yet done.*/
+  bool fRegisterScanOK;
 
 
 
@@ -131,18 +139,18 @@ public:
   {
     return  fChipLabel;
   }
+  void SetCarrierBoardDescriptor(const QString& label)
+   {
+    fCarrierBoardLabel=label;
+   }
+
+   const QString& GetCarrierBoardDescriptor()
+   {
+     return  fCarrierBoardLabel;
+   }
 
 
 
-
-
-//  void SetVoltage(double volts){fVoltage=volts;}
-//
-//  double GetVoltage(){return fVoltage;}
-//
-//  void SetCurrent(double amps){fCurrent=amps;}
-//
-//  double GetCurrent(){return fCurrent;}
 
   void SetCurrentASIC(double amps){fCurrentASIC=amps;}
   void SetCurrentHV(double amps){fCurrentHV=amps;}
@@ -153,7 +161,14 @@ public:
   double GetCurrentHV(){return fCurrentHV;}
   double GetCurrentDiode(){return fCurrentDiode;}
 
-
+  bool IsIDScanOK(){return fIDScanOK;}
+  bool IsGeneralCallScanOK(){return fGeneralScanOK;}
+  bool IsReverseIDScanOK(){return fIDReverseScanOK;}
+  bool IsRegisterScanOK(){return fRegisterScanOK;}
+  void SetIDScan(bool ok){fIDScanOK=ok;}
+  void SetGeneralCallScan(bool ok){fGeneralScanOK=ok;}
+  void SetReverseIDScan(bool ok){fIDReverseScanOK=ok;}
+  void SetRegisterScan(bool ok){fRegisterScanOK=ok;}
 
   /** set local address id of this chip on the board*/
   void SetAddressId(uint8_t ad);
