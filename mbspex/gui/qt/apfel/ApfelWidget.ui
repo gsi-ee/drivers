@@ -14,7 +14,7 @@
    <string>APFEL Widget</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_77">
-   <item row="1" column="0">
+   <item row="0" column="0">
     <widget class="QTabWidget" name="ApfelTabWidget">
      <property name="toolTip">
       <string>Push this button to start measurement from keithly</string>
@@ -8033,7 +8033,7 @@
       <attribute name="title">
        <string>Current</string>
       </attribute>
-      <layout class="QFormLayout" name="formLayout_4">
+      <layout class="QFormLayout" name="formLayout">
        <item row="0" column="0" colspan="2">
         <widget class="QGroupBox" name="CurrentAlarmGroupBox">
          <property name="title">
@@ -9507,42 +9507,16 @@
          <property name="title">
           <string>Measurement mode</string>
          </property>
-         <layout class="QFormLayout" name="formLayout">
-          <item row="1" column="0">
-           <widget class="QCheckBox" name="CurrentSerialCheckBox">
-            <property name="toolTip">
-             <string>Check to use fake currents without multimeter IO to test scan output</string>
-            </property>
-            <property name="text">
-             <string>Use Serial line</string>
-            </property>
-            <property name="autoExclusive">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QCheckBox" name="CurrentTestCheckBox">
-            <property name="toolTip">
-             <string>Check to use fake currents without multimeter IO to test scan output</string>
-            </property>
-            <property name="text">
-             <string>Fake Mode</string>
-            </property>
-            <property name="autoExclusive">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0" colspan="2">
-           <layout class="QHBoxLayout" name="horizontalLayout_150">
+         <layout class="QVBoxLayout" name="verticalLayout_17">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_148">
             <item>
-             <widget class="QCheckBox" name="CurrentSocketCheckBox">
+             <widget class="QCheckBox" name="CurrentSerialCheckBox">
               <property name="toolTip">
-               <string>Check to use fake currents without multimeter IO to test scan output</string>
+               <string>Check to use direct serial connection to specified device</string>
               </property>
               <property name="text">
-               <string>Use Socket</string>
+               <string>Use Serial line</string>
               </property>
               <property name="checked">
                <bool>true</bool>
@@ -9553,7 +9527,40 @@
              </widget>
             </item>
             <item>
+             <widget class="QLineEdit" name="SerialDeviceName">
+              <property name="toolTip">
+               <string>Specify device node for serial connection</string>
+              </property>
+              <property name="text">
+               <string>/dev/ttyUSB0</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_150">
+            <item>
+             <widget class="QCheckBox" name="CurrentSocketCheckBox">
+              <property name="toolTip">
+               <string>Check to use tcp socket to a serial interface</string>
+              </property>
+              <property name="text">
+               <string>Use Socket</string>
+              </property>
+              <property name="checked">
+               <bool>false</bool>
+              </property>
+              <property name="autoExclusive">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QLineEdit" name="CurrentNodeName">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="toolTip">
                <string>Specify node name of gpbi socket device</string>
               </property>
@@ -9577,7 +9584,26 @@
             </item>
            </layout>
           </item>
+          <item>
+           <widget class="QCheckBox" name="CurrentTestCheckBox">
+            <property name="toolTip">
+             <string>Check to use fake currents without multimeter IO to test scan output</string>
+            </property>
+            <property name="text">
+             <string>Fake Mode</string>
+            </property>
+            <property name="autoExclusive">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
          </layout>
+         <zorder>CurrentTestCheckBox</zorder>
+         <zorder>CurrentSocketCheckBox</zorder>
+         <zorder>CurrentSerialCheckBox</zorder>
+         <zorder></zorder>
+         <zorder>SerialDeviceName</zorder>
+         <zorder>CurrentSerialCheckBox</zorder>
         </widget>
        </item>
       </layout>
@@ -12657,8 +12683,24 @@
      <y>419</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1319</x>
+     <x>627</x>
      <y>421</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>CurrentSerialCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>SerialDeviceName</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>228</x>
+     <y>449</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>358</x>
+     <y>444</y>
     </hint>
    </hints>
   </connection>

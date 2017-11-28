@@ -672,17 +672,18 @@ void ApfelGui::InitKeithley()
   trigsetup.push_back(QString (":INIT:CONT ON;\n"));
   if(useSerial)
   {
-  printm ("InitKeithley access of /dev/ttyS0...");
-  file.setFileName("/dev/ttyS0");
+    QString dev=fApfelWidget->SerialDeviceName->text();
+    printm ("InitKeithley access of %s...",dev.toLatin1 ().constData ());
+    file.setFileName(dev);
   if (!file.open(QIODevice::WriteOnly))
     {
-        printm ("InitKeithley error when opening /dev/ttyS0 for writing");
+        printm ("InitKeithley error when opening %s for writing", dev.toLatin1 ().constData ());
         return;
     }
-  infile.setFileName("/dev/ttyS0");
+  infile.setFileName(dev);
   if (!infile.open(QIODevice::ReadOnly))// | QIODevice::Unbuffered ))// | QIODevice::Text))
   {
-    printm ("InitKeithley error when opening /dev/ttyS0 for reading");
+    printm ("InitKeithley error when opening %s reading", dev.toLatin1 ().constData ());
     return;
   } 
   tty.setDevice(&file);
@@ -690,9 +691,6 @@ void ApfelGui::InitKeithley()
   else if(useSocket)
   {
 
-  // todo: switches and configurable names instead of defines
-  //QString host("eegpibenet02.gsi.de");
-   //quint16 port=1234;
    QString host=fApfelWidget->CurrentNodeName->text();
    quint16 port=fApfelWidget->CurrentPortSpinBox->value();
 
@@ -769,7 +767,9 @@ void ApfelGui::InitKeithley()
 
   // output format
   setup.push_back(QString (":FORM ASC;\n"));
-  setup.push_back(QString (":FORM:ELEM READ,UNIT,CHAN;\n"));
+  //setup.push_back(QString (":FORM:ELEM READ,UNIT,CHAN;\n"));
+
+  setup.push_back(QString (":FORM:ELEM READ;\n"));
 
   for(int i=0; i<setup.size(); ++i)
         {
@@ -798,19 +798,19 @@ double ApfelGui::ReadKeithleyCurrent()
   QString getData(":SENS:DATA? \n");
   if(useSerial)
    {
-
-  printm ("ReadKeithleyCurrent access of /dev/ttyS0...");
+    QString dev=fApfelWidget->SerialDeviceName->text();
+    printm ("ReadKeithleyCurrent access of %s...",dev.toLatin1 ().constData ());
  
-  file.setFileName("/dev/ttyS0");
+  file.setFileName(dev);
    if (!file.open(QIODevice::WriteOnly))
      {
-         printm ("ReadKeithleyCurrent error when opening /dev/ttyS0 for writing");
+         printm ("ReadKeithleyCurrent error when opening %s for writing", dev.toLatin1 ().constData ());
          return -12.0;;
      }
-   infile.setFileName("/dev/ttyS0");
+   infile.setFileName(dev);
    if (!infile.open(QIODevice::ReadOnly))// | QIODevice::Unbuffered ))// | QIODevice::Text))
    {
-     printm ("ReadKeithleyCurrent error when opening /dev/ttyS0 for reading");
+     printm ("ReadKeithleyCurrent error when opening %s for reading",  dev.toLatin1 ().constData ());
      return -13.0;
    }
 
@@ -819,9 +819,6 @@ double ApfelGui::ReadKeithleyCurrent()
   else if(useSocket)
    {
 
-	// todo: switches and configurable names instead of defines
-  //QString host("eegpibenet02.gsi.de");
-  //quint16 port=1234;
   QString host=fApfelWidget->CurrentNodeName->text();
   quint16 port=fApfelWidget->CurrentPortSpinBox->value();
 
@@ -858,7 +855,7 @@ if(useSerial)
     answer=sock.readLine();
           
        rev=answer.toDouble();
-       printm("Got answer:%s - %e A", answer.toLatin1 ().constData (), rev);
+       printm("Got answer string:%s", answer.toLatin1 ().constData ());
        return rev;
 }
 

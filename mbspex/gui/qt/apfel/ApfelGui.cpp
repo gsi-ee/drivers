@@ -35,7 +35,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.9981 of 27-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.9982 of 28-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
 
   fApfelWidget=new ApfelWidget();
   Settings_scrollArea->setWidget(fApfelWidget);
