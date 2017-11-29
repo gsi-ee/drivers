@@ -664,11 +664,11 @@ void ApfelGui::InitKeithley()
   bool useSerial=fApfelWidget->CurrentSerialCheckBox->isChecked();
   bool useSocket=fApfelWidget->CurrentSocketCheckBox->isChecked();
 
-  trigsetup.push_back(QString (":INIT:CONT OFF; :ABOR;\n"));
+  trigsetup.push_back(QString (":INIT:CONT OFF;:ABOR;\n"));
   trigsetup.push_back(QString (":TRIG:SOUR IMM;\n"));
   trigsetup.push_back(QString (":TRIG:COUN INF;\n"));
   trigsetup.push_back(QString (":TRIG:DEL:AUTO OFF;\n"));
-  trigsetup.push_back(QString (":TRIG:DEL0.000000;\n"));
+  trigsetup.push_back(QString (":TRIG:DEL 0.000000;\n"));
   trigsetup.push_back(QString (":INIT:CONT ON;\n"));
   if(useSerial)
   {
@@ -1033,6 +1033,15 @@ void ApfelGui::SetSingleChipCurrentMode(int apfel, bool selectHV, bool selectDio
 {
 
   theSetup_GET_FOR_SLAVE(BoardSetup);
+
+  // first find out which other chips should have power on:
+  int powermask=0;
+  for(int a=0; a<APFEL_NUMCHIPS; ++a)
+      {
+        if(theSetup->HasApfelPower(a)) powermask |= (1 << a);
+      }
+
+
   int dat = APFEL_IO_CONTROL_WR;
   int mask = 0;
   int lo=APFEL_IO_DATA_LO_WR;
@@ -1044,15 +1053,29 @@ void ApfelGui::SetSingleChipCurrentMode(int apfel, bool selectHV, bool selectDio
 
   // following words of low control word:
   int sel_DataASIC=0xFF; // 8bit
-  int chipID=0; // 4bit, not used
+  int chipID=0; // 4bit, use id 0 to compensate addressing differences on chip (Sven?)
 
 
 
   sel_InExt &=~(1 << apfel); // enable only this apfel
 
 
-  sel_VddAsic |= (1 << apfel);
-  sel_DataASIC  &= ~(1 << apfel);
+  sel_VddAsic=powermask; // always enable/disable other chips depending on power state
+  if(selectHV && selectDiode)
+  {
+    // in this mode want to clear the relevant bit
+    sel_VddAsic  &= ~(1 << apfel);
+  }
+  else
+  {
+    // maybe redundant, since our bit should be already set by powermask
+    sel_VddAsic |= (1 << apfel);
+  }
+
+
+
+  sel_DataASIC  &= ~powermask; // always enable/disable other chips depending on power state
+  sel_DataASIC  &= ~(1 << apfel); // also redundant?
 
   // the common part:
   hi |= (sel_VddAsic & 0xFF) <<8;
@@ -1060,12 +1083,11 @@ void ApfelGui::SetSingleChipCurrentMode(int apfel, bool selectHV, bool selectDio
   lo |=(sel_DataASIC & 0xFF) <<8;
   lo |= (chipID & 0xF) << 4;
 
-  // lsb for gain setup, this time we do not use bit 1 - SelIDAsic, so just hard coded ids
+  // lsb for gain setup: this time we _do_ use bit 1 - SelIDAsic, always set id 0 here because of pull up resistors on chip (?Sven)
   if(theSetup->IsHighGain())
-    lo |= (0x000c);
+    lo |= (0x0003);
   else
-    lo |= (0x000d);
-
+    lo |= (0x0002);
 
   // finally set the hv/diode switches:
   char selHV= selectHV ? 0x1 : 0x0;
@@ -1246,14 +1268,14 @@ void ApfelGui::ExecuteCurrentScan (int apfel)
   val = (fake ? (position * 1.0E-3) : ReadKeithleyCurrent ());
   printm ("          - got %E A", val);
   theSetup->SetCurrentASIC (apfel, val);
-  SetDefaultIOConfig ();    // back to normal operation
+  //SetDefaultIOConfig ();    // back to normal operation
 
   printm ("Starting %s HV current measurement for position %d ...", (fake ? "FAKE" : "Multimeter"), position);
   SetSingleChipCurrentMode (apfel, false, true);    // hv bit off, diode bit on      -> enable HV switch
   val = (fake ? (position * 1.0E-9) : ReadKeithleyCurrent ());
   printm ("          - got %E A", val);
   theSetup->SetCurrentHV(apfel, val);
-  SetDefaultIOConfig ();    // back to normal operation
+  //SetDefaultIOConfig ();    // back to normal operation
 
   printm ("Starting %s Diode current measurement for position %d ...", (fake ? "FAKE" : "Multimeter"), position);
   SetSingleChipCurrentMode (apfel, false, false);    // hv bit off, diode bit off     -> enable Diode switch

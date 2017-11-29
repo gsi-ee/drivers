@@ -70,14 +70,14 @@ void AdcSample::AddSample (uint16_t value)
    if(start<0) start=0;
    if(stop>fSample.size()) stop=fSample.size();
    double num=stop-start;
-   for (int i = start; i < num; ++i)
+   for (int i = start; i < stop; ++i)
      {
        fMean += fSample[i];
      }
    if(num)
        fMean /= num;
 
-   for (int i = start; i < num; ++i)
+   for (int i = start; i < stop; ++i)
     {
       sum += pow ((fSample[i] - fMean), 2);
     }
@@ -85,6 +85,7 @@ void AdcSample::AddSample (uint16_t value)
       fSigma= sqrt (sum / num);
 
     fBaselineDone=true;
+    //std::cout<<"AdcSample::CalculateMeanAndSigma - start:"<<start<<", stop:"<<stop<<", mean:"<< fMean<<", sigma:"<< fSigma<< std::endl;
  }
 
 

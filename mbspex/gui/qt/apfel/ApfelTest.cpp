@@ -430,6 +430,9 @@ bool ApfelTest::ProcessBenchmark ()
       printm("ApfelTest is measuring ADC trace samples of channel %d",febexchannel);
       {
 
+        int apfel=0, dac=0;
+        fCurrentSetup->EvaluateDACIndices(febexchannel,apfel,dac);
+
         if(fCurrentGain==1)
         {
           fOwner->SetPeakfinderPolarityNegative(true); // TODO 2016: check slope setup here?
@@ -439,16 +442,21 @@ bool ApfelTest::ProcessBenchmark ()
           fOwner->SetPeakfinderPolarityNegative(false);
         }
 
-        fOwner->AcquireSample(febexchannel);
-        fOwner->ShowSample(febexchannel,true);
+        // before getting the sample, we may invoke the pulser for this channel:
+        fOwner->EvaluatePulser(apfel); // use setup from pulser tab.
+        for(int t=0; t<3;++t) // TODO: configurable number of pulses?
+          fOwner->SetPulser(apfel);
+        // note that this works only in mbs mode due to the trigger that we still not have for adc buffer
+
+      fOwner->AcquireSample(febexchannel); // this includes peak finder for MBS case
+      fOwner->ShowSample(febexchannel,true);
       double mean=fCurrentSetup->GetADCMean(febexchannel);
       double sigma=fCurrentSetup->GetADCSigma(febexchannel);
       double minimum=fCurrentSetup->GetADCMiminum(febexchannel);
       double maximum=fCurrentSetup->GetADCMaximum(febexchannel);
       int baselinelow=fCurrentSetup->GetADCBaslineLowerBound(febexchannel);
       int baselineup=fCurrentSetup->GetADCBaslineUpperBound(febexchannel);
-      int apfel=0, dac=0;
-      fCurrentSetup->EvaluateDACIndices(febexchannel,apfel,dac);
+
       ApfelTestResults& theResults=fCurrentSetup->AccessTestResults(fCurrentGain, apfel);
       theResults.SetAdcSampleMean(dac,mean);
       theResults.SetAdcSampleSigma(dac,sigma);
