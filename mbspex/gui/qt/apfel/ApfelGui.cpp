@@ -35,7 +35,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.9984 of 29-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.9985 of 30-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
 
   fApfelWidget=new ApfelWidget();
   Settings_scrollArea->setWidget(fApfelWidget);
@@ -1891,7 +1891,8 @@ bool ApfelGui::RefreshCurrents (int apfel)
 
 
    double idiode=theSetup->GetCurrentDiode(apfel);
-   idiode *= 1.0e+6; // displayed units: microAmpere
+   //idiode *= 1.0e+6; // displayed units: microAmpere
+   idiode *= 1.0e+9; // displayed units: nanoAmpere
    //std::cout<< "Refresh Currents for apfel "<<apfel<<" gets Idiode="<<idiode << std::endl;
      fApfelCurrentDiodeSpin[apfel]->setValue(idiode);
      if((idiode>fApfelWidget->CurrentDiode_DoubleSpinBox_Min->value()) &&

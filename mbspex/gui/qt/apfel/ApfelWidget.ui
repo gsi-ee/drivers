@@ -8151,7 +8151,7 @@
                <string>Maximum allowed current measured for Diode (Alarm HI)</string>
               </property>
               <property name="suffix">
-               <string> uA</string>
+               <string> nA</string>
               </property>
               <property name="minimum">
                <double>-1.000000000000000</double>
@@ -8235,7 +8235,7 @@
                <number>1</number>
               </property>
               <property name="minimum">
-               <double>-10.000000000000000</double>
+               <double>-200.000000000000000</double>
               </property>
               <property name="maximum">
                <double>1000.000000000000000</double>
@@ -8271,10 +8271,10 @@
                <string>Minimum allowed current measured for Diode (Alarm LO)</string>
               </property>
               <property name="suffix">
-               <string> uA</string>
+               <string> nA</string>
               </property>
               <property name="minimum">
-               <double>-1.000000000000000</double>
+               <double>-500.000000000000000</double>
               </property>
               <property name="maximum">
                <double>5000.000000000000000</double>
@@ -8573,7 +8573,7 @@
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
                 <property name="suffix">
-                 <string> uA</string>
+                 <string> nA</string>
                 </property>
                 <property name="minimum">
                  <double>-5000.000000000000000</double>
@@ -8867,7 +8867,7 @@
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
                 <property name="suffix">
-                 <string> uA</string>
+                 <string> nA</string>
                 </property>
                 <property name="minimum">
                  <double>-5000.000000000000000</double>
@@ -9161,7 +9161,7 @@
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
                 <property name="suffix">
-                 <string> uA</string>
+                 <string> nA</string>
                 </property>
                 <property name="minimum">
                  <double>-5000.000000000000000</double>
@@ -9458,7 +9458,7 @@
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
                 <property name="suffix">
-                 <string> uA</string>
+                 <string> nA</string>
                 </property>
                 <property name="decimals">
                  <number>2</number>

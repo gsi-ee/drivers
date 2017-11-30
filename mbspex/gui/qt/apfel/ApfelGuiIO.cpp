@@ -1265,7 +1265,7 @@ void ApfelGui::ExecuteCurrentScan (int apfel)
   bool fake=fApfelWidget->CurrentTestCheckBox->isChecked();
   printm ("Starting %s ASIC current measurement  for position %d ...", (fake ? "FAKE" : "Multimeter") ,position);
   SetSingleChipCurrentMode (apfel, true, true);    // hv bit on, diode bit on  -> enable asic switch
-  usleep(500000);
+  usleep(200000);
   val = (fake ? (position * 1.0E-3) : ReadKeithleyCurrent ());
   printm ("          - got %E A", val);
   theSetup->SetCurrentASIC (apfel, val);
@@ -1273,7 +1273,7 @@ void ApfelGui::ExecuteCurrentScan (int apfel)
 
   printm ("Starting %s HV current measurement for position %d ...", (fake ? "FAKE" : "Multimeter"), position);
   SetSingleChipCurrentMode (apfel, false, true);    // hv bit off, diode bit on      -> enable HV switch
-  usleep(500000);
+  usleep(200000);
   val = (fake ? (position * 1.0E-9) : ReadKeithleyCurrent ());
   printm ("          - got %E A", val);
   theSetup->SetCurrentHV(apfel, val);
@@ -1281,8 +1281,9 @@ void ApfelGui::ExecuteCurrentScan (int apfel)
 
   printm ("Starting %s Diode current measurement for position %d ...", (fake ? "FAKE" : "Multimeter"), position);
   SetSingleChipCurrentMode (apfel, false, false);    // hv bit off, diode bit off     -> enable Diode switch
-  usleep(500000);
-  val = (fake ? (position * 1.0E-6) : ReadKeithleyCurrent ());
+  usleep(200000);
+  //val = (fake ? (position * 1.0E-6) : ReadKeithleyCurrent ());
+  val = (fake ? (position * 1.0E-9) : ReadKeithleyCurrent ());
   printm ("          - got %E A", val);
   theSetup->SetCurrentDiode(apfel, val);
   SetDefaultIOConfig ();    // back to normal operation
