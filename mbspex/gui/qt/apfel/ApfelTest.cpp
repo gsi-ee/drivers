@@ -308,13 +308,13 @@ bool ApfelTest::ProcessBenchmark ()
           theResults.SetAddressId(fCurrentSetup->GetApfelID(apfel));
 
 
-          // copy here the most recent current scan tests - TODO? current scan in sequencer?
+          // copy here the most recent current scan tests
           theResults.SetCurrentASIC(fCurrentSetup->GetCurrentASIC(apfel));
           theResults.SetCurrentHV(fCurrentSetup->GetCurrentHV(apfel));
           theResults.SetCurrentDiode(fCurrentSetup->GetCurrentDiode(apfel));
 
 
-          // copy here the most recent addressing scan tests - TODO? id scan in sequencer?
+          // copy here the most recent addressing scan tests if done before sequencer
           theResults.SetIDScan(fCurrentSetup->IsIDScanOK(apfel));
           theResults.SetGeneralCallScan(fCurrentSetup->IsGeneralScanOK(apfel));
           theResults.SetReverseIDScan(fCurrentSetup->IsReverseIDScanOK(apfel));
@@ -330,24 +330,7 @@ bool ApfelTest::ProcessBenchmark ()
           theResults.SetCarrierBoardDescriptor(fCurrentSetup->GetBoardID());
 
 
-          //////////////////////////////////////
-
-
-
-
-
-
-
           printm ("Recorded Slot %d, Chip id %s ", apfel, descriptor.toLatin1 ().constData ());
-
-        //////////// change for new current scan results
-
-
-
-         // also put here results of address scans:
-
-
-
 
         } // apfel
       }
@@ -359,6 +342,17 @@ bool ApfelTest::ProcessBenchmark ()
       for (int apfel = 0; apfel < APFEL_NUMCHIPS; ++apfel)
       {
         ApfelTestResults& theResults=fCurrentSetup->AccessTestResults(fCurrentGain, apfel);
+
+        // after the gain measurements, we have to copy the results of the general tests to structure for the very gain
+        theResults.SetIDScan(fCurrentSetup->IsIDScanOK(apfel));
+        theResults.SetGeneralCallScan(fCurrentSetup->IsGeneralScanOK(apfel));
+        theResults.SetReverseIDScan(fCurrentSetup->IsReverseIDScanOK(apfel));
+        theResults.SetRegisterScan(fCurrentSetup->IsRegisterScanOK(apfel));
+        theResults.SetCurrentASIC(fCurrentSetup->GetCurrentASIC(apfel));
+        theResults.SetCurrentHV(fCurrentSetup->GetCurrentHV(apfel));
+        theResults.SetCurrentDiode(fCurrentSetup->GetCurrentDiode(apfel));
+
+
         theResults.Finish();
       }
        printm("Test for gain %d has finished.",fCurrentGain);
@@ -432,6 +426,11 @@ bool ApfelTest::ProcessBenchmark ()
 
         int apfel=0, dac=0;
         fCurrentSetup->EvaluateDACIndices(febexchannel,apfel,dac);
+
+        // first we set baseline to standard value 4000:
+
+        fOwner->AutoAdjustChannel(febexchannel, 4000);
+
 
         if(fCurrentGain==1)
         {
@@ -516,18 +515,20 @@ bool ApfelTest::ProcessBenchmark ()
       break;
 
     case SEQ_ADDRESS_SCAN:
-      // note that we misuse febexchannel parameter here to work on specific apfelchip. todo: change paramter name
-      printm("Benchmark Timer is evaluating address scan for apfel chip %d", febexchannel);
+    {
+      int apfel=febexchannel;   // note that we misuse febexchannel parameter here to work on specific apfelchip. todo: change paramter name
+      printm("Benchmark Timer is evaluating address scan for apfel chip %d", apfel);
       fOwner->ExecuteIDScanTest(febexchannel);
-      // for the moment address scan results are kept in board setup and not in gain specific ApfelTestResults.
-
+    }
       break;
 
     case SEQ_CURRENT_MEASUEREMENT:
-      // note that we misuse febexchannel parameter here to work on specific apfelchip. todo: change paramter name
-      printm("Benchmark Timer is evaluating current measurement scan for apfel ch   ip %d", febexchannel);
-      fOwner->ExecuteCurrentScan(febexchannel);
-      // for the moment address scan results are kept in board setup and not in gain specific ApfelTestResults.
+
+    {
+      int apfel=febexchannel;   // note that we misuse febexchannel parameter here to work on specific apfelchip. todo: change paramter name
+      printm("Benchmark Timer is evaluating current measurement scan for apfel ch   ip %d", apfel);
+      fOwner->ExecuteCurrentScan(apfel);
+    }
       break;
 
 

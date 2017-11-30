@@ -1095,10 +1095,6 @@ void ApfelGui::StartBenchmarkPressed ()
 
 
 
-  //2017 TODO: take into account different current test benchmarks
-
-
-
 
 
   printm ("Benchmark has been started for sfp %d slave %d", fSFP, fSlave);
@@ -1141,18 +1137,21 @@ void ApfelGui::StartBenchmarkPressed ()
     {
       fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_AUTOCALIB));
     }
+
+     if (fApfelWidget->Gain1TestBaselineCheckBox->isChecked ())
+    {
+      for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
+        fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_BASELINE, channel));
+
+    }
+
     if (fApfelWidget->Gain1TestSigmaCheckBox->isChecked ())
     {
       for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_NOISESAMPLE, channel));
 
     }
-    if (fApfelWidget->Gain1TestBaselineCheckBox->isChecked ())
-    {
-      for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
-        fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_BASELINE, channel));
 
-    }
     if (fApfelWidget->Gain1TestCurveCheckBox->isChecked ())
     {
       for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
@@ -1164,7 +1163,9 @@ void ApfelGui::StartBenchmarkPressed ()
   if (fApfelWidget->Gain16groupBox->isChecked ())
   {
 
-    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_16));
+//    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_16));
+//    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_32));
+    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_16)); // ensure that we really have gain 16 set???
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_INIT));
 
 
@@ -1172,16 +1173,19 @@ void ApfelGui::StartBenchmarkPressed ()
     {
       fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_AUTOCALIB));
     }
+
+     if (fApfelWidget->Gain16TestBaselineCheckBox->isChecked ())
+    {
+      for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
+        fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_BASELINE, channel));
+    }
+
     if (fApfelWidget->Gain16TestSigmaCheckBox->isChecked ())
     {
       for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_NOISESAMPLE, channel));
     }
-    if (fApfelWidget->Gain16TestBaselineCheckBox->isChecked ())
-    {
-      for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
-        fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_BASELINE, channel));
-    }
+
     if (fApfelWidget->Gain16TestCurveCheckBox->isChecked ())
     {
       for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
@@ -1192,23 +1196,32 @@ void ApfelGui::StartBenchmarkPressed ()
   if (fApfelWidget->Gain32groupBox->isChecked ())
   {
 
-    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_32));
+//    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_32));
+//    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_16));
+    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_32));// ensure that we really have gain 32 set???
+
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_INIT));
 
     if (fApfelWidget->Gain32TestAutocalCheckBox->isChecked ())
     {
       fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_AUTOCALIB));
     }
+
+     if (fApfelWidget->Gain32TestBaselineCheckBox->isChecked ())
+    {
+      for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
+        fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_BASELINE, channel));
+    }
+
+
     if (fApfelWidget->Gain32TestSigmaCheckBox->isChecked ())
     {
       for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_NOISESAMPLE, channel));
     }
-    if (fApfelWidget->Gain32TestBaselineCheckBox->isChecked ())
-    {
-      for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)
-        fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_BASELINE, channel));
-    }
+
+
+
     if (fApfelWidget->Gain32TestCurveCheckBox->isChecked ())
     {
       for (int channel = 0; channel < APFEL_ADC_CHANNELS; ++channel)

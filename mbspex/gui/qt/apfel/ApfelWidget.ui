@@ -8078,6 +8078,9 @@
               <property name="maximum">
                <double>500.000000000000000</double>
               </property>
+              <property name="value">
+               <double>50.000000000000000</double>
+              </property>
              </widget>
             </item>
            </layout>
@@ -8115,10 +8118,13 @@
                <number>1</number>
               </property>
               <property name="minimum">
-               <double>-10.000000000000000</double>
+               <double>-1000.000000000000000</double>
               </property>
               <property name="maximum">
                <double>1000.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>10.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -8154,10 +8160,13 @@
                <string> nA</string>
               </property>
               <property name="minimum">
-               <double>-1.000000000000000</double>
+               <double>-5000.000000000000000</double>
               </property>
               <property name="maximum">
                <double>5000.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>10.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -8235,10 +8244,13 @@
                <number>1</number>
               </property>
               <property name="minimum">
-               <double>-200.000000000000000</double>
+               <double>-1000.000000000000000</double>
               </property>
               <property name="maximum">
                <double>1000.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>-100.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -8274,10 +8286,13 @@
                <string> nA</string>
               </property>
               <property name="minimum">
-               <double>-500.000000000000000</double>
+               <double>-5000.000000000000000</double>
               </property>
               <property name="maximum">
                <double>5000.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>-100.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -9855,6 +9870,9 @@
             <layout class="QVBoxLayout" name="verticalLayout_21">
              <item>
               <widget class="QCheckBox" name="AllGainBenchmarkCheckBox">
+               <property name="toolTip">
+                <string>Toggle all gains on/off</string>
+               </property>
                <property name="text">
                 <string>All Gains</string>
                </property>
@@ -9866,23 +9884,10 @@
              <item>
               <widget class="QCheckBox" name="AllTestAutocalCheckBox">
                <property name="toolTip">
-                <string>Check to enable DAC autocalibration for Gain16 setup</string>
+                <string>Check to enable DAC autocalibration for ALLÄ Gains </string>
                </property>
                <property name="text">
                 <string>DAC Autocalibrate</string>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QCheckBox" name="AllTesttSigmaCheckBox">
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check to take a sample trace from the ADC in the auto calibrated working point. This will evaluate test pulser peaks. The mean and sigma values are calculated for the baseline region as defined by the slider in the sample tab.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-               <property name="text">
-                <string>ADC Samples</string>
                </property>
                <property name="checked">
                 <bool>true</bool>
@@ -9896,6 +9901,19 @@
                </property>
                <property name="text">
                 <string>Baseline calibration</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="AllTesttSigmaCheckBox">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check to take a sample trace from the ADC in the middle baseline working point (4000). This will evaluate test pulser peaks. The mean and sigma values are calculated for the baseline region as defined by the slider in the sample tab. Note that MBS buffer mode must be set to trigger on the test pulses!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>ADC Samples</string>
                </property>
                <property name="checked">
                 <bool>true</bool>
@@ -9932,23 +9950,10 @@
                <item>
                 <widget class="QCheckBox" name="Gain1TestAutocalCheckBox">
                  <property name="toolTip">
-                  <string>Check to enable DAC autocalibration for Gain16 setup</string>
+                  <string>Check to enable DAC autocalibration for Gain1 setup</string>
                  </property>
                  <property name="text">
                   <string>DAC Autocalibrate</string>
-                 </property>
-                 <property name="checked">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QCheckBox" name="Gain1TestSigmaCheckBox">
-                 <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check to take a sample trace from the ADC in the auto calibrated working point. This will evaluate test pulser peaks. The mean and sigma values are calculated for the baseline region as defined by the slider in the sample tab.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                 </property>
-                 <property name="text">
-                  <string>ADC Samples</string>
                  </property>
                  <property name="checked">
                   <bool>true</bool>
@@ -9962,6 +9967,19 @@
                  </property>
                  <property name="text">
                   <string>Baseline calibration</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="Gain1TestSigmaCheckBox">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check to take a sample trace from the ADC in the middle baseline working point (4000). This will evaluate test pulser peaks. The mean and sigma values are calculated for the baseline region as defined by the slider in the sample tab. Note that MBS buffer mode must be set to trigger on the test pulses!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="text">
+                  <string>ADC Samples</string>
                  </property>
                  <property name="checked">
                   <bool>true</bool>
@@ -10007,12 +10025,12 @@
                 </widget>
                </item>
                <item>
-                <widget class="QCheckBox" name="Gain16TestSigmaCheckBox">
+                <widget class="QCheckBox" name="Gain16TestBaselineCheckBox">
                  <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check to take a sample trace from the ADC in the auto calibrated working point. This will evaluate test pulser peaks. The mean and sigma values are calculated for the baseline region as defined by the slider in the sample tab.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  <string>check to aquire paramters of ADC-DAC baseline calibration function</string>
                  </property>
                  <property name="text">
-                  <string>ADC Samples</string>
+                  <string>Baseline calibration</string>
                  </property>
                  <property name="checked">
                   <bool>true</bool>
@@ -10020,12 +10038,12 @@
                 </widget>
                </item>
                <item>
-                <widget class="QCheckBox" name="Gain16TestBaselineCheckBox">
+                <widget class="QCheckBox" name="Gain16TestSigmaCheckBox">
                  <property name="toolTip">
-                  <string>check to aquire paramters of ADC-DAC baseline calibration function</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check to take a sample trace from the ADC in the middle baseline working point (4000). This will evaluate test pulser peaks. The mean and sigma values are calculated for the baseline region as defined by the slider in the sample tab. Note that MBS buffer mode must be set to trigger on the test pulses!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="text">
-                  <string>Baseline calibration</string>
+                  <string>ADC Samples</string>
                  </property>
                  <property name="checked">
                   <bool>true</bool>
@@ -10060,7 +10078,7 @@
                <item>
                 <widget class="QCheckBox" name="Gain32TestAutocalCheckBox">
                  <property name="toolTip">
-                  <string>Check to enable DAC autocalibration for Gain16 setup</string>
+                  <string>Check to enable DAC autocalibration for Gain32 setup</string>
                  </property>
                  <property name="text">
                   <string>DAC Autocalibrate</string>
@@ -10074,12 +10092,12 @@
                 </widget>
                </item>
                <item>
-                <widget class="QCheckBox" name="Gain32TestSigmaCheckBox">
+                <widget class="QCheckBox" name="Gain32TestBaselineCheckBox">
                  <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check to take a sample trace from the ADC in the auto calibrated working point. This will evaluate test pulser peaks. The mean and sigma values are calculated for the baseline region as defined by the slider in the sample tab.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  <string>check to aquire paramters of ADC-DAC baseline calibration function</string>
                  </property>
                  <property name="text">
-                  <string>ADC Samples</string>
+                  <string>Baseline calibration</string>
                  </property>
                  <property name="checked">
                   <bool>true</bool>
@@ -10087,12 +10105,12 @@
                 </widget>
                </item>
                <item>
-                <widget class="QCheckBox" name="Gain32TestBaselineCheckBox">
+                <widget class="QCheckBox" name="Gain32TestSigmaCheckBox">
                  <property name="toolTip">
-                  <string>check to aquire paramters of ADC-DAC baseline calibration function</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check to take a sample trace from the ADC in the middle baseline working point (4000). This will evaluate test pulser peaks. The mean and sigma values are calculated for the baseline region as defined by the slider in the sample tab. Note that MBS buffer mode must be set to trigger on the test pulses!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="text">
-                  <string>Baseline calibration</string>
+                  <string>ADC Samples</string>
                  </property>
                  <property name="checked">
                   <bool>true</bool>
@@ -10146,6 +10164,9 @@
                 <height>0</height>
                </size>
               </property>
+              <property name="toolTip">
+               <string>Tolerance (+/-) for sample curve window in display</string>
+              </property>
               <property name="prefix">
                <string>Tolerance:  </string>
               </property>
@@ -10185,6 +10206,9 @@
             </item>
             <item>
              <widget class="QDialogButtonBox" name="ReferenceLoadButtonBox">
+              <property name="toolTip">
+               <string>Select or reset sample comparison curve</string>
+              </property>
               <property name="standardButtons">
                <set>QDialogButtonBox::Open|QDialogButtonBox::RestoreDefaults</set>
               </property>
@@ -10222,6 +10246,378 @@
    <header>kplotwidget.h</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>ApfelTabWidget</tabstop>
+  <tabstop>PasemRadioButton</tabstop>
+  <tabstop>PandaRadioButton</tabstop>
+  <tabstop>CarrierSerialNum</tabstop>
+  <tabstop>ApfelSerialNum_1</tabstop>
+  <tabstop>ApfelSerialNum_2</tabstop>
+  <tabstop>ApfelSerialNum_3</tabstop>
+  <tabstop>ApfelSerialNum_4</tabstop>
+  <tabstop>ApfelSerialNum_5</tabstop>
+  <tabstop>ApfelSerialNum_6</tabstop>
+  <tabstop>ApfelSerialNum_7</tabstop>
+  <tabstop>ApfelSerialNum_8</tabstop>
+  <tabstop>PowerCheckBox_all</tabstop>
+  <tabstop>PowerCheckBox_1</tabstop>
+  <tabstop>PowerCheckBox_2</tabstop>
+  <tabstop>PowerCheckBox_3</tabstop>
+  <tabstop>PowerCheckBox_4</tabstop>
+  <tabstop>PowerCheckBox_5</tabstop>
+  <tabstop>PowerCheckBox_6</tabstop>
+  <tabstop>PowerCheckBox_7</tabstop>
+  <tabstop>PowerCheckBox_8</tabstop>
+  <tabstop>ApfelRadioButton</tabstop>
+  <tabstop>PolandRadioButton</tabstop>
+  <tabstop>StretcherOnRadioButton</tabstop>
+  <tabstop>StretcherOffRadioButton</tabstop>
+  <tabstop>gainCombo_all</tabstop>
+  <tabstop>LoGainRadioButton</tabstop>
+  <tabstop>gainCombo_0</tabstop>
+  <tabstop>HiGainRadioButton</tabstop>
+  <tabstop>gainCombo_1</tabstop>
+  <tabstop>gainCombo_2</tabstop>
+  <tabstop>gainCombo_3</tabstop>
+  <tabstop>gainCombo_4</tabstop>
+  <tabstop>gainCombo_5</tabstop>
+  <tabstop>gainCombo_6</tabstop>
+  <tabstop>gainCombo_7</tabstop>
+  <tabstop>gainCombo_8</tabstop>
+  <tabstop>gainCombo_9</tabstop>
+  <tabstop>gainCombo_10</tabstop>
+  <tabstop>gainCombo_11</tabstop>
+  <tabstop>gainCombo_12</tabstop>
+  <tabstop>gainCombo_13</tabstop>
+  <tabstop>gainCombo_14</tabstop>
+  <tabstop>gainCombo_15</tabstop>
+  <tabstop>ApfelDACTabset</tabstop>
+  <tabstop>Apfel1_DACSlider_1</tabstop>
+  <tabstop>Apfel1_DAClineEdit_1</tabstop>
+  <tabstop>Apfel1_DACSlider_2</tabstop>
+  <tabstop>Apfel1_DAClineEdit_2</tabstop>
+  <tabstop>Apfel1_DACSlider_3</tabstop>
+  <tabstop>Apfel1_DAClineEdit_3</tabstop>
+  <tabstop>Apfel1_DACSlider_4</tabstop>
+  <tabstop>Apfel1_DAClineEdit_4</tabstop>
+  <tabstop>AutocalibrateButton_1</tabstop>
+  <tabstop>Apfel2_DACSlider_1</tabstop>
+  <tabstop>Apfel2_DAClineEdit_1</tabstop>
+  <tabstop>Apfel2_DACSlider_2</tabstop>
+  <tabstop>Apfel2_DAClineEdit_2</tabstop>
+  <tabstop>Apfel2_DACSlider_3</tabstop>
+  <tabstop>Apfel2_DAClineEdit_3</tabstop>
+  <tabstop>Apfel2_DACSlider_4</tabstop>
+  <tabstop>Apfel2_DAClineEdit_4</tabstop>
+  <tabstop>AutocalibrateButton_2</tabstop>
+  <tabstop>Apfel3_DACSlider_1</tabstop>
+  <tabstop>Apfel3_DAClineEdit_1</tabstop>
+  <tabstop>Apfel3_DACSlider_2</tabstop>
+  <tabstop>Apfel3_DAClineEdit_2</tabstop>
+  <tabstop>Apfel3_DACSlider_3</tabstop>
+  <tabstop>Apfel3_DAClineEdit_3</tabstop>
+  <tabstop>Apfel3_DACSlider_4</tabstop>
+  <tabstop>Apfel3_DAClineEdit_4</tabstop>
+  <tabstop>AutocalibrateButton_3</tabstop>
+  <tabstop>Apfel4_DACSlider_1</tabstop>
+  <tabstop>Apfel4_DAClineEdit_1</tabstop>
+  <tabstop>Apfel4_DACSlider_2</tabstop>
+  <tabstop>Apfel4_DAClineEdit_2</tabstop>
+  <tabstop>Apfel4_DACSlider_3</tabstop>
+  <tabstop>Apfel4_DAClineEdit_3</tabstop>
+  <tabstop>Apfel4_DACSlider_4</tabstop>
+  <tabstop>Apfel4_DAClineEdit_4</tabstop>
+  <tabstop>AutocalibrateButton_4</tabstop>
+  <tabstop>Apfel5_DACSlider_1</tabstop>
+  <tabstop>Apfel5_DAClineEdit_1</tabstop>
+  <tabstop>Apfel5_DACSlider_2</tabstop>
+  <tabstop>Apfel5_DAClineEdit_2</tabstop>
+  <tabstop>Apfel5_DACSlider_3</tabstop>
+  <tabstop>Apfel5_DAClineEdit_3</tabstop>
+  <tabstop>Apfel5_DACSlider_4</tabstop>
+  <tabstop>Apfel5_DAClineEdit_4</tabstop>
+  <tabstop>AutocalibrateButton_5</tabstop>
+  <tabstop>Apfel6_DACSlider_1</tabstop>
+  <tabstop>Apfel6_DAClineEdit_1</tabstop>
+  <tabstop>Apfel6_DACSlider_2</tabstop>
+  <tabstop>Apfel6_DAClineEdit_2</tabstop>
+  <tabstop>Apfel6_DACSlider_3</tabstop>
+  <tabstop>Apfel6_DAClineEdit_3</tabstop>
+  <tabstop>Apfel6_DACSlider_4</tabstop>
+  <tabstop>Apfel6_DAClineEdit_4</tabstop>
+  <tabstop>AutocalibrateButton_6</tabstop>
+  <tabstop>Apfel7_DACSlider_1</tabstop>
+  <tabstop>Apfel7_DAClineEdit_1</tabstop>
+  <tabstop>Apfel7_DACSlider_2</tabstop>
+  <tabstop>Apfel7_DAClineEdit_2</tabstop>
+  <tabstop>Apfel7_DACSlider_3</tabstop>
+  <tabstop>Apfel7_DAClineEdit_3</tabstop>
+  <tabstop>Apfel7_DACSlider_4</tabstop>
+  <tabstop>Apfel7_DAClineEdit_4</tabstop>
+  <tabstop>AutocalibrateButton_7</tabstop>
+  <tabstop>Apfel8_DACSlider_1</tabstop>
+  <tabstop>Apfel8_DAClineEdit_1</tabstop>
+  <tabstop>Apfel8_DACSlider_2</tabstop>
+  <tabstop>Apfel8_DAClineEdit_2</tabstop>
+  <tabstop>Apfel8_DACSlider_3</tabstop>
+  <tabstop>Apfel8_DAClineEdit_3</tabstop>
+  <tabstop>Apfel8_DACSlider_4</tabstop>
+  <tabstop>Apfel8_DAClineEdit_4</tabstop>
+  <tabstop>AutocalibrateButton_8</tabstop>
+  <tabstop>AutocalibrateButton_all</tabstop>
+  <tabstop>InverseMappingCheckBox</tabstop>
+  <tabstop>ApfelTestPolarityBox_all</tabstop>
+  <tabstop>PulserCheckBox_all</tabstop>
+  <tabstop>PulserAmpSpinBox_all</tabstop>
+  <tabstop>PulseBroadcastCheckBox</tabstop>
+  <tabstop>ApfelTestPolarityBox_0</tabstop>
+  <tabstop>PulserCheckBox_0</tabstop>
+  <tabstop>PulserAmpSpinBox_0</tabstop>
+  <tabstop>PulserCheckBox_1</tabstop>
+  <tabstop>PulserAmpSpinBox_1</tabstop>
+  <tabstop>ApfelTestPolarityBox_1</tabstop>
+  <tabstop>PulserCheckBox_2</tabstop>
+  <tabstop>PulserAmpSpinBox_2</tabstop>
+  <tabstop>PulserCheckBox_3</tabstop>
+  <tabstop>PulserAmpSpinBox_3</tabstop>
+  <tabstop>ApfelTestPolarityBox_2</tabstop>
+  <tabstop>PulserCheckBox_4</tabstop>
+  <tabstop>PulserAmpSpinBox_4</tabstop>
+  <tabstop>PulserCheckBox_5</tabstop>
+  <tabstop>PulserAmpSpinBox_5</tabstop>
+  <tabstop>ApfelTestPolarityBox_3</tabstop>
+  <tabstop>PulserCheckBox_6</tabstop>
+  <tabstop>PulserAmpSpinBox_6</tabstop>
+  <tabstop>PulserCheckBox_7</tabstop>
+  <tabstop>PulserAmpSpinBox_7</tabstop>
+  <tabstop>ApfelTestPolarityBox_4</tabstop>
+  <tabstop>PulserCheckBox_8</tabstop>
+  <tabstop>PulserAmpSpinBox_8</tabstop>
+  <tabstop>PulserCheckBox_9</tabstop>
+  <tabstop>PulserAmpSpinBox_9</tabstop>
+  <tabstop>ApfelTestPolarityBox_5</tabstop>
+  <tabstop>PulserCheckBox_10</tabstop>
+  <tabstop>PulserAmpSpinBox_10</tabstop>
+  <tabstop>PulserCheckBox_11</tabstop>
+  <tabstop>PulserAmpSpinBox_11</tabstop>
+  <tabstop>ApfelTestPolarityBox_6</tabstop>
+  <tabstop>PulserCheckBox_12</tabstop>
+  <tabstop>PulserAmpSpinBox_12</tabstop>
+  <tabstop>PulserCheckBox_13</tabstop>
+  <tabstop>PulserAmpSpinBox_13</tabstop>
+  <tabstop>ApfelTestPolarityBox_7</tabstop>
+  <tabstop>PulserCheckBox_14</tabstop>
+  <tabstop>PulserAmpSpinBox_14</tabstop>
+  <tabstop>PulserCheckBox_15</tabstop>
+  <tabstop>PulserAmpSpinBox_15</tabstop>
+  <tabstop>PulseTimerCheckBox</tabstop>
+  <tabstop>FrequencyComboBox</tabstop>
+  <tabstop>checkBox_all</tabstop>
+  <tabstop>DAC_Slider_all</tabstop>
+  <tabstop>DAC_spinBox_all</tabstop>
+  <tabstop>Baseline_Box_invert</tabstop>
+  <tabstop>CalibrateADCButton</tabstop>
+  <tabstop>CalibrateResetButton</tabstop>
+  <tabstop>AutoAdjustButton</tabstop>
+  <tabstop>ADCAdjustValue</tabstop>
+  <tabstop>Baseline_Box_all</tabstop>
+  <tabstop>DAC_Slider_00</tabstop>
+  <tabstop>DAC_spinBox_00</tabstop>
+  <tabstop>ADC_Value_00</tabstop>
+  <tabstop>Baseline_Box_00</tabstop>
+  <tabstop>DAC_Slider_01</tabstop>
+  <tabstop>DAC_spinBox_01</tabstop>
+  <tabstop>ADC_Value_01</tabstop>
+  <tabstop>Baseline_Box_01</tabstop>
+  <tabstop>DAC_Slider_02</tabstop>
+  <tabstop>DAC_spinBox_02</tabstop>
+  <tabstop>ADC_Value_02</tabstop>
+  <tabstop>Baseline_Box_02</tabstop>
+  <tabstop>DAC_Slider_03</tabstop>
+  <tabstop>DAC_spinBox_03</tabstop>
+  <tabstop>ADC_Value_03</tabstop>
+  <tabstop>Baseline_Box_03</tabstop>
+  <tabstop>DAC_Slider_04</tabstop>
+  <tabstop>DAC_spinBox_04</tabstop>
+  <tabstop>ADC_Value_04</tabstop>
+  <tabstop>Baseline_Box_04</tabstop>
+  <tabstop>DAC_Slider_05</tabstop>
+  <tabstop>DAC_spinBox_05</tabstop>
+  <tabstop>ADC_Value_05</tabstop>
+  <tabstop>Baseline_Box_05</tabstop>
+  <tabstop>DAC_Slider_06</tabstop>
+  <tabstop>DAC_spinBox_06</tabstop>
+  <tabstop>ADC_Value_06</tabstop>
+  <tabstop>Baseline_Box_06</tabstop>
+  <tabstop>DAC_Slider_07</tabstop>
+  <tabstop>DAC_spinBox_07</tabstop>
+  <tabstop>ADC_Value_07</tabstop>
+  <tabstop>Baseline_Box_07</tabstop>
+  <tabstop>DAC_Slider_08</tabstop>
+  <tabstop>DAC_spinBox_08</tabstop>
+  <tabstop>ADC_Value_08</tabstop>
+  <tabstop>Baseline_Box_08</tabstop>
+  <tabstop>DAC_Slider_09</tabstop>
+  <tabstop>DAC_spinBox_09</tabstop>
+  <tabstop>ADC_Value_09</tabstop>
+  <tabstop>Baseline_Box_09</tabstop>
+  <tabstop>DAC_Slider_10</tabstop>
+  <tabstop>DAC_spinBox_10</tabstop>
+  <tabstop>ADC_Value_10</tabstop>
+  <tabstop>Baseline_Box_10</tabstop>
+  <tabstop>DAC_Slider_11</tabstop>
+  <tabstop>DAC_spinBox_11</tabstop>
+  <tabstop>ADC_Value_11</tabstop>
+  <tabstop>Baseline_Box_11</tabstop>
+  <tabstop>DAC_Slider_12</tabstop>
+  <tabstop>DAC_spinBox_12</tabstop>
+  <tabstop>ADC_Value_12</tabstop>
+  <tabstop>Baseline_Box_12</tabstop>
+  <tabstop>DAC_Slider_13</tabstop>
+  <tabstop>DAC_spinBox_13</tabstop>
+  <tabstop>ADC_Value_13</tabstop>
+  <tabstop>Baseline_Box_13</tabstop>
+  <tabstop>DAC_Slider_14</tabstop>
+  <tabstop>DAC_spinBox_14</tabstop>
+  <tabstop>ADC_Value_14</tabstop>
+  <tabstop>Baseline_Box_14</tabstop>
+  <tabstop>DAC_Slider_15</tabstop>
+  <tabstop>DAC_spinBox_15</tabstop>
+  <tabstop>ADC_Value_15</tabstop>
+  <tabstop>Baseline_Box_15</tabstop>
+  <tabstop>ADC_SampleMean_0</tabstop>
+  <tabstop>ADC_SampleSigma_0</tabstop>
+  <tabstop>Sampling_Box_0</tabstop>
+  <tabstop>ADC_SampleMean_1</tabstop>
+  <tabstop>ADC_SampleSigma_1</tabstop>
+  <tabstop>Sampling_Box_1</tabstop>
+  <tabstop>ADC_SampleMean_2</tabstop>
+  <tabstop>ADC_SampleSigma_2</tabstop>
+  <tabstop>Sampling_Box_2</tabstop>
+  <tabstop>ADC_SampleMean_3</tabstop>
+  <tabstop>ADC_SampleSigma_3</tabstop>
+  <tabstop>Sampling_Box_3</tabstop>
+  <tabstop>ADC_SampleMean_4</tabstop>
+  <tabstop>ADC_SampleSigma_4</tabstop>
+  <tabstop>Sampling_Box_4</tabstop>
+  <tabstop>ADC_SampleMean_5</tabstop>
+  <tabstop>ADC_SampleSigma_5</tabstop>
+  <tabstop>Sampling_Box_5</tabstop>
+  <tabstop>ADC_SampleMean_6</tabstop>
+  <tabstop>ADC_SampleSigma_6</tabstop>
+  <tabstop>Sampling_Box_6</tabstop>
+  <tabstop>ADC_SampleMean_7</tabstop>
+  <tabstop>ADC_SampleSigma_7</tabstop>
+  <tabstop>Sampling_Box_7</tabstop>
+  <tabstop>ADC_SampleMean_8</tabstop>
+  <tabstop>ADC_SampleSigma_8</tabstop>
+  <tabstop>Sampling_Box_8</tabstop>
+  <tabstop>ADC_SampleMean_9</tabstop>
+  <tabstop>ADC_SampleSigma_9</tabstop>
+  <tabstop>Sampling_Box_9</tabstop>
+  <tabstop>ADC_SampleMean_10</tabstop>
+  <tabstop>ADC_SampleSigma_10</tabstop>
+  <tabstop>Sampling_Box_10</tabstop>
+  <tabstop>ADC_SampleMean_11</tabstop>
+  <tabstop>ADC_SampleSigma_11</tabstop>
+  <tabstop>Sampling_Box_11</tabstop>
+  <tabstop>ADC_SampleMean_12</tabstop>
+  <tabstop>ADC_SampleSigma_12</tabstop>
+  <tabstop>Sampling_Box_12</tabstop>
+  <tabstop>ADC_SampleMean_13</tabstop>
+  <tabstop>ADC_SampleSigma_13</tabstop>
+  <tabstop>Sampling_Box_13</tabstop>
+  <tabstop>ADC_SampleMean_14</tabstop>
+  <tabstop>ADC_SampleSigma_14</tabstop>
+  <tabstop>Sampling_Box_14</tabstop>
+  <tabstop>ADC_SampleMean_15</tabstop>
+  <tabstop>ADC_SampleSigma_15</tabstop>
+  <tabstop>Sampling_Box_15</tabstop>
+  <tabstop>DoSampleButton</tabstop>
+  <tabstop>DumpSampleButton</tabstop>
+  <tabstop>Sample_Box_all</tabstop>
+  <tabstop>MonitorRadioButton</tabstop>
+  <tabstop>ReadoutRadioButton</tabstop>
+  <tabstop>BaselineLowerSlider</tabstop>
+  <tabstop>BaselineLowerLineEdit</tabstop>
+  <tabstop>BaselineUpperSlider</tabstop>
+  <tabstop>BaselineUpperLineEdit</tabstop>
+  <tabstop>PlotTabWidget</tabstop>
+  <tabstop>ZoomButton</tabstop>
+  <tabstop>UnzoomButton</tabstop>
+  <tabstop>RefreshSampleButton</tabstop>
+  <tabstop>MaximaTableWidget</tabstop>
+  <tabstop>PeakNegaitveCheckBox</tabstop>
+  <tabstop>PeakDeltaDoubleSpinBox</tabstop>
+  <tabstop>PeakFallDoubleSpinBox</tabstop>
+  <tabstop>PeakFinderButton</tabstop>
+  <tabstop>AddressScanPushButton</tabstop>
+  <tabstop>CurrentASIC_DoubleSpinBox_Max</tabstop>
+  <tabstop>CurrentHV_DoubleSpinBox_Max</tabstop>
+  <tabstop>CurrentDiode_DoubleSpinBox_Max</tabstop>
+  <tabstop>CurrentASIC_DoubleSpinBox_Min</tabstop>
+  <tabstop>CurrentHV_DoubleSpinBox_Min</tabstop>
+  <tabstop>CurrentDiode_DoubleSpinBox_Min</tabstop>
+  <tabstop>CurrentASIC_DoubleSpinBox_1</tabstop>
+  <tabstop>CurrentHV_DoubleSpinBox_1</tabstop>
+  <tabstop>CurrentDiode_DoubleSpinBox_1</tabstop>
+  <tabstop>CurrentASIC_DoubleSpinBox_5</tabstop>
+  <tabstop>CurrentHV_DoubleSpinBox_5</tabstop>
+  <tabstop>CurrentDiode_DoubleSpinBox_5</tabstop>
+  <tabstop>CurrentASIC_DoubleSpinBox_2</tabstop>
+  <tabstop>CurrentHV_DoubleSpinBox_2</tabstop>
+  <tabstop>CurrentDiode_DoubleSpinBox_2</tabstop>
+  <tabstop>CurrentASIC_DoubleSpinBox_6</tabstop>
+  <tabstop>CurrentHV_DoubleSpinBox_6</tabstop>
+  <tabstop>CurrentDiode_DoubleSpinBox_6</tabstop>
+  <tabstop>CurrentASIC_DoubleSpinBox_3</tabstop>
+  <tabstop>CurrentHV_DoubleSpinBox_3</tabstop>
+  <tabstop>CurrentDiode_DoubleSpinBox_3</tabstop>
+  <tabstop>CurrentASIC_DoubleSpinBox_7</tabstop>
+  <tabstop>CurrentHV_DoubleSpinBox_7</tabstop>
+  <tabstop>CurrentDiode_DoubleSpinBox_7</tabstop>
+  <tabstop>CurrentASIC_DoubleSpinBox_4</tabstop>
+  <tabstop>CurrentHV_DoubleSpinBox_4</tabstop>
+  <tabstop>CurrentDiode_DoubleSpinBox_4</tabstop>
+  <tabstop>CurrentASIC_DoubleSpinBox_8</tabstop>
+  <tabstop>CurrentHV_DoubleSpinBox_8</tabstop>
+  <tabstop>CurrentDiode_DoubleSpinBox_8</tabstop>
+  <tabstop>MeasureCurrentsPushButton</tabstop>
+  <tabstop>InitKeithleyPushButton</tabstop>
+  <tabstop>BenchmarkButtonBox</tabstop>
+  <tabstop>AddressTestCheckBox</tabstop>
+  <tabstop>CurrentMeasurementCheckBox</tabstop>
+  <tabstop>AllGainBenchmarkCheckBox</tabstop>
+  <tabstop>AllTestAutocalCheckBox</tabstop>
+  <tabstop>AllTesttSigmaCheckBox</tabstop>
+  <tabstop>AllTestBaselineCheckBox</tabstop>
+  <tabstop>AllTestCurveCheckBox</tabstop>
+  <tabstop>Gain1groupBox</tabstop>
+  <tabstop>Gain1TestAutocalCheckBox</tabstop>
+  <tabstop>Gain1TestSigmaCheckBox</tabstop>
+  <tabstop>Gain1TestBaselineCheckBox</tabstop>
+  <tabstop>Gain1TestCurveCheckBox</tabstop>
+  <tabstop>Gain16groupBox</tabstop>
+  <tabstop>Gain16TestAutocalCheckBox</tabstop>
+  <tabstop>Gain16TestSigmaCheckBox</tabstop>
+  <tabstop>Gain16TestBaselineCheckBox</tabstop>
+  <tabstop>Gain16TestCurveCheckBox</tabstop>
+  <tabstop>Gain32groupBox</tabstop>
+  <tabstop>Gain32TestAutocalCheckBox</tabstop>
+  <tabstop>Gain32TestSigmaCheckBox</tabstop>
+  <tabstop>Gain32TestBaselineCheckBox</tabstop>
+  <tabstop>Gain32TestCurveCheckBox</tabstop>
+  <tabstop>RelativeComparisonBox</tabstop>
+  <tabstop>ToleranceSpinBox</tabstop>
+  <tabstop>ReferenceLineEdit</tabstop>
+  <tabstop>ReferenceLoadButtonBox</tabstop>
+  <tabstop>CurrentTestCheckBox</tabstop>
+  <tabstop>CurrentNodeName</tabstop>
+  <tabstop>CurrentSocketCheckBox</tabstop>
+  <tabstop>CurrentPortSpinBox</tabstop>
+  <tabstop>CurrentSerialCheckBox</tabstop>
+  <tabstop>SerialDeviceName</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

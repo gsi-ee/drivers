@@ -35,7 +35,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.9985 of 30-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.99867 of 30-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
 
   fApfelWidget=new ApfelWidget();
   Settings_scrollArea->setWidget(fApfelWidget);
@@ -803,14 +803,26 @@ void ApfelGui::AutoAdjust ()
   {
     if (fBaselineBoxes[channel]->isChecked ())
     {
-      int dac = AdjustBaseline (channel, targetvalue);
-      fDACSpinBoxes[channel]->setValue (dac);
-      AutoApplyRefresh (channel, dac);    // once again apply dac settings to immediately see the baseline on gui
-      printm ("--- Auto adjusted baselines of sfp:%d board:%d channel:%d to value:%d =>%d permille DAC", fSFP, fSlave,
-          channel, targetvalue, dac);
+       AutoAdjustChannel (channel, targetvalue);
+//      int dac = AdjustBaseline (channel, targetvalue);
+//      fDACSpinBoxes[channel]->setValue (dac);
+//      AutoApplyRefresh (channel, dac);    // once again apply dac settings to immediately see the baseline on gui
+//      printm ("--- Auto adjusted baselines of sfp:%d board:%d channel:%d to value:%d =>%d permille DAC", fSFP, fSlave,
+//          channel, targetvalue, dac);
     }
   }
 }
+
+void ApfelGui::AutoAdjustChannel (int channel, unsigned targetvalue)
+{
+  int dac = AdjustBaseline (channel, targetvalue);
+       fDACSpinBoxes[channel]->setValue (dac);
+       AutoApplyRefresh (channel, dac);    // once again apply dac settings to immediately see the baseline on gui
+       printm ("--- Auto adjusted baselines of sfp:%d board:%d channel:%d to value:%d =>%d permille DAC", fSFP, fSlave,
+           channel, targetvalue, dac);
+
+}
+
 
 int ApfelGui::AdjustBaseline (int channel, int adctarget)
 {
@@ -1834,7 +1846,7 @@ void ApfelGui::RefreshDAC (int apfel)
 }
 
 
-bool ApfelGui::RefreshCurrents (int apfel)
+bool ApfelGui::RefreshCurrents (int apfel, bool reset)
 {
   bool rev=true;
   theSetup_GET_FOR_SLAVE_RETURN(BoardSetup);
@@ -1846,7 +1858,13 @@ bool ApfelGui::RefreshCurrents (int apfel)
       RefreshColouredLabel(fApfelCurrentASICLabel[apfel],asicstate,apfel_yellow_background);
       RefreshColouredLabel(fApfelCurrentHVLabel[apfel],hvstate,apfel_yellow_background);
       RefreshColouredLabel(fApfelCurrentDiodeLabel[apfel],diodestate,apfel_yellow_background);
-
+    }
+  else if(reset)
+    {
+      RefreshColouredLabel(fApfelCurrentASICLabel[apfel],asicstate,apfel_blue_background);
+      RefreshColouredLabel(fApfelCurrentHVLabel[apfel],hvstate,apfel_blue_background);
+      RefreshColouredLabel(fApfelCurrentDiodeLabel[apfel],diodestate,apfel_blue_background);
+      RefreshColouredLabel(fApfelWidget->CurrentMeasurementsLabel_All,"NOT DONE", apfel_blue_background);
     }
   else
   {
@@ -2491,7 +2509,7 @@ void ApfelGui::DoIdScan()
    {
       RefreshIDScan(a,true); // reset colors
    }
-
+  //RefreshColouredLabel(fApfelWidget->AdressTestLabel_All,QString("New Test..."), apfel_blue_background);
   for(int a=0; a<APFEL_NUMCHIPS; ++a)
   {
     ExecuteIDScanTest(a);
@@ -2506,12 +2524,14 @@ void ApfelGui::DoIdScan()
 void ApfelGui::DoCurrentScan ()
 {
 
-  // TODO reset to blue
-//  for(int a=0; a<APFEL_NUMCHIPS; ++a)
-//     {
-//        RefreshCurrents(a,true); // reset colors
-//     }
+  //  reset to blue for new scan:
+  for(int a=0; a<APFEL_NUMCHIPS; ++a)
+     {
+        RefreshCurrents(a,true); // reset colors
+     }
 
+
+  //RefreshColouredLabel(fApfelWidget->CurrentMeasurementsLabel_All,QString("New Test..."), apfel_blue_background);
   for (int a = 0; a < APFEL_NUMCHIPS; ++a)
   {
     ExecuteCurrentScan (a);

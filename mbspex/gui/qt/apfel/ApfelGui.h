@@ -192,7 +192,7 @@ protected:
 
   /** udpate display of current measurements for apfel chip with given index.
    * Return value is false if any of the tests shows a failure */
-   bool RefreshCurrents(int apfel);
+   bool RefreshCurrents(int apfel, bool reset=false);
 
    /** udpate display of  id scans for apfel chip with given index. if reset is true, put startup colors.
     *  Return value is false if any of the tests shows a failure*/
@@ -459,6 +459,9 @@ protected:
 
   /** Adjust baselines of the currently selected febex device.*/
   void AutoAdjust();
+
+  /** Set baseline of febex ADC channel to the targetvalue.*/
+  void AutoAdjustChannel (int channel, unsigned targetvalue);
 
 
   /** perform a scan of the DAC-ADC curve of gain and channel.
