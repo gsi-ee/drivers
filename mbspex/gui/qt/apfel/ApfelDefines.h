@@ -34,6 +34,10 @@
 /** number of output channels for each apfel chip*/
 #define APFEL_NUMCHANS 2
 
+
+/** number of multipulser peak samples*/
+#define APFELTEST_MULTIPULSER_PEAKS 3
+
 /** base address for writing apfel core register (corresponds to DAC 1/index0)*/
 #define APFEL_CORE_REQUEST_BASE_WR 0x12000000
 

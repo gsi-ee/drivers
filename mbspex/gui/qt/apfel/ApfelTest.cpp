@@ -9,7 +9,7 @@
 #include <stdio.h>
 
 ApfelTest::ApfelTest () :
-    fOwner (0), fCurrentSetup (0), fTestLength (0), fCurrentGain(0)
+    fOwner (0), fCurrentSetup (0), fTestLength (0), fCurrentGain(0), fMultiPulserMode(false)
 {
 
   fReferenceValues[1]=ApfelTestResults();
@@ -431,23 +431,91 @@ bool ApfelTest::ProcessBenchmark ()
 
         fOwner->AutoAdjustChannel(febexchannel, 4000);
 
-
+        int polarityflag=-1;
         if(fCurrentGain==1)
         {
+          polarityflag=0;
           fOwner->SetPeakfinderPolarityNegative(true); // TODO 2016: check slope setup here?
+          if(IsMultiPulserMode())
+            fCurrentSetup->SetTestPulsePostive (apfel, false);
+
         }
         else
         {
+          polarityflag=1;
           fOwner->SetPeakfinderPolarityNegative(false);
+          if(IsMultiPulserMode())
+            fCurrentSetup->SetTestPulsePostive (apfel, true);
         }
 
-        // before getting the sample, we may invoke the pulser for this channel:
-        fOwner->EvaluatePulser(apfel); // use setup from pulser tab.
-        for(int t=0; t<3;++t) // TODO: configurable number of pulses?
-          fOwner->SetPulser(apfel);
-        // note that this works only in mbs mode due to the trigger that we still not have for adc buffer
 
-      fOwner->AcquireSample(febexchannel); // this includes peak finder for MBS case
+
+
+
+        // before getting the sample, we may invoke the pulser for this channel:
+        int peakPositions[APFELTEST_MULTIPULSER_PEAKS]; // remember the peaks found after each pulser in multi pulser mode
+        int peakAmplitudes[APFELTEST_MULTIPULSER_PEAKS];
+
+        if(IsMultiPulserMode())
+        {
+        fCurrentSetup->SetTestPulseEnable (apfel, 0, true); // need both channels of apfel to trigger with mbs
+        fCurrentSetup->SetTestPulseEnable (apfel, 1, true);
+
+        uint8_t amplitude[APFELTEST_MULTIPULSER_PEAKS];
+
+        switch(fCurrentGain)
+        {
+          case 1:
+            amplitude[0]=9;
+            amplitude[1]=12;
+            amplitude[2]=15;
+            break;
+          case 16:
+            amplitude[0]=2;
+            amplitude[1]=3;
+            amplitude[2]=4;
+            break;
+          case 32:
+          default:
+            amplitude[0]=1;
+            amplitude[1]=2;
+            amplitude[2]=3;
+            break;
+        };
+
+
+
+
+
+        for (int numpuls = 0; numpuls < APFELTEST_MULTIPULSER_PEAKS; ++numpuls)
+          {
+            fCurrentSetup->SetTestPulseAmplitude (apfel, 0, amplitude[numpuls]);
+            fCurrentSetup->SetTestPulseAmplitude (apfel, 1, amplitude[numpuls]);
+
+            for (int t = 0; t < 3; ++t)    // TODO: configurable number of pulses?
+            {
+              fOwner->SetPulser (apfel);    // invoke a single pulse of specified setup
+            }
+            fOwner->AcquireSample (febexchannel,polarityflag);    // this includes peak finder for MBS case
+            // need pulseindex here?
+            peakAmplitudes[numpuls] = fCurrentSetup->GetSamplePeakHeight (febexchannel, 0);    // remember highest peak
+            peakPositions[numpuls] = fCurrentSetup->GetSamplePeakPosition (febexchannel, 0);
+          }    // numpuls
+
+        } // multipulsermode
+
+        else
+        {
+          // use external pulser
+          fOwner->AcquireSample(febexchannel, polarityflag); // this includes peak finder for MBS case
+        }
+
+
+          // note that this works only in mbs mode due to the trigger that we still not have for adc buffer
+
+
+
+       // in any case we only show last sample and take baselines from it:
       fOwner->ShowSample(febexchannel,true);
       double mean=fCurrentSetup->GetADCMean(febexchannel);
       double sigma=fCurrentSetup->GetADCSigma(febexchannel);
@@ -471,8 +539,18 @@ bool ApfelTest::ProcessBenchmark ()
       theResults.ResetAdcPeaks(dac);
       bool peaksnegative=fCurrentSetup->IsSamplePeaksNegative(febexchannel);
       theResults.SetNegativeAdcPeaks(dac,peaksnegative);
-
-
+      if(IsMultiPulserMode())
+      {
+        printm("\t\tfound %d peaks (polarity:%s) from different pulses", APFELTEST_MULTIPULSER_PEAKS, (peaksnegative ? "negative":"positive"));
+        // internal pulser: take the highest peaks found of 3 samples
+        for (int i = 0; i < APFELTEST_MULTIPULSER_PEAKS; ++i)
+        {
+          theResults.AddAdcPeak(dac,peakAmplitudes[i], peakPositions[i]);
+        }
+      }
+      else
+      {
+        // external pulser: just take the first n peaks of a single sample
       int numpeaks = fCurrentSetup->NumSamplePeaks (febexchannel);
       printm("\t\tfound %d peaks (polarity:%s) ", numpeaks, (peaksnegative ? "negative":"positive"));
 
@@ -489,7 +567,7 @@ bool ApfelTest::ProcessBenchmark ()
           }
         }
        }
-
+      }
 
 
       break;

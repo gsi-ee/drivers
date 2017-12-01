@@ -1231,7 +1231,7 @@ void ApfelGui::StartBenchmarkPressed ()
 
   }
 
-
+  fBenchmark.SetMultiPulserMode(fApfelWidget->multiPulserRadio->isChecked());
 
   fBenchmark.FinalizeSequencerList ();
   fSequencerStopwatch.start ();

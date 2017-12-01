@@ -9859,6 +9859,51 @@
             </layout>
            </widget>
           </item>
+          <item row="0" column="2">
+           <spacer name="horizontalSpacer_20">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>519</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="3">
+           <widget class="QGroupBox" name="PulsermodeBox">
+            <property name="title">
+             <string>Pulser mode</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_23">
+             <item>
+              <widget class="QRadioButton" name="externalPulserRadio">
+               <property name="toolTip">
+                <string>select to take one sample from external pulser</string>
+               </property>
+               <property name="text">
+                <string>external</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="multiPulserRadio">
+               <property name="toolTip">
+                <string>select to sample 3 different internal pulser peaks (PANDA default)</string>
+               </property>
+               <property name="text">
+                <string>internal (multiple pulse scan)</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
           <item row="1" column="0">
            <widget class="QGroupBox" name="TestgroupBoxAll">
             <property name="title">
@@ -9936,7 +9981,7 @@
             </layout>
            </widget>
           </item>
-          <item row="1" column="1" colspan="2">
+          <item row="1" column="1" colspan="3">
            <layout class="QHBoxLayout" name="horizontalLayout_90">
             <item>
              <widget class="QGroupBox" name="Gain1groupBox">
@@ -10135,7 +10180,7 @@
             </item>
            </layout>
           </item>
-          <item row="2" column="0" colspan="3">
+          <item row="2" column="0" colspan="4">
            <layout class="QHBoxLayout" name="horizontalLayout_92">
             <item>
              <widget class="QCheckBox" name="RelativeComparisonBox">
@@ -10215,19 +10260,6 @@
              </widget>
             </item>
            </layout>
-          </item>
-          <item row="0" column="2">
-           <spacer name="horizontalSpacer_20">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>519</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
           </item>
          </layout>
         </widget>

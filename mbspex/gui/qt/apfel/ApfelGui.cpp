@@ -35,7 +35,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.99867 of 30-Nov-2017 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.99870 of 1-Dec-2017 by JAM (j.adamczewski@gsi.de)\n";
 
   fApfelWidget=new ApfelWidget();
   Settings_scrollArea->setWidget(fApfelWidget);
@@ -1094,7 +1094,7 @@ int ApfelGui::CalibrateResetADC (int channel)
 
 }
 
-int ApfelGui::AcquireSample (int channel)
+int ApfelGui::AcquireSample(int channel, int peakfinderpolarity)
 {
 
   theSetup_GET_FOR_SLAVE_RETURN(BoardSetup);
@@ -1138,7 +1138,7 @@ int ApfelGui::AcquireSample (int channel)
     //std::cout << "Filled "<<i<< "adc samples from mbs trace up to position #"<< cursor<< std::endl;
   }
   EvaluateBaseline(channel);
-  FindPeaks(channel);
+  FindPeaks(channel, peakfinderpolarity);
   RefreshLastADCSample (channel);
   return 0;
 }
@@ -1157,14 +1157,19 @@ void ApfelGui::EvaluateBaseline(int channel)
 }
 
 
-void ApfelGui::FindPeaks(int channel)
+void ApfelGui::FindPeaks (int channel, int usepolarity)
 {
   theSetup_GET_FOR_SLAVE(BoardSetup);
-  double deltaratio= fApfelWidget->PeakDeltaDoubleSpinBox->value()/100.0;
-  double fall=fApfelWidget->PeakFallDoubleSpinBox->value();
-  bool negative=fApfelWidget->PeakNegaitveCheckBox->isChecked();
-  theSetup->EvaluatePeaks(channel,deltaratio,fall,negative);
-
+  double deltaratio = fApfelWidget->PeakDeltaDoubleSpinBox->value () / 100.0;
+  double fall = fApfelWidget->PeakFallDoubleSpinBox->value ();
+  bool negative = false;
+  if(usepolarity ==0)
+    negative = true;
+  else if (usepolarity == 1)
+    negative = false;
+  else
+    negative=fApfelWidget->PeakNegaitveCheckBox->isChecked();
+  theSetup->EvaluatePeaks (channel, deltaratio, fall, negative);
 
 }
 

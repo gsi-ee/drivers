@@ -484,8 +484,10 @@ protected:
     void CalibrateResetSelectedADCs();
 
 
-    /** get a sample from febex readout buffer for specified channel. */
-    int AcquireSample(int channel);
+    /** get a sample from febex readout buffer for specified channel.
+     *   peakfinder polarity may specify the expected peak polarity: 0: negative, 1: positive
+     * default: use setup in gui checkbox*/
+    int AcquireSample(int channel, int peakfinderpolarity=-1);
 
     /** get sample from febex  for ADC channels with acquire checkbox checked.*/
     void AcquireSelectedSamples();
@@ -519,8 +521,10 @@ protected:
     /** zoom display of sample for channel to the vicinity of peak number peak*/
     void ZoomSampleToPeak(int channel, int peak);
 
-    /** do peak finding on current sample*/
-    void FindPeaks(int channel);
+    /** do peak finding on current sample
+     * polarity may specify the expected peak polarity: 0: negative, 1: positive
+     * default: use setup in gui checkbox*/
+    void FindPeaks(int channel,int usepolarity=-1);
 
     /** Switch peak finder polarity to negative or positive. */
     void SetPeakfinderPolarityNegative(bool on);

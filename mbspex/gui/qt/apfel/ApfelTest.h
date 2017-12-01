@@ -40,7 +40,7 @@ private:
    std::map<int, ApfelTestResults> fReferenceValues;
 
 
-
+   bool fMultiPulserMode;
 
 public:
 
@@ -49,6 +49,10 @@ public:
   void SetOwner(ApfelGui* parent){fOwner=parent;}
 
   void SetSetup(BoardSetup* set){fCurrentSetup=set;}
+
+
+  void SetMultiPulserMode(bool on){fMultiPulserMode=0;}
+  bool IsMultiPulserMode(){return fMultiPulserMode;}
 
 
   /** access to reference values for gain 1,16, or 32*/
