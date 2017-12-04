@@ -329,6 +329,11 @@ bool ApfelTest::ProcessBenchmark ()
           // qr tag for carrier board:
           theResults.SetCarrierBoardDescriptor(fCurrentSetup->GetBoardID());
 
+          // environment temperature as logged by the user:
+          theResults.SetTemperatureInfo(fCurrentSetup->GetTemperature());
+
+
+
 
           printm ("Recorded Slot %d, Chip id %s ", apfel, descriptor.toLatin1 ().constData ());
 
@@ -498,6 +503,8 @@ bool ApfelTest::ProcessBenchmark ()
             }
             fOwner->AcquireSample (febexchannel,polarityflag);    // this includes peak finder for MBS case
             // need pulseindex here?
+            fOwner->ShowSample(febexchannel,true);
+
             peakAmplitudes[numpuls] = fCurrentSetup->GetSamplePeakHeight (febexchannel, 0);    // remember highest peak
             peakPositions[numpuls] = fCurrentSetup->GetSamplePeakPosition (febexchannel, 0);
           }    // numpuls
@@ -508,6 +515,7 @@ bool ApfelTest::ProcessBenchmark ()
         {
           // use external pulser
           fOwner->AcquireSample(febexchannel, polarityflag); // this includes peak finder for MBS case
+          fOwner->ShowSample(febexchannel,true);
         }
 
 
@@ -516,7 +524,7 @@ bool ApfelTest::ProcessBenchmark ()
 
 
        // in any case we only show last sample and take baselines from it:
-      fOwner->ShowSample(febexchannel,true);
+      //fOwner->ShowSample(febexchannel,true);
       double mean=fCurrentSetup->GetADCMean(febexchannel);
       double sigma=fCurrentSetup->GetADCSigma(febexchannel);
       double minimum=fCurrentSetup->GetADCMiminum(febexchannel);
@@ -545,7 +553,7 @@ bool ApfelTest::ProcessBenchmark ()
         // internal pulser: take the highest peaks found of 3 samples
         for (int i = 0; i < APFELTEST_MULTIPULSER_PEAKS; ++i)
         {
-          theResults.AddAdcPeak(dac,peakAmplitudes[i], peakPositions[i]);
+          theResults.AddAdcPeak(dac, peakPositions[i], peakAmplitudes[i]);
         }
       }
       else
@@ -563,7 +571,7 @@ bool ApfelTest::ProcessBenchmark ()
             height = fCurrentSetup->GetSamplePeakHeight (febexchannel, i);
             pos = fCurrentSetup->GetSamplePeakPosition (febexchannel, i);
             printm("\t\t (pos:%d,ADC;%d)",pos,height);
-            theResults.AddAdcPeak(dac,height,pos);
+            theResults.AddAdcPeak(dac,pos, height);
           }
         }
        }

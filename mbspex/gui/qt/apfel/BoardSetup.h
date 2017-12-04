@@ -56,6 +56,8 @@ private:
   /** carrier board id tag*/
   QString fBoardID;
 
+  /** environemnt temperature logged by operator*/
+  QString fTemperature;
 
 public:
 
@@ -73,6 +75,15 @@ public:
 
 
 
+  void SetTemperature (const QString& val)
+  {
+    fTemperature= val;
+  }
+
+  const QString& GetTemperature ()
+  {
+    return fTemperature;
+  }
 
 
 

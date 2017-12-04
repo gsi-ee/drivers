@@ -1014,6 +1014,13 @@ void ApfelGui::StartBenchmarkPressed ()
   if (theSetup->IsUsePandaTestBoard ())
   {
     // pandatest mode: remember carrier board id
+    QString temperatur= fApfelWidget->EnvironmentTemperature->text ();
+    if (temperatur.isEmpty ())
+    {
+      printm ("Missing environment temperature information! Please type in a value (in °C)!");
+      return;
+    }
+    theSetup->SetTemperature(temperatur);
 
     QString carrier= fApfelWidget->CarrierSerialNum->text ();
     if (carrier.isEmpty ())
@@ -1036,6 +1043,7 @@ void ApfelGui::StartBenchmarkPressed ()
       }
       theSetup->SetChipID (a, tag);
     }
+
 
 
 

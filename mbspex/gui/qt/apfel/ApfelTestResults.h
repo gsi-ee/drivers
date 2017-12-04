@@ -33,6 +33,9 @@ private:
      * sticked to the hardware*/
   QString fCarrierBoardLabel;
 
+  /** user written information about environment temperature (in degree Centigrade)*/
+  QString fTemperatureInfo;
+
   /** Current for ASIC measured by Keithley */
   double fCurrentASIC;
 
@@ -147,6 +150,17 @@ public:
    const QString& GetCarrierBoardDescriptor()
    {
      return  fCarrierBoardLabel;
+   }
+
+
+   void SetTemperatureInfo(const QString& label)
+   {
+     fTemperatureInfo=label;
+   }
+
+   const QString& GetTemperatureInfo()
+   {
+     return  fTemperatureInfo;
    }
 
 

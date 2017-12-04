@@ -111,6 +111,16 @@
        </item>
        <item row="0" column="1">
         <layout class="QGridLayout" name="gridLayout_30">
+         <item row="1" column="4">
+          <widget class="QLineEdit" name="EnvironmentTemperature">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type environment temperature&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="readOnly">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
          <item row="1" column="0">
           <widget class="QCheckBox" name="PowerCheckBox_all">
            <property name="font">
@@ -130,7 +140,7 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
+         <item row="1" column="2">
           <spacer name="horizontalSpacer">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
@@ -143,12 +153,12 @@
            </property>
           </spacer>
          </item>
-         <item row="1" column="3">
+         <item row="1" column="5">
           <layout class="QHBoxLayout" name="horizontalLayout_149">
            <item>
             <widget class="QLabel" name="CarrierBoardLabel">
              <property name="toolTip">
-              <string>Addres ID of APFEL in this mounting position</string>
+              <string>Addres ID of Test carrier board</string>
              </property>
              <property name="frameShape">
               <enum>QFrame::StyledPanel</enum>
@@ -170,7 +180,7 @@
            </item>
           </layout>
          </item>
-         <item row="3" column="0" colspan="4">
+         <item row="3" column="0" colspan="6">
           <layout class="QGridLayout" name="gridLayout_5">
            <item row="0" column="0">
             <widget class="QGroupBox" name="PowerGroupBox_1">
@@ -662,13 +672,26 @@
            </item>
           </layout>
          </item>
-         <item row="1" column="2">
+         <item row="1" column="1">
           <widget class="QPushButton" name="ClearIDspushButton">
            <property name="toolTip">
             <string>Press this button to erase all chip id fields before a new setup</string>
            </property>
            <property name="text">
             <string>Clear IDs</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="3">
+          <widget class="QLabel" name="TemperatureLabel">
+           <property name="toolTip">
+            <string>Environment temperature (°C)</string>
+           </property>
+           <property name="frameShape">
+            <enum>QFrame::StyledPanel</enum>
+           </property>
+           <property name="text">
+            <string>Temperature:</string>
            </property>
           </widget>
          </item>
@@ -9648,6 +9671,9 @@
            <layout class="QHBoxLayout" name="horizontalLayout_89">
             <item>
              <widget class="QDialogButtonBox" name="BenchmarkButtonBox">
+              <property name="toolTip">
+               <string>Control benchmark measurements</string>
+              </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
@@ -10289,9 +10315,8 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>ApfelTabWidget</tabstop>
-  <tabstop>PasemRadioButton</tabstop>
-  <tabstop>PandaRadioButton</tabstop>
+  <tabstop>ClearIDspushButton</tabstop>
+  <tabstop>EnvironmentTemperature</tabstop>
   <tabstop>CarrierSerialNum</tabstop>
   <tabstop>ApfelSerialNum_1</tabstop>
   <tabstop>ApfelSerialNum_2</tabstop>
@@ -10310,6 +10335,7 @@
   <tabstop>PowerCheckBox_6</tabstop>
   <tabstop>PowerCheckBox_7</tabstop>
   <tabstop>PowerCheckBox_8</tabstop>
+  <tabstop>PandaRadioButton</tabstop>
   <tabstop>ApfelRadioButton</tabstop>
   <tabstop>PolandRadioButton</tabstop>
   <tabstop>StretcherOnRadioButton</tabstop>
@@ -10659,6 +10685,10 @@
   <tabstop>CurrentPortSpinBox</tabstop>
   <tabstop>CurrentSerialCheckBox</tabstop>
   <tabstop>SerialDeviceName</tabstop>
+  <tabstop>externalPulserRadio</tabstop>
+  <tabstop>multiPulserRadio</tabstop>
+  <tabstop>ApfelTabWidget</tabstop>
+  <tabstop>PasemRadioButton</tabstop>
  </tabstops>
  <resources/>
  <connections>
@@ -13149,11 +13179,11 @@
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>562</x>
+     <x>334</x>
      <y>41</y>
     </hint>
     <hint type="destinationlabel">
-     <x>698</x>
+     <x>723</x>
      <y>47</y>
     </hint>
    </hints>
@@ -13165,7 +13195,7 @@
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>534</x>
+     <x>306</x>
      <y>58</y>
     </hint>
     <hint type="destinationlabel">
@@ -13181,7 +13211,7 @@
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>563</x>
+     <x>335</x>
      <y>53</y>
     </hint>
     <hint type="destinationlabel">
@@ -13197,7 +13227,7 @@
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>563</x>
+     <x>335</x>
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
@@ -13213,7 +13243,7 @@
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>557</x>
+     <x>329</x>
      <y>58</y>
     </hint>
     <hint type="destinationlabel">
@@ -13229,7 +13259,7 @@
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>540</x>
+     <x>312</x>
      <y>56</y>
     </hint>
     <hint type="destinationlabel">
@@ -13245,7 +13275,7 @@
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>554</x>
+     <x>326</x>
      <y>58</y>
     </hint>
     <hint type="destinationlabel">
@@ -13261,7 +13291,7 @@
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>557</x>
+     <x>329</x>
      <y>42</y>
     </hint>
     <hint type="destinationlabel">
@@ -13277,12 +13307,28 @@
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>545</x>
+     <x>317</x>
      <y>54</y>
     </hint>
     <hint type="destinationlabel">
      <x>711</x>
      <y>285</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ClearIDspushButton</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>EnvironmentTemperature</receiver>
+   <slot>clear()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>271</x>
+     <y>53</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>533</x>
+     <y>49</y>
     </hint>
    </hints>
   </connection>

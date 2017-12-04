@@ -35,7 +35,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.99871 of 1-Dec-2017 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.99872 of 4-Dec-2017 by JAM (j.adamczewski@gsi.de)\n";
 
   fApfelWidget=new ApfelWidget();
   Settings_scrollArea->setWidget(fApfelWidget);
@@ -2610,7 +2610,7 @@ void ApfelGui::SaveTestResults ()
       WriteTestFile (QString ("\tPeakPos_%1 \tPeakHeight_%2").arg (i).arg (i));
     }
 
-  WriteTestFile (QString ("\tI_ASIC(A) \tI_HV(A)  \tI_Diode(A) \tIDScan \tGeneralCall \tReverseID \tRegIO \t \t\tStartDate \t StartTime \tStopDate \tStopTime"));
+  WriteTestFile (QString ("\tI_ASIC(A) \tI_HV(A)  \tI_Diode(A) \tIDScan \tGeneralCall \tReverseID \tRegIO \tTemp (C) \t\tStartDate \t StartTime \tStopDate \tStopTime"));
   WriteTestFile (QString ("\n"));
   // loop over gain:
   for (int gain = 1; gain < 40; gain += 15)
@@ -2724,7 +2724,9 @@ void ApfelGui::SaveTestResults ()
 
         line.append(QString ("\t%1 \t%2 \t%3\t").arg(currentasic).arg(currenthv).arg(currentdiode));
         line.append(QString ("\t%1 \t%2 \t%3 \t%4 \t").arg(idscanok).arg(generalcallok).arg(reverseidok).arg(registerok));
-
+        line.append("\t");
+        line.append(theResult.GetTemperatureInfo());
+        line.append("\t");
         line.append(theResult.GetStartTime());
         line.append("\t");
         line.append(theResult.GetEndTime());

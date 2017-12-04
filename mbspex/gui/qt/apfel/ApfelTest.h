@@ -51,7 +51,7 @@ public:
   void SetSetup(BoardSetup* set){fCurrentSetup=set;}
 
 
-  void SetMultiPulserMode(bool on){fMultiPulserMode=0;}
+  void SetMultiPulserMode(bool on){fMultiPulserMode=on;}
   bool IsMultiPulserMode(){return fMultiPulserMode;}
 
 
