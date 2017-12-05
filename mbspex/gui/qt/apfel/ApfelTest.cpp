@@ -7,6 +7,7 @@
 
 #include "errno.h"
 #include <stdio.h>
+#include <unistd.h>
 
 ApfelTest::ApfelTest () :
     fOwner (0), fCurrentSetup (0), fTestLength (0), fCurrentGain(0), fMultiPulserMode(false)
@@ -432,21 +433,24 @@ bool ApfelTest::ProcessBenchmark ()
         int apfel=0, dac=0;
         fCurrentSetup->EvaluateDACIndices(febexchannel,apfel,dac);
 
-        // first we set baseline to standard value 4000:
 
-        fOwner->AutoAdjustChannel(febexchannel, 4000);
+        fOwner->PulseTimer_changed (0); // switch off manual pulser timer during benchmark!
 
+
+        // set baseline to standard values and define polarities:
         int polarityflag=-1;
         if(fCurrentGain==1)
         {
+          fOwner->AutoAdjustChannel(febexchannel, 12000); // negative peaks, high baseline
           polarityflag=0;
           fOwner->SetPeakfinderPolarityNegative(true); // TODO 2016: check slope setup here?
           if(IsMultiPulserMode())
-            fCurrentSetup->SetTestPulsePostive (apfel, false);
+            fCurrentSetup->SetTestPulsePostive (apfel, true); // for pandatestboard we send positive pulses anyway, but get negative peaks
 
         }
         else
         {
+          fOwner->AutoAdjustChannel(febexchannel, 4000); // positive peaks
           polarityflag=1;
           fOwner->SetPeakfinderPolarityNegative(false);
           if(IsMultiPulserMode())
@@ -457,7 +461,7 @@ bool ApfelTest::ProcessBenchmark ()
 
 
 
-        // before getting the sample, we may invoke the pulser for this channel:
+        // before getting the sample, we invoke the pulser for this channel:
         int peakPositions[APFELTEST_MULTIPULSER_PEAKS]; // remember the peaks found after each pulser in multi pulser mode
         int peakAmplitudes[APFELTEST_MULTIPULSER_PEAKS];
 
@@ -497,9 +501,10 @@ bool ApfelTest::ProcessBenchmark ()
             fCurrentSetup->SetTestPulseAmplitude (apfel, 0, amplitude[numpuls]);
             fCurrentSetup->SetTestPulseAmplitude (apfel, 1, amplitude[numpuls]);
 
-            for (int t = 0; t < 3; ++t)    // TODO: configurable number of pulses?
+            for (int t = 0; t < 5; ++t)    // TODO: configurable number of pulses?
             {
               fOwner->SetPulser (apfel);    // invoke a single pulse of specified setup
+              usleep(50); // wait for mbs trigger
             }
             fOwner->AcquireSample (febexchannel,polarityflag);    // this includes peak finder for MBS case
             // need pulseindex here?

@@ -136,6 +136,7 @@ void AdcSample::FindPeaks(double deltaratio, double falldistance, bool negative)
     //std::cout<< "FindPeaks has deltaratio:"<<deltaratio<<", fall:"<<falldistance<<", deltanext:"<<deltanextpeak<<", fallabs:"<<falldelta<< std::endl;
 
     int startpos=0;
+    int endpos=fSample.size() -100; // clip artefacts at end of mbs buffer
     fPeaks.clear();
 
   for(int p=0; p<APFEL_ADC_NUMMAXIMA;++p)
@@ -144,7 +145,7 @@ void AdcSample::FindPeaks(double deltaratio, double falldistance, bool negative)
     peak[p]=0;
     if(negative) peak[p]=-APFEL_ADC_MAXVALUE;
 
-  for (int i = startpos; i < fSample.size(); ++i)
+  for (int i = startpos; i < endpos; ++i)
   {
       int val=fSample[i];
       if(negative) val*=-1.0; // just flip curve down
