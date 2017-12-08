@@ -35,7 +35,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.9988 of 5-Dec-2017 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.9990 of 8-Dec-2017 by JAM (j.adamczewski@gsi.de)\n";
 
   fApfelWidget=new ApfelWidget();
   Settings_scrollArea->setWidget(fApfelWidget);
@@ -2375,10 +2375,22 @@ int ApfelGui::ScanDACCurve (int gain, int channel)
 {
   QApplication::setOverrideCursor (Qt::WaitCursor);
   theSetup_GET_FOR_SLAVE_RETURN(BoardSetup);
-  int apfel = 0, dac = 0;
+  int apfel = 0, dac = 0, dacrecord=0;
   theSetup->EvaluateDACIndices (channel, apfel, dac);
   ApfelTestResults& theResults = theSetup->AccessTestResults (gain, apfel);
-  theResults.ResetDacSample (dac);
+  dacrecord=dac;
+  // kludge to get also results from second adc for dac3: we record it for dac4
+  if (gain == 1)
+  {
+    if ((channel % 2) != 0)
+    {
+      dacrecord++;
+      printm ("\tScanDACCurve for channel %d  at gain 1: -shifted dac to index %d to record results", channel, dacrecord);
+    }
+  }
+  ////////////////////////
+
+  theResults.ResetDacSample (dacrecord);
   int points = APFEL_DAC_CURVEPOINTS;
   // depending on gain, we have different stepsizes
   int step = 0;
@@ -2386,7 +2398,7 @@ int ApfelGui::ScanDACCurve (int gain, int channel)
   {
     case 1:
       step = 16;
-      dac = 2;
+      //dac = 2;
       break;
     case 16:
       step = 2;
@@ -2414,7 +2426,11 @@ int ApfelGui::ScanDACCurve (int gain, int channel)
     WriteDAC_ApfelI2c (apfel, dac, theSetup->GetDACValue (apfel, dac));
     int adcval = AcquireBaselineSample (channel);
    // std::cout<<"   ScanDACCurve got d:"<<dacval<<", adc:"<<adcval << std::endl;
-    theResults.AddDacSample (dac, dacval, adcval);
+
+
+
+
+    theResults.AddDacSample (dacrecord, dacval, adcval);
   }
   DisableI2C ();
   ResetBenchmarkCurve ();
@@ -2647,7 +2663,7 @@ void ApfelGui::SaveTestResults ()
 
         if (gain == 1)
         {
-          if (dac == 0 || dac == 1 || dac == 3)
+          if (dac == 0 || dac == 1 )
           {
             baseline = APFEL_NOVALUE;
             sigma = APFEL_NOVALUE;

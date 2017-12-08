@@ -504,8 +504,9 @@ bool ApfelTest::ProcessBenchmark ()
             for (int t = 0; t < 5; ++t)    // TODO: configurable number of pulses?
             {
               fOwner->SetPulser (apfel);    // invoke a single pulse of specified setup
-              usleep(50); // wait for mbs trigger
+              //usleep(50); // wait for mbs trigger
             }
+            usleep(200); // wait for mbs trigger
             fOwner->AcquireSample (febexchannel,polarityflag);    // this includes peak finder for MBS case
             // need pulseindex here?
             fOwner->ShowSample(febexchannel,true);
@@ -537,7 +538,22 @@ bool ApfelTest::ProcessBenchmark ()
       int baselinelow=fCurrentSetup->GetADCBaslineLowerBound(febexchannel);
       int baselineup=fCurrentSetup->GetADCBaslineUpperBound(febexchannel);
 
+
+
+
       ApfelTestResults& theResults=fCurrentSetup->AccessTestResults(fCurrentGain, apfel);
+
+      // kludge to get also results from second adc for dac3: we record it
+           if(fCurrentGain==1)
+           {
+             if((febexchannel%2)!=0)
+             {
+               dac++;
+               printm("\tChannel %d  sample for gain 1: -shifted dac to index %d to record results",febexchannel, dac);
+             }
+           }
+
+
       theResults.SetAdcSampleMean(dac,mean);
       theResults.SetAdcSampleSigma(dac,sigma);
       theResults.SetAdcSampleMinimum(dac,minimum);
@@ -546,7 +562,7 @@ bool ApfelTest::ProcessBenchmark ()
       theResults.SetAdcBaselineUpperBound(dac, baselineup);
 
 
-      printm("\tChannel %d : baseline-(%d...%d), mean=%f sigma=%f minimum=%f maximum=%f", baselinelow, baselineup, febexchannel, mean,sigma,minimum,maximum);
+      printm("\tChannel %d : baseline-(%d...%d), mean=%f sigma=%f minimum=%f maximum=%f",febexchannel, baselinelow, baselineup,  mean,sigma,minimum,maximum);
 
       // insert here the found peak position into the test results:
       theResults.ResetAdcPeaks(dac);
@@ -593,6 +609,20 @@ bool ApfelTest::ProcessBenchmark ()
         fCurrentSetup->EvaluateDACIndices(febexchannel,apfel,dac);
         ApfelTestResults& theResults=fCurrentSetup->AccessTestResults(fCurrentGain, apfel);
         GainSetup gainSetup=fCurrentSetup->AccessGainSetup(fCurrentGain,febexchannel);
+
+        // kludge to get also results from second adc for dac3: we record it for dac4
+        if (fCurrentGain == 1)
+        {
+          if ((febexchannel % 2) != 0)
+          {
+            dac++;
+            printm ("\tChannel %d  baseline for gain 1: -shifted dac to index %d to record results", febexchannel, dac);
+          }
+        }
+
+        // will not work here, since result has only gain curve for channel, not for dac
+
+
         theResults.SetGainParameter(dac, gainSetup);
       }
       break;
