@@ -31,7 +31,7 @@ PolandGui::PolandGui (QWidget* parent) :
     GosipGui (parent), fTriggerOn(true)
 {
   fImplementationName="POLAND";
-  fVersionString="Welcome to POLAND GUI!\n\t v0.96 of 06-Nov-2017 by JAM (j.adamczewski@gsi.de)";
+  fVersionString="Welcome to POLAND GUI!\n\t v0.961 of 12-Jan-2018 by JAM (j.adamczewski@gsi.de)";
   setWindowTitle(QString("%1 GUI").arg(fImplementationName));
 
   fPolandWidget=new PolandWidget(this);
@@ -840,6 +840,7 @@ GetSensors();
     fPolandWidget->TPiggy3LCD->display (theSetup->GetTemp_Piggy_3());
     fPolandWidget->TPiggy4LCD->display (theSetup->GetTemp_Piggy_4());
 
+
     QString basetext=QString("0x%1").arg(qulonglong(theSetup->GetSensorId_Base()),0,16);
     fPolandWidget->IdBaseLabel->setText(basetext);
 
@@ -887,14 +888,6 @@ void PolandGui::GetSensors ()
   unsigned int version=ReadGosip (fSFP, fSlave, POLAND_REG_FIRMWARE_VERSION);
   theSetup->SetVersionId(version);
 
-//  unsigned long long id_lsb=ReadGosip (fSFP, fSlave, POLAND_REG_ID_LSB);
-//  unsigned long long id_msb=ReadGosip (fSFP, fSlave, POLAND_REG_ID_MSB);
-//  id_msb= id_msb & 0xFFFFFF; // mask out upper crc word
-//  unsigned long long id= (id_msb << 32) + id_lsb;
-//  theSetup->SetSensorId(id);
-
-
-
   unsigned int address=POLAND_REG_TEMP_BASE;
   for(int t=0; t<POLAND_TEMP_NUM;t+=2)
   {
@@ -908,8 +901,10 @@ void PolandGui::GetSensors ()
   {
     unsigned long long id_msb=ReadGosip (fSFP, fSlave, address);
     unsigned long long id_lsb=ReadGosip (fSFP, fSlave, address+4);
+    id_lsb = id_lsb & 0xFFFFFFFF; // clear high bits of long long
     id_msb= id_msb & 0xFFFFFF; // mask out upper crc word
-    unsigned long long id= (id_msb << 32) + id_lsb;
+    unsigned long long id= (id_msb << 32) | id_lsb;
+    //printm("GetSensors for %d got id: 0x%llx. msb:0x%llx , lsb:0x%llx\n",t, id, id_msb, id_lsb);
     theSetup->SetSensorId(t,id);
     address+=8;
   }
