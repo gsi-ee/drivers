@@ -17,7 +17,8 @@
 #include <QTextStream>
 #include <QFile>
 
-#include "Qt/qtcpsocket.h"
+//#include "Qt/qtcpsocket.h"
+#include <QtNetwork/qtcpsocket.h>
 
 // following will use external scripts to read toellner power supply
 //#define TOELLNER_POWER_USE_SCRIPT 1

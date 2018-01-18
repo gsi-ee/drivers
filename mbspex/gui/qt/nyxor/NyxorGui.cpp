@@ -37,7 +37,11 @@ NyxorGui::NyxorGui (QWidget* parent, bool oldsetup) :
 {
 
   fImplementationName="NYXOR";
-  fVersionString="Welcome to NYXOR GUI!\n\t v0.91 of 24-May-2017 by JAM (j.adamczewski@gsi.de)";
+  QString msg=QString( "Welcome to NYXOR GUI!\n\t v0.92 of 17-Jan-2018 by JAM (j.adamczewski@gsi.de)\n\tContains parts of ROC/nxyter GUI by Sergey Linev, GSI\n\t%1").
+         arg(fOldSetup ? "Using old register adresses.": "Using new register addresses.");
+
+  fVersionString=msg;
+
   setWindowTitle(QString("%1 GUI").arg(fImplementationName));
 
   fNyxorWidget=new NyxorWidget(this);

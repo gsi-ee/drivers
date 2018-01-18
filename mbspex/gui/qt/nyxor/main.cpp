@@ -1,5 +1,5 @@
-#include <QtGui/QApplication>
-#include <QtGui/QMainWindow>
+#include <QApplication>
+#include <QMainWindow>
 #include "NyxorGui.h"
 #include <iostream>
 
@@ -7,7 +7,7 @@
 void usage(const char* progname)
 {
   printf (" %s for mbspex library  \n", progname);
-  printf (" v0.99 24-October-2016 by JAM (j.adamczewski@gsi.de)\n");
+  printf (" v0.92 17-January-2018 by JAM (j.adamczewski@gsi.de)\n");
   printf ("********************************************************************\n");
   printf (" usage: %s [-h|-old] \n",progname);
   printf ("\t Options:\n");

@@ -1,5 +1,6 @@
-#include <QtGui/QApplication>
-#include <QtGui/QMainWindow>
+#include <QApplication>
+#include <QMainWindow>
+
 #include "FebexGui.h"
 
 int main(int argc, char *argv[])

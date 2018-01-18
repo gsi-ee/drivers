@@ -1,4 +1,24 @@
+
+QTVERSION = 3
+
+ifneq ($(shell which qmake 2>/dev/null),)
+ifneq ($(shell qmake -qt5 --version 2>&1 | grep "Qt version 5."),)
+QTVERSION = 5
+QMAKE = qmake -qt=5
+else
+ifneq ($(shell qmake --version 2>&1 | grep "Qt version 4."),)
+QTVERSION = 4
+QMAKE = qmake
+else
+ifneq ($(shell which qmake-qt4 2>/dev/null),)
+QTVERSION = 4
 QMAKE = qmake-qt4
+endif
+endif
+endif
+endif
+
+
 
 ifndef PEXORSYS
 
