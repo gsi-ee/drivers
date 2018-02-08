@@ -35,7 +35,7 @@ TamexPadiGui::TamexPadiGui (QWidget* parent) : fShowAmplifiedVoltages(true), Gos
  
  
  fImplementationName="TAMEX-PADI";
- fVersionString="Welcome to TAMEX-PADI GUI!\n\t v0.702 of 08-Feb-2018 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to TAMEX-PADI GUI!\n\t v0.71 of 08-Feb-2018 by JAM (j.adamczewski@gsi.de)";
 
 
   fTamexPadiWidget=new TamexPadiWidget(this);
@@ -345,7 +345,7 @@ void TamexPadiGui::DisableSPI ()
 
 void TamexPadiGui::PadiSPISleep()
 {
-  usleep(900);
+  usleep(500);
 }
 
 
@@ -404,6 +404,7 @@ void TamexPadiGui::DumpSlave()
 {
   // JAM 2016 first demonstration how to get the actual adc values:
   if(!AssertChainConfigured()) return;
+  printm("SFP %d DEV:%d :)",fSFP, fSlave);
 
 //    printm("SFP %d DEV:%d :)",fSFP, fSlave);
 //    for(int adc=0; adc<FEBEX_ADC_NUMADC; ++adc){
@@ -510,6 +511,13 @@ void TamexPadiGui::Threshold_doubleSpinBox_all_changed(double voltage)
          fThresholdSlider[chan]->setValue (regval);
          fThresholdLineEdit[chan]->setText (pre + text.setNum (regval, fNumberBase));
          fThresholdSpinBoxes[chan]->setValue(voltage);
+
+         if (IsAutoApply() && !fBroadcasting)
+             {
+               EvaluateSlave ();
+               GOSIP_BROADCAST_ACTION(ApplyThreshold(chan, regval));
+               // here method to set the threshold registers by value
+             }
        }
   GOSIP_UNLOCK_SLOT
 }
@@ -526,6 +534,13 @@ void  TamexPadiGui::Threshold_doubleSpinBox_changed(int channel, double voltage)
   QString pre;
   fNumberBase == 16 ? pre = "0x" : pre = "";
   fThresholdLineEdit[channel]->setText (pre + text.setNum (regval, fNumberBase));
+
+  // since we lock the Qt slots to avoid prelling, any element has to take care to set the autoapply
+  if (IsAutoApply() && !fBroadcasting)
+     {
+       EvaluateSlave ();
+       GOSIP_BROADCAST_ACTION(ApplyThreshold(channel, regval));
+     }
 
   GOSIP_UNLOCK_SLOT
 }
@@ -627,6 +642,14 @@ void TamexPadiGui::Threshold_Slider_all_changed(int regval)
       fThresholdLineEdit[chan]->setText (pre + text.setNum (regval, fNumberBase));
       fThresholdSpinBoxes[chan]->setValue(volts);
 
+      if (IsAutoApply() && !fBroadcasting)
+         {
+           EvaluateSlave ();
+           GOSIP_BROADCAST_ACTION(ApplyThreshold(chan, regval));
+           // here method to set the threshold registers by value
+         }
+
+
     }
 
    GOSIP_UNLOCK_SLOT
@@ -647,7 +670,7 @@ void  TamexPadiGui::Threshold_Slider_changed(int channel, int regval)
   double volts=GetVoltageFromRegister(regval);
   fThresholdSpinBoxes[channel]->setValue(volts);
 
-
+  // since we lock the Qt slots to avoid prelling, any element has to take care to set the autoapply
   if (IsAutoApply() && !fBroadcasting)
    {
      EvaluateSlave ();
@@ -752,7 +775,12 @@ void TamexPadiGui::Threshold_Text_all_changed()
       fThresholdLineEdit[chan]->setText (txt);
       fThresholdSpinBoxes[chan]->setValue(volts);
 
-    }
+      if (IsAutoApply() && !fBroadcasting)
+        {
+        EvaluateSlave ();
+        GOSIP_BROADCAST_ACTION(ApplyThreshold(chan, val));
+        }
+      }
   GOSIP_UNLOCK_SLOT
 }
 
@@ -771,8 +799,15 @@ void TamexPadiGui::Threshold_Text_all_changed()
     if(ok)
       fThresholdSlider[channel]->setValue(val);
 
-    // TODO forward display of the voltage spinbox:
-    // ? done by setValue via changed signal anyway ?
+    double volts=GetVoltageFromRegister(val);
+    fThresholdSpinBoxes[channel]->setValue(volts);
+
+    // since we lock the Qt slots to avoid prelling, any element has to take care to set the autoapply
+    if (IsAutoApply() && !fBroadcasting)
+       {
+         EvaluateSlave ();
+         GOSIP_BROADCAST_ACTION(ApplyThreshold(channel, val));
+       }
 
     GOSIP_UNLOCK_SLOT
 
@@ -1286,7 +1321,7 @@ void TamexPadiGui::RefreshView ()
             uint16_t thres=theSetup->GetDACValue(channel);
             double thresvoltage=GetVoltageFromRegister(thres);
 
-            std::cout << "TamexPadiGui::RefreshView with thres("<< (int) channel<<")="<< thres<<" ->"<<thresvoltage<<" mV"<<std::endl;
+            //std::cout << "TamexPadiGui::RefreshView with thres("<< (int) channel<<")="<< thres<<" ->"<<thresvoltage<<" mV"<<std::endl;
 
 
             fThresholdLineEdit[channel]->setText (pre+text.setNum (thres, fNumberBase));
@@ -1409,7 +1444,7 @@ void TamexPadiGui::SetRegisters ()
   QApplication::setOverrideCursor (Qt::WaitCursor);
 
   // apply PADI thresholds:
-  uint8_t values[TAMEX_PADI_NUMCHIPS] = { 0, 0 };
+  uint16_t values[TAMEX_PADI_NUMCHIPS] = { 0, 0 };
   for (int c = 0; c < TAMEX_PADI_NUMCHAN; ++c)
   {
     printm ("TamexPadiGui::GetRegisters channel %d sees thresholds 0x%x and 0x%x\n", c, values[0], values[1]);
@@ -1437,11 +1472,11 @@ void TamexPadiGui::SetRegisters ()
 }
 
 
-void TamexPadiGui::SetThreshold(uint8_t globalchannel, uint8_t value)
+void TamexPadiGui::SetThreshold(uint8_t globalchannel, uint16_t value)
 {
   theSetup_GET_FOR_SLAVE(TamexPadiSetup);
   int chip=0, chan=0;
-  uint8_t values[TAMEX_PADI_NUMCHIPS]={0, 0};
+  uint16_t values[TAMEX_PADI_NUMCHIPS]={0, 0};
   theSetup->EvaluateDACIndices(globalchannel, chip, chan);
   for(int p=0; p<TAMEX_PADI_NUMCHIPS; ++p)
   {
@@ -1670,7 +1705,7 @@ void TamexPadiGui::GetRegisters ()
    // threshold set via PADI dacs:
    EnableSPI ();
    // we read the channels of both padis in parallel:
-   uint8_t values[TAMEX_PADI_NUMCHIPS]={0, 0};
+   uint16_t values[TAMEX_PADI_NUMCHIPS]={0, 0};
    PrepareReadDAC_Padi(0);
 
    for (int c = 0; c < TAMEX_PADI_NUMCHAN; ++c)
@@ -1705,30 +1740,16 @@ void TamexPadiGui::GetRegisters ()
 
 
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   bool TamexPadiGui::WriteDAC_Padi (uint8_t chan, uint8_t value_padi[TAMEX_PADI_NUMCHIPS])
+   bool TamexPadiGui::WriteDAC_Padi (uint8_t chan, uint16_t value_padi[TAMEX_PADI_NUMCHIPS])
     {
       if(chan>= TAMEX_PADI_NUMCHAN) return false;
       int com=COM_TAM_PADI_WRITE;
       com |= ((chan & 0xF) << 10);
       com |= ((chan & 0xF) << 26);
-      com |= (value_padi[0] & 0x3F);
-      com |= (value_padi[1] & 0x3F) << 16;
-
+      com |= (value_padi[0] & 0x3FF);
+      com |= (value_padi[1] & 0x3FF) << 16;
+      WriteGosip (fSFP, fSlave, REG_TAM_PADI_DAT_WR, com); //  Load data register for transmission
+      PadiSPISleep();
       WriteGosip (fSFP, fSlave, REG_TAM_PADI_CTL, 0x1);  // Prepare start bit
       PadiSPISleep();
       WriteGosip (fSFP, fSlave, REG_TAM_PADI_CTL, 0x0);  //Start
@@ -1757,13 +1778,15 @@ void TamexPadiGui::GetRegisters ()
       }
 
 
-    bool TamexPadiGui::ReadDAC_Padi (uint8_t (& value_padi)[TAMEX_PADI_NUMCHIPS])
+    bool TamexPadiGui::ReadDAC_Padi (uint16_t (& value_padi)[TAMEX_PADI_NUMCHIPS])
     {
       int val = ReadGosip (fSFP, fSlave, REG_TAM_PADI_DAT_RD); // read back the current shift register value
       PadiSPISleep();
       if(val==-1) return false;
-      value_padi[0] =   val & 0x3F;
-      value_padi[1] =  (val >> 16) & 0x3F;
+      value_padi[0] =   val & 0x3FF;
+      value_padi[1] =  (val >> 16) & 0x3FF;
+      printm("ReadDAC_Padi gets values 0x%x and 0x%x", value_padi[0],  value_padi[1]);
+
       return true;
     }
 

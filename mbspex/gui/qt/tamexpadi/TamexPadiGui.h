@@ -82,7 +82,7 @@ protected:
 
 
   /** set threshold register value for global channel*/
-  void SetThreshold(uint8_t globalchannel, uint8_t value);
+  void SetThreshold(uint8_t globalchannel, uint16_t value);
 
   /** set the enabled status of tdc channels*/
   void SetTDCsEnabledChannels();
@@ -117,13 +117,13 @@ protected:
   /** Write values to SPI bus address of currently selected slave.
    * Note that we write values for the channels of both padi chips simultaneously in one operation.
    *  return value is false on failure*/
-    bool WriteDAC_Padi (uint8_t chan, uint8_t value_padi[TAMEX_PADI_NUMCHIPS]);
+    bool WriteDAC_Padi (uint8_t chan, uint16_t value_padi[TAMEX_PADI_NUMCHIPS]);
 
     /** Read values of currently selected slave
      *  Note that we read values for the channels of both padi chips simultaneously in one operation from the shift register.
      *  The channel to read must be selected before by method PrepareReadDAC_Padi
      *  return value is false on failure*/
-    bool ReadDAC_Padi(uint8_t (&value_padi)[TAMEX_PADI_NUMCHIPS]);
+    bool ReadDAC_Padi(uint16_t (&value_padi)[TAMEX_PADI_NUMCHIPS]);
 
 
     /** Prepare to transfer threshold of given channel*/

@@ -106,7 +106,7 @@ class TamexPadiSetup : public GosipSetup
 public:
 
   /** the (relative) threshold values set on the PADI dacs*/
-  uint8_t fDACValueSet[TAMEX_PADI_NUMCHIPS][TAMEX_PADI_NUMCHAN];
+  uint16_t fDACValueSet[TAMEX_PADI_NUMCHIPS][TAMEX_PADI_NUMCHAN];
 
   /** the chipversion info of the PADIs*/
   uint8_t fChipVersion[TAMEX_PADI_NUMCHIPS];
@@ -186,7 +186,7 @@ public:
     return fDACValueSet[chip][chan];
   }
 
-  int SetDACValue(int chip, int chan, uint8_t value)
+  int SetDACValue(int chip, int chan, uint16_t value)
     {
       if(chip<0 || chip>=TAMEX_PADI_NUMCHIPS || chan <0 || chan >=TAMEX_PADI_NUMCHAN) return -1; // error handling
       fDACValueSet[chip][chan]=value;
@@ -210,7 +210,7 @@ public:
     }
 
   /** helper function to set DAC value via global channel number*/
-  int SetDACValue(int globalchannel,  uint8_t value)
+  int SetDACValue(int globalchannel,  uint16_t value)
      {
           int chip=0, chan=0;
           EvaluateDACIndices(globalchannel, chip, chan);
