@@ -7,6 +7,7 @@ GUI_POLAND = poland
 GUI_FEBEX = febex
 GUI_NYXOR = nyxor
 GUI_APFEL = apfel
+GUI_TAMEX = tamexpadi
 
 .PHONY: all clean install  
 
@@ -20,6 +21,7 @@ else
 endif	
 	cd $(GUI_FEBEX); make
 	cd $(GUI_APFEL); make
+	cd $(GUI_TAMEX); make	
 	
 
 install: 
@@ -31,9 +33,10 @@ else
 endif
 	cd $(GUI_FEBEX); make install
 	cd $(GUI_APFEL); make install
+	cd $(GUI_TAMEX); make install	
 
 clean:
-
+	cd $(GUI_TAMEX); make clean	
 	cd $(GUI_POLAND); make clean
 	cd $(GUI_NYXOR); make clean
 	cd $(GUI_FEBEX); make clean
