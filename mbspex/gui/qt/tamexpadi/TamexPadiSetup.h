@@ -57,7 +57,7 @@
 #define COM_CTRL_NOREF_RESET 0x7c2050
 
 /* tamex control register value to apply with no reference channel enabled*/
-#define COM_CTRL_NOREF_APPLY 0x7c20c0
+#define COM_CTRL_NOREF_APPLY 0x7c2040
 
 
 /** register bit for "enable or" lemo output */

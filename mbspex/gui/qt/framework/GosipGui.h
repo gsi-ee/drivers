@@ -66,6 +66,14 @@ fSlotGuard =true;
 fSlotGuard =false;
 
 
+/** JAM2018: the following pattern is used in most of the gui slots for autoapply:*/
+#define GOSIP_AUTOAPPLY(X)\
+if (IsAutoApply() && !fBroadcasting)\
+     {\
+       EvaluateSlave ();\
+       GOSIP_BROADCAST_ACTION(X);\
+     }\
+
 
 
 /** JAM2017 helper macro to cast setup structure to implementation class later.
