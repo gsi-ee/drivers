@@ -60,6 +60,9 @@ protected:
   /** Switches between amplified voltages (+- 600mV) and non amplified (+- 3mV)*/
   bool fShowAmplifiedVoltages;
 
+  /** if true dump all register values to terminal. To be used for DataDump button*/
+  bool fTamexDumpMode;
+
  
  /** reset current febex slave, i.e. initialize it to defaults*/
   virtual void ResetSlave ();
@@ -132,7 +135,7 @@ protected:
 
 
 
-  /** dump current ADC values of currently set FEBEX*/
+  /** dump current values of currently set FEBEX*/
   void DumpSlave();
 
  
@@ -143,6 +146,10 @@ protected:
    * This function is capable of usage in GOSIP_BROADCAST_ACTION macro*/
   void ApplyThreshold(int channel, int val);
 
+
+  /** apply threshold to all channels by PADI broadcast feature.
+     * This function is capable of usage in GOSIP_BROADCAST_ACTION macro*/
+  void ApplyThresholdToAll(int val);
 
 
   /** evaluate change of threshold voltage spinbox for global  channel channel*/

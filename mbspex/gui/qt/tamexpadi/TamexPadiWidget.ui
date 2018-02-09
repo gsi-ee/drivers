@@ -1320,7 +1320,7 @@
          <item>
           <widget class="QCheckBox" name="VoltageModeCheckBox">
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Display amplified voltages (-600mV ... +600mV)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Display thresholds with amplified voltages (-600mV ... +600mV)&lt;/p&gt;&lt;p&gt;Otherwise, show non-amplified range (-3mV....+3mV))&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="text">
             <string>Amplilfied voltages</string>
@@ -1352,7 +1352,7 @@
               <item>
                <widget class="QSlider" name="Threshold_Slider_00">
                 <property name="toolTip">
-                 <string>Threshold 00 value</string>
+                 <string/>
                 </property>
                 <property name="minimum">
                  <number>0</number>
@@ -1390,7 +1390,7 @@
               <item>
                <widget class="QDoubleSpinBox" name="Threshold_doubleSpinBox_00">
                 <property name="toolTip">
-                 <string>PADI Threshold_00 </string>
+                 <string>Threshold_00 </string>
                 </property>
                 <property name="suffix">
                  <string> mV</string>

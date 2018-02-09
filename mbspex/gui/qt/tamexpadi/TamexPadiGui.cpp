@@ -23,19 +23,20 @@
 
 
 
-
+#define TAMEX_PRINT_DUMP(args...) \
+if(fTamexDumpMode) printm( args );
 
 
 /*
  *  Constructs a TamexPadiGui which is a child of 'parent', with the
  *  name 'name'.'
  */
-TamexPadiGui::TamexPadiGui (QWidget* parent) : fShowAmplifiedVoltages(true), GosipGui (parent)
+TamexPadiGui::TamexPadiGui (QWidget* parent) : fShowAmplifiedVoltages(true), fTamexDumpMode(false), GosipGui (parent)
 {
  
  
  fImplementationName="TAMEX-PADI";
- fVersionString="Welcome to TAMEX-PADI GUI!\n\t v0.71 of 08-Feb-2018 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to TAMEX-PADI GUI!\n\t v0.80 of 09-Feb-2018 by JAM (j.adamczewski@gsi.de)";
 
 
   fTamexPadiWidget=new TamexPadiWidget(this);
@@ -402,27 +403,12 @@ void TamexPadiGui::ResetSlave()
 
 void TamexPadiGui::DumpSlave()
 {
-  // JAM 2016 first demonstration how to get the actual adc values:
   if(!AssertChainConfigured()) return;
-  printm("SFP %d DEV:%d :)",fSFP, fSlave);
+  printm("###### SFP %d DEV:%d :)",fSFP, fSlave);
+  fTamexDumpMode=true;
+  GetRegisters();
 
-//    printm("SFP %d DEV:%d :)",fSFP, fSlave);
-//    for(int adc=0; adc<FEBEX_ADC_NUMADC; ++adc){
-//      for (int chan=0; chan<FEBEX_ADC_NUMCHAN; ++chan){
-//        int val=ReadADC_TamexPadi(adc,chan);
-//        if(val<0)
-//          printm("Read error for adc:%d chan:%d",adc,chan);
-//        else
-//          {
-//            if(fNumberBase==16)
-//              printm("Val (adc:0x%x chan:0x%x)=0x%x",adc,chan,val);
-//            else
-//              printm("Val (adc:%d chan:%d)=%d",adc,chan,val);
-//        }
-//      }
-//
-//    }
-
+  fTamexDumpMode=false;
 }
 
 void TamexPadiGui::ApplyFileConfig(int )
@@ -447,6 +433,27 @@ void TamexPadiGui::ApplyThreshold(int channel, int val)
 
 
 }
+
+void TamexPadiGui::ApplyThresholdToAll(int val)
+{
+  theSetup_GET_FOR_SLAVE(TamexPadiSetup);
+  uint16_t thres=val;
+  for(int c=0; c<TAMEX_TDC_NUMCHAN; ++c)
+    theSetup->SetDACValue(c,thres); // keep setup structure consistent
+
+  uint16_t values[TAMEX_PADI_NUMCHIPS]={0, 0};
+  for(int p=0; p<TAMEX_PADI_NUMCHIPS; ++p)
+     {
+       values[p]=val;
+     }
+  // broadcast the settings to the chip (with channel 8)
+  if(!WriteDAC_Padi (8, values))
+      {
+      printm("SetThreshold has error setting value 0x%x to all channels",val);
+      return;
+     }
+}
+
 
 
 
@@ -498,10 +505,7 @@ void TamexPadiGui::Threshold_doubleSpinBox_all_changed(double voltage)
   QString text;
   QString pre;
   fNumberBase == 16 ? pre = "0x" : pre = "";
-
-
   int regval=GetRegisterFromVoltage(voltage);
-
   fTamexPadiWidget->Threshold_Slider_all->setValue(regval);
   fTamexPadiWidget->Threshold_Value_all->setText (pre + text.setNum (regval, fNumberBase));
 
@@ -512,12 +516,21 @@ void TamexPadiGui::Threshold_doubleSpinBox_all_changed(double voltage)
          fThresholdLineEdit[chan]->setText (pre + text.setNum (regval, fNumberBase));
          fThresholdSpinBoxes[chan]->setValue(voltage);
 
-         if (IsAutoApply() && !fBroadcasting)
-             {
-               EvaluateSlave ();
-               GOSIP_BROADCAST_ACTION(ApplyThreshold(chan, regval));
-               // here method to set the threshold registers by value
-             }
+//////////////////// too time consuming:
+//         if (IsAutoApply() && !fBroadcasting)
+//             {
+//               EvaluateSlave ();
+//               GOSIP_BROADCAST_ACTION(ApplyThreshold(chan, regval));
+//               // here method to set the threshold registers by value
+//             }
+////////////////////////////////////////
+
+       } // for
+   // better use the padi broadcast feature:
+       if (IsAutoApply() && !fBroadcasting)
+       {
+         EvaluateSlave ();
+         GOSIP_BROADCAST_ACTION(ApplyThresholdToAll(regval));
        }
   GOSIP_UNLOCK_SLOT
 }
@@ -642,15 +655,24 @@ void TamexPadiGui::Threshold_Slider_all_changed(int regval)
       fThresholdLineEdit[chan]->setText (pre + text.setNum (regval, fNumberBase));
       fThresholdSpinBoxes[chan]->setValue(volts);
 
-      if (IsAutoApply() && !fBroadcasting)
-         {
-           EvaluateSlave ();
-           GOSIP_BROADCAST_ACTION(ApplyThreshold(chan, regval));
-           // here method to set the threshold registers by value
-         }
-
+// does work, but is time consuming:
+//      if (IsAutoApply() && !fBroadcasting)
+//         {
+//           EvaluateSlave ();
+//           GOSIP_BROADCAST_ACTION(ApplyThreshold(chan, regval));
+//           // here method to set the threshold registers by value
+//         }
+//////////////////////
 
     }
+   // better use the padi broadcast feature:
+   if (IsAutoApply() && !fBroadcasting)
+   {
+     EvaluateSlave ();
+     GOSIP_BROADCAST_ACTION(ApplyThresholdToAll(regval));
+   }
+
+
 
    GOSIP_UNLOCK_SLOT
 }
@@ -775,12 +797,23 @@ void TamexPadiGui::Threshold_Text_all_changed()
       fThresholdLineEdit[chan]->setText (txt);
       fThresholdSpinBoxes[chan]->setValue(volts);
 
-      if (IsAutoApply() && !fBroadcasting)
-        {
-        EvaluateSlave ();
-        GOSIP_BROADCAST_ACTION(ApplyThreshold(chan, val));
-        }
+///////////// too time consuming:
+//      if (IsAutoApply() && !fBroadcasting)
+//        {
+//        EvaluateSlave ();
+//        GOSIP_BROADCAST_ACTION(ApplyThreshold(chan, val));
+//        }
+/////////////////////////////////
       }
+
+   // better use the padi broadcast feature:
+     if (IsAutoApply() && !fBroadcasting)
+     {
+       EvaluateSlave ();
+       GOSIP_BROADCAST_ACTION(ApplyThresholdToAll(val));
+     }
+
+
   GOSIP_UNLOCK_SLOT
 }
 
@@ -1345,6 +1378,12 @@ void TamexPadiGui::RefreshView ()
 
        }
 
+  // put chip version to header of the padi boxes:
+  int v0=theSetup->GetPadiVersion(0);
+  fTamexPadiWidget->PADIgroupBox_0->setTitle(QString("PADI 0 - version 0x%1").arg(v0,0,16));
+  int v1=theSetup->GetPadiVersion(1);
+  fTamexPadiWidget->PADIgroupBox_1->setTitle(QString("PADI 1 - version 0x%1").arg(v1,0,16));
+
 
   // now the tdc control registers:
   int trigpre=theSetup->GetPreTriggerWindow();
@@ -1384,9 +1423,10 @@ void TamexPadiGui::RefreshView ()
   int allval=fTamexPadiWidget->Threshold_Slider_all->value();
   fTamexPadiWidget->Threshold_Value_all->setText (pre + text.setNum (allval, fNumberBase));
 
-
-  RefreshChains();
-  RefreshStatus();
+  GosipGui::RefreshView();
+  // ^this handles the refresh of chains and status. better use base class function here! JAM2018
+  //RefreshChains();
+  //RefreshStatus();
 }
 
 
@@ -1652,13 +1692,13 @@ void TamexPadiGui::GetRegisters ()
   //////////////////////////////////////////////
   // here read channel enabled status register:
   int regenabled= ReadGosip (fSFP, fSlave, REG_TAM_EN_1);
-  printm("TamexPadiGui::GetRegisters sees channel enabled register 0x%x \n", regenabled);
+  TAMEX_PRINT_DUMP("Channel enabled register \t0x%x", regenabled);
   theSetup->SetEnabledRegister(regenabled);
 
   //////////////////////////////////////////////
   // trigger windows:
    int trigwinreg=ReadGosip (fSFP, fSlave, REG_TAM_TRG_WIN);
-   printm("TamexPadiGui::GetRegisters sees trigger window register 0x%x \n", trigwinreg);
+   TAMEX_PRINT_DUMP("Trigger window register \t0x%x", trigwinreg);
 
    bool windowenabled= ((trigwinreg & (1 << 31)) == (1 << 31));
    int pretime  = trigwinreg & 0x7FFF;
@@ -1671,7 +1711,7 @@ void TamexPadiGui::GetRegisters ()
   /////////////////////////////////////////////////////////////////////////////////7
   // clock source:
    int clockreg=ReadGosip (fSFP, fSlave, REG_TAM_CLK_SEL);
-   printm("TamexPadiGui::GetRegisters sees clock source register 0x%x \n", clockreg);
+   TAMEX_PRINT_DUMP("Clock source register  \t0x%x", clockreg);
    int clk= clockreg & 0xFF;
    if(clk== 0x21)
    {
@@ -1689,7 +1729,7 @@ void TamexPadiGui::GetRegisters ()
    //////////////////////////////////////////////////////////////////////////
   // lemo output and reference channel:
    int control=ReadGosip (fSFP, fSlave, REG_TAM_CTRL);
-   printm("TamexPadiGui::GetRegisters sees tamex control register 0x%x \n", control);
+   TAMEX_PRINT_DUMP("Tamex control register \t0x%x", control);
 
    bool hasrefchannel = ((control & COM_CTRL_REFCHAN_APPLY) == COM_CTRL_REFCHAN_APPLY ? true : false);
    bool enable_or = ((control & COM_CTRL_ENABLE_OR_BIT) == COM_CTRL_ENABLE_OR_BIT ? true : false);
@@ -1704,6 +1744,12 @@ void TamexPadiGui::GetRegisters ()
    /////////////////////////////////////////////////////////////////////////////
    // threshold set via PADI dacs:
    EnableSPI ();
+   TAMEX_PRINT_DUMP("______________________________");
+   TAMEX_PRINT_DUMP("   DAC threshold settings:    ");
+   TAMEX_PRINT_DUMP("Channel \t| PADI-0 \t| PADI-1 ");
+   TAMEX_PRINT_DUMP("--------\t+------  \t+--------");
+
+
    // we read the channels of both padis in parallel:
    uint16_t values[TAMEX_PADI_NUMCHIPS]={0, 0};
    PrepareReadDAC_Padi(0);
@@ -1716,16 +1762,17 @@ void TamexPadiGui::GetRegisters ()
                    printm("GetRegisters has error reading PADI channels %d",c);
                    return;
                  }
-               printm("TamexPadiGui::GetRegisters channel %d sees thresholds 0x%x and 0x%x\n",c, values[0], values[1]);
+               TAMEX_PRINT_DUMP("  %d    \t| 0x%x    \t| 0x%x ",c, values[0], values[1]);
                for(int p=0; p<TAMEX_PADI_NUMCHIPS; ++p)
                {
                  theSetup->SetDACValue(p,c,values[p]);
                }
             }
    // after last channel, we read the chip version which is available as channel 8:
+   PrepareReadDAC_Padi(0); // dummy to shift result out. prepares next channel 0, but should not harm
    ReadDAC_Padi(values);
 
-   printm("TamexPadiGui::GetRegisters sees chipversions 0x%x and 0x%x\n", values[0], values[1]);
+   TAMEX_PRINT_DUMP("Version\t| 0x%x    \t| 0x%x", values[0], values[1]);
    for(int p=0; p<TAMEX_PADI_NUMCHIPS; ++p)
      {
      theSetup->SetPadiVersion(p,values[p]);
@@ -1742,7 +1789,8 @@ void TamexPadiGui::GetRegisters ()
 
    bool TamexPadiGui::WriteDAC_Padi (uint8_t chan, uint16_t value_padi[TAMEX_PADI_NUMCHIPS])
     {
-      if(chan>= TAMEX_PADI_NUMCHAN) return false;
+      if(chan> TAMEX_PADI_NUMCHAN) return false;
+      // note that for chan==TAMEX_PADI_NUMCHAN, we will broadcast settings to all DACs
       int com=COM_TAM_PADI_WRITE;
       com |= ((chan & 0xF) << 10);
       com |= ((chan & 0xF) << 26);
@@ -1763,7 +1811,8 @@ void TamexPadiGui::GetRegisters ()
 
       bool TamexPadiGui::PrepareReadDAC_Padi(uint8_t chan)
       {
-         if(chan>= TAMEX_PADI_NUMCHAN) return false;
+         if(chan> TAMEX_PADI_NUMCHAN) return false;
+      // note that for chan==TAMEX_PADI_NUMCHAN, we read out chipversion
       int com=COM_TAM_PADI_READ;
       com |= ((chan & 0xF) << 10);
       com |= ((chan & 0xF) << 26);
@@ -1785,7 +1834,7 @@ void TamexPadiGui::GetRegisters ()
       if(val==-1) return false;
       value_padi[0] =   val & 0x3FF;
       value_padi[1] =  (val >> 16) & 0x3FF;
-      printm("ReadDAC_Padi gets values 0x%x and 0x%x", value_padi[0],  value_padi[1]);
+      //printm("ReadDAC_Padi gets values 0x%x and 0x%x", value_padi[0],  value_padi[1]);
 
       return true;
     }
