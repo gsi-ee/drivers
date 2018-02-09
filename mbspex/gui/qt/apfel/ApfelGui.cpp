@@ -35,9 +35,10 @@ ApfelGui::ApfelGui (QWidget* parent) :
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.9990 of 8-Dec-2017 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.9991 of 9-Feb-2018 by JAM (j.adamczewski@gsi.de)\n";
 
   fApfelWidget=new ApfelWidget();
+  Settings_scrollArea->setMinimumHeight(550); // JAM2018 - adjust default container for large APFEL
   Settings_scrollArea->setWidget(fApfelWidget);
   setWindowTitle(QString("%1 GUI").arg(fImplementationName));
   ClearOutputBtn_clicked ();
@@ -2251,9 +2252,8 @@ void ApfelGui::RefreshView ()
     // also put most recent sample parameters to display:
     RefreshLastADCSample (channel);
   }
-
-  RefreshChains ();
-  RefreshStatus ();
+  GosipGui::RefreshView ();
+   // ^this handles the refresh of chains and status. better use base class function here! JAM2018
 }
 
 

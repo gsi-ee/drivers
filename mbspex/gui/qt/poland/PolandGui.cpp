@@ -31,7 +31,7 @@ PolandGui::PolandGui (QWidget* parent) :
     GosipGui (parent), fTriggerOn(true)
 {
   fImplementationName="POLAND";
-  fVersionString="Welcome to POLAND GUI!\n\t v0.961 of 12-Jan-2018 by JAM (j.adamczewski@gsi.de)";
+  fVersionString="Welcome to POLAND GUI!\n\t v0.965 of 9-Feb-2018 by JAM (j.adamczewski@gsi.de)";
   setWindowTitle(QString("%1 GUI").arg(fImplementationName));
 
   fPolandWidget=new PolandWidget(this);
@@ -156,31 +156,22 @@ void PolandGui::ApplyDACSettings()
 
 void PolandGui::QFW_changed ()
 {
-  if(!checkBox_AA->isChecked()) return;
   GOSIP_LOCK_SLOT
-  //std::cout << "PolandGui::QFW_changed()"<< std::endl;
-  EvaluateSlave ();
-  GOSIP_BROADCAST_ACTION(ApplyQFWSettings());
+  GOSIP_AUTOAPPLY(ApplyQFWSettings());
   GOSIP_UNLOCK_SLOT
 }
 
 void PolandGui::DAC_changed ()
 {
-  if(!checkBox_AA->isChecked()) return;
   GOSIP_LOCK_SLOT
-  //std::cout << "PolandGui::DAC_changed()"<< std::endl;
-  EvaluateSlave ();
-  GOSIP_BROADCAST_ACTION(ApplyDACSettings());
+  GOSIP_AUTOAPPLY(ApplyDACSettings());
   GOSIP_UNLOCK_SLOT
 }
 
 void PolandGui::Fan_changed ()
 {
-  if(!checkBox_AA->isChecked()) return;
   GOSIP_LOCK_SLOT
-  //std::cout << "PolandGui::Fan_changed()"<< std::endl;
-  EvaluateSlave ();
-  GOSIP_BROADCAST_ACTION(ApplyFanSettings());
+  GOSIP_AUTOAPPLY(ApplyFanSettings());
 
   // for autoapply refresh fan readout immediately:
   if(AssertNoBroadcast(false))

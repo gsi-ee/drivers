@@ -35,7 +35,7 @@ FebexGui::FebexGui (QWidget* parent) : GosipGui (parent)
  
  
  fImplementationName="FEBEX";
- fVersionString="Welcome to FEBEX GUI!\n\t v0.976 of 24-May-2017 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to FEBEX GUI!\n\t v0.977 of 9-Feb-2018 by JAM (j.adamczewski@gsi.de)";
 
 
   fFebexWidget=new FebexWidget(this);
@@ -625,11 +625,7 @@ void FebexGui::Threshold_spinBox_all_changed(int val)
 
 void  FebexGui::Threshold_spinBox_changed(int channel, int val)
 {
-  if (IsAutoApply() && !fBroadcasting)
-   {
-     EvaluateSlave ();
-     GOSIP_BROADCAST_ACTION(ApplyThreshold(channel, val));
-   }
+  GOSIP_AUTOAPPLY(ApplyThreshold(channel, val));
 }
 
 void FebexGui::Threshold_spinBox_00_changed (int val)
@@ -711,11 +707,7 @@ void FebexGui::ChannelDisabled_toggled_all(bool on)
 
 void FebexGui::Disabled_toggled (int channel, bool on)
 {
-  if (IsAutoApply () && !fBroadcasting)
-  {
-    EvaluateSlave ();
-    GOSIP_BROADCAST_ACTION(ApplyDisabled(channel, on));
-  }
+  GOSIP_AUTOAPPLY(ApplyDisabled(channel, on));
 }
 
 
@@ -801,11 +793,7 @@ void FebexGui::ChannelSparsy_toggled_all(bool on)
 
 void FebexGui::Sparsy_toggled (int channel, bool on)
 {
-  if (IsAutoApply () && !fBroadcasting)
-  {
-    EvaluateSlave ();
-    GOSIP_BROADCAST_ACTION(ApplySparsy(channel, on));
-  }
+  GOSIP_AUTOAPPLY(ApplySparsy(channel, on));
 }
 
 
@@ -894,11 +882,7 @@ void FebexGui::ChannelTrigger_toggled_all(bool on)
 
 void FebexGui::IntTrigger_toggled (int channel, bool on)
 {
-  if (IsAutoApply () && !fBroadcasting)
-  {
-    EvaluateSlave ();
-    GOSIP_BROADCAST_ACTION(ApplyIntTrigger(channel, on));
-  }
+  GOSIP_AUTOAPPLY(ApplyIntTrigger(channel, on));
 }
 
 
@@ -987,12 +971,7 @@ void FebexGui::ChannelTrigger_toggled_00 (bool on)
 
  void FebexGui::DAC_spinBox_changed (int channel, int val)
 {
-  if (IsAutoApply() && !fBroadcasting)
-  {
-    EvaluateSlave ();
-    GOSIP_BROADCAST_ACTION(AutoApplyRefresh(channel, val));
-  }
-
+   GOSIP_AUTOAPPLY(AutoApplyRefresh(channel, val));
 }
 
 
@@ -1228,8 +1207,9 @@ void FebexGui::RefreshView ()
           int adc=AcquireBaselineSample(channel);
           fADCLineEdit[channel]->setText (pre+text.setNum (adc, fNumberBase));
      }
-  RefreshChains();
-  RefreshStatus();
+
+  GosipGui::RefreshView ();
+   // ^this handles the refresh of chains and status. better use base class function here! JAM2018
 }
 
 

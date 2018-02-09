@@ -37,7 +37,7 @@
         <x>0</x>
         <y>0</y>
         <width>1346</width>
-        <height>123</height>
+        <height>121</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout">
@@ -218,7 +218,7 @@
         <x>0</x>
         <y>0</y>
         <width>1346</width>
-        <height>822</height>
+        <height>824</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_5">
@@ -476,10 +476,16 @@
        </item>
        <item row="1" column="0">
         <widget class="QScrollArea" name="Settings_scrollArea">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
-           <height>550</height>
+           <height>450</height>
           </size>
          </property>
          <property name="widgetResizable">
@@ -491,7 +497,7 @@
             <x>0</x>
             <y>0</y>
             <width>1324</width>
-            <height>546</height>
+            <height>446</height>
            </rect>
           </property>
          </widget>
@@ -499,6 +505,12 @@
        </item>
        <item row="2" column="0">
         <widget class="QGroupBox" name="ShowLogBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="title">
           <string>Show output</string>
          </property>

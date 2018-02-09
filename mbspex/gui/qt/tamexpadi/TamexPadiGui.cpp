@@ -1239,8 +1239,6 @@ void TamexPadiGui::RefreshView ()
 
   GosipGui::RefreshView ();
   // ^this handles the refresh of chains and status. better use base class function here! JAM2018
-  //RefreshChains();
-  //RefreshStatus();
 }
 
 void TamexPadiGui::EvaluateView ()

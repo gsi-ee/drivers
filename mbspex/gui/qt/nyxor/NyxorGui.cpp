@@ -45,6 +45,7 @@ NyxorGui::NyxorGui (QWidget* parent, bool oldsetup) :
   setWindowTitle(QString("%1 GUI").arg(fImplementationName));
 
   fNyxorWidget=new NyxorWidget(this);
+  Settings_scrollArea->setMinimumHeight(550); // JAM2018 - adjust default container for large nxyter stuff
   Settings_scrollArea->setWidget(fNyxorWidget);
 
  
@@ -457,16 +458,20 @@ void NyxorGui::RefreshView ()
   fADCTab->RefreshView();
   fDACTab->RefreshView();
 
-  RefreshChains();
 
-  QString statustext;
-  statustext.append ("SFP ");
-  statustext.append (text.setNum (fSFP));
-  statustext.append (" DEV ");
-  statustext.append (text.setNum (fSlave));
-  statustext.append (" - Last refresh:");
-  statustext.append (QDateTime::currentDateTime ().toString (Qt::TextDate));
-  StatusLabel->setText (statustext);
+  GosipGui::RefreshView ();
+   // ^this handles the refresh of chains and status. better use base class function here! JAM2018
+
+//  RefreshChains();
+//
+//  QString statustext;
+//  statustext.append ("SFP ");
+//  statustext.append (text.setNum (fSFP));
+//  statustext.append (" DEV ");
+//  statustext.append (text.setNum (fSlave));
+//  statustext.append (" - Last refresh:");
+//  statustext.append (QDateTime::currentDateTime ().toString (Qt::TextDate));
+//  StatusLabel->setText (statustext);
 
 }
 

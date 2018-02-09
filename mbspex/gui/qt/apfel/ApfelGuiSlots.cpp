@@ -116,11 +116,8 @@ void ApfelGui::RefreshSampleBtn_clicked ()
 
 void ApfelGui::SwitchChanged ()
 {
-  if (checkBox_AA->isChecked () && !fBroadcasting)
-  {
-    EvaluateSlave ();
-    GOSIP_BROADCAST_ACTION(AutoApplySwitch());
-  }
+  GOSIP_AUTOAPPLY(AutoApplySwitch());
+
 }
 
 void ApfelGui::PulserTimeout ()
@@ -157,12 +154,7 @@ void ApfelGui::PulserDisplayTimeout ()
 
 void ApfelGui::PulserChanged (int apfel)
 {
-  if (checkBox_AA->isChecked () && !fBroadcasting)
-  {
-    EvaluateSlave ();
-    GOSIP_BROADCAST_ACTION(AutoApplyPulser(apfel));
-  }
-
+  GOSIP_AUTOAPPLY(AutoApplyPulser(apfel));
 }
 
 void ApfelGui::PulserChanged_0 ()
@@ -207,11 +199,7 @@ void ApfelGui::PulserChanged_7 ()
 
 void ApfelGui::GainChanged (int apfel, int channel)
 {
-  if (checkBox_AA->isChecked () && !fBroadcasting)
-  {
-    EvaluateSlave ();
-    GOSIP_BROADCAST_ACTION(AutoApplyGain(apfel,channel));
-  }
+  GOSIP_AUTOAPPLY(AutoApplyGain(apfel,channel));
 }
 
 void ApfelGui::GainChanged_0 ()
@@ -301,12 +289,7 @@ void ApfelGui::GainChanged_15 ()
 void ApfelGui::PowerChanged(int apfel, int checkstate)
 {
   //std::cout <<"PowerChanged slot, apfel="<<apfel<<", state="<<checkstate  <<std::endl;
-
-  if (checkBox_AA->isChecked () && !fBroadcasting)
-   {
-     EvaluateSlave ();
-     GOSIP_BROADCAST_ACTION(AutoApplyPower(apfel,checkstate));
-   }
+  GOSIP_AUTOAPPLY(AutoApplyPower(apfel,checkstate));
 }
 
 
@@ -365,11 +348,7 @@ void ApfelGui::DAC_enterText (int apfel, int dac)
   fDACSlider[apfel][dac]->setValue (val & 0x3FF);
 
   //std::cout << "ApfelGui::DAC_enterText=" << apfel << ", dac=" << dac << ", val=" << val << std::endl;
-  if (checkBox_AA->isChecked () && !fBroadcasting)
-  {
-    EvaluateSlave ();
-    GOSIP_BROADCAST_ACTION(AutoApplyDAC(apfel,dac, val));
-  }
+  GOSIP_AUTOAPPLY(AutoApplyDAC(apfel,dac, val));
   GOSIP_UNLOCK_SLOT
 }
 
@@ -539,12 +518,7 @@ void ApfelGui::DAC_changed (int apfel, int dac, int val)
   fDACLineEdit[apfel][dac]->setText (pre + text.setNum (val, fNumberBase));
 
   // if autoapply mode, immediately set to structure and
-
-  if (checkBox_AA->isChecked () && !fBroadcasting)
-  {
-    EvaluateSlave ();
-    GOSIP_BROADCAST_ACTION(AutoApplyDAC(apfel,dac, val));
-  }
+  GOSIP_AUTOAPPLY(AutoApplyDAC(apfel,dac, val));
   GOSIP_UNLOCK_SLOT
 
 }
@@ -796,11 +770,7 @@ void ApfelGui::DAC_spinBox_changed (int channel, int val)
 {
   GOSIP_LOCK_SLOT
   //std::cout << "ApfelGui::DAC_spinBox_changed, channel="<<channel<<",  val="<<val << std::endl;
-  if (checkBox_AA->isChecked () && !fBroadcasting)
-  {
-    EvaluateSlave ();
-    GOSIP_BROADCAST_ACTION(AutoApplyRefresh(channel, val));
-  }
+  GOSIP_AUTOAPPLY(AutoApplyRefresh(channel, val));
  GOSIP_UNLOCK_SLOT
 }
 
@@ -904,15 +874,7 @@ void ApfelGui::InverseMapping_changed (int on)
 void ApfelGui::BaselineInvert_changed (int on)
 {
   //std::cout << "BaselineInvert_changed to" <<  on << std::endl;
-
-   if (checkBox_AA->isChecked () && !fBroadcasting)
-   {
-     EvaluateSlave ();
-     GOSIP_BROADCAST_ACTION(SetBaselineInverted(!on));
-     //NOTE: "inverted" on gui means the old behaviour (pasem), in fact internally this is the non inverted state
-   }
-
-
+  GOSIP_AUTOAPPLY(SetBaselineInverted(!on));
 }
 
 
@@ -926,13 +888,7 @@ void ApfelGui::PulseBroadcast_changed (int on)
 
   if (on)
   {
-
-    if (checkBox_AA->isChecked () && !fBroadcasting)
-    {
-      EvaluateSlave ();
-      GOSIP_BROADCAST_ACTION(SetBroadcastPulser());
-    }
-
+    GOSIP_AUTOAPPLY(SetBroadcastPulser());
   }
 
 }
