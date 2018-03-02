@@ -1,11 +1,11 @@
 ifneq ($(KERNELRELEASE),)
 # When Makefile is invoked from kernel build system, define objects
 
-#ccflags-y += -DGIT_REVISION="$(shell git --git-dir=$(src)/../.git log -n1 --pretty='format:%h (%ci)')"
+ccflags-y += -DGIT_REVISION="$(shell git --git-dir=$(src)/../.git log -n1 --pretty='format:%h (%ci)')"
 
-# replace dynamic git revision by most recent from
-#ccflags-y += -DGIT_REVISION="$(shell git --git-dir=$(src)/../../fpga-config-space/.git log -n1 --pretty='format:%h (%ci)')"
-ccflags-y += -DGIT_REVISION="8893c2e (2018-02-27 15:36:49 +0100)"
+# following to get rid of kernel 4.9 errors:
+ccflags-y +=-Wno-date-time 
+
 
 obj-m += pcie_wb.o wishbone.o spec_wb.o
 # Only build wishbone-serial if it was missing
