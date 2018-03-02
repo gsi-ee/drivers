@@ -13,12 +13,14 @@ ccflags-y +=-Wno-date-time
 
 
 obj-m += pcie_wb.o wishbone.o spec_wb.o
+
+# For MBS we always want to have wishbone-serial
 # Only build wishbone-serial if it was missing
-ifneq ($(CONFIG_USB_SERIAL_WISHBONE),m)
-ifneq ($(CONFIG_USB_SERIAL_WISHBONE),y)
+#ifneq ($(CONFIG_USB_SERIAL_WISHBONE),m)
+#ifneq ($(CONFIG_USB_SERIAL_WISHBONE),y)
 obj-m += wishbone-serial.o
-endif
-endif
+#endif
+#endif
 
 else
 # When the Makefile is run directly, invoke the kernel build system
