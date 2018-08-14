@@ -29,7 +29,7 @@
 #include <linux/list.h>
 #include <linux/jiffies.h>
 #include <linux/wait.h>
-
+#include <linux/vmalloc.h>
 
 #include "pexor_user.h"
 

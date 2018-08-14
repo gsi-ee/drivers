@@ -22,16 +22,25 @@ static DEVICE_ATTR(rcvbufs, S_IRUGO, pexor_sysfs_rcvbuffers_show, NULL);
 static DEVICE_ATTR(codeversion, S_IRUGO, pexor_sysfs_codeversion_show, NULL);
 static DEVICE_ATTR(dmaregs, S_IRUGO, pexor_sysfs_dmaregs_show, NULL);
 static DEVICE_ATTR(trixorregs, S_IRUGO, pexor_sysfs_trixorregs_show, NULL);
-static DEVICE_ATTR(trixorfcti, S_IWUGO | S_IRUGO , pexor_sysfs_trixor_fctime_show, pexor_sysfs_trixor_fctime_store);
-static DEVICE_ATTR(trixorcvti, S_IWUGO | S_IRUGO , pexor_sysfs_trixor_cvtime_show, pexor_sysfs_trixor_cvtime_store);
 
+//static DEVICE_ATTR(trixorfcti, S_IWUGO | S_IRUGO , pexor_sysfs_trixor_fctime_show, pexor_sysfs_trixor_fctime_store);
+//static DEVICE_ATTR(trixorcvti, S_IWUGO | S_IRUGO , pexor_sysfs_trixor_cvtime_show, pexor_sysfs_trixor_cvtime_store);
+
+static DEVICE_ATTR(trixorfcti,(S_IWUSR| S_IWGRP | S_IRUGO)  , pexor_sysfs_trixor_fctime_show, pexor_sysfs_trixor_fctime_store);
+static DEVICE_ATTR(trixorcvti, (S_IWUSR| S_IWGRP | S_IRUGO) , pexor_sysfs_trixor_cvtime_show, pexor_sysfs_trixor_cvtime_store);
 
 
 
 #ifdef PEXOR_WITH_SFP
 static DEVICE_ATTR(sfpregs, S_IRUGO, pexor_sysfs_sfpregs_show, NULL);
-static DEVICE_ATTR(gosipretries, S_IWUGO | S_IRUGO , pexor_sysfs_sfp_retries_show, pexor_sysfs_sfp_retries_store);
-static DEVICE_ATTR(gosipbuswait, S_IWUGO | S_IRUGO , pexor_sysfs_buswait_show, pexor_sysfs_buswait_store);
+//static DEVICE_ATTR(gosipretries, S_IWUGO | S_IRUGO , pexor_sysfs_sfp_retries_show, pexor_sysfs_sfp_retries_store);
+//static DEVICE_ATTR(gosipbuswait, S_IWUGO | S_IRUGO , pexor_sysfs_buswait_show, pexor_sysfs_buswait_store);
+
+
+static DEVICE_ATTR(gosipretries, (S_IWUSR| S_IWGRP | S_IRUGO) , pexor_sysfs_sfp_retries_show, pexor_sysfs_sfp_retries_store);
+static DEVICE_ATTR(gosipbuswait, (S_IWUSR| S_IWGRP | S_IRUGO) , pexor_sysfs_buswait_show, pexor_sysfs_buswait_store);
+
+
 
 
 #endif
@@ -65,8 +74,13 @@ static struct class* pexor_class;
     #define compat_lock_page SetPageLocked
     #define compat_unlock_page ClearPageLocked
 #else
-    /* in v2.6.28, __set_page_locked and __clear_page_locked was introduced */
-    #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
+/* JAM 2018 -in v4.5., lock_page_killable and unlock_page was introduced */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,5,0)
+#define compat_lock_page    lock_page_killable
+#define compat_unlock_page  unlock_page
+#else
+  /* in v2.6.28, __set_page_locked and __clear_page_locked was introduced */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
         #define compat_lock_page __set_page_locked
         #define compat_unlock_page __clear_page_locked
     #else
@@ -81,6 +95,9 @@ static struct class* pexor_class;
             __clear_bit(PG_locked, &page->flags);
         }
     #endif
+
+
+#endif
 #endif
 /** End M.Stapelbergs helper*/
 
@@ -490,7 +507,27 @@ int pexor_ioctl_mapbuffer (struct pexor_privdata *priv, unsigned long arg)
 
   /* Get the page information */
   down_read (&current->mm->mmap_sem);
-  res = get_user_pages (current, current->mm, dmabuf->virt_addr, nr_pages, 1, 0, pages, NULL );
+
+  // port to kernel 4.9/Debian 9.0 JAM 9-2017 - 8-2018 for pexor
+  // kernel 4.9.0:
+  //    long get_user_pages(unsigned long start, unsigned long nr_pages,
+  //             unsigned int gup_flags, struct page **pages,
+  //             struct vm_area_struct **vmas)
+  //
+  // kernel 4.8.x :
+  //     long get_user_pages(unsigned long start, unsigned long nr_pages,
+  //                     int write, int force, struct page **pages,
+  //                     struct vm_area_struct **vmas);
+
+
+  #if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
+       res = get_user_pages (current, current->mm, dmabuf->virt_addr, nr_pages, 1, 0, pages, NULL );
+  #elif  LINUX_VERSION_CODE < KERNEL_VERSION(4,9,0)
+       res = get_user_pages (dmabuf->virt_addr, nr_pages, 1, 0, pages, NULL );
+  #else
+       res = get_user_pages (dmabuf->virt_addr, nr_pages, FOLL_WRITE, pages, NULL );
+  #endif
+
   up_read (&current->mm->mmap_sem);
 
   /* Error, not all pages mapped */
@@ -569,7 +606,13 @@ int pexor_ioctl_mapbuffer (struct pexor_privdata *priv, unsigned long arg)
     //ClearPageLocked(pages[i]);
     if (!PageReserved (pages[i]))
       SetPageDirty (pages[i]);
-    page_cache_release(pages[i]);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
+        page_cache_release(pages[i]);
+#else
+        put_page(pages[i]);
+#endif
+
   }
   vfree (sg);
   mapbuffer_pages: vfree (pages);
@@ -1228,8 +1271,13 @@ int pexor_mmap (struct file *filp, struct vm_area_struct *vma)
     /* for external phys memory, use directly pfn*/
     pexor_dbg(KERN_NOTICE "Using external address %p / PFN %lx\n", (void*) (vma->vm_pgoff << PAGE_SHIFT ), vma->vm_pgoff);
 
-    /*	   vma->vm_flags |= (VM_RESERVED); */
-    /* TODO: do we need this?*/
+
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(3,7,0)
+        vma->vm_flags |= (VM_RESERVED); /* TODO: do we need this?*/
+#endif
+
+
+
     ret = remap_pfn_range (vma, vma->vm_start, vma->vm_pgoff, buf->size, vma->vm_page_prot);
 
   }
@@ -1372,10 +1420,15 @@ int unmap_sg_dmabuffer (struct pci_dev *pdev, struct pexor_dmabuf *buf)
     {
       SetPageDirty (buf->pages[i]);
       compat_unlock_page(buf->pages[i]);
-//      __clear_page_locked (buf->pages[i]);
-      //ClearPageLocked(buf->pages[i]);
     }
-    page_cache_release( buf->pages[i]);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,6,0)
+        page_cache_release(buf->pages[i]);
+#else
+        put_page(buf->pages[i]);
+#endif
+
+
   }
   vfree (buf->pages);
   vfree (buf->sg);

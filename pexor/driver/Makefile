@@ -9,6 +9,9 @@ KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 PWD       := $(shell pwd)
  
 
+#ccflags-y +=-Wno-error=date-time 
+ccflags-y +=-Wno-date-time 
+
 
 all:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD)
