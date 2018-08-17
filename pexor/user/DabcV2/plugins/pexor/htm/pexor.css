@@ -32,9 +32,30 @@ p { margin-top: 6px; padding: 0 10px 1em; }
 
 /* Override / redefine here some of the jquery ui icons */
 
+.ui-spinner-input {
+   margin: 0.2em;
+}
 
  
 
+.ui-button-text-only
+.ui-button-text {
+   padding: 0.3em 0.3em;
+}
+
+
+/* supress highlighting the checkboxes when in checked state:*/
+.ui-state-active,
+.ui-widget-content .ui-state-active,
+.ui-widget-header .ui-state-active,
+a.ui-button:active,
+.ui-button:active,
+.ui-button.ui-state-active:hover 
+{
+border: 1px solid #dddddd;
+color: #333333;
+background: #e9e9e9;            
+}
 
 .ui-button .ui-icon.ui-icon-poland {
     background-image: url("img/PolandLogo.png");
@@ -42,7 +63,7 @@ p { margin-top: 6px; padding: 0 10px 1em; }
     background-size: contain;
 }
 
-.ui-button.ui-state-hover .ui-icon.ui-icon-poland {
+.ui-button:hover .ui-icon.ui-icon-poland {
     background-image: url("img/PolandLogo.png");
   	background-position: 0 0;  
     background-size: contain;
@@ -55,7 +76,7 @@ p { margin-top: 6px; padding: 0 10px 1em; }
 /*     background-size: contain; */
 /* } */
 
-/* .ui-button.ui-state-hover .ui-icon.ui-icon-mystop { */
+/* .ui-button:hover .ui-icon.ui-icon-mystop { */
 /*     background-image: url("img/start.png"); */
 /*   	background-position: 0 0;   */
 /*     background-size: contain; */
@@ -65,11 +86,11 @@ p { margin-top: 6px; padding: 0 10px 1em; }
 
 
 .ui-button  .ui-icon.ui-icon-stop {
-	background-image: url("/jsrootsys/style/images/ui-icons_228ef1_256x240.png");	
+	background-image: url("/jsrootsys/style/images/ui-icons_777777_256x240.png");	
 	}
 
 
-.ui-button.ui-state-hover .ui-icon.ui-icon-stop {
+.ui-button:hover .ui-icon.ui-icon-stop {
     background-image: url("img/Stop.png");
   	background-position: 0 0;  
     background-size: contain;
@@ -77,10 +98,10 @@ p { margin-top: 6px; padding: 0 10px 1em; }
 
 
 .ui-button  .ui-icon.ui-icon-play {
-	background-image: url("/jsrootsys/style/images/ui-icons_228ef1_256x240.png");	
+	background-image: url("/jsrootsys/style/images//ui-icons_777777_256x240.png");	
 	}
 
-.ui-button.ui-state-hover .ui-icon.ui-icon-play {
+.ui-button:hover .ui-icon.ui-icon-play {
     background-image: url("img/start.png");
   	background-position: 0 0;  
     background-size: contain;
@@ -88,31 +109,31 @@ p { margin-top: 6px; padding: 0 10px 1em; }
 
 
 .ui-button  .ui-icon.ui-icon-refresh {
-	background-image: url("/jsrootsys/style/images/ui-icons_228ef1_256x240.png");	
+	background-image: url("/jsrootsys/style/images//ui-icons_777777_256x240.png");	
 	}
 
 
-.ui-button.ui-state-hover .ui-icon.ui-icon-refresh {
+.ui-button:hover .ui-icon.ui-icon-refresh {
     background-image: url("img/refresh.png");
   	background-position: 0 0;  
     background-size: contain;
 }
 
 .ui-button  .ui-icon.ui-icon-disk {
-	background-image: url("/jsrootsys/style/images/ui-icons_228ef1_256x240.png");	
+	background-image: url("/jsrootsys/style/images//ui-icons_777777_256x240.png");	
 	}
 
-.ui-button.ui-state-hover .ui-icon.ui-icon-disk {
+.ui-button:hover .ui-icon.ui-icon-disk {
     background-image: url("img/filesave.png");
   	background-position: 0 0;  
     background-size: contain;
 }
 
 .ui-button  .ui-icon.ui-icon-image {
-	background-image: url("/jsrootsys/style/images/ui-icons_228ef1_256x240.png");	
+	background-image: url("/jsrootsys/style/images//ui-icons_777777_256x240.png");	
 	}
 
-.ui-button.ui-state-hover .ui-icon.ui-icon-image {
+.ui-button:hover .ui-icon.ui-icon-image {
     background-image: url("img/tgraph.png");
   	background-position: 0 0;  
     background-size: contain;
@@ -120,11 +141,11 @@ p { margin-top: 6px; padding: 0 10px 1em; }
 
 
 .ui-button  .ui-icon.ui-icon-wrench {
-	background-image: url("/jsrootsys/style/images/ui-icons_228ef1_256x240.png");	
+	background-image: url("/jsrootsys/style/images//ui-icons_777777_256x240.png");	
 	}
 
 
-.ui-button.ui-state-hover .ui-icon.ui-icon-wrench {
+.ui-button:hover .ui-icon.ui-icon-wrench {
     background-image: url("img/control.png");
   	background-position: 0 0;  
     background-size: contain;
@@ -132,43 +153,43 @@ p { margin-top: 6px; padding: 0 10px 1em; }
 
 
 .ui-button  .ui-icon.ui-icon-gear {
-	background-image: url("/jsrootsys/style/images/ui-icons_228ef1_256x240.png");	
+	background-image: url("/jsrootsys/style/images//ui-icons_777777_256x240.png");	
 	}
 
-.ui-button.ui-state-hover .ui-icon.ui-icon-gear {
+.ui-button:hover .ui-icon.ui-icon-gear {
     background-image: url("img/dllicon.png");
   	background-position: 0 0;  
     background-size: contain;
 }
 
 .ui-button  .ui-icon.ui-icon-trash {
-	background-image: url("/jsrootsys/style/images/ui-icons_228ef1_256x240.png");	
+	background-image: url("/jsrootsys/style/images//ui-icons_777777_256x240.png");	
 	}
 
 
-.ui-button.ui-state-hover .ui-icon.ui-icon-trash {
+.ui-button:hover .ui-icon.ui-icon-trash {
     background-image: url("img/clear.png");
   	background-position: 0 0;  
     background-size: contain;
 }
 
 .ui-button  .ui-icon.ui-icon-closethick {
-	background-image: url("/jsrootsys/style/images/ui-icons_228ef1_256x240.png");	
+	background-image: url("/jsrootsys/style/images//ui-icons_777777_256x240.png");	
 	}
 
 
-.ui-button.ui-state-hover .ui-icon.ui-icon-closethick {
+.ui-button:hover .ui-icon.ui-icon-closethick {
     background-image: url("img/close16.png");
   	background-position: 0 0;  
     background-size: contain;
 }
 
 .ui-button  .ui-icon.ui-icon-cancel {
-	background-image: url("/jsrootsys/style/images/ui-icons_228ef1_256x240.png");	
+	background-image: url("/jsrootsys/style/images//ui-icons_777777_256x240.png");	
 	}
 
 
-.ui-button.ui-state-hover .ui-icon.ui-icon-cancel {
+.ui-button:hover .ui-icon.ui-icon-cancel {
     background-image: url("img/shutanal.png");
   	background-position: 0 0;  
     background-size: contain;
@@ -176,22 +197,22 @@ p { margin-top: 6px; padding: 0 10px 1em; }
 
 
 .ui-button  .ui-icon.ui-icon-power {
-	background-image: url("/jsrootsys/style/images/ui-icons_228ef1_256x240.png");	
+	background-image: url("/jsrootsys/style/images//ui-icons_777777_256x240.png");	
 	}
 
 
-.ui-button.ui-state-hover .ui-icon.ui-icon-power {
+.ui-button:hover .ui-icon.ui-icon-power {
     background-image: url("img/launchanal.png");
   	background-position: 0 0;  
     background-size: contain;
 }
 
 .ui-button  .ui-icon.ui-icon-circle-arrow-n {
-	background-image: url("/jsrootsys/style/images/ui-icons_228ef1_256x240.png");	
+	background-image: url("/jsrootsys/style/images//ui-icons_777777_256x240.png");	
 	}
 
 
-.ui-button.ui-state-hover .ui-icon.ui-icon-circle-arrow-n {
+.ui-button:hover .ui-icon.ui-icon-circle-arrow-n {
     background-image: url("img/Speed.png");
   	background-position: 0 0;  
     background-size: contain;

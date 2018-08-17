@@ -204,7 +204,7 @@ PexorDisplay.prototype.BuildView = function(){
       
       pthis.hpainter = hpainter;
       
-      pthis.SetTrending(300);
+      pthis.SetTrending(false, 300);
       // pthis.SetRateGauges();
       
       hpainter.display("PexDevice/PexDevInfo");
@@ -307,7 +307,7 @@ PexorDisplay.prototype.RefreshView = function(){
 //			$("#buttonStartFile").prop('checked', true);
 //			$("label[for='buttonStartFile']").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-closethick MyButtonStyle\"</span>");
 //			$("label[for='buttonStartFile']").attr("title", "Close output file");
-    		$("#buttonStartFile").button("option", {icons: { primary: "ui-icon-closethick MyButtonStyle" }});
+    		$("#buttonStartFile").button("option", {icon: "ui-icon-closethick MyButtonStyle" });
 			$("#buttonStartFile").attr("title", "Close output file");
 			
 		} else {
@@ -317,7 +317,7 @@ PexorDisplay.prototype.RefreshView = function(){
 //			 $("label[for='buttonStartFile']").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-disk MyButtonStyle\"</span>");
 //			 $("label[for='buttonStartFile']").attr("title", "Open lmd file for writing");
 //			 
-			 $("#buttonStartFile").button("option", {icons: { primary: "ui-icon-disk MyButtonStyle" }}); 
+			 $("#buttonStartFile").button("option", {icon: "ui-icon-disk MyButtonStyle"}); 
 			 $("#buttonStartFile").attr("title", "Open lmd file for writing");
 			  
 			 
@@ -341,18 +341,16 @@ PexorDisplay.prototype.RefreshView = function(){
 	 $("#Refreshtime").prop('disabled', this.fMonitoring);
 	 
 	 
-	 if (this.fTrending) {
-			 //$("label[for='Trending']").html("<span class=\"ui-button-text\">  Show Rate Gauges </span>");
-			 $("label[for='Trending']").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-circle-arrow-n MyButtonStyle\"></span>");//
-			 //.addClass("MyButtonStyle");
-			 $("label[for='Trending']").attr("title", "Show Rate Gauges");	
+   if (!this.fTrending) {
+      $("label[for='Trending']").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-image MyButtonStyle\"></span>");//
+      $("label[for='Trending']").attr("title", "Rates are displayed as gauges. Press to switch to trending graphs.");
+      $("#Trendlength").spinner("enable");
 		} else {
-			//$("label[for='Trending']").html("<span class=\"ui-button-text\">   Show Rate Trending </span>");
-			$("label[for='Trending']").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-image MyButtonStyle\"></span>");
-			//.addClass("MyButtonStyle");
-			$("label[for='Trending']").attr("title", "Show Rate Trending");		
+      $("label[for='Trending']").html("<span class=\"ui-button-icon-primary ui-icon ui-icon-circle-arrow-n MyButtonStyle\"></span>");
+      $("label[for='Trending']").attr("title", "Rates are displayed as trending graphs. Press to switch to gauges.");
+      $("#Trendlength").spinner("disable");
 		}
-	 $("#Trendlength").prop('disabled', this.fTrending);
+//	 $("#Trendlength").prop('disabled', this.fTrending);
 	 
 	 console.log("RefreshView with dabc state = %s", this.fPexorState.fDabcState);
 	 
@@ -398,7 +396,7 @@ $(function() {
 	
 	//////// first DABC generic commands
 	// later this should be part of the framework...
-	$("#buttonStartDabc").button({text: false, icons: { primary: "ui-icon-play MyButtonStyle"}}).click(
+	$("#buttonStartDabc").button({text: false, icon: "ui-icon-play MyButtonStyle"}).click(
 			function() {
 				var requestmsg = "Really Re-Start DABC Application?";
 				var response = confirm(requestmsg);
@@ -413,7 +411,7 @@ $(function() {
 				});
 			});
 	
-	$("#buttonStopDabc").button({text: false, icons: { primary: "ui-icon-stop MyButtonStyle"}}).click(
+	$("#buttonStopDabc").button({text: false, icon: "ui-icon-stop MyButtonStyle"}).click(
 			function() {
 				var requestmsg = "Really Stop DABC Application?";
 				var response = confirm(requestmsg);
@@ -428,7 +426,7 @@ $(function() {
 				});
 			});
 	
-	$("#buttonConfigureDabc").button({text: false, icons: { primary: "ui-icon-power MyButtonStyle"}}).click(
+	$("#buttonConfigureDabc").button({text: false, icon: "ui-icon-power MyButtonStyle"}).click(
 			function() {
 				var requestmsg = "Really Re-Configure DABC Application?";
 				var response = confirm(requestmsg);
@@ -442,7 +440,7 @@ $(function() {
 					MyDisplay.RefreshMonitor();
 				});
 			});
-	$("#buttonHaltDabc").button({text: false, icons: { primary: "ui-icon-cancel MyButtonStyle"}}).click(
+	$("#buttonHaltDabc").button({text: false, icon: "ui-icon-cancel MyButtonStyle"}).click(
 			function() {
 				var requestmsg = "Really Halt (shutdown) DABC Application?";
 				var response = confirm(requestmsg);
@@ -460,7 +458,7 @@ $(function() {
 	
 ///////////////////////////// pexor specific:	
 	
-	$("#buttonStartAcquisition").button({text: false, icons: { primary: "ui-icon-play MyButtonStyle"}}).click(
+	$("#buttonStartAcquisition").button({text: false, icon: "ui-icon-play MyButtonStyle"}).click(
 			function() {
 				var requestmsg = "Really Start Acquisition?";
 				var response = confirm(requestmsg);
@@ -477,7 +475,7 @@ $(function() {
 				});
 			});
 
-	$("#buttonStopAcquisition").button({text: false, icons: { primary: "ui-icon-stop MyButtonStyle"}}).click(
+	$("#buttonStopAcquisition").button({text: false, icon: "ui-icon-stop MyButtonStyle"}).click(
 			function() {
 
 				var requestmsg = "Really Stop Acquisition?";
@@ -494,7 +492,7 @@ $(function() {
 					MyDisplay.RefreshMonitor();
 				});
 			});
-	$("#buttonInitAcquisition").button({text: false, icons: { primary: "ui-icon-wrench MyButtonStyle"}}).click(function() {
+	$("#buttonInitAcquisition").button({text: false, icon: "ui-icon-wrench MyButtonStyle"}).click(function() {
 		var requestmsg = "Really Initialize Acquisition?";
 		var response = confirm(requestmsg);
 		if (!response)
@@ -510,7 +508,7 @@ $(function() {
 
 	});
 
-	$("#buttonStartFile").button({text: false, icons: { primary: "ui-icon-disk MyButtonStyle"}});
+	$("#buttonStartFile").button({text: false, icon: "ui-icon-disk MyButtonStyle"});
 
 	$("#lmd_file_form").submit(
 				function(event) {
@@ -572,27 +570,30 @@ $(function() {
 	
 	
 
-	$("#Monitoring").button({text: false, icons: { primary: "ui-icon-play MyButtonStyle"}}).click(function() {		
+   $("#Monitoring").checkboxradio({icon: false})
+      .click(function() {
 		MyDisplay.fUpdateInterval=1000*parseInt(document.getElementById("Refreshtime").value);
 		MyDisplay.ChangeMonitoring($(this).is(':checked'));
 		MyDisplay.RefreshView();
 	});
 	
 	
-	$("#buttonRefresh").button({text: false, icons: { primary: "ui-icon-refresh MyButtonStyle"}}).click(
+	$("#buttonRefresh").button({text: false, icon: "ui-icon-refresh MyButtonStyle"}).click(
 			function() {
 					MyDisplay.RefreshMonitor();
 				});
 	
 	
-	$("#Trending").button({text: false, icons: { primary: "ui-icon-image MyButtonStyle"}}).click(function() {
+   $("#Trending").checkboxradio({icon: false})
+   .prop('checked', MyDisplay.fTrending)
+   .click(function() {
 		MyDisplay.SetTrending($(this).is(':checked'), parseInt(document.getElementById("Trendlength").value));
 		MyDisplay.RefreshView();
 	});
 	
 	
 	
-	$("#buttonExecuteGosip").button({text: false, icons: { primary: "ui-icon-gear MyButtonStyle"}});
+	$("#buttonExecuteGosip").button({text: false, icon: "ui-icon-gear MyButtonStyle"});
 	
 	$( "#gosipcmd_form" ).submit(
 				function(event) {
@@ -631,7 +632,7 @@ $(function() {
 			
 	
 	
-	$("#buttonClearGosipLog").button({text: false, icons: { primary: "ui-icon-trash MyButtonStyle"}}).click(
+	$("#buttonClearGosipLog").button({text: false, icon: "ui-icon-trash MyButtonStyle"}).click(
 			function() {
 					MyDisplay.SetStatusMessage("Cleared gosip logoutput."); 
 					document.getElementById("GosipLog").innerHTML="";
@@ -642,7 +643,7 @@ $(function() {
 	
 	
 // Use new jquery ui styled icon. However, here we would lose colors due to rendering
-	$("#buttonUserGUI").button({text: false, icons: { primary: "ui-icon-poland MyButtonStyle"}}).click(
+	$("#buttonUserGUI").button({text: false, icon: "ui-icon-poland MyButtonStyle"}).click(
 			function() {
 					MyDisplay.SetStatusMessage("Launched gosip user gui."); 
 					window.open('/GOSIP/Test/UI/','_blank');
