@@ -24,6 +24,42 @@
 #define TAMEX_PRINT_DUMP(args...) \
 if(fTamexDumpMode) printm( args );
 
+
+
+
+std::map<Tamex_Module_type, std::map< int, QString > > TamexPadiGui::fgClockSourceText=
+{
+    {   TamMod_TAMEX2,
+        {
+            {0, QString("0x20 -> External CLK via 2 pin lemo (200 MHz)")},
+            {1, QString("0x21 -> CLK from TRBus (25 MHz) via on-board PLL")},
+            {2, QString("0x22 -> CLK from TRBus + Module 0 feeds 25 MHz CLK to TRBus")},
+            {3, QString("0x24 -> On-board oscillator (200 MHz)")},
+            {4, QString("")}
+        }
+    },
+    {  TamMod_TAMEXPADI1,
+        {
+                {0, QString("0x0 -> CLK from previous module via backplane (feed in 200 MHz on crate interface)")},
+                {1, QString("0x1 -> CLK from on-board oscillator")},
+                {2, QString("0x2 -> CLK from 2-pin LEMO on front (feed in 200 MHz)")},
+                {3, QString("0x4 -> CLK from previous module via backplane (first module CLK-master with local CLK)")},
+                {4, QString("0x8 -> CLK from previous module via backplane (first module CLK-master with external CLK from front)")}
+
+        }
+     },
+     {  TamMod_TAMEX3,
+         {
+                 {0, QString("0x26 -> External CLK from backplane (200 MHz)")},
+                 {1, QString("0x2a -> On-board oscillator (200 MHz)")},
+                 {2, QString(" 0x22 -> CLK from TRBus (25 MHz) via on-board PLL (Module 0 feeds 25 MHz CLK to TRBus)")},
+                 {3, QString("0x20 -> External CLK from backplane (25 MHz)")},
+                 {4, QString("")}
+         }
+     }
+
+};
+
 /*
  *  Constructs a TamexPadiGui which is a child of 'parent', with the
  *  name 'name'.'
@@ -33,7 +69,7 @@ TamexPadiGui::TamexPadiGui (QWidget* parent) :
 {
 
   fImplementationName = "TAMEX-PADI";
-  fVersionString = "Welcome to TAMEX-PADI GUI!\n\t v0.82 of 09-Feb-2018 by JAM (j.adamczewski@gsi.de)";
+  fVersionString = "Welcome to TAMEX-PADI GUI!\n\t v0.92 of 10-Sep-2018 by JAM (j.adamczewski@gsi.de)";
 
   fTamexPadiWidget = new TamexPadiWidget (this);
   Settings_scrollArea->setWidget (fTamexPadiWidget);
@@ -172,6 +208,58 @@ TamexPadiGui::TamexPadiGui (QWidget* parent) :
   QObject::connect (fTamexPadiWidget->Channel_trailing_radio_14, SIGNAL(toggled(bool)), this, SLOT(ChannelTrailing_toggled_14(bool)));
   QObject::connect (fTamexPadiWidget->Channel_trailing_radio_15, SIGNAL(toggled(bool)), this, SLOT(ChannelTrailing_toggled_15(bool)));
 
+  //////////////////////////
+
+
+  QObject::connect (fTamexPadiWidget->TriggerEnabledBoxAll, SIGNAL(toggled(bool)), this, SLOT(TriggerEnabled_toggled_all(bool)));
+
+   QObject::connect (fTamexPadiWidget->TriggerEnabledBoxCh00, SIGNAL(toggled(bool)), this, SLOT(TriggerEnabled_toggled_00(bool)));
+   QObject::connect (fTamexPadiWidget->TriggerEnabledBoxCh01, SIGNAL(toggled(bool)), this, SLOT(TriggerEnabled_toggled_01(bool)));
+   QObject::connect (fTamexPadiWidget->TriggerEnabledBoxCh02, SIGNAL(toggled(bool)), this, SLOT(TriggerEnabled_toggled_02(bool)));
+   QObject::connect (fTamexPadiWidget->TriggerEnabledBoxCh03, SIGNAL(toggled(bool)), this, SLOT(TriggerEnabled_toggled_03(bool)));
+   QObject::connect (fTamexPadiWidget->TriggerEnabledBoxCh04, SIGNAL(toggled(bool)), this, SLOT(TriggerEnabled_toggled_04(bool)));
+   QObject::connect (fTamexPadiWidget->TriggerEnabledBoxCh05, SIGNAL(toggled(bool)), this, SLOT(TriggerEnabled_toggled_05(bool)));
+   QObject::connect (fTamexPadiWidget->TriggerEnabledBoxCh06, SIGNAL(toggled(bool)), this, SLOT(TriggerEnabled_toggled_06(bool)));
+   QObject::connect (fTamexPadiWidget->TriggerEnabledBoxCh07, SIGNAL(toggled(bool)), this, SLOT(TriggerEnabled_toggled_07(bool)));
+   QObject::connect (fTamexPadiWidget->TriggerEnabledBoxCh08, SIGNAL(toggled(bool)), this, SLOT(TriggerEnabled_toggled_08(bool)));
+   QObject::connect (fTamexPadiWidget->TriggerEnabledBoxCh09, SIGNAL(toggled(bool)), this, SLOT(TriggerEnabled_toggled_09(bool)));
+   QObject::connect (fTamexPadiWidget->TriggerEnabledBoxCh10, SIGNAL(toggled(bool)), this, SLOT(TriggerEnabled_toggled_10(bool)));
+   QObject::connect (fTamexPadiWidget->TriggerEnabledBoxCh11, SIGNAL(toggled(bool)), this, SLOT(TriggerEnabled_toggled_11(bool)));
+   QObject::connect (fTamexPadiWidget->TriggerEnabledBoxCh12, SIGNAL(toggled(bool)), this, SLOT(TriggerEnabled_toggled_12(bool)));
+   QObject::connect (fTamexPadiWidget->TriggerEnabledBoxCh13, SIGNAL(toggled(bool)), this, SLOT(TriggerEnabled_toggled_13(bool)));
+   QObject::connect (fTamexPadiWidget->TriggerEnabledBoxCh14, SIGNAL(toggled(bool)), this, SLOT(TriggerEnabled_toggled_14(bool)));
+   QObject::connect (fTamexPadiWidget->TriggerEnabledBoxCh15, SIGNAL(toggled(bool)), this, SLOT(TriggerEnabled_toggled_15(bool)));
+
+
+   //currentIndexChanged
+
+   QObject::connect (fTamexPadiWidget->PolarityComboBoxAll, SIGNAL(currentIndexChanged(int)), this, SLOT(InputPolarity_toggled_all(int )));
+
+     QObject::connect (fTamexPadiWidget->PolarityComboBox00, SIGNAL(currentIndexChanged(int)), this, SLOT(InputPolarity_toggled_00(int )));
+     QObject::connect (fTamexPadiWidget->PolarityComboBox01, SIGNAL(currentIndexChanged(int)), this, SLOT(InputPolarity_toggled_01(int )));
+     QObject::connect (fTamexPadiWidget->PolarityComboBox02, SIGNAL(currentIndexChanged(int)), this, SLOT(InputPolarity_toggled_02(int )));
+     QObject::connect (fTamexPadiWidget->PolarityComboBox03, SIGNAL(currentIndexChanged(int)), this, SLOT(InputPolarity_toggled_03(int )));
+     QObject::connect (fTamexPadiWidget->PolarityComboBox04, SIGNAL(currentIndexChanged(int)), this, SLOT(InputPolarity_toggled_04(int )));
+     QObject::connect (fTamexPadiWidget->PolarityComboBox05, SIGNAL(currentIndexChanged(int)), this, SLOT(InputPolarity_toggled_05(int )));
+     QObject::connect (fTamexPadiWidget->PolarityComboBox06, SIGNAL(currentIndexChanged(int)), this, SLOT(InputPolarity_toggled_06(int )));
+     QObject::connect (fTamexPadiWidget->PolarityComboBox07, SIGNAL(currentIndexChanged(int)), this, SLOT(InputPolarity_toggled_07(int )));
+     QObject::connect (fTamexPadiWidget->PolarityComboBox08, SIGNAL(currentIndexChanged(int)), this, SLOT(InputPolarity_toggled_08(int )));
+     QObject::connect (fTamexPadiWidget->PolarityComboBox09, SIGNAL(currentIndexChanged(int)), this, SLOT(InputPolarity_toggled_09(int )));
+     QObject::connect (fTamexPadiWidget->PolarityComboBox10, SIGNAL(currentIndexChanged(int)), this, SLOT(InputPolarity_toggled_10(int )));
+     QObject::connect (fTamexPadiWidget->PolarityComboBox11, SIGNAL(currentIndexChanged(int)), this, SLOT(InputPolarity_toggled_11(int )));
+     QObject::connect (fTamexPadiWidget->PolarityComboBox12, SIGNAL(currentIndexChanged(int)), this, SLOT(InputPolarity_toggled_12(int )));
+     QObject::connect (fTamexPadiWidget->PolarityComboBox13, SIGNAL(currentIndexChanged(int)), this, SLOT(InputPolarity_toggled_13(int )));
+     QObject::connect (fTamexPadiWidget->PolarityComboBox14, SIGNAL(currentIndexChanged(int)), this, SLOT(InputPolarity_toggled_14(int )));
+     QObject::connect (fTamexPadiWidget->PolarityComboBox15, SIGNAL(currentIndexChanged(int)), this, SLOT(InputPolarity_toggled_15(int )));
+
+
+
+
+
+  //////////////////////////
+
+
+
   QObject::connect (fTamexPadiWidget->VoltageModeCheckBox, SIGNAL(stateChanged(int)), this, SLOT (VoltageModeCheckBoxChanged(int)));
 
   QObject::connect (fTamexPadiWidget->PreTriggerSpinBox, SIGNAL(valueChanged(int)), this, SLOT(PreTriggerSpinBox_changed(int)));
@@ -183,6 +271,12 @@ TamexPadiGui::TamexPadiGui (QWidget* parent) :
   QObject::connect (fTamexPadiWidget->Ch0RefRadioButton, SIGNAL(toggled(bool)), this, SLOT (TriggerOutChanged()));
   QObject::connect (fTamexPadiWidget->EnableOrCheckBox, SIGNAL(toggled(bool)), this, SLOT (TriggerOutChanged()));
   QObject::connect (fTamexPadiWidget->CombineOrCheckBox, SIGNAL(toggled(bool)), this, SLOT (TriggerOutChanged()));
+
+
+
+  QObject::connect (fTamexPadiWidget->BoardTypeComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT (BoardTypeComboBoxurrentIndexChanged(int)));
+
+
 
   /** JAM put references to designer checkboxes into array to be handled later easily: */
   fThresholdSpinBoxes[0] = fTamexPadiWidget->Threshold_doubleSpinBox_00;
@@ -287,9 +381,53 @@ TamexPadiGui::TamexPadiGui (QWidget* parent) :
   fChannelEnabledBox[14] = fTamexPadiWidget->channelGroupBox_14;
   fChannelEnabledBox[15] = fTamexPadiWidget->channelGroupBox_15;
 
+
+  fChannelTriggerEnabCheck[0] =  fTamexPadiWidget->TriggerEnabledBoxCh00;
+  fChannelTriggerEnabCheck[1] =  fTamexPadiWidget->TriggerEnabledBoxCh01;
+  fChannelTriggerEnabCheck[2] =  fTamexPadiWidget->TriggerEnabledBoxCh02;
+  fChannelTriggerEnabCheck[3] =  fTamexPadiWidget->TriggerEnabledBoxCh03;
+  fChannelTriggerEnabCheck[4] =  fTamexPadiWidget->TriggerEnabledBoxCh04;
+  fChannelTriggerEnabCheck[5] =  fTamexPadiWidget->TriggerEnabledBoxCh05;
+  fChannelTriggerEnabCheck[6] =  fTamexPadiWidget->TriggerEnabledBoxCh06;
+  fChannelTriggerEnabCheck[7] =  fTamexPadiWidget->TriggerEnabledBoxCh07;
+  fChannelTriggerEnabCheck[8] =  fTamexPadiWidget->TriggerEnabledBoxCh08;
+  fChannelTriggerEnabCheck[9] =  fTamexPadiWidget->TriggerEnabledBoxCh09;
+  fChannelTriggerEnabCheck[10] =  fTamexPadiWidget->TriggerEnabledBoxCh10;
+  fChannelTriggerEnabCheck[11] =  fTamexPadiWidget->TriggerEnabledBoxCh11;
+  fChannelTriggerEnabCheck[12] =  fTamexPadiWidget->TriggerEnabledBoxCh12;
+  fChannelTriggerEnabCheck[13] =  fTamexPadiWidget->TriggerEnabledBoxCh13;
+  fChannelTriggerEnabCheck[14] =  fTamexPadiWidget->TriggerEnabledBoxCh14;
+  fChannelTriggerEnabCheck[15] =  fTamexPadiWidget->TriggerEnabledBoxCh15;
+
+  fChannelPolarityBox[0] = fTamexPadiWidget->PolarityComboBox00;
+  fChannelPolarityBox[1] = fTamexPadiWidget->PolarityComboBox01;
+  fChannelPolarityBox[2] = fTamexPadiWidget->PolarityComboBox02;
+  fChannelPolarityBox[3] = fTamexPadiWidget->PolarityComboBox03;
+  fChannelPolarityBox[4] = fTamexPadiWidget->PolarityComboBox04;
+  fChannelPolarityBox[5] = fTamexPadiWidget->PolarityComboBox05;
+  fChannelPolarityBox[6] = fTamexPadiWidget->PolarityComboBox06;
+  fChannelPolarityBox[7] = fTamexPadiWidget->PolarityComboBox07;
+  fChannelPolarityBox[8] = fTamexPadiWidget->PolarityComboBox08;
+  fChannelPolarityBox[9] = fTamexPadiWidget->PolarityComboBox09;
+  fChannelPolarityBox[10] = fTamexPadiWidget->PolarityComboBox10;
+  fChannelPolarityBox[11] = fTamexPadiWidget->PolarityComboBox11;
+  fChannelPolarityBox[12] = fTamexPadiWidget->PolarityComboBox12;
+  fChannelPolarityBox[13] = fTamexPadiWidget->PolarityComboBox13;
+  fChannelPolarityBox[14] = fTamexPadiWidget->PolarityComboBox14;
+  fChannelPolarityBox[15] = fTamexPadiWidget->PolarityComboBox15;
+
+
   // just to update the ns labels (and to see if something changes when we show
   fTamexPadiWidget->PreTriggerSpinBox->setValue (100);
   fTamexPadiWidget->PostTriggerSpinBox->setValue (100);
+
+  for(int i=0; i<16; ++i)
+  {
+      fChannelPolarityBox[i]->setItemData(0, QBrush(Qt::red),  Qt::TextColorRole );//Qt::BackgroundColorRole); //Qt::TextColorRole
+      fChannelPolarityBox[i]->setItemData(1, QBrush(Qt::blue),Qt::TextColorRole);//  Qt::BackgroundColorRole);
+  }
+  fTamexPadiWidget->PolarityComboBoxAll->setItemData(0, QBrush(Qt::red),  Qt::TextColorRole);//  Qt::BackgroundColorRole);
+  fTamexPadiWidget->PolarityComboBoxAll->setItemData(1, QBrush(Qt::blue), Qt::TextColorRole);//  Qt::BackgroundColorRole);
 
   GetSFPChainSetup ();    // ensure that any slave has a status structure before we begin clicking...
   show ();
@@ -811,6 +949,29 @@ void TamexPadiGui::ApplyChannelEnabled (int channel, int leading, int trailing)
 
 }
 
+
+
+void TamexPadiGui::ApplyTriggerEnabled(int channel, bool on)
+{
+  //std::cout<<"ApplyTriggerEnabled ch:"<<channel<<", on:"<<on << std::endl;
+
+  theSetup_GET_FOR_SLAVE(TamexPadiSetup);
+  theSetup->SetChannelTriggerEnabled (channel, on);
+  SetTDCsTriggerChannels ();
+
+
+}
+
+void TamexPadiGui::ApplyInputPolarity(int channel, bool positive)
+{
+ //std::cout<<"ApplyInputPolarity ch:"<<channel<<", positive:"<<positive << std::endl;
+  theSetup_GET_FOR_SLAVE(TamexPadiSetup);
+  theSetup->SetChannelPolarityPositive(channel, positive);
+  SetTDCsPolarity();
+}
+
+
+
 void TamexPadiGui::ApplyChannelEnabledAll (bool on)
 {
   theSetup_GET_FOR_SLAVE(TamexPadiSetup);
@@ -846,6 +1007,34 @@ void TamexPadiGui::ApplyTrailingEnabledAll (bool on)
     theSetup->SetChannelTrailingEnabled (chan, on);
   SetTDCsEnabledChannels ();
 }
+
+
+void TamexPadiGui::ApplyTriggerEnabledAll (bool on)
+{
+  theSetup_GET_FOR_SLAVE(TamexPadiSetup);
+  //std::cout<<"ApplyTriggerEnabledAll for on= "<< on << std::endl;
+  for (int chan = 0; chan < TAMEX_TDC_NUMCHAN; ++chan)
+  {
+    theSetup->SetChannelTriggerEnabled (chan, on);
+  }
+  SetTDCsTriggerChannels ();
+
+}
+
+
+
+void TamexPadiGui::ApplyInputPolarityAll (bool on)
+{
+  theSetup_GET_FOR_SLAVE(TamexPadiSetup);
+  for (int chan = 0; chan < TAMEX_TDC_NUMCHAN; ++chan)
+  {
+    theSetup->SetChannelPolarityPositive(chan, on);
+  }
+  SetTDCsPolarity();
+
+}
+
+
 
 void TamexPadiGui::ChannelEnabled_toggled (int channel, bool on)
 {
@@ -1104,6 +1293,186 @@ void TamexPadiGui::ChannelTrailing_toggled_all (bool on)
   GOSIP_UNLOCK_SLOT
 }
 
+//// BEGIN COMSTRUCTION, JAM at work
+////////////////////////////////////////////////////////////////////\/////////////////////////////////
+void TamexPadiGui::TriggerEnabled_toggled (int channel, bool on)
+{
+  GOSIP_LOCK_SLOT
+  GOSIP_AUTOAPPLY(ApplyTriggerEnabled(channel, on));
+  GOSIP_UNLOCK_SLOT
+}
+
+void TamexPadiGui::TriggerEnabled_toggled_00 (bool on)
+{
+  TriggerEnabled_toggled (0, on);
+}
+void TamexPadiGui::TriggerEnabled_toggled_01 (bool on)
+{
+  TriggerEnabled_toggled (1, on);
+}
+void TamexPadiGui::TriggerEnabled_toggled_02 (bool on)
+{
+  TriggerEnabled_toggled (2, on);
+}
+void TamexPadiGui::TriggerEnabled_toggled_03 (bool on)
+{
+  TriggerEnabled_toggled (3, on);
+}
+void TamexPadiGui::TriggerEnabled_toggled_04 (bool on)
+{
+  TriggerEnabled_toggled (4, on);
+}
+void TamexPadiGui::TriggerEnabled_toggled_05 (bool on)
+{
+  TriggerEnabled_toggled (5, on);
+}
+void TamexPadiGui::TriggerEnabled_toggled_06 (bool on)
+{
+  TriggerEnabled_toggled (6, on);
+}
+void TamexPadiGui::TriggerEnabled_toggled_07 (bool on)
+{
+  TriggerEnabled_toggled (7, on);
+}
+void TamexPadiGui::TriggerEnabled_toggled_08 (bool on)
+{
+  TriggerEnabled_toggled (8, on);
+}
+void TamexPadiGui::TriggerEnabled_toggled_09 (bool on)
+{
+  TriggerEnabled_toggled (9, on);
+}
+void TamexPadiGui::TriggerEnabled_toggled_10 (bool on)
+{
+  TriggerEnabled_toggled (10, on);
+}
+void TamexPadiGui::TriggerEnabled_toggled_11 (bool on)
+{
+  TriggerEnabled_toggled (11, on);
+}
+void TamexPadiGui::TriggerEnabled_toggled_12 (bool on)
+{
+  TriggerEnabled_toggled (12, on);
+}
+void TamexPadiGui::TriggerEnabled_toggled_13 (bool on)
+{
+  TriggerEnabled_toggled (13, on);
+}
+void TamexPadiGui::TriggerEnabled_toggled_14 (bool on)
+{
+  TriggerEnabled_toggled (14, on);
+}
+void TamexPadiGui::TriggerEnabled_toggled_15 (bool on)
+{
+  TriggerEnabled_toggled (15, on);
+}
+
+void TamexPadiGui::TriggerEnabled_toggled_all (bool on)
+{
+  GOSIP_LOCK_SLOT
+  for (int chan = 0; chan < TAMEX_TDC_NUMCHAN; ++chan)
+    fChannelTriggerEnabCheck[chan]->setChecked (on);
+  // since we lock the slots of the radiobuttons, we handle the autoapply here separately (and better):
+  GOSIP_AUTOAPPLY(ApplyTriggerEnabledAll(on));
+  GOSIP_UNLOCK_SLOT
+}
+
+
+//////////////////////////////////////////////////////////////////77
+
+
+void TamexPadiGui::InputPolarity_toggled (int channel, int index )
+{
+  GOSIP_LOCK_SLOT
+  //std::cout << "TamexPadiGui::InputPolarity_toggled, channel="<<channel<<", index="<<index<<std::endl;
+  GOSIP_AUTOAPPLY(ApplyInputPolarity(channel, (index==0)));
+  GOSIP_UNLOCK_SLOT
+}
+
+void TamexPadiGui::InputPolarity_toggled_00 (int index)
+{
+  InputPolarity_toggled (0, index);
+}
+void TamexPadiGui::InputPolarity_toggled_01 (int index)
+{
+  InputPolarity_toggled (1, index);
+}
+void TamexPadiGui::InputPolarity_toggled_02 (int index)
+{
+  InputPolarity_toggled (2, index);
+}
+void TamexPadiGui::InputPolarity_toggled_03 (int index)
+{
+  InputPolarity_toggled (3, index);
+}
+void TamexPadiGui::InputPolarity_toggled_04 (int index)
+{
+  InputPolarity_toggled (4, index);
+}
+void TamexPadiGui::InputPolarity_toggled_05 (int index)
+{
+  InputPolarity_toggled (5, index);
+}
+void TamexPadiGui::InputPolarity_toggled_06 (int index)
+{
+  InputPolarity_toggled (6, index);
+}
+void TamexPadiGui::InputPolarity_toggled_07 (int index)
+{
+  InputPolarity_toggled (7, index);
+}
+void TamexPadiGui::InputPolarity_toggled_08 (int index)
+{
+  InputPolarity_toggled (8, index);
+}
+void TamexPadiGui::InputPolarity_toggled_09 (int index)
+{
+  InputPolarity_toggled (9, index);
+}
+void TamexPadiGui::InputPolarity_toggled_10 (int index)
+{
+  InputPolarity_toggled (10, index);
+}
+void TamexPadiGui::InputPolarity_toggled_11 (int index)
+{
+  InputPolarity_toggled (11, index);
+}
+void TamexPadiGui::InputPolarity_toggled_12 (int index)
+{
+  InputPolarity_toggled (12, index);
+}
+void TamexPadiGui::InputPolarity_toggled_13 (int index)
+{
+  InputPolarity_toggled (13, index);
+}
+void TamexPadiGui::InputPolarity_toggled_14 (int index)
+{
+  InputPolarity_toggled (14, index);
+}
+void TamexPadiGui::InputPolarity_toggled_15 (int index)
+{
+  InputPolarity_toggled (15, index);
+}
+
+void TamexPadiGui::InputPolarity_toggled_all (int index)
+{
+  GOSIP_LOCK_SLOT
+  for (int chan = 0; chan < TAMEX_TDC_NUMCHAN; ++chan)
+    fChannelPolarityBox[chan]->setCurrentIndex (index);
+  // since we lock the slots of the radiobuttons, we handle the autoapply here separately (and better):
+  GOSIP_AUTOAPPLY(ApplyInputPolarityAll(index==0));
+  GOSIP_UNLOCK_SLOT
+}
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////// END CONSTRUCTION
+
+
+
 void TamexPadiGui::ApplyTriggerwindow ()
 {
   //std::cout << "TamexPadiGui::ApplyTriggerwindow"<<std::endl;
@@ -1157,6 +1526,27 @@ void TamexPadiGui::ClockSourceCurrentIndexChanged (int index)
   GOSIP_UNLOCK_SLOT
 }
 
+void TamexPadiGui::ApplyBoardType (Tamex_Module_type mod)
+{
+  //std::cout << "TamexPadiGui::ApplyBoardType for "<< mod <<std::endl;
+  theSetup_GET_FOR_SLAVE(TamexPadiSetup);
+  theSetup->SetModuleType(mod);
+}
+
+
+void  TamexPadiGui::BoardTypeComboBoxurrentIndexChanged (int ix)
+{
+  GOSIP_LOCK_SLOT
+  //std::cout << "TamexPadiGui::BoardTypeComboBoxurrentIndexChanged to "<<ix<<std::endl;
+  Tamex_Module_type mod = BoardIndex2ModuleType(ix);
+  RefreshClockSourceList(mod);
+  RefreshModuleCaps(mod);
+  GOSIP_AUTOAPPLY(ApplyBoardType(mod));
+  GOSIP_UNLOCK_SLOT
+
+}
+
+
 void TamexPadiGui::ApplyTriggerOutAndRef ()
 {
   theSetup_GET_FOR_SLAVE(TamexPadiSetup);
@@ -1173,6 +1563,26 @@ void TamexPadiGui::TriggerOutChanged ()
   GOSIP_UNLOCK_SLOT
 }
 
+
+void TamexPadiGui::RefreshClockSourceList (Tamex_Module_type mod)
+
+{
+  for (int i=0; i<TAMEX_NUM_CLK_SRC; ++i)
+    {
+      QString txt=ModuleType2ComboText(mod,i);
+      //if(txt.isEmpty()) continue; // better override previous entry with empty string
+      fTamexPadiWidget->ClockSourceComboBox->setItemText(i, txt);
+    }
+}
+
+void TamexPadiGui::RefreshModuleCaps (Tamex_Module_type mod)
+{
+  fTamexPadiWidget->ChannelTriggerGroupBox->setEnabled(mod==TamMod_TAMEXPADI1);
+  fTamexPadiWidget->TamexPadiTabs->setTabEnabled(2,mod!=TamMod_TAMEX3);
+  fTamexPadiWidget->TriggerOutgroupBox->setEnabled(mod!=TamMod_TAMEX3);
+}
+
+
 void TamexPadiGui::RefreshView ()
 {
 
@@ -1182,7 +1592,10 @@ void TamexPadiGui::RefreshView ()
   QString pre;
   fNumberBase == 16 ? pre = "0x" : pre = "";
   theSetup_GET_FOR_SLAVE(TamexPadiSetup);
-
+  Tamex_Module_type module =theSetup->GetModuleType ();
+  RefreshModuleCaps(module);
+  int bix=ModuleType2BoardIndex(module);
+  fTamexPadiWidget->BoardTypeComboBox->setCurrentIndex(bix);
   for (uint8_t channel = 0; channel < TAMEX_TDC_NUMCHAN; ++channel)
   {
     uint16_t thres = theSetup->GetDACValue (channel);
@@ -1196,6 +1609,8 @@ void TamexPadiGui::RefreshView ()
 
     bool leading = theSetup->IsChannelLeadingEnabled (channel);
     bool trailing = theSetup->IsChannelTrailingEnabled (channel);
+    bool ispositive = theSetup->IsChannelPolarityPositive(channel);
+
     if (!leading && !trailing)
     {
       fChannelEnabledBox[channel]->setChecked (false);
@@ -1207,7 +1622,14 @@ void TamexPadiGui::RefreshView ()
       fChannelEnabledBox[channel]->setChecked (true);
       fChannelLeadingRadio[channel]->setChecked (leading);
       fChannelTrailingRadio[channel]->setChecked (trailing);
+      fChannelPolarityBox[channel]->setCurrentIndex(ispositive ? 0 : 1);
+
     }
+
+    bool enabtrig = theSetup->IsChannelTriggerEnabled (channel); // check of boardtype is done in setup class
+    fChannelTriggerEnabCheck[channel]->setChecked(enabtrig);
+
+
 
   }
 
@@ -1230,12 +1652,15 @@ void TamexPadiGui::RefreshView ()
   fTamexPadiWidget->EnableOrCheckBox->setChecked (theSetup->IsEnableOR ());
   fTamexPadiWidget->CombineOrCheckBox->setChecked (theSetup->IsCombineOR ());
 
+  RefreshClockSourceList(module);
   int ix = ClockSource2ComboIndex (theSetup->GetClockSource ());
   fTamexPadiWidget->ClockSourceComboBox->setCurrentIndex (ix);
-
   // when switching from hex to dec mode or vice versa, have to update the all value field:
   int allval = fTamexPadiWidget->Threshold_Slider_all->value ();
   fTamexPadiWidget->Threshold_Value_all->setText (pre + text.setNum (allval, fNumberBase));
+
+
+
 
   GosipGui::RefreshView ();
   // ^this handles the refresh of chains and status. better use base class function here! JAM2018
@@ -1254,11 +1679,18 @@ void TamexPadiGui::EvaluateView ()
     theSetup->SetDACValue (channel, thres);
     theSetup->SetChannelLeadingEnabled (channel, fChannelLeadingRadio[channel]->isChecked ());
     theSetup->SetChannelTrailingEnabled (channel, fChannelTrailingRadio[channel]->isChecked ());
+    theSetup->SetChannelPolarityPositive(channel, (fChannelPolarityBox[channel]->currentIndex() == 0) );
+
   }
 
   theSetup->SetEnabledTriggerWindow (fTamexPadiWidget->TriggerwindowGroupBox->isChecked ());
   theSetup->SetPreTriggerWindow (fTamexPadiWidget->PreTriggerSpinBox->value ());
   theSetup->SetPostTriggerWindow (fTamexPadiWidget->PostTriggerSpinBox->value ());
+
+  int bix=fTamexPadiWidget->BoardTypeComboBox->currentIndex();
+  Tamex_Module_type mod = BoardIndex2ModuleType(bix);
+  theSetup->SetModuleType (mod); // TODO Later, when the board type is evaluated by register read, this needs to removed JAM
+
   int index = fTamexPadiWidget->ClockSourceComboBox->currentIndex ();
   int clk = ComboIndex2ClockSource (index);
   theSetup->SetClockSource (clk);
@@ -1299,6 +1731,10 @@ void TamexPadiGui::SetRegisters ()
 
   SetTDCsEnabledChannels ();
 
+  SetTDCsTriggerChannels();
+
+  SetTDCsPolarity();
+
   QApplication::restoreOverrideCursor ();
 
 }
@@ -1327,46 +1763,53 @@ void TamexPadiGui::SetTDCsEnabledChannels ()
   theSetup_GET_FOR_SLAVE(TamexPadiSetup);
   // set tdc channels enabled/disabled:
   int regenabled = theSetup->GetEnabledRegister ();
-  //printm("SetTDCsEnabledChannels writes 0x%x",regenabled);
+  //printm("SetTDCsEnabledChannels writes enab:0x%x",regenabled);
   WriteGosip (fSFP, fSlave, REG_TAM_EN_1, regenabled);
+
+
+
+
+
 }
+
+void TamexPadiGui::SetTDCsTriggerChannels ()
+{
+  theSetup_GET_FOR_SLAVE(TamexPadiSetup);
+  if (theSetup->GetModuleType () == TamMod_TAMEXPADI1)
+  {
+    int regenabled = theSetup->GetTriggerEnabledRegister ();
+    printm ("SetTDCsTriggerChannels writes 0x%x", regenabled);
+    WriteGosip (fSFP, fSlave, REG_TAM_EN_TR, regenabled);
+  }
+  else
+  {
+    printm ("SetTDCsTriggerChannels is only supported for TAMEX-PADI1!");
+  }
+
+}
+
+void TamexPadiGui::SetTDCsPolarity()
+{
+  theSetup_GET_FOR_SLAVE(TamexPadiSetup);
+  int regenabled = theSetup->GetPolarityRegister ();
+  printm("SetTDCsPolarity writes 0x%x",regenabled);
+  WriteGosip (fSFP, fSlave, REG_TAM_POLARITY, regenabled);
+}
+
+
 
 void TamexPadiGui::SetLemoTriggerOut ()
 {
   theSetup_GET_FOR_SLAVE(TamexPadiSetup);
-
-////////////////// check from mbs
-//
-//  static int l_enable_or = ENABLE_OR_TAM2 << 29;
-//  static int l_combine_or = COMBINE_OR_TAM2 << 28;
-//
-
-//  l_stat = f_pex_slave_wr (l_i, l_j, REG_TAM_CTRL, 0x7c20d0); // set reset bit
-//          if (l_stat == -1)
-//          {
-//            printm (RON"ERROR>>"RES" TDC reset failed\n");
-//            l_err_prot_ct++;
-//          }
-//
-//          if ( (l_sfp_tam_mode[l_i] == 1) || (l_sfp_tam_mode[l_i] == 2) ) // TAMEX2
-//          {
-//            // clear reset & set CNTRL_REG (CH0 enabled)
-//            l_stat = f_pex_slave_wr (l_i, l_j, REG_TAM_CTRL, 0x7c20c0 | l_enable_or | l_combine_or);
-//            if (l_stat == -1)
-//            {
-//              printm (RON"ERROR>>"RES" Setting TDC control register failed\n");
-//              l_err_prot_ct++;
-//            }
-//          }
-//////////////////////////////////////////////////////////
-
-  int enable_or = theSetup->IsEnableOR () ? COM_CTRL_ENABLE_OR_BIT : 0;
-  int combine_or = theSetup->IsCombineOR () ? COM_CTRL_COMBINE_OR_BIT : 0;
-
   int reset = theSetup->IsTriggerReferenceChannel () ? COM_CTRL_REFCHAN_RESET : COM_CTRL_NOREF_RESET;
   int apply = theSetup->IsTriggerReferenceChannel () ? COM_CTRL_REFCHAN_APPLY : COM_CTRL_NOREF_APPLY;
-  apply = apply | enable_or | combine_or;
-
+  Tamex_Module_type module =theSetup->GetModuleType ();
+  if(module != TamMod_TAMEX3)
+  {
+    int enable_or = theSetup->IsEnableOR () ? COM_CTRL_ENABLE_OR_BIT : 0;
+    int combine_or = theSetup->IsCombineOR () ? COM_CTRL_COMBINE_OR_BIT : 0;
+    apply = apply | enable_or | combine_or;
+  }
   WriteGosip (fSFP, fSlave, REG_TAM_CTRL, reset);    // reset TDC
   WriteGosip (fSFP, fSlave, REG_TAM_CTRL, apply);    // set TDC control register
 
@@ -1375,62 +1818,160 @@ void TamexPadiGui::SetLemoTriggerOut ()
 void TamexPadiGui::SetClockSource ()
 {
   theSetup_GET_FOR_SLAVE(TamexPadiSetup);
-
-/////////////////////////////////////////
-//  if (CLK_SRC_TDC_TAM2 == 0x22)
-//          {
-//            l_stat = f_pex_slave_wr (l_i, l_j, REG_TAM_CLK_SEL, CLK_SRC_TDC_TAM2 - 1); // set tdc clock source
-//            if (l_stat == -1)
-//            {
-//              printm (RON"ERROR>>"RES" Setting clock source failed\n");
-//              l_err_prot_ct++;
-//            }
-//          }
-//          else
-//          {
-//            l_stat = f_pex_slave_wr (l_i, l_j, REG_TAM_CLK_SEL, CLK_SRC_TDC_TAM2); // set tdc clock source
-//            if (l_stat == -1)
-//            {
-//              printm (RON"ERROR>>"RES" Setting clock source failed\n");
-//              l_err_prot_ct++;
-//            }
-//          }
-//
-//          if ((CLK_SRC_TDC_TAM2 == 0x22) && (l_j == 0)) // If clock from TRBus used
-//          {
-//            l_stat = f_pex_slave_wr (l_i, l_j, REG_TAM_BUS_EN, 0x80); // Enable feeding clock to TRBus on slave 0
-//            if (l_stat == -1)
-//            {
-//              printm (RON"ERROR>>"RES" Enabling TRBus CLK on slave 0 failed\n");
-//              l_err_prot_ct++;
-//            }
-//          }
-////////////////////////////////////7
-
+  Tamex_Module_type module =theSetup->GetModuleType ();
   int clksrc = theSetup->GetClockSource ();
-  if (clksrc == 0x22)
+  switch(module)
   {
-    WriteGosip (fSFP, fSlave, REG_TAM_CLK_SEL, clksrc - 1);    // // set tdc clock source
-    if (fSlave == 0)    // If clock from TRBus used
-    {
-      WriteGosip (fSFP, fSlave, REG_TAM_BUS_EN, 0x80);    // Enable feeding clock to TRBus on slave 0
-    }
-  }
-  else
-  {
-    WriteGosip (fSFP, fSlave, REG_TAM_CLK_SEL, clksrc);
-    if (fSlave == 0)
-    {
-      // we should disable the clock feeding to trbus here when we switch back?
-      int busregister = ReadGosip (fSFP, fSlave, REG_TAM_BUS_EN);
-      if ((busregister & 0x80) == 0x80)
+    case TamMod_TAMEX2:
+        if (clksrc == 0x22)
+        {
+          WriteGosip (fSFP, fSlave, REG_TAM_CLK_SEL, clksrc - 1);    // // set tdc clock source
+          if (fSlave == 0)    // If clock from TRBus used
+          {
+            WriteGosip (fSFP, fSlave, REG_TAM_BUS_EN, 0x80);    // Enable feeding clock to TRBus on slave 0
+          }
+        }
+        else
+        {
+          WriteGosip (fSFP, fSlave, REG_TAM_CLK_SEL, clksrc);
+          if (fSlave == 0)
+          {
+            // we should disable the clock feeding to trbus here when we switch back?
+            int busregister = ReadGosip (fSFP, fSlave, REG_TAM_BUS_EN);
+            if ((busregister & 0x80) == 0x80)
+            {
+              busregister &= ~0x80;
+              WriteGosip (fSFP, fSlave, REG_TAM_BUS_EN, busregister);
+              // probably too detailed, but we do not know what else is set in this register...
+            }
+          }
+        }
+   break;
+
+   case TamMod_TAMEXPADI1:
+    default:
+      if ((clksrc == 0x4) && (fSlave == 0))
       {
-        busregister &= ~0x80;
-        WriteGosip (fSFP, fSlave, REG_TAM_BUS_EN, busregister);
-        // probably too detailed, but we do not know what else is set in this register...
+        WriteGosip (fSFP, fSlave, REG_TAM_CLK_SEL, 0x1);    // // Enable local clock oscillator on slave 0 only
       }
-    }
-  }
+      else  if ((clksrc == 0x8) && (fSlave == 0))
+      {
+        WriteGosip (fSFP, fSlave, REG_TAM_CLK_SEL, 0x2);    // Enable ext clock from front on slave 0 only
+      }
+      else
+      {
+        WriteGosip (fSFP, fSlave, REG_TAM_CLK_SEL, clksrc);    // set TAMEX-PADI1 clock source
+      }
+    break;
+
+    case TamMod_TAMEX3:
+
+      WriteGosip (fSFP, fSlave, REG_TAM_CLK_SEL, clksrc);    // set TAMEX3 clock source
+      if ((clksrc == 0x22))// If clock from TRBus used
+           {
+              if((fSlave == 0))
+              WriteGosip (fSFP, fSlave, REG_TAM_BUS_EN, 0x80);    // Enable feeding clock to TRBus on slave 0
+           }
+      else
+      {
+        if (fSlave == 0)
+        {
+          // we should disable the clock feeding to trbus here when we switch back?
+          int busregister = ReadGosip (fSFP, fSlave, REG_TAM_BUS_EN);
+          if ((busregister & 0x80) == 0x80)
+          {
+            busregister &= ~0x80;
+            WriteGosip (fSFP, fSlave, REG_TAM_BUS_EN, busregister);
+            // probably too detailed, but we do not know what else is set in this register...
+          }
+        }
+      }
+      break;
+
+  };
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+//  if ( (l_sfp_tam_mode[l_i] == 1) || (l_sfp_tam_mode[l_i] == 2) ) // Set TAMEX2 clock source
+//      {
+//
+//        if (CLK_SRC_TDC_TAM2 == 0x22) // special case clock distribution via TRBus
+//        {
+//          l_stat = f_pex_slave_wr (l_i, l_j, REG_TAM_CLK_SEL, 0x21);
+//          if (l_stat == -1)
+//          {
+//            printm (RON"ERROR>>"RES" Setting clock source failed\n");
+//            l_err_prot_ct++;
+//          }
+//        }
+//        else
+//        {
+//          l_stat = f_pex_slave_wr (l_i, l_j, REG_TAM_CLK_SEL, CLK_SRC_TDC_TAM2);
+//          if (l_stat == -1)
+//          {
+//            printm (RON"ERROR>>"RES" Setting clock source failed\n");
+//            l_err_prot_ct++;
+//          }
+//        }
+//
+//        if ((CLK_SRC_TDC_TAM2 == 0x22) && (l_j == 0)) // If clock from TRBus used
+//        {
+//          l_stat = f_pex_slave_wr (l_i, l_j, REG_TAM_BUS_EN, 0x80); // Enable feeding clock to TRBus on slave 0
+//          if (l_stat == -1)
+//          {
+//            printm (RON"ERROR>>"RES" Enabling TRBus CLK on slave 0 failed\n");
+//            l_err_prot_ct++;
+//          }
+//        }
+//      }
+//      else if (l_sfp_tam_mode[l_i] == 3) // Set TAMEX-PADI1 clock source
+//      {
+//        if ((CLK_SRC_TDC_TAM_PADI1 == 0x4) && (l_j == 0))
+//        {
+//          l_stat = f_pex_slave_wr (l_i, l_j, REG_TAM_CLK_SEL, 0x1); // Enable local clock oscillator on slave 0 only
+//          if (l_stat == -1)
+//          {
+//            printm (RON"ERROR>>"RES" Setting clock source failed\n");
+//            l_err_prot_ct++;
+//          }
+//        }
+//        else if ((CLK_SRC_TDC_TAM_PADI1 == 0x8) && (l_j == 0))
+//        {
+//          l_stat = f_pex_slave_wr (l_i, l_j, REG_TAM_CLK_SEL, 0x2); // Enable ext clock from front on slave 0 only
+//          if (l_stat == -1)
+//          {
+//            printm (RON"ERROR>>"RES" Setting clock source failed\n");
+//            l_err_prot_ct++;
+//          }
+//        }
+//        else
+//        {
+//          l_stat = f_pex_slave_wr (l_i, l_j, REG_TAM_CLK_SEL, CLK_SRC_TDC_TAM_PADI1); // Set TAMEX-PADI1 clock source
+//          if (l_stat == -1)
+//          {
+//            printm (RON"ERROR>>"RES" Setting clock source failed\n");
+//            l_err_prot_ct++;
+//          }
+//        }
+//      }
+//      else if (l_sfp_tam_mode[l_i] == 10) // Set TAMEX3 clock source
+//      {
+//        l_stat = f_pex_slave_wr (l_i, l_j, REG_TAM_CLK_SEL, CLK_SRC_TDC_TAM3);
+//        if (l_stat == -1)
+//        {
+//          printm (RON"ERROR>>"RES" Setting clock source failed\n");
+//          l_err_prot_ct++;
+//        }
+//        if ((CLK_SRC_TDC_TAM3 == 0x22) && (l_j == 0)) // If clock from TRBus used
+//        {
+//          l_stat = f_pex_slave_wr (l_i, l_j, REG_TAM_BUS_EN, 0x80); // Enable feeding clock to TRBus on slave 0
+//          if (l_stat == -1)
+//          {
+//            printm (RON"ERROR>>"RES" Enabling TRBus CLK on slave 0 failed\n");
+//            l_err_prot_ct++;
+//          }
+//        }
+//      }
+//////////////////////////////////////////////////////////////////////////////////////////////////7
 
 
 }
@@ -1464,6 +2005,8 @@ void TamexPadiGui::GetRegisters ()
   if (!AssertNoBroadcast ())
     return;
   theSetup_GET_FOR_SLAVE(TamexPadiSetup);
+  Tamex_Module_type boardtype=theSetup->GetModuleType(); // TODO - get actual board type from hardware register!!!!
+
   QApplication::setOverrideCursor (Qt::WaitCursor);
   //std::cout << "TamexPadiGui::GetRegisters()"<<std::endl;
 
@@ -1472,6 +2015,27 @@ void TamexPadiGui::GetRegisters ()
   int regenabled = ReadGosip (fSFP, fSlave, REG_TAM_EN_1);
   TAMEX_PRINT_DUMP("Channel enabled register \t0x%x", regenabled);
   theSetup->SetEnabledRegister (regenabled);
+
+
+  //////////////////////////////////////////////
+   // here read channel trigger enabled register:
+  if(boardtype == TamMod_TAMEXPADI1)
+  {
+   int trigenabled = ReadGosip (fSFP, fSlave, REG_TAM_EN_TR);
+   TAMEX_PRINT_DUMP("Channel trigger enabled register \t0x%x", trigenabled);
+   theSetup->SetTriggerEnabledRegister(trigenabled);
+  }
+  else
+  {
+    TAMEX_PRINT_DUMP("Channel trigger enabled register NOT READ, no TAMEX-PADI1 board!");
+  }
+
+  //////////////////////////////////////////////
+  // here read input polarity register:
+  int polar = ReadGosip (fSFP, fSlave, REG_TAM_POLARITY);
+  TAMEX_PRINT_DUMP("Channel polarity register \t0x%x", polar);
+  theSetup->SetPolarityRegister (polar);
+
 
   //////////////////////////////////////////////
   // trigger windows:
@@ -1490,16 +2054,25 @@ void TamexPadiGui::GetRegisters ()
   int clockreg = ReadGosip (fSFP, fSlave, REG_TAM_CLK_SEL);
   TAMEX_PRINT_DUMP("Clock source register  \t0x%x", clockreg);
   int clk = clockreg & 0xFF;
-  if (clk == 0x21)
+  switch(boardtype)
   {
-    // check here if we have setup with trbus clock feed
-    int busclock = ReadGosip (fSFP, 0, REG_TAM_BUS_EN);
+    case TamMod_TAMEX2:
+      if (clk == 0x21)
+      {
+        // check here if we have setup with trbus clock feed
+        int busclock = ReadGosip (fSFP, 0, REG_TAM_BUS_EN);
 
-    bool istrbus = (busclock & 0x80) == 0x80 ? true : false;
-    if (istrbus)
-      clk = 0x22;
+        bool istrbus = (busclock & 0x80) == 0x80 ? true : false;
+        if (istrbus)
+          clk = 0x22;
+      }
+
+    break;
+    default:
+
+    break;
+
   }
-
   theSetup->SetClockSource (clk);
 
   //////////////////////////////////////////////////////////////////////////
@@ -1513,45 +2086,58 @@ void TamexPadiGui::GetRegisters ()
 
   theSetup
   ->SetEnableTriggerReferenceChannel (hasrefchannel);
+
+
   theSetup->SetEnableOR (enable_or);
   theSetup->SetCombineOR (combine_or);
 
-  /////////////////////////////////////////////////////////////////////////////
-  // threshold set via PADI dacs:
-  EnableSPI ();
-  TAMEX_PRINT_DUMP("______________________________");
-  TAMEX_PRINT_DUMP("   DAC threshold settings:    ");
-  TAMEX_PRINT_DUMP("Channel \t| PADI-0 \t| PADI-1 ");
-  TAMEX_PRINT_DUMP("--------\t+------  \t+--------");
 
-  // we read the channels of both padis in parallel:
-  uint16_t values[TAMEX_PADI_NUMCHIPS] = { 0, 0 };
-  PrepareReadDAC_Padi (0);
-  
-  for (int c = 0; c < TAMEX_PADI_NUMCHAN; ++c)
+
+
+  if (boardtype != TamMod_TAMEX3)
   {
-    PrepareReadDAC_Padi (c + 1);
-    if (!ReadDAC_Padi (values))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // threshold set via PADI dacs:
+    EnableSPI ();
+    TAMEX_PRINT_DUMP("______________________________");
+    TAMEX_PRINT_DUMP("   DAC threshold settings:    ");
+    TAMEX_PRINT_DUMP("Channel \t| PADI-0 \t| PADI-1 ");
+    TAMEX_PRINT_DUMP("--------\t+------  \t+--------");
+
+    // we read the channels of both padis in parallel:
+    uint16_t values[TAMEX_PADI_NUMCHIPS] = { 0, 0 };
+    PrepareReadDAC_Padi (0);
+
+    for (int c = 0; c < TAMEX_PADI_NUMCHAN; ++c)
     {
-      printm ("GetRegisters has error reading PADI channels %d", c);
-      return;
+      PrepareReadDAC_Padi (c + 1);
+      if (!ReadDAC_Padi (values))
+      {
+        printm ("GetRegisters has error reading PADI channels %d", c);
+        return;
+      }
+      TAMEX_PRINT_DUMP("  %d    \t| 0x%x    \t| 0x%x ", c, values[0], values[1]);
+      for (int p = 0; p < TAMEX_PADI_NUMCHIPS; ++p)
+      {
+        theSetup->SetDACValue (p, c, values[p]);
+      }
     }
-    TAMEX_PRINT_DUMP("  %d    \t| 0x%x    \t| 0x%x ", c, values[0], values[1]);
+    // after last channel, we read the chip version which is available as channel 8:
+    PrepareReadDAC_Padi (0);    // dummy to shift result out. prepares next channel 0, but should not harm
+    ReadDAC_Padi (values);
+
+    TAMEX_PRINT_DUMP("Version\t| 0x%x    \t| 0x%x", values[0], values[1]);
     for (int p = 0; p < TAMEX_PADI_NUMCHIPS; ++p)
     {
-      theSetup->SetDACValue (p, c, values[p]);
+      theSetup->SetPadiVersion (p, values[p]);
     }
+    DisableSPI ();
   }
-  // after last channel, we read the chip version which is available as channel 8:
-  PrepareReadDAC_Padi (0);    // dummy to shift result out. prepares next channel 0, but should not harm
-  ReadDAC_Padi (values);
-
-  TAMEX_PRINT_DUMP("Version\t| 0x%x    \t| 0x%x", values[0], values[1]);
-  for (int p = 0; p < TAMEX_PADI_NUMCHIPS; ++p)
+  else
   {
-    theSetup->SetPadiVersion (p, values[p]);
+    TAMEX_PRINT_DUMP("TAMEX3 does not support PADI thresholds.");
   }
-  DisableSPI ();
 
   QApplication::restoreOverrideCursor ();
 }
@@ -1630,45 +2216,201 @@ unsigned int TamexPadiGui::Voltage2Register(double voltage)
 
 int TamexPadiGui::ClockSource2ComboIndex (int clk)
 {
+  // TODO: handle all these assignments with one global maps and pairs later
+
+  theSetup_GET_FOR_SLAVE_RETURN(TamexPadiSetup);
   int ix = 0;
-  switch (clk)
+  Tamex_Module_type mod=theSetup->GetModuleType();
+  switch(mod)
   {
-    case 0x20:
-      ix = 0;
-      break;
-    case 0x21:
-      ix = 1;
-      break;
-    case 0x22:
-      ix = 2;
-      break;
-    case 0x24:
+    case TamMod_TAMEX2:
+      switch (clk)
+        {
+          case 0x20:
+            ix = 0;
+            break;
+          case 0x21:
+            ix = 1;
+            break;
+          case 0x22:
+            ix = 2;
+            break;
+          case 0x24:
+          default:
+            ix = 3;
+            break;
+        };
+    break;
+    case TamMod_TAMEXPADI1:
     default:
-      ix = 3;
-      break;
-  }
+       switch (clk)
+       {
+         case 0x0:
+           ix = 0;
+           break;
+         case 0x1:
+           ix = 1;
+           break;
+         case 0x2:
+           ix = 2;
+           break;
+         case 0x4:
+           ix = 3;
+           break;
+         case 0x8:
+         default:
+           ix = 4;
+           break;
+       };
+    break;
+
+   case TamMod_TAMEX3:
+          switch (clk)
+          {
+            case 0x26:
+              ix = 0;
+              break;
+            case 0x2a:
+            default:
+              ix = 1;
+              break;
+            case 0x22:
+              ix = 2;
+              break;
+            case 0x20:
+              ix = 3;
+              break;
+          };
+   break;
+  };
   return ix;
 }
 
 int TamexPadiGui::ComboIndex2ClockSource (int index)
 {
+  // TODO: handle all these assignments with one global maps and pairs later
   int clk = 0;
-  switch (index)
+  theSetup_GET_FOR_SLAVE_RETURN(TamexPadiSetup);
+  Tamex_Module_type mod = theSetup->GetModuleType ();
+
+  switch (mod)
   {
-    case 0:
-      clk = 0x20;
+    case TamMod_TAMEX2:
+      switch (index)
+      {
+        case 0:
+          clk = 0x20;
+          break;
+        case 1:
+          clk = 0x21;
+          break;
+        case 2:
+          clk = 0x22;
+          break;
+        case 3:
+        default:
+          clk = 0x24;
+          break;
+      }
+      ;
       break;
-    case 1:
-      clk = 0x21;
-      break;
-    case 2:
-      clk = 0x22;
-      break;
-    case 3:
+    case TamMod_TAMEXPADI1:
     default:
-      clk = 0x24;
+      switch (index)
+      {
+        case 0:
+          clk = 0x0;
+          break;
+        case 1:
+          clk = 0x1;
+          break;
+        case 2:
+          clk = 0x2;
+          break;
+        case 3:
+        default:
+          clk = 0x4;
+          break;
+        case 4:
+          clk = 0x8;
+          break;
+
+      }
+      ;
+      break;
+    case TamMod_TAMEX3:
+      switch (index)
+      {
+        case 0:
+          clk = 0x26;
+          break;
+        case 1:
+          clk = 0x2a;
+          break;
+        case 2:
+          clk = 0x22;
+          break;
+        case 3:
+        default:
+          clk = 0x20;
+          break;
+
+      }
+      ;
       break;
   };
   return clk;
 }
+
+
+int TamexPadiGui::ModuleType2BoardIndex (Tamex_Module_type mod)
+{
+  // TODO: handle this with global map later
+  int ix = 0;
+  switch (mod)
+  {
+    case TamMod_TAMEX2:
+      ix = 0;
+      break;
+    case TamMod_TAMEXPADI1:
+      ix = 1;
+      break;
+    case TamMod_TAMEX3:
+      ix = 2;
+      break;
+    default:
+      ix = 1;
+      break;
+  }
+  return ix;
+}
+
+Tamex_Module_type TamexPadiGui::BoardIndex2ModuleType (int index)
+{
+  // TODO: handle this with global map later
+  Tamex_Module_type mod = TamMod_NONE;
+  switch (index)
+  {
+    case 0:
+      mod = TamMod_TAMEX2;
+      break;
+    case 1:
+      mod = TamMod_TAMEXPADI1;
+      break;
+    case 2:
+      mod = TamMod_TAMEX3;
+      break;
+    default:
+      mod = TamMod_NONE;
+      break;
+  };
+  return mod;
+}
+
+
+QString TamexPadiGui::ModuleType2ComboText(Tamex_Module_type mod, int ix)
+{
+  return fgClockSourceText[mod][ix];
+}
+
 

@@ -38,8 +38,17 @@ protected:
   /** auxiliary references to channel trailing edge enabled flags*/
   QRadioButton* fChannelTrailingRadio[TAMEX_TDC_NUMCHAN];
 
+  /** auxiliary references to channel trigger enabled flags*/
+   QCheckBox* fChannelTriggerEnabCheck[TAMEX_TDC_NUMCHAN];
+
+   /** auxiliary references to channel polarity selector*/
+   QComboBox * fChannelPolarityBox[TAMEX_TDC_NUMCHAN];
+
   /** auxiliary references to channel complete enabled flags*/
-  QGroupBox* fChannelEnabledBox[TAMEX_TDC_NUMCHAN];
+   QGroupBox* fChannelEnabledBox[TAMEX_TDC_NUMCHAN];
+
+
+
 
   /** Switches between amplified voltages (+- 600mV) and non amplified (+- 3mV)*/
   bool fShowAmplifiedVoltages;
@@ -47,11 +56,21 @@ protected:
   /** if true dump all register values to terminal. To be used for DataDump button*/
   bool fTamexDumpMode;
 
+
+  static std::map<Tamex_Module_type, std::map< int, QString > > fgClockSourceText;
+
+
   /** reset current febex slave, i.e. initialize it to defaults*/
   virtual void ResetSlave ();
 
   /** update register display*/
   void RefreshView ();
+
+  /** update display of available clock source*/
+  void RefreshClockSourceList (Tamex_Module_type mod);
+
+  /** Activate special GUI elements depending on module type capabilities*/
+  void RefreshModuleCaps (Tamex_Module_type mod);
 
   /** overwrite base class method to adjust waittime*/
   virtual void ApplyFileConfig (int gosipwait = 0);
@@ -67,6 +86,12 @@ protected:
 
   /** set the enabled status of tdc channels*/
   void SetTDCsEnabledChannels ();
+
+  /** set the triggering capability of tdc channels*/
+  void SetTDCsTriggerChannels ();
+
+  /** set input polarity tdc channels*/
+   void SetTDCsPolarity();
 
   /** set the mode of the lemo trigger outputs*/
   void SetLemoTriggerOut ();
@@ -110,6 +135,10 @@ protected:
    * This function is capable of usage in GOSIP_BROADCAST_ACTION macro*/
   void ApplyClockSource (int index);
 
+  /** apply setting for board type
+    * This function is capable of usage in GOSIP_BROADCAST_ACTION macro*/
+  void ApplyBoardType (Tamex_Module_type mod);
+
   /** apply setting for triggerwindows.
    * This function is capable of usage in GOSIP_BROADCAST_ACTION macro*/
   void ApplyTriggerwindow ();
@@ -151,14 +180,38 @@ protected:
    * This function is capable of usage in GOSIP_BROADCAST_ACTION macro*/
   void ApplyTrailingEnabledAll (bool on);
 
-  /** evaluate change of enabled febex channel channel*/
+  /** enable/or disable all tamex channel trigger sources
+    * This function is capable of usage in GOSIP_BROADCAST_ACTION macro*/
+   void ApplyTriggerEnabledAll (bool on);
+
+   /** set all tamex channels input polarity
+       * This function is capable of usage in GOSIP_BROADCAST_ACTION macro*/
+   void ApplyInputPolarityAll (bool positive);
+
+  /** enable trigger gemeration from tamex channel channel
+     * This function is capable of usage in GOSIP_BROADCAST_ACTION macro*/
+  void ApplyTriggerEnabled(int channel, bool on);
+
+  /** set input polarity for tamex channel channel
+  * This function is capable of usage in GOSIP_BROADCAST_ACTION macro*/
+  void ApplyInputPolarity(int channel, bool positive);
+
+  /** evaluate change of enabled tamex channel channel*/
   void ChannelEnabled_toggled (int channel, bool on);
 
-  /** evaluate change of disabled febex channel channel*/
+  /** evaluate change of leading edge enabled tamex channel*/
   void LeadingEnabled_toggled (int channel, bool on);
 
-  /** evaluate change of disabled febex channel channel*/
+  /** evaluate change of trailinging edge enabled tamex channel*/
   void TrailingEnabled_toggled (int channel, bool on);
+
+  /** evaluate change of trigger enabled tamex channel*/
+  void TriggerEnabled_toggled (int channel, bool on);
+
+  /** evaluate change of tamex channel input polarity*/
+  void InputPolarity_toggled (int channel, int index);
+
+
 
   /** helper to evaluate displayed voltage according to amp setup*/
   double Register2Voltage (unsigned int regval);
@@ -172,6 +225,16 @@ protected:
   /** convert clock source register value to combobox index */
   int ComboIndex2ClockSource (int ix);
 
+ /** convert module type value to combobox index */
+ int ModuleType2BoardIndex (Tamex_Module_type mod);
+
+ /** convert combobox index to tamex module type value*/
+ Tamex_Module_type BoardIndex2ModuleType (int index);
+
+ QString ModuleType2ComboText(Tamex_Module_type mod, int ix);
+
+
+
 public slots:
 
   virtual void VoltageModeCheckBoxChanged(int val);
@@ -181,6 +244,8 @@ public slots:
   virtual void TriggerWindowGroupBox_toggled (bool on);
 
   virtual void ClockSourceCurrentIndexChanged (int val);
+
+  virtual void BoardTypeComboBoxurrentIndexChanged (int val);
 
   virtual void TriggerOutChanged ();
 
@@ -297,6 +362,47 @@ public slots:
   virtual void ChannelEnabled_toggled_13 (bool on);
   virtual void ChannelEnabled_toggled_14 (bool on);
   virtual void ChannelEnabled_toggled_15 (bool on);
+
+
+  virtual void TriggerEnabled_toggled_all (bool on);
+
+  virtual void TriggerEnabled_toggled_00 (bool on);
+  virtual void TriggerEnabled_toggled_01 (bool on);
+  virtual void TriggerEnabled_toggled_02 (bool on);
+  virtual void TriggerEnabled_toggled_03 (bool on);
+  virtual void TriggerEnabled_toggled_04 (bool on);
+  virtual void TriggerEnabled_toggled_05 (bool on);
+  virtual void TriggerEnabled_toggled_06 (bool on);
+  virtual void TriggerEnabled_toggled_07 (bool on);
+  virtual void TriggerEnabled_toggled_08 (bool on);
+  virtual void TriggerEnabled_toggled_09 (bool on);
+  virtual void TriggerEnabled_toggled_10 (bool on);
+  virtual void TriggerEnabled_toggled_11 (bool on);
+  virtual void TriggerEnabled_toggled_12 (bool on);
+  virtual void TriggerEnabled_toggled_13 (bool on);
+  virtual void TriggerEnabled_toggled_14 (bool on);
+  virtual void TriggerEnabled_toggled_15 (bool on);
+
+
+  virtual void InputPolarity_toggled_all (int index);
+
+   virtual void InputPolarity_toggled_00 (int index);
+   virtual void InputPolarity_toggled_01 (int index);
+   virtual void InputPolarity_toggled_02 (int index);
+   virtual void InputPolarity_toggled_03 (int index);
+   virtual void InputPolarity_toggled_04 (int index);
+   virtual void InputPolarity_toggled_05 (int index);
+   virtual void InputPolarity_toggled_06 (int index);
+   virtual void InputPolarity_toggled_07 (int index);
+   virtual void InputPolarity_toggled_08 (int index);
+   virtual void InputPolarity_toggled_09 (int index);
+   virtual void InputPolarity_toggled_10 (int index);
+   virtual void InputPolarity_toggled_11 (int index);
+   virtual void InputPolarity_toggled_12 (int index);
+   virtual void InputPolarity_toggled_13 (int index);
+   virtual void InputPolarity_toggled_14 (int index);
+   virtual void InputPolarity_toggled_15 (int index);
+
 
 };
 

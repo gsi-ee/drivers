@@ -21,7 +21,8 @@
 #define REG_TAM_CTRL      0x200000
 #define REG_TAM_TRG_WIN   0x200004
 #define REG_TAM_EN_1      0x200008
-#define REG_TAM_EN_2      0x20000c
+#define REG_TAM_EN_TR     0x20000c
+#define REG_TAM_POLARITY  0x200010
 #define REG_TAM_CLK_SEL   0x311000
 #define REG_TAM_BUS_EN    0x311008
 
@@ -98,12 +99,29 @@
 #define PADI_DEF_TH 0xa000a000 // PADI thresholds set at startup 2x16 bits for PADI1/2
 
 
+/** maximum numeber of different clock sources in various boards*/
+#define TAMEX_NUM_CLK_SRC 5
+
+ /** tamex module type id. We use convention as in mbs readout code:*/
+enum Tamex_Module_type
+{
+    TamMod_NONE=0,
+    TamMod_TAMEX2=2,
+    TamMod_TAMEXPADI1=3,
+    TamMod_TAMEX3=10
+};
+
+
 
 /** this is a class (structure) to remember the previous setup read, and the
  * next setup to apply on the currently selected febex device:*/
 class TamexPadiSetup : public GosipSetup
 {
 public:
+
+   /** tamex module type id.*/
+  Tamex_Module_type fBoardType;
+
 
   /** the (relative) threshold values set on the PADI dacs*/
   uint16_t fDACValueSet[TAMEX_PADI_NUMCHIPS][TAMEX_PADI_NUMCHAN];
@@ -113,6 +131,13 @@ public:
 
   /** enabled register for the TDCS. 2 adjacent bits enables leading and trailing hits of one TDC channel?*/
   uint32_t fTDCEnabled;
+
+  /** trigger mask register for the TDCS. */
+  uint32_t fTDCHasTrigger;
+
+
+  /** polarity mask register for the TDCS. */
+   uint32_t fTDCPolarity;
 
 
   /** TDC clock source mode TAMEX2:
@@ -146,8 +171,8 @@ public:
 
 
   /* all initialization here:*/
-  TamexPadiSetup (): GosipSetup(), fTDCEnabled(0xFFFFFFFF), fClockSource(0x24),
-      fUseTriggerwindow(true), fTriggerPre(500), fTriggerPost(500), fEnableOR(true), fCombineOR(true), fUseReferenceChannel(true)
+  TamexPadiSetup (): GosipSetup(), fTDCEnabled(0xFFFFFFFF), fTDCHasTrigger(0xFFFFFFFF), fTDCPolarity(0xFFFFFFFF), fClockSource(0x24),
+      fBoardType(TamMod_TAMEXPADI1), fUseTriggerwindow(true), fTriggerPre(500), fTriggerPost(500), fEnableOR(true), fCombineOR(true), fUseReferenceChannel(true)
   {
     for (int p = 0; p < TAMEX_PADI_NUMCHIPS; ++p)
     {
@@ -158,10 +183,18 @@ public:
        }
     }
 
-
-
-
   }
+
+  void SetModuleType(Tamex_Module_type val)
+   {
+    fBoardType=val;
+   }
+
+  Tamex_Module_type GetModuleType()
+   {
+     return fBoardType;
+   }
+
 
    int GetPadiVersion(int chip)
    {
@@ -229,6 +262,8 @@ public:
   }
 
 
+
+
  void SetChannelLeadingEnabled(uint8_t ch, bool on)
  {
    if(ch >=TAMEX_TDC_NUMCHAN) return; // error handling
@@ -271,6 +306,85 @@ public:
      bool rev = ((reg & flags) == flags);
      return rev;
   }
+
+
+ void SetTriggerEnabledRegister(uint32_t val)
+   {
+     fTDCHasTrigger=val;
+   }
+
+   uint32_t GetTriggerEnabledRegister()
+   {
+     return fTDCHasTrigger;
+   }
+
+
+
+
+  void SetChannelTriggerEnabled(uint8_t ch, bool on)
+  {
+    if(ch >=TAMEX_TDC_NUMCHAN) return; // error handling
+      uint32_t reg=GetTriggerEnabledRegister();
+      uint32_t flags= (0x1 << ch); // set channel trigger bit
+      if(on)
+        reg |= flags;
+      else
+        reg &= ~flags;
+      SetTriggerEnabledRegister(reg);
+  }
+
+
+  bool IsChannelTriggerEnabled(uint8_t ch)
+   {
+      if(ch >=TAMEX_TDC_NUMCHAN) return false; // error handling?
+      if(fBoardType != TamMod_TAMEXPADI1) return true; // only tamexpadi1 can disable channels separately
+      uint32_t reg=GetTriggerEnabledRegister();
+      uint32_t flags= (0x1 << ch); // check trigger enabled bit for channel
+      bool rev = ((reg & flags) == flags);
+      return rev;
+   }
+
+
+/////////////////////////////////////////
+
+
+  void SetPolarityRegister(uint32_t val)
+    {
+      fTDCPolarity=val;
+    }
+
+  uint32_t GetPolarityRegister()
+    {
+      return fTDCPolarity;
+    }
+
+
+
+
+   void SetChannelPolarityPositive(uint8_t ch, bool positive)
+   {
+     if(ch >=TAMEX_TDC_NUMCHAN) return; // error handling
+     uint32_t reg=GetPolarityRegister();
+     uint32_t flags= (0x1 << ch); // set channel polarity bit
+     if(positive) // TODO: check hi or lo active bits?
+       reg |= flags;
+     else
+       reg &= ~flags;
+     SetPolarityRegister(reg);
+   }
+
+
+   bool IsChannelPolarityPositive(uint8_t ch)
+    {
+       if(ch >=TAMEX_TDC_NUMCHAN) return false; // error handling?
+       uint32_t reg=GetPolarityRegister();
+       uint32_t flags= (0x1 << ch); // check polarity bit for channel
+       bool rev = ((reg & flags) == flags);
+       return rev;
+    }
+
+
+
 
 
  uint8_t GetClockSource ()
