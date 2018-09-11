@@ -16,5 +16,6 @@ SOURCES += main.cpp TamexPadiGui.cpp TamexPadiWidget.cpp
 
 HEADERS += TamexPadiGui.h TamexPadiWidget.h TamexPadiSetup.h
 
+QMAKE_CXXFLAGS += -std=c++11
 
 FORMS = TamexPadiWidget.ui 
