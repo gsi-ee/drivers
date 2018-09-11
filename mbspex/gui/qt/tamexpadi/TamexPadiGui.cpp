@@ -69,7 +69,7 @@ TamexPadiGui::TamexPadiGui (QWidget* parent) :
 {
 
   fImplementationName = "TAMEX-PADI";
-  fVersionString = "Welcome to TAMEX-PADI GUI!\n\t v0.92 of 10-Sep-2018 by JAM (j.adamczewski@gsi.de)";
+  fVersionString = "Welcome to TAMEX-PADI GUI!\n\t v0.93 of 11-Sep-2018 by JAM (j.adamczewski@gsi.de)";
 
   fTamexPadiWidget = new TamexPadiWidget (this);
   Settings_scrollArea->setWidget (fTamexPadiWidget);
@@ -423,14 +423,20 @@ TamexPadiGui::TamexPadiGui (QWidget* parent) :
 
   for(int i=0; i<16; ++i)
   {
-      fChannelPolarityBox[i]->setItemData(0, QBrush(Qt::red),  Qt::TextColorRole );//Qt::BackgroundColorRole); //Qt::TextColorRole
-      fChannelPolarityBox[i]->setItemData(1, QBrush(Qt::blue),Qt::TextColorRole);//  Qt::BackgroundColorRole);
+      fChannelPolarityBox[i]->setItemData(0, QBrush(Qt::red),    Qt::BackgroundColorRole );
+      fChannelPolarityBox[i]->setItemData(0, QBrush(Qt::black),  Qt::TextColorRole );
+      fChannelPolarityBox[i]->setItemData(1, QBrush(Qt::blue),   Qt::BackgroundColorRole);
+      fChannelPolarityBox[i]->setItemData(1, QBrush(Qt::white),  Qt::TextColorRole);
   }
-  fTamexPadiWidget->PolarityComboBoxAll->setItemData(0, QBrush(Qt::red),  Qt::TextColorRole);//  Qt::BackgroundColorRole);
-  fTamexPadiWidget->PolarityComboBoxAll->setItemData(1, QBrush(Qt::blue), Qt::TextColorRole);//  Qt::BackgroundColorRole);
-
+  fTamexPadiWidget->PolarityComboBoxAll->setItemData(0, QBrush(Qt::red),  Qt::BackgroundColorRole);
+  fTamexPadiWidget->PolarityComboBoxAll->setItemData(0, QBrush(Qt::black),  Qt::TextColorRole);
+  fTamexPadiWidget->PolarityComboBoxAll->setItemData(1, QBrush(Qt::blue), Qt::BackgroundColorRole);
+  fTamexPadiWidget->PolarityComboBoxAll->setItemData(0, QBrush(Qt::red),  Qt::TextColorRole);
+  RefreshPolaritySelector( fTamexPadiWidget->PolarityComboBoxAll, true); // put default color to general pol widget
   GetSFPChainSetup ();    // ensure that any slave has a status structure before we begin clicking...
   show ();
+
+
 }
 
 TamexPadiGui::~TamexPadiGui ()
@@ -1385,6 +1391,7 @@ void TamexPadiGui::InputPolarity_toggled (int channel, int index )
 {
   GOSIP_LOCK_SLOT
   //std::cout << "TamexPadiGui::InputPolarity_toggled, channel="<<channel<<", index="<<index<<std::endl;
+  RefreshPolaritySelector(fChannelPolarityBox[channel], (index==0));
   GOSIP_AUTOAPPLY(ApplyInputPolarity(channel, (index==0)));
   GOSIP_UNLOCK_SLOT
 }
@@ -1457,9 +1464,13 @@ void TamexPadiGui::InputPolarity_toggled_15 (int index)
 void TamexPadiGui::InputPolarity_toggled_all (int index)
 {
   GOSIP_LOCK_SLOT
+  RefreshPolaritySelector(fTamexPadiWidget->PolarityComboBoxAll, (index==0));
   for (int chan = 0; chan < TAMEX_TDC_NUMCHAN; ++chan)
-    fChannelPolarityBox[chan]->setCurrentIndex (index);
-  // since we lock the slots of the radiobuttons, we handle the autoapply here separately (and better):
+    {
+      fChannelPolarityBox[chan]->setCurrentIndex (index);
+      RefreshPolaritySelector(fChannelPolarityBox[chan], (index==0));
+    }
+    // since we lock the slots of the radiobuttons, we handle the autoapply here separately (and better):
   GOSIP_AUTOAPPLY(ApplyInputPolarityAll(index==0));
   GOSIP_UNLOCK_SLOT
 }
@@ -1564,6 +1575,15 @@ void TamexPadiGui::TriggerOutChanged ()
 }
 
 
+ void TamexPadiGui::RefreshPolaritySelector(QComboBox* ctrl, bool ispositive)
+ {
+   ctrl->setStyleSheet(
+            ispositive ? "QComboBox { color: black; background-color: red; }":
+                "QComboBox { color: white; background-color: blue; }"
+        );
+ }
+
+
 void TamexPadiGui::RefreshClockSourceList (Tamex_Module_type mod)
 
 {
@@ -1623,7 +1643,7 @@ void TamexPadiGui::RefreshView ()
       fChannelLeadingRadio[channel]->setChecked (leading);
       fChannelTrailingRadio[channel]->setChecked (trailing);
       fChannelPolarityBox[channel]->setCurrentIndex(ispositive ? 0 : 1);
-
+      RefreshPolaritySelector(fChannelPolarityBox[channel], ispositive);
     }
 
     bool enabtrig = theSetup->IsChannelTriggerEnabled (channel); // check of boardtype is done in setup class

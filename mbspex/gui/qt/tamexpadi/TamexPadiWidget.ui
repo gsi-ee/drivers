@@ -514,16 +514,6 @@
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_6">
           <item>
-           <widget class="QCheckBox" name="checkBox_ChannelsAlll">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked all channel properties will be changed accordingly &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string>All</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QGroupBox" name="channelGroupBox_all">
             <property name="enabled">
              <bool>true</bool>
@@ -544,7 +534,7 @@
              <string>Enable All Channels</string>
             </property>
             <property name="title">
-             <string>ENABLED</string>
+             <string>ALL ENABLED</string>
             </property>
             <property name="flat">
              <bool>false</bool>
@@ -560,7 +550,7 @@
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>50</width>
+                 <width>100</width>
                  <height>24</height>
                 </size>
                </property>
@@ -3100,22 +3090,6 @@
     <hint type="destinationlabel">
      <x>176</x>
      <y>74</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>checkBox_ChannelsAlll</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>channelGroupBox_all</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>46</x>
-     <y>81</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>85</x>
-     <y>90</y>
     </hint>
    </hints>
   </connection>

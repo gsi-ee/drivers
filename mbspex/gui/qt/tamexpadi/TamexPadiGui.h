@@ -211,6 +211,8 @@ protected:
   /** evaluate change of tamex channel input polarity*/
   void InputPolarity_toggled (int channel, int index);
 
+  /** display polarity combobox with actual colors*/
+  void RefreshPolaritySelector(QComboBox* ctrl, bool ispositive);
 
 
   /** helper to evaluate displayed voltage according to amp setup*/
