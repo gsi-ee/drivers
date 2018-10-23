@@ -30,6 +30,8 @@
 #define STATISTIC     1000000
 #define MAX_TRIG_TYPE      16
 
+#define SERIALIZE_IO __asm__ volatile ("eieio")
+
 //----------------------------------------------------------------------------
  
 #include "stdio.h"
@@ -384,7 +386,8 @@ int f_user_readout (unsigned char   bh_trig_typ,
     eb_stat_before= *fifo_ready;
     //sleep(10);
     eb_fifo_ct_brd= *fifo_cnt; 
-    //sleep(10);
+    *fifo_pop=0xF;
+    SERIALIZE_IO;
     eb_tlu_high_ts = *ft_shi;
     //sleep(10);
     eb_tlu_low_ts = *ft_slo;
@@ -400,8 +403,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
     // TEST
     //exit(0);
    
-    *fifo_pop=0xF;
-    //sleep(3);
+  
     eb_stat_after=*fifo_ready;
     //sleep(3);
     //printm ("stat after: 0x%x\n", eb_stat_after);
@@ -422,14 +424,15 @@ int f_user_readout (unsigned char   bh_trig_typ,
     eb_cycle_read (eb_cycle, wrTLU + GSI_TM_LATCH_FIFO_READY, EB_BIG_ENDIAN|EB_DATA32, &eb_stat_before);
     /* read fifo fill counter */
     eb_cycle_read (eb_cycle, wrTLU + GSI_TM_LATCH_FIFO_CNT, EB_BIG_ENDIAN|EB_DATA32, &eb_fifo_ct_brd);
+    /* pop timestamp from FIFO */
+    eb_cycle_write (eb_cycle, wrTLU + GSI_TM_LATCH_FIFO_POP, EB_BIG_ENDIAN|EB_DATA32, 0xF);
     /* read high word of latched timestamp */
     eb_cycle_read (eb_cycle, wrTLU + GSI_TM_LATCH_FIFO_FTSHI, EB_BIG_ENDIAN|EB_DATA32, &eb_tlu_high_ts);
     /* read low word of latched timestamp */
     eb_cycle_read (eb_cycle, wrTLU + GSI_TM_LATCH_FIFO_FTSLO, EB_BIG_ENDIAN|EB_DATA32, &eb_tlu_low_ts);
     /* read fine time word of latched timestamp */
     eb_cycle_read (eb_cycle, wrTLU + GSI_TM_LATCH_FIFO_FTSSUB, EB_BIG_ENDIAN|EB_DATA32, &eb_tlu_fine_ts);
-    /* pop timestamp from FIFO */
-    eb_cycle_write (eb_cycle, wrTLU + GSI_TM_LATCH_FIFO_POP, EB_BIG_ENDIAN|EB_DATA32, 0xF);
+
     /* read status of FIFOs */
     eb_cycle_read (eb_cycle, wrTLU + GSI_TM_LATCH_FIFO_READY, EB_BIG_ENDIAN|EB_DATA32, &eb_stat_after);
 

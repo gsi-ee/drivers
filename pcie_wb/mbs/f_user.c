@@ -8,15 +8,15 @@
 
 #define USE_MBSPEX_LIB       1 // this define will switch on usage of mbspex lib with locked ioctls
                                // instead of direct register mapping usage
-#define WR_TIME_STAMP        1 // white rabbit latched time stamp
+//#define WR_TIME_STAMP        1 // white rabbit latched time stamp
 #define WRITE_ANALYSIS_PARAM 1 
 //#define DEBUG                1
 
 #ifdef WR_TIME_STAMP
 #define USE_TLU_FINE_TIME   1
  
-#define WR_USE_TLU_DIRECT 1  // JAM8-2018: new for direct tlu access
- 
+//#define WR_USE_TLU_DIRECT 1  // JAM8-2018: new for direct tlu access
+ #define SERIALIZE_IO __asm__ volatile ("eieio")
 #endif
 
 //----------------------------------------------------------------------------
@@ -65,6 +65,7 @@
 // nr of slaves on SFP 0   1   2   3
 //                     |   |   |   |
 //#define NR_SLAVES    { 1,  1,  0,  0}
+//#define NR_SLAVES    { 1,  1,  0,  0}
 #define NR_SLAVES    { 0,  0,  0,  0}
 
                               // maximum trace length 8000 (133 us)
@@ -76,8 +77,8 @@
 #define FEB_TRACE_LEN   300  // in nr of samples
 #define FEB_TRIG_DELAY   30  // in nr.of samples
 
-#define CLK_SOURCE_ID     {0xff,0}  // sfp_port, module_id of the module to distribute clock
-//#define CLK_SOURCE_ID     {0x0,0}  // sfp_port, module_id of the module to distribute clock
+//#define CLK_SOURCE_ID     {0xff,0}  // sfp_port, module_id of the module to distribute clock
+#define CLK_SOURCE_ID     {0x0,0}  // sfp_port, module_id of the module to distribute clock
 
 //--------------------------------------------------------------------------------------------------------
 
@@ -989,7 +990,8 @@ int f_user_readout (unsigned char   bh_trig_typ,
     eb_stat_before= *fifo_ready;
     //sleep(10);
     eb_fifo_ct_brd= *fifo_cnt;
-    //sleep(10);
+    *fifo_pop=0xF;
+    SERIALIZE_IO;
     eb_tlu_high_ts = *ft_shi;
     //sleep(10);
     eb_tlu_low_ts = *ft_slo;
@@ -1005,7 +1007,6 @@ int f_user_readout (unsigned char   bh_trig_typ,
     // TEST
     //exit(0);
 
-    *fifo_pop=0xF;
     //sleep(3);
     eb_stat_after=*fifo_ready;
     //sleep(3);
@@ -1029,14 +1030,15 @@ int f_user_readout (unsigned char   bh_trig_typ,
     eb_cycle_read (eb_cycle, wrTLU + GSI_TM_LATCH_FIFO_READY, EB_BIG_ENDIAN|EB_DATA32, &eb_stat_before);
     /* read fifo fill counter */
     eb_cycle_read (eb_cycle, wrTLU + GSI_TM_LATCH_FIFO_CNT, EB_BIG_ENDIAN|EB_DATA32, &eb_fifo_ct_brd);
+    /* pop timestamp from FIFO */
+    eb_cycle_write (eb_cycle, wrTLU + GSI_TM_LATCH_FIFO_POP, EB_BIG_ENDIAN|EB_DATA32, 0xF);
     /* read high word of latched timestamp */
     eb_cycle_read (eb_cycle, wrTLU + GSI_TM_LATCH_FIFO_FTSHI, EB_BIG_ENDIAN|EB_DATA32, &eb_tlu_high_ts);
     /* read low word of latched timestamp */
     eb_cycle_read (eb_cycle, wrTLU + GSI_TM_LATCH_FIFO_FTSLO, EB_BIG_ENDIAN|EB_DATA32, &eb_tlu_low_ts);
     /* read fine time word of latched timestamp */
     eb_cycle_read (eb_cycle, wrTLU + GSI_TM_LATCH_FIFO_FTSSUB, EB_BIG_ENDIAN|EB_DATA32, &eb_tlu_fine_ts);
-    /* pop timestamp from FIFO */
-    eb_cycle_write (eb_cycle, wrTLU + GSI_TM_LATCH_FIFO_POP, EB_BIG_ENDIAN|EB_DATA32, 0xF);
+
     /* read status of FIFOs */
     eb_cycle_read (eb_cycle, wrTLU + GSI_TM_LATCH_FIFO_READY, EB_BIG_ENDIAN|EB_DATA32, &eb_stat_after);
 
