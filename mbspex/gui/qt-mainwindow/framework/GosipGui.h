@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <QProcess>
 #include <QString>
+#include <QSettings>
 
 class QSignalMapper;
 
@@ -167,6 +168,9 @@ protected:
   QProcessEnvironment fEnv;
 #endif
 
+
+  /** handle mainwindow settings by this*/
+  QSettings* fSettings;
 
   /* for mdi windows Signals*/
   QSignalMapper*     fWinMapper;
@@ -357,6 +361,14 @@ protected:
    virtual void closeEvent( QCloseEvent * ce );
 
 
+
+   void storePanelGeometry(QWidget* w, const QString& kind);
+
+   QSize lastPanelSize(const QString& kind, int dfltwidth=450, int dfltheight=250);
+
+   QPoint lastPanelPos(const QString& kind);
+
+
 public slots:
   virtual void ShowBtn_clicked();
   virtual void ApplyBtn_clicked ();
@@ -377,6 +389,14 @@ public slots:
   void MinAllWindows();
   void ToggleFullScreenSlot();
   void ToggleSubwindowModeSlot();
+
+  /** read Qt settings (window size etc.)*/
+   virtual void ReadSettings();
+
+   /** write Qt settings (window size etc.)*/
+   virtual void WriteSettings();
+
+
 };
 
 #endif

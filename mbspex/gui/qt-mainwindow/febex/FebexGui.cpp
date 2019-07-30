@@ -35,9 +35,11 @@
 FebexGui::FebexGui (QWidget* parent) : GosipGui (parent)
 {
  
- 
+
  fImplementationName="FEBEX";
- fVersionString="Welcome to FEBEX GUI!\n\t v0.977 of 9-Feb-2018 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to FEBEX GUI!\n\t v0.980 of 30-July-2019 by JAM (j.adamczewski@gsi.de)";
+
+ fSettings=new QSettings("GSI", fImplementationName);
 
 #ifdef FEBEX_USE_SINGLE_SUBWINDOW
 fFebexWidget=new FebexWidget(this);
@@ -343,6 +345,7 @@ mdiArea->addSubWindow(fFebexWidget); // complete febex widget in one window
   fChannelTriggerRadio[15] = fFebexWidget->Channel_intrigger_radio_15;
 
 
+  ReadSettings();
 
   GetSFPChainSetup(); // ensure that any slave has a status structure before we begin clicking...
   show ();

@@ -16,6 +16,7 @@
 #include <QMessageBox>
 #include <QMdiSubWindow>
 #include <QSignalMapper>
+#include <QKeyEvent>
 
 #include <sstream>
 
@@ -62,11 +63,12 @@ void GosipGui::I2c_sleep ()
  *  name 'name'.'
  */
 GosipGui::GosipGui (QWidget* parent) :
-    QMainWindow (parent), fWinMapper(0), fDebug (false), fSaveConfig(false), fBroadcasting(false), fSlotGuard(false), fFullScreen(false), fMdiTabViewMode(false),
+    QMainWindow (parent), fSettings(0), fWinMapper(0), fDebug (false), fSaveConfig(false), fBroadcasting(false), fSlotGuard(false), fFullScreen(false), fMdiTabViewMode(true),
       fSFP (0), fSlave (0), fSFPSave (0), fSlaveSave (0), fConfigFile(NULL)
 {
 
  Q_INIT_RESOURCE(gosipicons);
+
 
   setupUi (this);
 #if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
@@ -75,7 +77,7 @@ GosipGui::GosipGui (QWidget* parent) :
 
 
   fImplementationName="GOSIP";
-  fVersionString="Welcome to GOSIP GUI!\n\t v0.83 of 06-November-2017 by JAM (j.adamczewski@gsi.de)";
+  fVersionString="Welcome to GOSIP GUI!\n\t v0.90 of 30-July-2019 by JAM (j.adamczewski@gsi.de)";
 
 
   fNumberBase=10;
@@ -94,19 +96,10 @@ GosipGui::GosipGui (QWidget* parent) :
   TextOutput->setCenterOnScroll (false);
   ClearOutputBtn_clicked ();
 
-//  QObject::connect (RefreshButton, SIGNAL (clicked ()), this, SLOT (ShowBtn_clicked ()));
-//  QObject::connect (ApplyButton, SIGNAL (clicked ()), this, SLOT (ApplyBtn_clicked ()));
-//
-//  QObject::connect (InitChainButton, SIGNAL (clicked ()), this, SLOT (InitChainBtn_clicked ()));
-//  QObject::connect (ResetBoardButton, SIGNAL (clicked ()), this, SLOT (ResetBoardBtn_clicked ()));
-//  QObject::connect (ResetSlaveButton, SIGNAL (clicked ()), this, SLOT (ResetSlaveBtn_clicked ()));
+
 
   QObject::connect (BroadcastButton, SIGNAL (clicked (bool)), this, SLOT (BroadcastBtn_clicked (bool)));
 
-  //  QObject::connect (DumpButton, SIGNAL (clicked ()), this, SLOT (DumpBtn_clicked ()));
-//  QObject::connect (ConfigButton, SIGNAL (clicked ()), this, SLOT (ConfigBtn_clicked ()));
-//  QObject::connect (SaveConfigButton, SIGNAL (clicked ()), this, SLOT (SaveConfigBtn_clicked ()));
-//  QObject::connect (ClearOutputButton, SIGNAL (clicked ()), this, SLOT (ClearOutputBtn_clicked ()));
 
 
   QObject::connect(actionConfigure, SIGNAL(triggered()), this, SLOT(ConfigBtn_clicked ()));
@@ -119,16 +112,20 @@ GosipGui::GosipGui (QWidget* parent) :
 //  QObject::connect(actionTile, SIGNAL(triggered()), mdiArea, SLOT(tileSubWindows()));
 
 
+  QObject::connect(actionSaveSettings, SIGNAL(triggered()), this, SLOT(WriteSettings()));
+
   connect(menuWindows, SIGNAL(aboutToShow()), this, SLOT(windowsMenuAboutToShow()));
   // need to create menu item with F11
   windowsMenuAboutToShow();
 
 
-  ControlToolBar->addAction( QIcon( ":/icons/refresh.png" ), "Show current hardware status (Refresh GUI)",
+  QAction* refreshaction=ControlToolBar->addAction( QIcon( ":/icons/refresh.png" ), "Show current hardware status (Refresh GUI) - F5",
                         this, SLOT(ShowBtn_clicked ()));
+  refreshaction->setShortcut(Qt::Key_F5);
 
-  ControlToolBar->addAction(  QIcon( ":/icons/left.png" ), "Apply GUI setup to hardware",
+  QAction* applyaction=ControlToolBar->addAction(  QIcon( ":/icons/left.png" ), "Apply GUI setup to hardware - F12",
                           this, SLOT(ApplyBtn_clicked ()));
+  applyaction->setShortcut(Qt::Key_F12);
 
   ControlToolBar->addSeparator();
   ControlToolBar->addAction(  QIcon( ":/icons/fileopen.png" ), "Load configuration from file into GUI",
@@ -189,6 +186,9 @@ GosipGui::~GosipGui ()
 #ifdef USE_MBSPEX_LIB
   mbspex_close (fPexFD);
 #endif
+
+if(fSettings) delete fSettings;
+
 }
 
 void GosipGui::ShowBtn_clicked ()
@@ -456,15 +456,19 @@ void GosipGui::ApplyFileConfig(int gosipwait)
 
 void GosipGui::DebugBox_changed (int on)
 {
+ GOSIP_LOCK_SLOT
 //std::cout << "DebugBox_changed to "<< on << std::endl;
 fDebug = on;
+GOSIP_UNLOCK_SLOT
 }
 
 void GosipGui::HexBox_changed(int on)
 {
+  GOSIP_LOCK_SLOT
   fNumberBase= (on ? 16 :10);
   //std::cout << "HexBox_changed set base to "<< fNumberBase << std::endl;
   RefreshView ();
+  GOSIP_UNLOCK_SLOT
 }
 
 
@@ -894,13 +898,14 @@ void GosipGui::windowsMenuAboutToShow()
     bool on = ! mdiArea->subWindowList().isEmpty();
 
 
-    menuWindows->addAction("Ca&scade", mdiArea, SLOT(cascadeSubWindows()))->setEnabled(on);
-    menuWindows->addAction("&Tile", mdiArea, SLOT(tileSubWindows()))->setEnabled(on);
-    menuWindows->addAction("&Minimize all", this, SLOT(MinAllWindows()))->setEnabled(on);
-    menuWindows->addAction((fMdiTabViewMode ? "&Tabbed subwindos" : "&Separate subwindows"), this, SLOT(ToggleSubwindowModeSlot()), Qt::Key_F6);
+    menuWindows->addAction("Cascade", mdiArea, SLOT(cascadeSubWindows()), Qt::Key_F7)->setEnabled(on);
+
+    menuWindows->addAction("Tile", mdiArea, SLOT(tileSubWindows()), Qt::Key_F8)->setEnabled(on);
+    menuWindows->addAction("Minimize all", this, SLOT(MinAllWindows()),Qt::Key_F9)->setEnabled(on);
+    menuWindows->addAction((fMdiTabViewMode ? "Tabbed subwindows" : "Separate subwindows"), this, SLOT(ToggleSubwindowModeSlot()), Qt::Key_F6);
 
 
-    menuWindows->addAction((fFullScreen ? "&Normal window" : "&Full screen"), this, SLOT(ToggleFullScreenSlot()), Qt::Key_F11);
+    menuWindows->addAction((fFullScreen ? "Normal window" : "Full screen"), this, SLOT(ToggleFullScreenSlot()), Qt::Key_F11);
 
 
     menuWindows->addSeparator();
@@ -972,6 +977,144 @@ void GosipGui::about()
 }
 
 
+// stolen from Go4 to store/restore the subwindow sizes:
+void GosipGui::storePanelGeometry(QWidget* w, const QString& kind)
+{
+  if(fSettings)
+    {
+     fSettings->setValue(QString("/") + kind + QString("/Width"), w->width() );
+     fSettings->setValue(QString("/") + kind + QString("/Height"), w->height() );
+     fSettings->setValue(QString("/") + kind + QString("/X"), w->pos().x());
+     fSettings->setValue(QString("/") + kind + QString("/Y"), w->pos().y());
+     std::cout<<"storePanelSize for "<<kind.toStdString().c_str() <<" saves width:"<<w->width()<<", height:"<< w->height();
+     std::cout<<" x:"<< w->pos().x()<<", y:"<<w->pos().y()<< std::endl;
+    }
+}
+
+QSize GosipGui::lastPanelSize(const QString& kind, int dfltwidth, int dfltheight)
+{
+    if(fSettings)
+    {
+      QSize rect(fSettings->value(QString("/") + kind + QString("/Width"), dfltwidth).toInt(),
+              fSettings->value(QString("/") + kind + QString("/Height"), dfltheight).toInt());
+
+
+     //std::cout<<"lastPanelSize for "<<kind.toStdString().c_str()<<" gets width:"<<rect.width()<<", height:"<< rect.height() << std::endl;
+
+     return rect;
+    }
+    else
+      return QSize( dfltwidth, dfltheight);
+}
+
+QPoint GosipGui::lastPanelPos(const QString& kind)
+{
+    if(fSettings)
+    {
+      QPoint pt(fSettings->value(QString("/") + kind + QString("/X")).toInt(),
+              fSettings->value(QString("/") + kind + QString("/Y")).toInt());
+
+
+    // std::cout<<"lastPanelPosition for "<<kind.toStdString().c_str()<<" gets x:"<<pt.x()<<", y:"<< pt.y() << std::endl;
+
+     return pt;
+    }
+    else
+      return QPoint( 0, 0);
+}
+
+
+
+void GosipGui::ReadSettings()
+{
+  //std::cout<< "ReadSettings..." << std::endl;
+  if(fSettings)
+    {
+      // have to lock the slots of the hexbox to avoid that we trigger a refresh view before everything is ready!
+    GOSIP_LOCK_SLOT
+      bool autoapp=fSettings->value("/ModeControl/isAutoApply", false).toBool();
+      checkBox_AA->setChecked(autoapp);
+
+      fNumberBase=fSettings->value("/ModeControl/numberBase", 10).toInt();
+      HexBox->setChecked(fNumberBase>10 ? true : false);
+      fDebug= fSettings->value("/ModeControl/isVerbose", false).toBool();
+      DebugBox->setChecked(fDebug);
+
+      fMdiTabViewMode=!(fSettings->value("/Mdi/isTabbedMode",false).toBool());
+      ToggleSubwindowModeSlot(); // set the desired mode and invert the flag again for correct menu display!
+
+
+
+      restoreState(fSettings->value("/MainWindow/State").toByteArray());
+      restoreGeometry(fSettings->value("/MainWindow/Geometry").toByteArray());
+
+// JAM2019: the following will not work to store window sizes of mdi subwindows
+// the settings file do not get byte array from subwindows, but only "false" property
+// => not intended to use qsettings for mdi subwindows directly
+//      mdiArea->restoreGeometry(fSettings->value("/MdiArea/Geometry").toByteArray());
+//      QList<QMdiSubWindow*> subwinlist= mdiArea->subWindowList();
+//         for (int i = 0; i < subwinlist.size(); ++i)
+//         {
+//           QMdiSubWindow* win= subwinlist.at(i);
+//           win->restoreGeometry(fSettings->value( QString ("/MdiArea/SubWindow%1").arg (i)).toByteArray());
+//           std::cout <<"ReadSettings restored subwindow "<< i << std::endl;
+//         }
+//////////// end comment on failed try,
+
+      QList<QMdiSubWindow*> subwinlist= mdiArea->subWindowList();
+      for (int i = 0; i < subwinlist.size(); ++i)
+      {
+        QMdiSubWindow* win= subwinlist.at(i);
+        win->resize(lastPanelSize(QString ("SubWindow%1").arg (i)));
+        win->move(lastPanelPos(QString ("SubWindow%1").arg (i)));
+        //std::cout <<"ReadSettings restored subwindow panel geometry "<< i << std::endl;
+      }
+      //std::cout<< "ReadSettings gets numberbase:"<<fNumberBase<<", fDebug:"<<fDebug<<", autoapply:"<<autoapp << std::endl;
+    GOSIP_UNLOCK_SLOT
+    }
+}
+
+void GosipGui::WriteSettings()
+{
+  //std::cout<< "WriteSettings..." << std::endl;
+  if(fSettings)
+  {
+    fSettings->setValue("/Mdi/isTabbedMode", fMdiTabViewMode);
+
+    fSettings->setValue("/ModeControl/isVerbose", fDebug);
+    fSettings->setValue("/ModeControl/numberBase", fNumberBase);
+    fSettings->setValue("/ModeControl/isAutoApply", IsAutoApply());
+
+    fSettings->setValue("/MainWindow/State", saveState());
+    fSettings->setValue("/MainWindow/Geometry", saveGeometry());
+
+// scan geometry of subwindows in mdiarea:
+
+
+// following is not working as intended. subwindowlist is available, but subwindow won't set/restore their geometry
+//    fSettings->setValue("/MdiArea/Geometry", mdiArea->saveGeometry());
+//    QList<QMdiSubWindow*> subwinlist= mdiArea->subWindowList();
+//    for (int i = 0; i < subwinlist.size(); ++i)
+//    {
+//      QMdiSubWindow* win= subwinlist.at(i);
+//      fSettings->setValue( QString ("/MdiArea/SubWindow%1").arg (i), win>saveGeometry());
+//      std::cout <<"WriteSettings stored subwindow "<< i << std::endl;
+//    }
+///////////////////////// end comment failed try
+
+
+    QList<QMdiSubWindow*> subwinlist= mdiArea->subWindowList();
+    for (int i = 0; i < subwinlist.size(); ++i)
+    {
+      QMdiSubWindow* win= subwinlist.at(i);
+      storePanelGeometry(win,QString ("SubWindow%1").arg (i)); // stolen from go4
+     // std::cout <<"WriteSettings stored subwindow panel size "<< i << std::endl;
+    }
+
+
+
+  }
+}
 
 
 void GosipGui::closeEvent( QCloseEvent* ce)
