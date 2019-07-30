@@ -986,8 +986,8 @@ void GosipGui::storePanelGeometry(QWidget* w, const QString& kind)
      fSettings->setValue(QString("/") + kind + QString("/Height"), w->height() );
      fSettings->setValue(QString("/") + kind + QString("/X"), w->pos().x());
      fSettings->setValue(QString("/") + kind + QString("/Y"), w->pos().y());
-     std::cout<<"storePanelSize for "<<kind.toStdString().c_str() <<" saves width:"<<w->width()<<", height:"<< w->height();
-     std::cout<<" x:"<< w->pos().x()<<", y:"<<w->pos().y()<< std::endl;
+    // std::cout<<"storePanelSize for "<<kind.toStdString().c_str() <<" saves width:"<<w->width()<<", height:"<< w->height();
+     //std::cout<<" x:"<< w->pos().x()<<", y:"<<w->pos().y()<< std::endl;
     }
 }
 
