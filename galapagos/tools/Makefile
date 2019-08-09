@@ -1,0 +1,48 @@
+#
+
+include ../common.mk
+
+INCDIR += ../include
+LDINC += $(addprefix -L ,$(LIBDIR))
+LDFLAGS += -Wl,-rpath,/usr/lib -lrt
+# avoid shared lib for the moment due to more easy testing
+#GAPGLIB = -Wl,-rpath,/usr/lib -Wl,-rpath,$(LIBDIR) -lgalapagos
+GAPGLIB = $(LIBDIR)/libgalapagos.a
+
+BINARIES = galapcmd
+
+###############################################################
+# Target definitions
+
+.PHONY: exall dirs depend clean
+
+exall: dirs depend $(BINARIES)
+
+
+# Relate all exec names to it exec in the bin dir
+$(BINARIES) : % : $(BINDIR)/% ;
+
+# Target for each exec from the object file
+$(BINDIR)/%: $(OBJDIR)/%.o
+	@echo -e "LD \t$@"
+#	$(Q)$(CXX) $(LDINC) $(LDFLAGS) $(GAPGLIB) $(CFLAGS) -o $@ $<
+	$(Q)$(CXX) $(LDFLAGS) $(CFLAGS) -o  $@  $< $(GAPGLIB)
+
+#$(BINDIR)/galaptest: $(OBJDIR)/galaptest.o $(OBJDIR)/timing.o
+#	@echo -e "LD \t$@"
+#	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/galaptest.o $(OBJDIR)/timing.o $(GAPGLIB)
+#	$(Q)$(CC) $(LDINC) $(LDFLAGS) $(GAPGLIB) $(CFLAGS) -o $@ $(OBJDIR)/galaptest.o $(OBJDIR)/timing.o
+
+
+
+# dummy for included common.mk
+liball: exall
+
+
+clean:
+	@echo -e "CLEAN \t$(shell pwd)"
+	-$(Q)rm -f $(addprefix $(BINDIR)/,$(BINARIES))
+#	-$(Q)rm -f $(BINDIR)/m_test5
+	-$(Q)rm -f $(OBJ)
+#	-$(Q)rm -f $(OBJDIR)/galaptest.o $(OBJDIR)/timing.o
+	-$(Q)rm -f $(DEPEND)

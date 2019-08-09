@@ -1,0 +1,10 @@
+#!/bin/sh
+module="galapagos"
+device="galapagos"
+
+# invoke rmmod with all arguments we got
+/sbin/rmmod $module
+# Remove stale nodes
+rm -f /dev/${device}
+#ls -l /dev | grep pexor
+echo PEXOR module unloaded.
