@@ -4,6 +4,7 @@
 
 #include "BasicGui.h"
 #include "GalChannelWidget.h"
+#include "GalSequenceWidget.h"
 #include "GalapagosSetup.h"
 #include "GalapagosMacros.h"
 #include <kled.h>
@@ -38,6 +39,8 @@ protected:
 
   GalChannelWidget* fGalChannelWidget;
 
+  GalSequenceWidget* fGalSequenceWidget;
+
   /** auxiliary references to channel enabled flags*/
    QRadioButton* fChannelEnabledRadio[GAPG_CHANNELS];
 
@@ -49,6 +52,7 @@ protected:
    QComboBox* fChannelSequenceCombo[GAPG_CHANNELS];
  //
 
+   QString fLastFileDir;
 
  /** reset current slave, i.e. initialize it to defaults*/
   virtual void ResetSlave ();
@@ -156,6 +160,19 @@ public slots:
   GALAGUI_DEFINE_MULTICHANNEL_CHANGED_16(ChannelSequence);
 
 virtual void GeneratorActive_clicked(bool checked);
+
+
+virtual void SequenceIDChanged (int ix);
+
+virtual void SequenceNew_clicked();
+virtual void SequenceEdit_clicked();
+virtual void SequenceLoad_clicked();
+virtual void SequenceSave_clicked();
+virtual void SequenceApply_clicked();
+virtual void SequenceEditCancel_clicked();
+
+virtual void ReadSettings();
+virtual void WriteSettings();
 
 };
 

@@ -176,6 +176,26 @@ class GalapagosObject
 
   GalapagosObject(uint16_t id, const char* name): fId(id), fName(name){}
 
+  GalapagosObject(const GalapagosObject& ob)
+  {
+    //std::cout<< "GalapagosObject copy ctor for "<<ob.fName.c_str() << std::endl;
+    fId=ob.fId;
+    fName=ob.fName;
+
+  }
+
+  GalapagosObject& operator=(const GalapagosObject& rhs)
+  {
+    if (this != &rhs) {
+    //std::cout<< "GalapagosObject operator= for "<<rhs.fName.c_str() << std::endl;
+    fId=rhs.fId;
+    fName=rhs.fName;
+    }
+    return *this;
+  }
+
+  virtual ~GalapagosObject(){}
+
   uint32_t Id() {return fId;}
 
   const char* Name() {return fName.c_str();}
@@ -202,6 +222,25 @@ public:
     {
       Clear();
     }
+
+  GalapagosPattern(const GalapagosPattern& seq) : GalapagosObject(seq)
+   {
+     //std::cout<< "GalapagosPattern copy ctor " << std::endl;
+     fPattern=seq.fPattern;
+   }
+
+  GalapagosPattern& operator=(const GalapagosPattern& rhs)
+      {
+        if (this != &rhs) {
+          GalapagosObject::operator=(rhs);
+          fPattern=rhs.fPattern;
+        }
+        return *this;
+      }
+
+
+
+  virtual ~GalapagosPattern(){}
 
   void Clear()
     {
@@ -251,10 +290,40 @@ public:
     Clear();
   }
 
+  GalapagosSequence(const GalapagosSequence& seq) : GalapagosObject(seq)
+  {
+    //std::cout<< "GalapagosSequence copy ctor " << std::endl;
+    fCommandSkript=seq.fCommandSkript;
+    fCommandTokens=seq.fCommandTokens;
+  }
+
+  GalapagosSequence& operator=(const GalapagosSequence& rhs)
+    {
+      if (this != &rhs) {
+        //std::cout<< "GalapagosSequence operator= "<< std::endl;
+        GalapagosObject::operator=(rhs);
+        fCommandSkript=rhs.fCommandSkript;
+        fCommandTokens=rhs.fCommandTokens;
+      }
+      return *this;
+    }
+
+  virtual ~GalapagosSequence(){}
+
+
+
   void AddCommand(const char* cmd)
   {
+    if(cmd==0) return;
     fCommandSkript.push_back(std::string(cmd));
   }
+
+
+  const char* GetCommandLine(int ix)
+   {
+     if(ix>=fCommandSkript.size()) return 0;
+     return fCommandSkript[ix].c_str();
+   }
 
   void Compile()
   {
@@ -270,7 +339,7 @@ public:
   /** read command token of given index*/
    uint32_t GetCommandToken(int ix)
    {
-     if(ix>fCommandTokens.size()) return 0;
+     if(ix>=fCommandTokens.size()) return 0;
      return fCommandTokens[ix];
    }
 
@@ -309,7 +378,10 @@ public:
 
 
      /** references to sequence to be activated*/
-     GalapagosSequence* fChannelSequence[GAPG_CHANNELS];
+     //GalapagosSequence* fChannelSequence[GAPG_CHANNELS];
+
+      /** unique sequence id for each cheannel*/
+     uint32_t fChannelSequenceID[GAPG_CHANNELS];
 
 
      /* list of known pattern sequences as visible in the sequence editor*/
@@ -332,7 +404,7 @@ public:
       fKnownPatterns.clear();
       fKnownSequences.clear();
       for (int i=0; i< GAPG_CHANNELS; ++i)
-        fChannelSequence[i]=0;
+        fChannelSequenceID[i]=0;
   }
 
     bool IsGeneratorActive()
@@ -401,7 +473,14 @@ public:
         return rev;
     }
 
-   GalapagosSequence& AddSequence(GalapagosSequence seq)
+   void ClearSequences()
+   {
+     fKnownSequences.clear();
+     for (int i=0; i< GAPG_CHANNELS; ++i)
+            fChannelSequenceID[i]=0;
+   }
+
+   GalapagosSequence& AddSequence(GalapagosSequence& seq)
    {
      // TODO: may need ot check if sequence of this id/name already exists?
      fKnownSequences.push_back(seq);
@@ -409,7 +488,7 @@ public:
    }
 
    /* Access a known sequence by unique id number. May be redundant if we rely on name*/
-   GalapagosSequence* GetSequence(int id)
+   GalapagosSequence* GetSequence(uint32_t id)
    {
      for(int t=0; t<fKnownSequences.size();++t)
      {
@@ -433,19 +512,19 @@ public:
    size_t NumKnownSequences() {return fKnownSequences.size();}
 
    /** access to list of known sequences by index */
-   GalapagosSequence* GetKnownSequence(int ix)
+   GalapagosSequence* GetKnownSequence(size_t ix)
      {
        if(ix>fKnownSequences.size()) return 0;
        return &(fKnownSequences[ix]);
      }
 
 
-   bool SetChannelSequence(int chan, int id)
+   bool SetChannelSequence(int chan, uint32_t id)
    {
      if(chan>GAPG_CHANNELS) return false;
      GalapagosSequence* seq=GetSequence(id);
      if(seq==0) return false;
-     fChannelSequence[chan] = seq;
+     fChannelSequenceID[chan] = seq->Id();
      return true;
    }
 
@@ -454,21 +533,22 @@ public:
        if(chan>GAPG_CHANNELS) return false;
        GalapagosSequence* seq=GetSequence(name);
        if(seq==0) return false;
-       fChannelSequence[chan] = seq;
+       fChannelSequenceID[chan] = seq->Id();
        return true;
      }
 
    GalapagosSequence* GetChannelSequence(int chan)
    {
      if(chan>GAPG_CHANNELS) return 0;
-     return fChannelSequence[chan];
+     uint32_t id=GetChannelSequenceID(chan);
+     if(id==0) return 0;
+     return GetSequence(id);
    }
 
-   int GetChannelSequenceID(int chan)
+   uint32_t GetChannelSequenceID(int chan)
    {
-     GalapagosSequence* seq=GetChannelSequence(chan);
-     if(seq==0) return -1;
-     return seq->Id();
+     if(chan>GAPG_CHANNELS) return 0;
+     return fChannelSequenceID[chan];
    }
 
 };

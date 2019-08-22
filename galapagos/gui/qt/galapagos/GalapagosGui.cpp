@@ -15,6 +15,8 @@
 #include <QTimer>
 #include <QMdiSubWindow>
 
+#include <QFile>
+
 #include <sstream>
 #include <string.h>
 #include <errno.h>
@@ -35,16 +37,19 @@ GalapagosGui::GalapagosGui (QWidget* parent) : BasicGui (parent)
  
 
  fImplementationName="GALAPAGUI";
- fVersionString="Welcome to GalapaGUI!\n\t v0.11 of 8-Aug-2019 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to GalapaGUI!\n\t v0.12 of 22-Aug-2019 by JAM (j.adamczewski@gsi.de)";
 
  fSettings=new QSettings("GSI", fImplementationName);
+ fLastFileDir = QDir::currentPath();
 
  Qt::WindowFlags wflags= Qt::CustomizeWindowHint | Qt::WindowMinMaxButtonsHint | Qt::WindowTitleHint;
  fGalChannelWidget= new GalChannelWidget(this);
  QMdiSubWindow* channels=mdiArea->addSubWindow(fGalChannelWidget,wflags);
  channels->setAttribute(Qt::WA_DeleteOnClose, false);
 
-
+ fGalSequenceWidget= new GalSequenceWidget(this);
+  QMdiSubWindow* seqs=mdiArea->addSubWindow(fGalSequenceWidget,wflags);
+  seqs->setAttribute(Qt::WA_DeleteOnClose, false);
 
   setWindowTitle(QString("%1").arg(fImplementationName));
 
@@ -62,6 +67,16 @@ GalapagosGui::GalapagosGui (QWidget* parent) : BasicGui (parent)
 
   QObject::connect (fGalChannelWidget->Channel_sequence_comboBox_ALL, SIGNAL(currentIndexChanged(int)), this,  SLOT(ChannelSequence_changed_all(int)));
   GALAGUI_CONNECT_INDEXCHANGED_16(fGalChannelWidget->Channel_sequence_comboBox_,ChannelSequence_changed_);
+
+  QObject::connect (fGalSequenceWidget->Sequence_comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(SequenceIDChanged(int)));
+
+  QObject::connect (fGalSequenceWidget->SequenceNewButton, SIGNAL(clicked()), this, SLOT(SequenceNew_clicked()));
+  QObject::connect (fGalSequenceWidget->SequenceEditButton, SIGNAL(clicked()), this, SLOT(SequenceEdit_clicked()));
+  QObject::connect (fGalSequenceWidget->SequenceLoadButton, SIGNAL(clicked()), this, SLOT(SequenceLoad_clicked()));
+  QObject::connect (fGalSequenceWidget->SequenceSaveButton, SIGNAL(clicked()), this, SLOT(SequenceSave_clicked()));
+  QObject::connect (fGalSequenceWidget->SequenceApplyButton, SIGNAL(clicked()), this, SLOT(SequenceApply_clicked()));
+  QObject::connect (fGalSequenceWidget-> SequenceEditCancelButton, SIGNAL(clicked()), this, SLOT(SequenceEditCancel_clicked()));
+
 
 //    GALAGUI_ASSIGN_WIDGETS_16(fChannelEnabledRadio);
     //, fGalChannelWidget->Channel_enabled_radio_);
@@ -142,11 +157,56 @@ GalapagosGui::GalapagosGui (QWidget* parent) : BasicGui (parent)
    fChannelSequenceCombo[14] = fGalChannelWidget->Channel_sequence_comboBox_14;
    fChannelSequenceCombo[15] = fGalChannelWidget->Channel_sequence_comboBox_15;
 
-  ReadSettings();
+
   BuildSetup();
+  ReadSettings();
   show ();
 }
 
+void GalapagosGui::ReadSettings()
+{
+  BasicGui::ReadSettings();
+  theSetup_GET_FOR_CLASS(GalapagosSetup);
+  if(fSettings)
+    {
+    int numseqs=fSettings->value("/Numsequences", 1).toInt();
+    for (int six=0; six<numseqs; ++six)
+          {
+            QString settingsname=QString("/Sequences/%1").arg(six);
+            QString seqfilename=fSettings->value(settingsname).toString();
+            std::cout<< " GalapagosGui::ReasdSettings() would load sequence file"<<seqfilename.toLatin1().data()<< std::endl;
+
+          }
+      // here setup of patterns and sequences from file
+
+
+    }
+}
+void GalapagosGui::WriteSettings()
+{
+  BasicGui::WriteSettings();
+
+  if(fSettings)
+    {
+
+
+      // here setup of patterns and sequences from file
+    theSetup_GET_FOR_CLASS(GalapagosSetup);
+    for (int six=0; six<theSetup->NumKnownSequences(); ++six)
+      {
+        GalapagosSequence* seq=theSetup->GetKnownSequence(six);
+        if(seq==0)  continue;
+        QString settingsname=QString("/Sequences/%1").arg(six);
+        QString seqfilename=QString("%1.gas").arg(seq->Name());
+        fSettings->setValue(settingsname, seqfilename);
+        std::cout<< " GalapagosGui::WriteSettings() saves sequence file"<<seqfilename.toLatin1().data()<< std::endl;
+      }
+    fSettings->setValue("Numsequences",(int) theSetup->NumKnownSequences());
+
+    // TODO: store the sequences also here
+
+    }
+}
 GalapagosGui::~GalapagosGui ()
 {
 }
@@ -329,11 +389,210 @@ void GalapagosGui::ApplyChannelSequence(int channel, int ix)
 }
 
 
+void GalapagosGui::SequenceIDChanged (int ix)
+{
+  GAPG_LOCK_SLOT;
+  std::cout << "GalapagosGui::SequenceIDChanged  ix="<<ix << std::endl;
+
+  fGalSequenceWidget->SequenceTextEdit->clear();
+
+  // now take out commands from known sequences:
+  theSetup_GET_FOR_CLASS(GalapagosSetup);
+  GalapagosSequence* seq=theSetup->GetKnownSequence(ix);
+  if(seq==0)  {
+      fGalSequenceWidget->SequenceTextEdit->appendPlainText("unknown ID!");
+      return;
+  }
+  std::cout<<"SequenceIDChanged gets sequence :"<<std::hex<< (ulong) seq<< ", id:"<<std::dec << seq->Id()<<", name:"<<seq->Name()<< std::endl;
+  const char* line=0;
+  int l=0;
+  while ((line=seq->GetCommandLine(l++)) !=0)
+    {
+      std::cout<<"SequenceIDChanged reading  line:"<<line  << std::endl;
+      QString txt(line);
+      fGalSequenceWidget->SequenceTextEdit->appendPlainText(txt);
+    }
+  GAPG_UNLOCK_SLOT;
+}
+
+void GalapagosGui::SequenceNew_clicked()
+{
+  std::cout << "GalapagosGui:: SequenceNew_clicked "<< std::endl;
+  theSetup_GET_FOR_CLASS(GalapagosSetup);
+  bool ok=false;
+  size_t sid= theSetup->NumKnownSequences()+1;
+  QString defaultname=QString("Sequence_%1").arg(sid);
+  QString seqname = QInputDialog::getText(this, tr("Create a new sequence"),
+                                         tr("Sequence name:"), QLineEdit::Normal,
+                                         defaultname, &ok);
+  if (!ok || seqname.isEmpty()) return;
+  GalapagosSequence seq(sid,seqname.toLatin1().constData());
+  seq.AddCommand("NOP");
+  seq.Compile();
+  theSetup->AddSequence(seq);
+
+
+
+  GAPG_LOCK_SLOT;
+  RefreshView();
+  GAPG_UNLOCK_SLOT;
+  fGalSequenceWidget->Sequence_comboBox->setCurrentIndex(sid-1);
+  SequenceEdit_clicked();
+
+}
+
+
+void GalapagosGui::SequenceEdit_clicked()
+{
+  std::cout << "GalapagosGui:: SequenceEdit_clicked"<< std::endl;
+  fGalSequenceWidget->SequenceTextEdit->setReadOnly(false);
+  fGalSequenceWidget->SequenceApplyButton->setEnabled(true);
+  fGalSequenceWidget->SequenceEditCancelButton->setEnabled(true);
+  fGalSequenceWidget->Sequence_comboBox->setEnabled(false);
+}
+
+void GalapagosGui::SequenceEditCancel_clicked()
+{
+  std::cout << "GalapagosGui:: SequenceEditCancel_clicked"<< std::endl;
+  int ix=fGalSequenceWidget->Sequence_comboBox->currentIndex();
+  SequenceIDChanged(ix);
+  fGalSequenceWidget->SequenceTextEdit->setReadOnly(true);
+  fGalSequenceWidget->SequenceApplyButton->setEnabled(false);
+  fGalSequenceWidget->SequenceEditCancelButton->setEnabled(false);
+  fGalSequenceWidget->Sequence_comboBox->setEnabled(true);
+}
+
+
+void GalapagosGui::SequenceLoad_clicked()
+{
+  std::cout << "GalapagosGui::SequenceLoad_clicked"<< std::endl;
+  QFileDialog fd( this,
+                     "Select Files with New Galapagos command sequence",
+                     fLastFileDir,
+                     QString("Galapagos Sequence files (*.gas);;All files (*.*)"));
+
+     fd.setFileMode( QFileDialog::ExistingFiles);
+
+     if ( fd.exec() != QDialog::Accepted ) return;
+     theSetup_GET_FOR_CLASS(GalapagosSetup);
+     QStringList list = fd.selectedFiles();
+     QStringList::Iterator fit = list.begin();
+     size_t sid= theSetup->NumKnownSequences()+1;
+     while( fit != list.end() ) {
+        QString fileName = *fit;
+        fLastFileDir = QFileInfo(fileName).absolutePath();
+        QFile sfile(fileName);
+        if (!sfile.open( QIODevice::ReadOnly))
+          {
+            printm ("!!! Could not open file %s", fileName.toLatin1().constData());
+            continue;
+          }
+        QString seqname=fileName.split("/").last();
+        seqname.chop(4);
+        std::cout << "Loading sequence from file "<< seqname.toLatin1().constData()<< std::endl;
+        GalapagosSequence seq(sid++, seqname.toLatin1().constData()); // TODO: sequence id also taken from file?
+        QByteArray content = sfile. readAll();
+        QList<QByteArray> commands=content.split(QChar::LineFeed);
+        QList<QByteArray>::const_iterator cit;
+          for (cit = commands.constBegin(); cit != commands.constEnd(); ++cit)
+             {
+               QByteArray cmd=*cit;
+               //cmd.append(";");
+               seq.AddCommand(cmd.data());
+               std::cout<< "   Added command "<<cmd.data() << std::endl;
+             }
+          seq.Compile();
+          theSetup->AddSequence(seq);
+        ++fit;
+     }
+ GAPG_LOCK_SLOT;
+     RefreshView(); // populate comboboxes with all known sequences
+ GAPG_UNLOCK_SLOT;
+
+}
+
+void GalapagosGui::SequenceSave_clicked()
+{
+  std::cout << "GalapagosGui::SequenceSave_clicked"<< std::endl;
+  QFileDialog fd( this,
+                      "Save Galapagos command sequence to file",
+                      fLastFileDir,
+                      QString("Galapagos Sequence files (*.gas)"));
+  fd.setFileMode( QFileDialog::AnyFile);
+  fd.setAcceptMode(QFileDialog::AcceptSave);
+  fd.selectFile("NewSequence.gas");
+  if (fd.exec() != QDialog::Accepted) return;
+  QStringList flst = fd.selectedFiles();
+  if (flst.isEmpty()) return;
+
+  QString fileName = flst[0];
+  fLastFileDir = fd.directory().path();
+  if (fileName.indexOf(".gas", 0, Qt::CaseInsensitive)<0) fileName+=".gas";
+  theSetup_GET_FOR_CLASS(GalapagosSetup);
+  QFile sfile(fileName);
+  if (!sfile.open( QIODevice::WriteOnly))
+  {
+    printm ("!!! Could not open file %s", fileName.toLatin1().constData());
+    return;
+  }
+
+  int ix=fGalSequenceWidget->Sequence_comboBox->currentIndex();
+  GalapagosSequence* seq=theSetup->GetKnownSequence(ix);
+   if(seq==0)  {
+       printm("unknown  sequence for ID %d!",ix);
+       return;
+   }
+   const char* line=0;
+   int l=0;
+   while ((line=seq->GetCommandLine(l++)) !=0)
+     {
+       std::cout<<"SequenceSave_clicked writes line:"<<line  << std::endl;
+       sfile.write(line);
+       sfile.write("\n");
+     }
+}
+
+void GalapagosGui::SequenceApply_clicked()
+{
+  std::cout << "GalapagosGui::SequenceOK_clicked"<< std::endl;
+  fGalSequenceWidget->SequenceTextEdit->setReadOnly(true);
+  fGalSequenceWidget->SequenceApplyButton->setEnabled(false);
+
+  // TODO: copy content of editor into list of known sequences.
+
+  theSetup_GET_FOR_CLASS(GalapagosSetup);
+  int ix=fGalSequenceWidget->Sequence_comboBox->currentIndex();
+  GalapagosSequence* seq=theSetup->GetKnownSequence(ix);
+  if(seq==0)  {
+    statusBar()->showMessage("NEVER COME HERE: sequence id not known in setup!");
+    return;
+   }
+  seq->Clear();
+  const char* line=0;
+   int l=0;
+   QString theCode=fGalSequenceWidget->SequenceTextEdit->toPlainText();
+   std::cout<< "got editor code: "<<theCode.toLatin1().constData() << std::endl;
+   QStringList commands = theCode.split(QChar::LineFeed);
+   QStringList::const_iterator it;
+   for (it = commands.constBegin(); it != commands.constEnd(); ++it)
+      {
+        QString cmd=*it;
+        //cmd.append(";");
+        seq->AddCommand(cmd.toLatin1().constData());
+        std::cout<< "   Added command "<<cmd.toLatin1().constData() << std::endl;
+      }
+   seq->Compile(); // TODO: here we may check if sequence is valid and give feedback output
+   fGalSequenceWidget->Sequence_comboBox->setEnabled(true);
+}
+
+
+
+
 
 void GalapagosGui::RefreshView ()
 {
 
-  //std::cout << "GalapagosGui::RefreshView"<<std::endl;
+  std::cout << "GalapagosGui::RefreshView"<<std::endl;
 // display setup structure to gui:
 
   //GAPG_LOCK_SLOT
@@ -367,6 +626,9 @@ void GalapagosGui::RefreshView ()
 
   // setup combobox entries from known sequences:
   fGalChannelWidget->Channel_sequence_comboBox_ALL->clear();
+
+  int oldsid=fGalSequenceWidget->Sequence_comboBox->currentIndex(); // remember our active item
+  fGalSequenceWidget->Sequence_comboBox->clear();
   for (int six=0; six<theSetup->NumKnownSequences(); ++six)
   {
     GalapagosSequence* seq=theSetup->GetKnownSequence(six);
@@ -376,8 +638,17 @@ void GalapagosGui::RefreshView ()
       if(six==0)fChannelSequenceCombo[channel]->clear();
       fChannelSequenceCombo[channel]->addItem(seq->Name());
     }
+
+
+
     fGalChannelWidget->Channel_sequence_comboBox_ALL->addItem(seq->Name());
+
+    // also populate names in sequence editor window:
+    fGalSequenceWidget->Sequence_comboBox->addItem(seq->Name());
+
   }
+  fGalSequenceWidget->Sequence_comboBox->setCurrentIndex(oldsid); // restore active item
+
 
   // now refresh the combobox from configured sequences:
   for(uint8_t channel=0; channel<16;++channel)
@@ -407,7 +678,7 @@ void GalapagosGui::RefreshView ()
 
 void GalapagosGui::EvaluateView ()
 {
-  //std::cout << "GalapagosGui::EvaluateView"<<std::endl;
+  std::cout << "GalapagosGui::EvaluateView"<<std::endl;
 
   // here the current gui display is just copied to setup structure in local memory
   theSetup_GET_FOR_CLASS(GalapagosSetup);
@@ -472,7 +743,7 @@ void GalapagosGui::GetRegisters ()
   theSetup_GET_FOR_CLASS(GalapagosSetup);
   QApplication::setOverrideCursor (Qt::WaitCursor);
 
-  //std::cout << "GalapagosGui::GetRegisters()"<<std::endl;
+  std::cout << "GalapagosGui::GetRegisters()"<<std::endl;
 
   uint32_t status=ReadGAPG ( GAPG_MAIN_CONTROL);
 
@@ -490,11 +761,12 @@ void GalapagosGui::GetRegisters ()
     for(uint8_t channel=0; channel<GAPG_CHANNELS;++channel)
      {
        uint32_t seqid=ReadGAPG ( GAPG_CHANNEL_SEQUENCE_BASE + channel*sizeof(uint32_t));
-       theSetup->SetChannelSequence(channel,seqid);
-
+       if(!theSetup->SetChannelSequence(channel,seqid))
+         {
+           printm ("GetRegisters Warning- channel %d has unknown sequence id %d on hardware, fallback to id 1",channel,seqid);
+           theSetup->SetChannelSequence(channel,1);
+         }
      }
-
-
 
   
   QApplication::restoreOverrideCursor ();
@@ -508,15 +780,18 @@ BasicSetup* GalapagosGui::CreateSetup()
         // here we mock up some default patterns that might be always available
 
         GalapagosSequence seq0(1,"SinglePulse");
-        seq0.AddCommand("SINGLE PULSE 100");
+        seq0.AddCommand("SINGLE PULSE 100;");
         seq0.Compile();
         setup->AddSequence(seq0);
         GalapagosSequence seq1(2,"DoublePulse");
-        seq1.AddCommand("DOUBLE PULSE 100 500");
+        seq1.AddCommand("DOUBLE PULSE 100 500;");
         seq1.Compile();
         setup->AddSequence(seq1);
         GalapagosSequence seq2(3,"PulseSequenceNew");
-        seq2.AddCommand("SEQUENCE PULSE 100 20 20000");
+        seq2.AddCommand("SEQUENCE PULSE 100 20 20000;");
+        seq2.AddCommand("KEEP 0 200;");
+        seq2.AddCommand("SEQUENCE PULSE 100 20 30000;");
+        seq2.AddCommand("KEEP 0 100;");
         seq2.Compile();
         setup->AddSequence(seq2);
 
