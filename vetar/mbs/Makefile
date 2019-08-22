@@ -102,7 +102,7 @@ SMILIBS = $(LIB)/lib_mbs.a $(LIB)/lib_tools.a $(LIB)/lib_mbs.a $(LIB)/lib_smi.a 
           $(LIB)/libedit.a  -lnetinet
 endif
 
-WRSYS = /mbs/driv/white_rabbit/cherry/$(GSI_CPU_PLATFORM)_$(GSI_OS)_$(GSI_OS_VERSIONX)_$(GSI_OS_TYPE)
+WRSYS = /mbs/driv/white_rabbit/enigma/$(GSI_CPU_PLATFORM)_$(GSI_OS)_$(GSI_OS_VERSIONX)_$(GSI_OS_TYPE)
 WR_INC = -I $(WRSYS)/include -I$(WRSYS)/include/wb_devices 
 WR_LIB = $(WRSYS)/lib/libetherbone_$(shell uname -r).a
 

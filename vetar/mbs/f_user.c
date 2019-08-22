@@ -11,6 +11,8 @@
 #ifdef WR_TIME_STAMP
  #define USE_TLU_FINE_TIME 1
  #define WR_USE_TLU_DIRECT 1  // JAM8-2017: new for direct tlu access
+
+ #define WR_RELEASE_ENIGMA 1  // JAM 8-2019: changed TLU addresses for ENIGMA
 #endif
 
 //#define USER_TRIG_CLEAR    1  //dont't use with direct tlu mapping
@@ -88,8 +90,16 @@ static long           l_first = 0;
 
 #ifdef WR_TIME_STAMP
 static FILE* dactl_handle =0;
+
+#ifdef WR_RELEASE_ENIGMA
+// following is for enigma release:
+static int   tlu_address =   0x2000100;
+#else
+// this is for doomsday and before:
 static int   tlu_address = 0x4000100;
-static int   tlu_direct_off = 0xFFFFFFFF;
+#endif
+
+//static int   tlu_direct_off = 0xFFFFFFFF;
 #ifdef WR_USE_TLU_DIRECT
 static INTS4* ch_select;
 static INTS4* ch_fifosize;
