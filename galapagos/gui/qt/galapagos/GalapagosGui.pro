@@ -25,7 +25,7 @@ equals(QT_MAJOR_VERSION, 5) {
 CONFIG += debug qt warn_off thread
 
 
-SOURCES += main.cpp GalapagosGui.cpp GalChannelWidget.cpp GalSequenceWidget.cpp 
+SOURCES += main.cpp GalapagosGui.cpp  GalapagosGuiSlots.cpp GalChannelWidget.cpp GalSequenceWidget.cpp 
 HEADERS += GalapagosGui.h GalChannelWidget.h GalSequenceWidget.h GalapagosSetup.h
 
 
