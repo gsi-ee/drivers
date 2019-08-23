@@ -170,15 +170,13 @@ void GalapagosGui::ReadSettings()
   if(fSettings)
     {
     int numseqs=fSettings->value("/Numsequences", 1).toInt();
-    for (int six=0; six<numseqs; ++six)
+    for (int six=3; six<numseqs; ++six) // do not reload the default entries again
           {
             QString settingsname=QString("/Sequences/%1").arg(six);
             QString seqfilename=fSettings->value(settingsname).toString();
-            std::cout<< " GalapagosGui::ReasdSettings() would load sequence file"<<seqfilename.toLatin1().data()<< std::endl;
-
+            std::cout<< " GalapagosGui::ReasdSettings() will load sequence file"<<seqfilename.toLatin1().data()<< std::endl;
+            if(!LoadSequence(seqfilename)) printm("Warning: Sequence %s from setup could not be loaded!",seqfilename.toLatin1().data());
           }
-      // here setup of patterns and sequences from file
-
 
     }
 }
@@ -200,10 +198,9 @@ void GalapagosGui::WriteSettings()
         QString seqfilename=QString("%1.gas").arg(seq->Name());
         fSettings->setValue(settingsname, seqfilename);
         std::cout<< " GalapagosGui::WriteSettings() saves sequence file"<<seqfilename.toLatin1().data()<< std::endl;
+        SaveSequence(seqfilename, seq);
       }
     fSettings->setValue("Numsequences",(int) theSetup->NumKnownSequences());
-
-    // TODO: store the sequences also here
 
     }
 }
@@ -420,7 +417,10 @@ void GalapagosGui::SequenceNew_clicked()
   std::cout << "GalapagosGui:: SequenceNew_clicked "<< std::endl;
   theSetup_GET_FOR_CLASS(GalapagosSetup);
   bool ok=false;
+  // automatic assignment of new id here: begin with id from index
   size_t sid= theSetup->NumKnownSequences()+1;
+  while (theSetup->GetSequence(sid)!=0) sid++;
+
   QString defaultname=QString("Sequence_%1").arg(sid);
   QString seqname = QInputDialog::getText(this, tr("Create a new sequence"),
                                          tr("Sequence name:"), QLineEdit::Normal,
@@ -474,35 +474,43 @@ void GalapagosGui::SequenceLoad_clicked()
      fd.setFileMode( QFileDialog::ExistingFiles);
 
      if ( fd.exec() != QDialog::Accepted ) return;
-     theSetup_GET_FOR_CLASS(GalapagosSetup);
+     //theSetup_GET_FOR_CLASS(GalapagosSetup);
      QStringList list = fd.selectedFiles();
      QStringList::Iterator fit = list.begin();
-     size_t sid= theSetup->NumKnownSequences()+1;
+     //size_t sid= theSetup->NumKnownSequences()+1;
      while( fit != list.end() ) {
         QString fileName = *fit;
         fLastFileDir = QFileInfo(fileName).absolutePath();
-        QFile sfile(fileName);
-        if (!sfile.open( QIODevice::ReadOnly))
-          {
-            printm ("!!! Could not open file %s", fileName.toLatin1().constData());
-            continue;
-          }
-        QString seqname=fileName.split("/").last();
-        seqname.chop(4);
-        std::cout << "Loading sequence from file "<< seqname.toLatin1().constData()<< std::endl;
-        GalapagosSequence seq(sid++, seqname.toLatin1().constData()); // TODO: sequence id also taken from file?
-        QByteArray content = sfile. readAll();
-        QList<QByteArray> commands=content.split(QChar::LineFeed);
-        QList<QByteArray>::const_iterator cit;
-          for (cit = commands.constBegin(); cit != commands.constEnd(); ++cit)
-             {
-               QByteArray cmd=*cit;
-               //cmd.append(";");
-               seq.AddCommand(cmd.data());
-               std::cout<< "   Added command "<<cmd.data() << std::endl;
-             }
-          seq.Compile();
-          theSetup->AddSequence(seq);
+        if(!LoadSequence(fileName))
+        {
+           printm("Sequence load sees error with %s",fileName.toLatin1().data());
+        }
+
+
+//        QFile sfile(fileName);
+//        if (!sfile.open( QIODevice::ReadOnly))
+//          {
+//            printm ("!!! Could not open file %s", fileName.toLatin1().constData());
+//            continue;
+//          }
+//        QString seqname=fileName.split("/").last();
+//        seqname.chop(4);
+//        std::cout << "Loading sequence from file "<< seqname.toLatin1().constData()<< std::endl;
+//        GalapagosSequence seq(sid++, seqname.toLatin1().constData()); // TODO: sequence id also taken from file?
+//        QByteArray content = sfile. readAll();
+//        QList<QByteArray> commands=content.split(QChar::LineFeed);
+//        QList<QByteArray>::const_iterator cit;
+//          for (cit = commands.constBegin(); cit != commands.constEnd(); ++cit)
+//             {
+//               QByteArray cmd=*cit;
+//               //cmd.append(";");
+//               seq.AddCommand(cmd.data());
+//               std::cout<< "   Added command "<<cmd.data() << std::endl;
+//             }
+//          seq.Compile();
+//          theSetup->AddSequence(seq);
+//        ++sid;
+
         ++fit;
      }
  GAPG_LOCK_SLOT;
@@ -520,36 +528,49 @@ void GalapagosGui::SequenceSave_clicked()
                       QString("Galapagos Sequence files (*.gas)"));
   fd.setFileMode( QFileDialog::AnyFile);
   fd.setAcceptMode(QFileDialog::AcceptSave);
-  fd.selectFile("NewSequence.gas");
+  QString defname=fGalSequenceWidget->Sequence_comboBox->currentText();
+  defname.append(".gas");
+  fd.selectFile(defname);
   if (fd.exec() != QDialog::Accepted) return;
   QStringList flst = fd.selectedFiles();
   if (flst.isEmpty()) return;
-
+  theSetup_GET_FOR_CLASS(GalapagosSetup);
   QString fileName = flst[0];
   fLastFileDir = fd.directory().path();
-  if (fileName.indexOf(".gas", 0, Qt::CaseInsensitive)<0) fileName+=".gas";
-  theSetup_GET_FOR_CLASS(GalapagosSetup);
-  QFile sfile(fileName);
-  if (!sfile.open( QIODevice::WriteOnly))
-  {
-    printm ("!!! Could not open file %s", fileName.toLatin1().constData());
-    return;
+  int ix=fGalSequenceWidget->Sequence_comboBox->currentIndex();
+   GalapagosSequence* seq=theSetup->GetKnownSequence(ix);
+    if(seq==0)  {
+        printm("NEVER COME HERE:unknown  sequence for index %d!",ix);
+        return;
+    }
+
+  if(!SaveSequence(fileName,seq)){
+    printm("Could not save sequence of index %d to file %s!",ix,fileName.toLatin1().constData());
   }
 
-  int ix=fGalSequenceWidget->Sequence_comboBox->currentIndex();
-  GalapagosSequence* seq=theSetup->GetKnownSequence(ix);
-   if(seq==0)  {
-       printm("unknown  sequence for ID %d!",ix);
-       return;
-   }
-   const char* line=0;
-   int l=0;
-   while ((line=seq->GetCommandLine(l++)) !=0)
-     {
-       std::cout<<"SequenceSave_clicked writes line:"<<line  << std::endl;
-       sfile.write(line);
-       sfile.write("\n");
-     }
+//  if (fileName.indexOf(".gas", 0, Qt::CaseInsensitive)<0) fileName+=".gas";
+//  theSetup_GET_FOR_CLASS(GalapagosSetup);
+//  QFile sfile(fileName);
+//  if (!sfile.open( QIODevice::WriteOnly))
+//  {
+//    printm ("!!! Could not open file %s", fileName.toLatin1().constData());
+//    return;
+//  }
+//
+//  int ix=fGalSequenceWidget->Sequence_comboBox->currentIndex();
+//  GalapagosSequence* seq=theSetup->GetKnownSequence(ix);
+//   if(seq==0)  {
+//       printm("unknown  sequence for ID %d!",ix);
+//       return;
+//   }
+//   const char* line=0;
+//   int l=0;
+//   while ((line=seq->GetCommandLine(l++)) !=0)
+//     {
+//       std::cout<<"SequenceSave_clicked writes line:"<<line  << std::endl;
+//       sfile.write(line);
+//       sfile.write("\n");
+//     }
 }
 
 void GalapagosGui::SequenceApply_clicked()
@@ -586,7 +607,90 @@ void GalapagosGui::SequenceApply_clicked()
 }
 
 
+bool GalapagosGui::LoadSequence(const QString& fileName)
+{
+  //TODO: later redefine sequence script format with some html tags?
+  QFile sfile(fileName);
+  if (!sfile.open( QIODevice::ReadOnly))
+    {
+    printm ("!!! Could not open sequence file %s", fileName.toLatin1().constData());
+    return false;
+    }
+  theSetup_GET_FOR_CLASS_RETURN_BOOL(GalapagosSetup);
+  QString seqname=fileName.split("/").last();
+  seqname.chop(4);
+  std::cout << "Loading sequence from file "<< seqname.toLatin1().constData()<< std::endl;
+  GalapagosSequence seq(0, seqname.toLatin1().constData()); // sequence id will be taken from file
+  QByteArray content = sfile. readAll();
+  QList<QByteArray> commands=content.split(QChar::LineFeed);
+  QList<QByteArray>::const_iterator cit;
+  bool hasSequenceId=false;
+  for (cit = commands.constBegin(); cit != commands.constEnd(); ++cit)
+  {
+    QByteArray cmd=*cit;
+    std::cout<< "   scanning line "<<cmd.data() << std::endl;
+    QString line(cmd);
+    if(!hasSequenceId)
+      {
+      QString line(cmd);
+      if(!line.contains("SequenceID")) continue;
+      std::cout<< "sequence id keyword was found!"<< std::endl;
+      bool ok=false;
+      QString value=line.split("=").last();
+      int sid=value.toInt(&ok);
+      if(!ok) continue;
+      std::cout<< "Found sequence id "<<sid << std::endl;
+      seq.SetId(sid);
+      hasSequenceId=true;
+    }
+    if(line.contains("#")) continue;
+    //cmd.append(";");
+    seq.AddCommand(cmd.data());
+    std::cout<< "   Added command "<<cmd.data() << std::endl;
+  }
+  if(seq.Id()==0)
+  {
+    printm("LoadSequence %s error: could not read sequence ID!",seqname.toLatin1().constData());
+    return false;
+  }
 
+  seq.Compile();
+  GalapagosSequence* oldseq=0;
+  if((oldseq=theSetup->GetSequence(seq.Id()))!=0)
+  {
+    printm("LoadSequence %s error: sequence %s had already assigned specified unique id %d !",seqname.toLatin1().constData(), oldseq->Name(), seq.Id());
+    return false;
+  }
+  theSetup->AddSequence(seq);
+  return true;
+}
+
+bool GalapagosGui::SaveSequence(const QString& fileName, GalapagosSequence* seq)
+{
+  //TODO: later redefine sequence script format with some html tags?
+  if(seq==0) return false;
+  QFile sfile(fileName);
+    if (!sfile.open( QIODevice::WriteOnly))
+    {
+      printm ("!!! Could not open file %s", fileName.toLatin1().constData());
+      return false;
+    }
+   QString header= QString("#Sequence %1 saved on %2").arg(seq->Id()).arg(QDateTime::currentDateTime().toString("dd.MM.yyyy - hh:mm:ss."));
+   QString idtag= QString("#SequenceID = %1").arg(seq->Id());
+   sfile.write(header.toLatin1().constData());
+   sfile.write("\n");
+   sfile.write(idtag.toLatin1().constData());
+   sfile.write("\n");
+  const char* line=0;
+     int l=0;
+     while ((line=seq->GetCommandLine(l++)) !=0)
+       {
+         std::cout<<"SequenceSave_clicked writes line:"<<line  << std::endl;
+         sfile.write(line);
+         sfile.write("\n");
+       }
+  return true;
+}
 
 
 void GalapagosGui::RefreshView ()

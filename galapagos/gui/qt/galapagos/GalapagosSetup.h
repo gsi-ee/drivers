@@ -198,7 +198,11 @@ class GalapagosObject
 
   uint32_t Id() {return fId;}
 
+  void SetId(uint32_t val){fId=val;}
+
   const char* Name() {return fName.c_str();}
+
+  void SetName(const char* nm){fName=nm;}
 
   bool EqualsName(const char* nm)
   {

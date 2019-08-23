@@ -124,6 +124,12 @@ protected:
    /** evaluate change of disabled febex channel channel*/
    void ChannelSequence_changed(int channel, int ix);
 
+   /** load sequence from file fullname. Returns false if no success*/
+   bool LoadSequence(const QString& fullname);
+
+   /** save sequence from setup to file fullname. Returns false if no success*/
+   bool SaveSequence(const QString& fullname, GalapagosSequence* seq);
+
 public slots:
 
 
@@ -137,23 +143,6 @@ public slots:
 
   GALAGUI_DEFINE_MULTICHANNEL_TOGGLED_16(ChannelSimulated);
 
-//
-//  virtual void ChannelEnabled_toggled_00 (bool on);
-//  virtual void ChannelEnabled_toggled_01 (bool on);
-//  virtual void ChannelEnabled_toggled_02 (bool on);
-//  virtual void ChannelEnabled_toggled_03 (bool on);
-//  virtual void ChannelEnabled_toggled_04 (bool on);
-//  virtual void ChannelEnabled_toggled_05 (bool on);
-//  virtual void ChannelEnabled_toggled_06 (bool on);
-//  virtual void ChannelEnabled_toggled_07 (bool on);
-//  virtual void ChannelEnabled_toggled_08 (bool on);
-//  virtual void ChannelEnabled_toggled_09 (bool on);
-//  virtual void ChannelEnabled_toggled_10 (bool on);
-//  virtual void ChannelEnabled_toggled_11 (bool on);
-//  virtual void ChannelEnabled_toggled_12 (bool on);
-//  virtual void ChannelEnabled_toggled_13 (bool on);
-//  virtual void ChannelEnabled_toggled_14 (bool on);
-//  virtual void ChannelEnabled_toggled_15 (bool on);
 
   virtual void ChannelSequence_changed_all(int ix);
 
