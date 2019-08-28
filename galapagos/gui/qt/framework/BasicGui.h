@@ -59,7 +59,12 @@ if(theSetup==0) {\
   return -1;\
 }
 
-
+#define theSetup_GET_FOR_CLASS_RETURN_BOOL(X) \
+X* theSetup = dynamic_cast<X*>(fSetup);\
+if(theSetup==0) {\
+  printm("--- Could not get setup structure X - NEVER COME HERE"); \
+  return false;\
+}
 /** this define will switch between direct call of galapagos lib or external shell call of galapcmd*
  * note: we need to call "make nogalapagos" if we disable this define here!
  * note2: this define is enabled from top Makefile when building regular "make all"*/
