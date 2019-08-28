@@ -17,6 +17,9 @@
 
 #include <QFile>
 
+//#include <okteta/piecetablebytearraymodel.h>
+
+
 #include <sstream>
 #include <string.h>
 #include <errno.h>
@@ -26,7 +29,42 @@
 
 
 
+void GalapagosGui::ConnectSlots()
+{
+  QObject::connect (fGalChannelWidget->GeneratorActiveButton, SIGNAL(clicked(bool)), this, SLOT(GeneratorActive_clicked(bool)));
 
+
+   QObject::connect (fGalChannelWidget->Channel_enabled_radio_ALL, SIGNAL(toggled(bool)), this, SLOT(ChannelEnabled_toggled_all(bool)));
+   GALAGUI_CONNECT_TOGGLED_16(fGalChannelWidget->Channel_enabled_radio_, ChannelEnabled_toggled_);
+
+
+   QObject::connect (fGalChannelWidget->Channel_simulate_radio_ALL, SIGNAL(toggled(bool)), this, SLOT(ChannelSimulated_toggled_all(bool)));
+   GALAGUI_CONNECT_TOGGLED_16(fGalChannelWidget->Channel_simulate_radio_, ChannelSimulated_toggled_);
+
+
+   QObject::connect (fGalChannelWidget->Channel_sequence_comboBox_ALL, SIGNAL(currentIndexChanged(int)), this,  SLOT(ChannelSequence_changed_all(int)));
+   GALAGUI_CONNECT_INDEXCHANGED_16(fGalChannelWidget->Channel_sequence_comboBox_,ChannelSequence_changed_);
+
+   QObject::connect (fGalSequenceWidget->Sequence_comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(SequenceIDChanged(int)));
+
+   QObject::connect (fGalSequenceWidget->SequenceNewButton, SIGNAL(clicked()), this, SLOT(SequenceNew_clicked()));
+   QObject::connect (fGalSequenceWidget->SequenceEditButton, SIGNAL(clicked()), this, SLOT(SequenceEdit_clicked()));
+   QObject::connect (fGalSequenceWidget->SequenceLoadButton, SIGNAL(clicked()), this, SLOT(SequenceLoad_clicked()));
+   QObject::connect (fGalSequenceWidget->SequenceSaveButton, SIGNAL(clicked()), this, SLOT(SequenceSave_clicked()));
+   QObject::connect (fGalSequenceWidget->SequenceApplyButton, SIGNAL(clicked()), this, SLOT(SequenceApply_clicked()));
+   QObject::connect (fGalSequenceWidget-> SequenceEditCancelButton, SIGNAL(clicked()), this, SLOT(SequenceEditCancel_clicked()));
+
+
+   QObject::connect (fGalPatternWidget->Pattern_comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(PatternIDChanged(int)));
+
+   QObject::connect (fGalPatternWidget->PatternNewButton, SIGNAL(clicked()), this, SLOT(PatternNew_clicked()));
+    QObject::connect (fGalPatternWidget->PatternEditButton, SIGNAL(clicked()), this, SLOT(PatternEdit_clicked()));
+    QObject::connect (fGalPatternWidget->PatternLoadButton, SIGNAL(clicked()), this, SLOT(PatternLoad_clicked()));
+    QObject::connect (fGalPatternWidget->PatternSaveButton, SIGNAL(clicked()), this, SLOT(PatternSave_clicked()));
+    QObject::connect (fGalPatternWidget->PatternApplyButton, SIGNAL(clicked()), this, SLOT(PatternApply_clicked()));
+    QObject::connect (fGalPatternWidget-> PatternEditCancelButton, SIGNAL(clicked()), this, SLOT(PatternEditCancel_clicked()));
+
+}
 
 
 
@@ -148,24 +186,25 @@ void GalapagosGui::SequenceIDChanged (int ix)
   GAPG_LOCK_SLOT;
   //std::cout << "GalapagosGui::SequenceIDChanged  ix="<<ix << std::endl;
 
-  fGalSequenceWidget->SequenceTextEdit->clear();
-
-  // now take out commands from known sequences:
-  theSetup_GET_FOR_CLASS(GalapagosSetup);
-  GalapagosSequence* seq=theSetup->GetKnownSequence(ix);
-  if(seq==0)  {
-      fGalSequenceWidget->SequenceTextEdit->appendPlainText("unknown ID!");
-      return;
-  }
-  //std::cout<<"SequenceIDChanged gets sequence :"<<std::hex<< (ulong) seq<< ", id:"<<std::dec << seq->Id()<<", name:"<<seq->Name()<< std::endl;
-  const char* line=0;
-  int l=0;
-  while ((line=seq->GetCommandLine(l++)) !=0)
-    {
-      //std::cout<<"SequenceIDChanged reading  line:"<<line  << std::endl;
-      QString txt(line);
-      fGalSequenceWidget->SequenceTextEdit->appendPlainText(txt);
-    }
+  RefreshSequenceIndex(ix);
+//  fGalSequenceWidget->SequenceTextEdit->clear();
+//
+//  // now take out commands from known sequences:
+//  theSetup_GET_FOR_CLASS(GalapagosSetup);
+//  GalapagosSequence* seq=theSetup->GetKnownSequence(ix);
+//  if(seq==0)  {
+//      fGalSequenceWidget->SequenceTextEdit->appendPlainText("unknown ID!");
+//      return;
+//  }
+//  //std::cout<<"SequenceIDChanged gets sequence :"<<std::hex<< (ulong) seq<< ", id:"<<std::dec << seq->Id()<<", name:"<<seq->Name()<< std::endl;
+//  const char* line=0;
+//  int l=0;
+//  while ((line=seq->GetCommandLine(l++)) !=0)
+//    {
+//      //std::cout<<"SequenceIDChanged reading  line:"<<line  << std::endl;
+//      QString txt(line);
+//      fGalSequenceWidget->SequenceTextEdit->appendPlainText(txt);
+//    }
   GAPG_UNLOCK_SLOT;
 }
 
@@ -231,10 +270,8 @@ void GalapagosGui::SequenceLoad_clicked()
      fd.setFileMode( QFileDialog::ExistingFiles);
 
      if ( fd.exec() != QDialog::Accepted ) return;
-     //theSetup_GET_FOR_CLASS(GalapagosSetup);
      QStringList list = fd.selectedFiles();
      QStringList::Iterator fit = list.begin();
-     //size_t sid= theSetup->NumKnownSequences()+1;
      while( fit != list.end() ) {
         QString fileName = *fit;
         fLastFileDir = QFileInfo(fileName).absolutePath();
@@ -313,6 +350,124 @@ void GalapagosGui::SequenceApply_clicked()
 }
 
 
+void GalapagosGui::PatternIDChanged (int ix)
+{
+  GAPG_LOCK_SLOT;
+  //std::cout << "GalapagosGui::PatternIDChanged  ix="<<ix << std::endl;
 
-    
+  RefreshPatternIndex(ix);
+  // now take out commands from known sequences:
+//  theSetup_GET_FOR_CLASS(GalapagosSetup);
+//  GalapagosPattern* pat=theSetup->GetKnownPattern(ix);
+//  if(pat==0)  {
+//      printm("Warning: unknown pattern ID in combobox, NEVER COME HERE!!");
+//      return;
+//  }
+//
+//  // here provide okteta model from our pattern data:
+//
+//  // provide tempory bytearray:
+//  QByteArray theByteArray;
+//  size_t numbytes=pat->NumBytes();
+//  for(int c=0; c<numbytes; ++c)
+//    theByteArray.append(pat->GetByte(c));
+//
+//  Okteta::PieceTableByteArrayModel* theByteArrayModel =
+//      new Okteta::PieceTableByteArrayModel(theByteArray, fGalPatternWidget->oktetabyteview);
+//
+//
+//
+//  fGalPatternWidget->oktetabyteview->setByteArrayModel(theByteArrayModel);
+//  fGalPatternWidget->oktetabyteview->setReadOnly(true);
+//  fGalPatternWidget->oktetabyteview->setOverwriteMode(false);
+
+  //std::cout<<"SequenceIDChanged gets sequence :"<<std::hex<< (ulong) seq<< ", id:"<<std::dec << seq->Id()<<", name:"<<seq->Name()<< std::endl;
+  GAPG_UNLOCK_SLOT;
+}
+
+
+
+
+void GalapagosGui::PatternNew_clicked()
+{
+  std::cout << "GalapagosGui::PatternNew_clicked"<< std::endl;
+}
+
+void GalapagosGui::PatternEdit_clicked()
+{
+  std::cout << "GalapagosGui::PatternEdit_clicked"<< std::endl;
+  fGalPatternWidget->oktetabyteview->setReadOnly(false);
+   fGalPatternWidget->PatternApplyButton->setEnabled(true);
+   fGalPatternWidget->PatternEditCancelButton->setEnabled(true);
+   fGalPatternWidget->Pattern_comboBox->setEnabled(false);
+
+}
+
+void GalapagosGui::PatternLoad_clicked()
+{
+  std::cout << "GalapagosGui::PatternLoad_clicked"<< std::endl;
+}
+
+
+void GalapagosGui::PatternSave_clicked()
+{
+  std::cout << "GalapagosGui::PatternSave_clicked"<< std::endl;
+
+}
+
+void GalapagosGui::PatternApply_clicked()
+{
+  std::cout << "GalapagosGui::PatternApply_clicked"<< std::endl;
+  fGalPatternWidget->oktetabyteview->setReadOnly(true);
+  fGalPatternWidget->PatternApplyButton->setEnabled(false);
+
+
+   theSetup_GET_FOR_CLASS(GalapagosSetup);
+   int ix=fGalPatternWidget->Pattern_comboBox->currentIndex();
+   GalapagosPattern* pat=theSetup->GetKnownPattern(ix);
+   if(pat==0)  {
+     statusBar()->showMessage("NEVER COME HERE: Pattern id not known in setup!");
+     return;
+    }
+   // TODO: evaluate bytarray from model and put it to our pattern object.
+
+//   seq->Clear();
+//   const char* line=0;
+//    int l=0;
+//    QString theCode=fGalSequenceWidget->SequenceTextEdit->toPlainText();
+//    //std::cout<< "got editor code: "<<theCode.toLatin1().constData() << std::endl;
+//    QStringList commands = theCode.split(QChar::LineFeed);
+//    QStringList::const_iterator it;
+//    for (it = commands.constBegin(); it != commands.constEnd(); ++it)
+//       {
+//         QString cmd=*it;
+//         //cmd.append(";");
+//         seq->AddCommand(cmd.toLatin1().constData());
+//         //std::cout<< "   Added command "<<cmd.toLatin1().constData() << std::endl;
+//       }
+//    seq->Compile(); // TODO: here we may check if sequence is valid and give feedback output
+
+
+   fGalPatternWidget->Pattern_comboBox->setEnabled(true);
+
+
+
+
+}
+
+void GalapagosGui::PatternEditCancel_clicked()
+{
+  std::cout << "GalapagosGui::PatternEditCancel_clicked"<< std::endl;
+  int ix=fGalPatternWidget->Pattern_comboBox->currentIndex();
+  PatternIDChanged(ix);
+  fGalPatternWidget->oktetabyteview->setReadOnly(true);
+  fGalPatternWidget->PatternApplyButton->setEnabled(false);
+  fGalPatternWidget->PatternEditCancelButton->setEnabled(false);
+  fGalPatternWidget->Pattern_comboBox->setEnabled(true);
+
+
+
+}
+
+
 

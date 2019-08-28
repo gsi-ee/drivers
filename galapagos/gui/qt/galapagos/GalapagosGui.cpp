@@ -17,6 +17,8 @@
 
 #include <QFile>
 
+#include <okteta/piecetablebytearraymodel.h>
+
 #include <sstream>
 #include <string.h>
 #include <errno.h>
@@ -37,7 +39,7 @@ GalapagosGui::GalapagosGui (QWidget* parent) : BasicGui (parent)
  
 
  fImplementationName="GALAPAGUI";
- fVersionString="Welcome to GalapaGUI!\n\t v0.13 of 23-Aug-2019 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to GalapaGUI!\n\t v0.15 of 28-Aug-2019 by JAM (j.adamczewski@gsi.de)";
 
  fSettings=new QSettings("GSI", fImplementationName);
  fLastFileDir = QDir::currentPath();
@@ -51,35 +53,14 @@ GalapagosGui::GalapagosGui (QWidget* parent) : BasicGui (parent)
   QMdiSubWindow* seqs=mdiArea->addSubWindow(fGalSequenceWidget,wflags);
   seqs->setAttribute(Qt::WA_DeleteOnClose, false);
 
+  fGalPatternWidget= new GalPatternWidget(this);
+  QMdiSubWindow* pats=mdiArea->addSubWindow(fGalPatternWidget,wflags);
+  pats->setAttribute(Qt::WA_DeleteOnClose, false);
+
+
   setWindowTitle(QString("%1").arg(fImplementationName));
 
-
-  QObject::connect (fGalChannelWidget->GeneratorActiveButton, SIGNAL(clicked(bool)), this, SLOT(GeneratorActive_clicked(bool)));
-
-
-  QObject::connect (fGalChannelWidget->Channel_enabled_radio_ALL, SIGNAL(toggled(bool)), this, SLOT(ChannelEnabled_toggled_all(bool)));
-  GALAGUI_CONNECT_TOGGLED_16(fGalChannelWidget->Channel_enabled_radio_, ChannelEnabled_toggled_);
-
-
-  QObject::connect (fGalChannelWidget->Channel_simulate_radio_ALL, SIGNAL(toggled(bool)), this, SLOT(ChannelSimulated_toggled_all(bool)));
-  GALAGUI_CONNECT_TOGGLED_16(fGalChannelWidget->Channel_simulate_radio_, ChannelSimulated_toggled_);
-
-
-  QObject::connect (fGalChannelWidget->Channel_sequence_comboBox_ALL, SIGNAL(currentIndexChanged(int)), this,  SLOT(ChannelSequence_changed_all(int)));
-  GALAGUI_CONNECT_INDEXCHANGED_16(fGalChannelWidget->Channel_sequence_comboBox_,ChannelSequence_changed_);
-
-  QObject::connect (fGalSequenceWidget->Sequence_comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(SequenceIDChanged(int)));
-
-  QObject::connect (fGalSequenceWidget->SequenceNewButton, SIGNAL(clicked()), this, SLOT(SequenceNew_clicked()));
-  QObject::connect (fGalSequenceWidget->SequenceEditButton, SIGNAL(clicked()), this, SLOT(SequenceEdit_clicked()));
-  QObject::connect (fGalSequenceWidget->SequenceLoadButton, SIGNAL(clicked()), this, SLOT(SequenceLoad_clicked()));
-  QObject::connect (fGalSequenceWidget->SequenceSaveButton, SIGNAL(clicked()), this, SLOT(SequenceSave_clicked()));
-  QObject::connect (fGalSequenceWidget->SequenceApplyButton, SIGNAL(clicked()), this, SLOT(SequenceApply_clicked()));
-  QObject::connect (fGalSequenceWidget-> SequenceEditCancelButton, SIGNAL(clicked()), this, SLOT(SequenceEditCancel_clicked()));
-
-
-//    GALAGUI_ASSIGN_WIDGETS_16(fChannelEnabledRadio);
-    //, fGalChannelWidget->Channel_enabled_radio_);
+  ConnectSlots();
 
 
   fChannelEnabledRadio[0] = fGalChannelWidget->Channel_enabled_radio_00;
@@ -138,7 +119,6 @@ GalapagosGui::GalapagosGui (QWidget* parent) : BasicGui (parent)
    fChannelSimulatedRadio[14] = fGalChannelWidget->Channel_simulate_radio_14;
    fChannelSimulatedRadio[15] = fGalChannelWidget->Channel_simulate_radio_15;
 
-   //fChannelSequenceCombo
 
    fChannelSequenceCombo[0] = fGalChannelWidget->Channel_sequence_comboBox_00;
    fChannelSequenceCombo[1] = fGalChannelWidget->Channel_sequence_comboBox_01;
@@ -246,9 +226,10 @@ void GalapagosGui::ApplyFileConfig(int )
        controlword &= ~GAPG_BIT_MAIN_ENABLE;
 
      WriteGAPG ( GAPG_MAIN_CONTROL,  controlword);
-
+     GAPG_LOCK_SLOT
      GetRegisters();
      RefreshView();
+     GAPG_UNLOCK_SLOT
 
  }
 
@@ -260,7 +241,9 @@ void GalapagosGui::ApplyChannelEnabled(int channel, bool on)
     theSetup->SetChannelEnabled(channel, on);
   WriteGAPG ( GAPG_CHANNEL_ENABLE_LOW, theSetup->GetChannelControl_0());
   WriteGAPG ( GAPG_CHANNEL_ENABLE_HI,  theSetup->GetChannelControl_1());
+  GAPG_LOCK_SLOT
   RefreshView();
+  GAPG_UNLOCK_SLOT
 
 }
 
@@ -436,7 +419,10 @@ void GalapagosGui::RefreshView ()
     fGalSequenceWidget->Sequence_comboBox->addItem(seq->Name());
 
   }
+
   fGalSequenceWidget->Sequence_comboBox->setCurrentIndex(oldsid); // restore active item
+
+  RefreshSequenceIndex(oldsid);
 
 
   // now refresh the combobox from configured sequences:
@@ -455,14 +441,75 @@ void GalapagosGui::RefreshView ()
 
       }
 
+  int oldpat=fGalPatternWidget->Pattern_comboBox->currentIndex(); // remember our active item
+  fGalPatternWidget->Pattern_comboBox->clear();
+  for (int pix=0; pix<theSetup->NumKnownPatterns(); ++pix)
+   {
+    GalapagosPattern* pat=theSetup->GetKnownPattern(pix);
+    if(pat==0)  continue;
+    fGalPatternWidget->Pattern_comboBox->addItem(pat->Name());
+   }
+  fGalPatternWidget->Pattern_comboBox->setCurrentIndex(oldpat); // restore active item
+  RefreshPatternIndex(oldpat);
 
-  //GAPG_UNLOCK_SLOT
+  fGalPatternWidget->oktetabyteview->setValueCoding(fNumberBase==16 ? Okteta::AbstractByteArrayView::HexadecimalCoding : Okteta::AbstractByteArrayView::BinaryCoding);
+
+
+//  GAPG_UNLOCK_SLOT
   BasicGui::RefreshView ();
    // ^this handles the refresh of chains and status. better use base class function here! JAM2018
 }
 
 
+void GalapagosGui::RefreshSequenceIndex(int ix)
+{
+  fGalSequenceWidget->SequenceTextEdit->clear();
 
+   // now take out commands from known sequences:
+   theSetup_GET_FOR_CLASS(GalapagosSetup);
+   GalapagosSequence* seq=theSetup->GetKnownSequence(ix);
+   if(seq==0)  {
+       //fGalSequenceWidget->SequenceTextEdit->appendPlainText("unknown ID!");
+       printm("Warning: unknown sequence index in combobox, NEVER COME HERE!!");
+       return;
+   }
+   //std::cout<<"SequenceIDChanged gets sequence :"<<std::hex<< (ulong) seq<< ", id:"<<std::dec << seq->Id()<<", name:"<<seq->Name()<< std::endl;
+   const char* line=0;
+   int l=0;
+   while ((line=seq->GetCommandLine(l++)) !=0)
+     {
+       //std::cout<<"SequenceIDChanged reading  line:"<<line  << std::endl;
+       QString txt(line);
+       fGalSequenceWidget->SequenceTextEdit->appendPlainText(txt);
+     }
+}
+
+void GalapagosGui::RefreshPatternIndex(int ix)
+{
+  theSetup_GET_FOR_CLASS(GalapagosSetup);
+   GalapagosPattern* pat=theSetup->GetKnownPattern(ix);
+   if(pat==0)  {
+       printm("Warning: unknown pattern index in combobox, NEVER COME HERE!!");
+       return;
+   }
+
+   // here provide okteta model from our pattern data:
+
+   // provide tempory bytearray:
+   QByteArray theByteArray;
+   size_t numbytes=pat->NumBytes();
+   for(int c=0; c<numbytes; ++c)
+     theByteArray.append(pat->GetByte(c));
+
+   Okteta::PieceTableByteArrayModel* theByteArrayModel =
+       new Okteta::PieceTableByteArrayModel(theByteArray, fGalPatternWidget->oktetabyteview);
+
+
+
+   fGalPatternWidget->oktetabyteview->setByteArrayModel(theByteArrayModel);
+   fGalPatternWidget->oktetabyteview->setReadOnly(true);
+   fGalPatternWidget->oktetabyteview->setOverwriteMode(false);
+}
 
 
 void GalapagosGui::EvaluateView ()
@@ -584,6 +631,26 @@ BasicSetup* GalapagosGui::CreateSetup()
         seq2.Compile();
         setup->AddSequence(seq2);
 
+
+        GalapagosPattern pat0 (1, "Alternating10");
+        for(int b=0;b<10;++b)
+          pat0.AddByte(0xAA);
+        setup->AddPattern(pat0);
+
+        GalapagosPattern pat1 (2, "ByteSteps50");
+        for(int b=0;b<50;++b)
+          pat1.AddByte((b % 2)==0 ? 0xFF : 0x00);
+        setup->AddPattern(pat1);
+
+        GalapagosPattern pat2 (2, "WordSteps50");
+        for(int b=0;b<50;++b)
+          pat2.AddByte((b % 4)==0 ? 0xFF : 0x00);
+        setup->AddPattern(pat2);
+
+        GalapagosPattern pat3 (2, "Inc100");
+        for(int b=0;b<100;++b)
+        pat3.AddByte(b);
+        setup->AddPattern(pat3);
 
       // std::cout <<"GalapagosGui:: CreateSetup" <<std::endl;
        return setup;

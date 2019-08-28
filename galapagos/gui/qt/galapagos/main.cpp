@@ -8,6 +8,9 @@ int main(int argc, char *argv[])
 
  // Q_INIT_RESOURCE(gosipicons);
 
+
+
+
   QApplication::setStyle("plastique");
   QApplication app(argc, argv);
 

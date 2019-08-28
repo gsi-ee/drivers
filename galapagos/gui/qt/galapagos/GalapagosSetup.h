@@ -252,7 +252,7 @@ public:
     }
 
   /** fill pattern*/
-  void AddPattern (uint8_t patty)
+  void AddByte (uint8_t patty)
   {
     fPattern.push_back(patty);
   }
@@ -263,8 +263,13 @@ public:
     return fPattern.size() * sizeof(uint8_t);
   }
 
+  size_t NumBytes()
+  {
+    return fPattern.size();
+  }
+
   /** read next byte of bit pattern at given vector index.*/
-  uint8_t GetSnippet(int ix)
+  uint8_t GetByte(int ix)
   {
     if(ix>fPattern.size()) return 0;
     return fPattern[ix];
@@ -554,6 +559,47 @@ public:
      if(chan>GAPG_CHANNELS) return 0;
      return fChannelSequenceID[chan];
    }
+/////////////////////////////77
+
+   GalapagosPattern& AddPattern(GalapagosPattern& pat)
+     {
+       // TODO: may need ot check if sequence of this id/name already exists?
+       fKnownPatterns.push_back(pat);
+       return pat;
+     }
+
+     /* Access a known sequence by unique id number. May be redundant if we rely on name*/
+     GalapagosPattern* GetPattern(uint32_t id)
+     {
+       for(int t=0; t<fKnownPatterns.size();++t)
+       {
+           if(fKnownPatterns[t].Id()==id)
+             return &(fKnownPatterns[t]);
+       }
+       return 0;
+     }
+
+     /* Access a known sequence by unique name*/
+     GalapagosPattern* GetPattern(const char* name)
+        {
+          for(int t=0; t<fKnownPatterns.size();++t)
+          {
+            if(fKnownPatterns[t].EqualsName(name))
+                return &(fKnownPatterns[t]);
+          }
+          return 0;
+        }
+
+     size_t NumKnownPatterns() {return fKnownPatterns.size();}
+
+     /** access to list of known sequences by index */
+     GalapagosPattern* GetKnownPattern(size_t ix)
+       {
+         if(ix>fKnownPatterns.size()) return 0;
+         return &(fKnownPatterns[ix]);
+       }
+
+
 
 };
 

@@ -17,7 +17,8 @@ equals(QT_MAJOR_VERSION, 5) {
   QT += widgets KWidgetsAddons
   INCLUDEPATH += /usr/include/KF5/KPlotting/
    INCLUDEPATH += /usr/include/KF5/KWidgetsAddons/
-  LIBS += -lKF5Plotting 
+   INCLUDEPATH += /usr/include/okteta/
+  LIBS += -lKF5Plotting -lokteta2core -lokteta2gui
 }
 
 
@@ -25,8 +26,8 @@ equals(QT_MAJOR_VERSION, 5) {
 CONFIG += debug qt warn_off thread
 
 
-SOURCES += main.cpp GalapagosGui.cpp  GalapagosGuiSlots.cpp GalChannelWidget.cpp GalSequenceWidget.cpp 
-HEADERS += GalapagosGui.h GalChannelWidget.h GalSequenceWidget.h GalapagosSetup.h
+SOURCES += main.cpp GalapagosGui.cpp  GalapagosGuiSlots.cpp GalChannelWidget.cpp GalSequenceWidget.cpp GalPatternWidget.cpp 
+HEADERS += GalapagosGui.h GalChannelWidget.h GalSequenceWidget.h GalapagosSetup.h GalPatternWidget.h
 
 
-FORMS = GalChannelWidget.ui GalSequenceWidget.ui
+FORMS = GalChannelWidget.ui GalSequenceWidget.ui GalPatternWidget.ui

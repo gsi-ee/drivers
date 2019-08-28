@@ -5,6 +5,7 @@
 #include "BasicGui.h"
 #include "GalChannelWidget.h"
 #include "GalSequenceWidget.h"
+#include "GalPatternWidget.h"
 #include "GalapagosSetup.h"
 #include "GalapagosMacros.h"
 #include <kled.h>
@@ -30,7 +31,7 @@ public:
   GalapagosGui (QWidget* parent = 0);
   virtual ~GalapagosGui ();
 
-  virtual BasicSetup* CreateSetup();
+
 
 
 protected:
@@ -40,6 +41,8 @@ protected:
   GalChannelWidget* fGalChannelWidget;
 
   GalSequenceWidget* fGalSequenceWidget;
+
+  GalPatternWidget* fGalPatternWidget;
 
   /** auxiliary references to channel enabled flags*/
    QRadioButton* fChannelEnabledRadio[GAPG_CHANNELS];
@@ -54,12 +57,24 @@ protected:
 
    QString fLastFileDir;
 
+
+   virtual BasicSetup* CreateSetup();
+
+   virtual void ConnectSlots();
+
+
  /** reset current slave, i.e. initialize it to defaults*/
   virtual void ResetSlave ();
 
 
   /** update register display*/
   void RefreshView ();
+
+  /** refresh editor content for sequence id*/
+  void RefreshSequenceIndex(int ix);
+
+  /** refresh editor content for pattern id*/
+   void RefreshPatternIndex(int ix);
 
 
   /** overwrite base class method to adjust waittime*/
@@ -159,6 +174,18 @@ virtual void SequenceLoad_clicked();
 virtual void SequenceSave_clicked();
 virtual void SequenceApply_clicked();
 virtual void SequenceEditCancel_clicked();
+
+
+virtual void PatternIDChanged (int ix);
+
+virtual void PatternNew_clicked();
+virtual void PatternEdit_clicked();
+virtual void PatternLoad_clicked();
+virtual void PatternSave_clicked();
+virtual void PatternApply_clicked();
+virtual void PatternEditCancel_clicked();
+
+
 
 virtual void ReadSettings();
 virtual void WriteSettings();
