@@ -406,12 +406,61 @@ void GalapagosGui::PatternEdit_clicked()
 void GalapagosGui::PatternLoad_clicked()
 {
   std::cout << "GalapagosGui::PatternLoad_clicked"<< std::endl;
+  QFileDialog fd( this,
+                      "Select Files with New Galapagos bit pattern",
+                      fLastFileDir,
+                      QString("Galapagos Pattern files (*.gap);;All files (*.*)"));
+
+  fd.setFileMode( QFileDialog::ExistingFiles);
+
+  if ( fd.exec() != QDialog::Accepted ) return;
+  QStringList list = fd.selectedFiles();
+  QStringList::Iterator fit = list.begin();
+  while( fit != list.end() ) {
+    QString fileName = *fit;
+    fLastFileDir = QFileInfo(fileName).absolutePath();
+    if(!LoadPattern(fileName))
+    {
+      printm("Pattern load sees error with %s",fileName.toLatin1().data());
+    }
+    ++fit;
+  }
+  GAPG_LOCK_SLOT;
+    RefreshView(); // populate comboboxes with all known sequences
+  GAPG_UNLOCK_SLOT;
 }
 
 
 void GalapagosGui::PatternSave_clicked()
 {
   std::cout << "GalapagosGui::PatternSave_clicked"<< std::endl;
+  QFileDialog fd( this,
+                       "Save Galapagos bit pattern to file",
+                       fLastFileDir,
+                       QString("Galapagos Pattern files (*.gap)"));
+   fd.setFileMode( QFileDialog::AnyFile);
+   fd.setAcceptMode(QFileDialog::AcceptSave);
+   QString defname=fGalPatternWidget->Pattern_comboBox->currentText();
+   defname.append(".gap");
+   fd.selectFile(defname);
+   if (fd.exec() != QDialog::Accepted) return;
+   QStringList flst = fd.selectedFiles();
+   if (flst.isEmpty()) return;
+   theSetup_GET_FOR_CLASS(GalapagosSetup);
+   QString fileName = flst[0];
+   fLastFileDir = fd.directory().path();
+   int ix=fGalPatternWidget->Pattern_comboBox->currentIndex();
+    GalapagosPattern* pat=theSetup->GetKnownPattern(ix);
+     if(pat==0)  {
+         printm("NEVER COME HERE:unknown  pattern for index %d!",ix);
+         return;
+     }
+
+   if(!SavePattern(fileName,pat)){
+     printm("Could not save pattern of index %d to file %s!",ix,fileName.toLatin1().constData());
+   }
+
+
 
 }
 
@@ -429,29 +478,17 @@ void GalapagosGui::PatternApply_clicked()
      statusBar()->showMessage("NEVER COME HERE: Pattern id not known in setup!");
      return;
     }
-   // TODO: evaluate bytarray from model and put it to our pattern object.
-
-//   seq->Clear();
-//   const char* line=0;
-//    int l=0;
-//    QString theCode=fGalSequenceWidget->SequenceTextEdit->toPlainText();
-//    //std::cout<< "got editor code: "<<theCode.toLatin1().constData() << std::endl;
-//    QStringList commands = theCode.split(QChar::LineFeed);
-//    QStringList::const_iterator it;
-//    for (it = commands.constBegin(); it != commands.constEnd(); ++it)
-//       {
-//         QString cmd=*it;
-//         //cmd.append(";");
-//         seq->AddCommand(cmd.toLatin1().constData());
-//         //std::cout<< "   Added command "<<cmd.toLatin1().constData() << std::endl;
-//       }
-//    seq->Compile(); // TODO: here we may check if sequence is valid and give feedback output
-
+   // evaluate bytarray from model and put it to our pattern object:
+   fGalPatternWidget->oktetabyteview->selectAll(true);
+   QByteArray theData=fGalPatternWidget->oktetabyteview->selectedData();
+   pat->Clear();
+   size_t numbytes=theData.size();
+   for(int i=0; i<numbytes; ++i)
+   {
+     pat->AddByte(theData[i]);
+   }
 
    fGalPatternWidget->Pattern_comboBox->setEnabled(true);
-
-
-
 
 }
 

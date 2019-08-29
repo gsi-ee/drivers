@@ -2,7 +2,13 @@
 #define GAPGSETUP_H
 
 #include "BasicGui.h"
+#include <QByteArray>
 #include <stdint.h>
+
+// magic number for pattern file header,  idintifier GALAPAGO in similar hex digits?:
+#define PATTERN_FILE_TAG 0xFA1AEAF0
+// pattern file format version
+#define PATTERN_FILE_VERSION 0x1
 
 
 /** total number of output channels of pattern generator*/
@@ -275,6 +281,14 @@ public:
     return fPattern[ix];
   }
 
+  // provide tempory bytearray:
+  QByteArray GetByteArray()
+  {
+     QByteArray theByteArray;
+     for(int c=0; c<NumBytes(); ++c)
+       theByteArray.append(GetByte(c));
+     return theByteArray;
+  }
 };
 
 

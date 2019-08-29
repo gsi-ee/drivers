@@ -145,6 +145,15 @@ protected:
    /** save sequence from setup to file fullname. Returns false if no success*/
    bool SaveSequence(const QString& fullname, GalapagosSequence* seq);
 
+   /** load pattern from file fullname. Returns false if no success*/
+   bool LoadPattern(const QString& fullname);
+
+      /** save pattern from setup to file fullname. Returns false if no success*/
+   bool SavePattern(const QString& fullname, GalapagosPattern* pat);
+
+
+
+
 public slots:
 
 

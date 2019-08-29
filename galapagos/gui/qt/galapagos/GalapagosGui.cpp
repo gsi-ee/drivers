@@ -343,7 +343,7 @@ bool GalapagosGui::SaveSequence(const QString& fileName, GalapagosSequence* seq)
       printm ("!!! Could not open file %s", fileName.toLatin1().constData());
       return false;
     }
-   QString header= QString("#Sequence %1 saved on %2").arg(seq->Id()).arg(QDateTime::currentDateTime().toString("dd.MM.yyyy - hh:mm:ss."));
+   QString header= QString("#Sequence %1 saved on %2").arg(seq->Name()).arg(QDateTime::currentDateTime().toString("dd.MM.yyyy - hh:mm:ss."));
    QString idtag= QString("#SequenceID = %1").arg(seq->Id());
    sfile.write(header.toLatin1().constData());
    sfile.write("\n");
@@ -359,6 +359,114 @@ bool GalapagosGui::SaveSequence(const QString& fileName, GalapagosSequence* seq)
        }
   return true;
 }
+
+bool GalapagosGui::LoadPattern(const QString& fileName)
+{
+  QFile pfile(fileName);
+   if (!pfile.open( QIODevice::ReadOnly))
+     {
+     printm ("!!! Could not open sequence file %s", fileName.toLatin1().constData());
+     return false;
+     }
+   theSetup_GET_FOR_CLASS_RETURN_BOOL(GalapagosSetup);
+   QString patname=fileName.split("/").last();
+   patname.chop(4);
+   //std::cout << "Loading sequence from file "<< seqname.toLatin1().constData()<< std::endl;
+   GalapagosPattern pat(0, patname.toLatin1().constData()); // pattern id will be taken from file
+
+// read back our own binary format:
+
+   QDataStream inStream(&pfile);
+   // Read and check the header
+   quint32 magic, version, id, trailer;
+   inStream >> magic;
+   if (magic != PATTERN_FILE_TAG)
+   {
+     printm ("!!! Wrong format header 0x%x in file %s", magic, fileName.toLatin1().constData());
+     return false;
+   }
+   inStream >> version;
+   if (version != PATTERN_FILE_VERSION)
+   {
+     printm ("!!! Wrong format version %d in file %s", version, fileName.toLatin1().constData());
+     return false;
+   }
+   inStream >> id;
+   if(id==0)
+     {
+       printm("LoadPattern %s error: could not read pattern ID!",patname.toLatin1().constData());
+       return false;
+     }
+   pat.SetId(id);
+
+   char* pdata=0;
+   uint psize=0;
+   inStream.readBytes(pdata, psize);
+   if(pdata==0 || psize==0)
+   {
+     printm ("!!! Error reading pattern bytes from file %s", fileName.toLatin1().constData());
+     return false;
+   }
+   inStream >> trailer;
+
+   if (trailer != PATTERN_FILE_TAG)
+   {
+       printm ("!!! Wrong format trailer 0x%x in file %s", trailer, fileName.toLatin1().constData());
+       return false;
+   }
+   GalapagosPattern* oldpat=0;
+   if((oldpat=theSetup->GetPattern(pat.Id()))!=0)
+   {
+     printm("LoadPattern %s error: pattern %s had already assigned specified unique id %d !",patname.toLatin1().constData(), oldpat->Name(), pat.Id());
+     return false;
+   }
+
+   // everything from file was ok, now put it into new pattern:
+   for(int t=0; t<psize; ++t)
+   {
+     pat.AddByte(pdata[t]);
+   }
+   delete pdata; // was allocated by Qt inside the readBytes function
+
+   theSetup->AddPattern(pat);
+   return true;
+}
+
+
+bool GalapagosGui::SavePattern(const QString& fileName, GalapagosPattern* pat)
+{
+  // TODO: optionally change id when saving a pattern?
+  if(pat==0) return false;
+  QFile pfile(fileName);
+    if (!pfile.open( QIODevice::WriteOnly))
+    {
+      printm ("!!! Could not open file %s", fileName.toLatin1().constData());
+      return false;
+    }
+
+// first approach: implement own binary format here
+// later do support common formats (intel hex, uuencode?) like in okteta for exchange with external editor
+    QDataStream outStream(&pfile);
+    outStream << (qint32) PATTERN_FILE_TAG; // GALAPAGOS gap format identifier
+    outStream << (qint32) PATTERN_FILE_VERSION; // format version number
+    outStream << (quint32) pat->Id(); // unique setup id of pattern
+    QByteArray byteArray=pat->GetByteArray();
+
+//    size_t bytesize=byteArray.size()
+//    outStream << (qint32) bytesize; // pattern length information
+//    outStream.writeRawData(byteArray.data(), byteArray.size()); // the actual pattern data
+    outStream.writeBytes(byteArray.data(), byteArray.size()); // the actual pattern data
+
+
+    outStream << (qint32) PATTERN_FILE_TAG; // GALAPAGOS gap format identifier trailer
+
+    printm("Saved Pattern with id %d to file %s ",pat->Id(), fileName.toLatin1().constData());
+    return true;
+}
+
+
+
+
 
 
 void GalapagosGui::RefreshView ()
