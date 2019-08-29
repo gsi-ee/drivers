@@ -39,23 +39,19 @@ GalapagosGui::GalapagosGui (QWidget* parent) : BasicGui (parent)
  
 
  fImplementationName="GALAPAGUI";
- fVersionString="Welcome to GalapaGUI!\n\t v0.15 of 28-Aug-2019 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to GalapaGUI!\n\t v0.16 of 29-Aug-2019 by JAM (j.adamczewski@gsi.de)";
 
  fSettings=new QSettings("GSI", fImplementationName);
  fLastFileDir = QDir::currentPath();
 
- Qt::WindowFlags wflags= Qt::CustomizeWindowHint | Qt::WindowMinMaxButtonsHint | Qt::WindowTitleHint;
  fGalChannelWidget= new GalChannelWidget(this);
- QMdiSubWindow* channels=mdiArea->addSubWindow(fGalChannelWidget,wflags);
- channels->setAttribute(Qt::WA_DeleteOnClose, false);
+ AddSubWindow(fGalChannelWidget);
 
  fGalSequenceWidget= new GalSequenceWidget(this);
-  QMdiSubWindow* seqs=mdiArea->addSubWindow(fGalSequenceWidget,wflags);
-  seqs->setAttribute(Qt::WA_DeleteOnClose, false);
+ AddSubWindow(fGalSequenceWidget);
 
   fGalPatternWidget= new GalPatternWidget(this);
-  QMdiSubWindow* pats=mdiArea->addSubWindow(fGalPatternWidget,wflags);
-  pats->setAttribute(Qt::WA_DeleteOnClose, false);
+  AddSubWindow(fGalPatternWidget);
 
 
   setWindowTitle(QString("%1").arg(fImplementationName));
@@ -155,8 +151,14 @@ GalapagosGui::~GalapagosGui ()
 
 
 
-
-
+void GalapagosGui::AddSubWindow(QWidget* widget)
+{
+  Qt::WindowFlags wflags= Qt::CustomizeWindowHint | Qt::WindowMinMaxButtonsHint | Qt::WindowTitleHint;
+  QMdiSubWindow* sub=mdiArea->addSubWindow(widget,wflags);
+  sub->setAttribute(Qt::WA_DeleteOnClose, false);
+  //sub->setOption(QMdiSubWindow::RubberBandResize);
+  //sub->setOption(QMdiSubWindow::RubberBandMove); // JAM required for qt5 performance
+}
 
 void GalapagosGui::EnableI2C ()
 {
@@ -578,7 +580,7 @@ void GalapagosGui::RefreshSequenceIndex(int ix)
    GalapagosSequence* seq=theSetup->GetKnownSequence(ix);
    if(seq==0)  {
        //fGalSequenceWidget->SequenceTextEdit->appendPlainText("unknown ID!");
-       printm("Warning: unknown sequence index in combobox, NEVER COME HERE!!");
+       printm("Warning: unknown sequence index %d in combobox, NEVER COME HERE!!",ix);
        return;
    }
    //std::cout<<"SequenceIDChanged gets sequence :"<<std::hex<< (ulong) seq<< ", id:"<<std::dec << seq->Id()<<", name:"<<seq->Name()<< std::endl;
@@ -590,6 +592,7 @@ void GalapagosGui::RefreshSequenceIndex(int ix)
        QString txt(line);
        fGalSequenceWidget->SequenceTextEdit->appendPlainText(txt);
      }
+   fGalSequenceWidget->SequenceIDSpinBox->setValue(seq->Id());
 }
 
 void GalapagosGui::RefreshPatternIndex(int ix)
@@ -597,7 +600,7 @@ void GalapagosGui::RefreshPatternIndex(int ix)
   theSetup_GET_FOR_CLASS(GalapagosSetup);
    GalapagosPattern* pat=theSetup->GetKnownPattern(ix);
    if(pat==0)  {
-       printm("Warning: unknown pattern index in combobox, NEVER COME HERE!!");
+       printm("Warning: unknown pattern index %d in combobox, NEVER COME HERE!!",ix);
        return;
    }
 
@@ -617,6 +620,8 @@ void GalapagosGui::RefreshPatternIndex(int ix)
    fGalPatternWidget->oktetabyteview->setByteArrayModel(theByteArrayModel);
    fGalPatternWidget->oktetabyteview->setReadOnly(true);
    fGalPatternWidget->oktetabyteview->setOverwriteMode(false);
+
+   fGalPatternWidget->PatternIDSpinBox->setValue(pat->Id());
 }
 
 
@@ -750,12 +755,12 @@ BasicSetup* GalapagosGui::CreateSetup()
           pat1.AddByte((b % 2)==0 ? 0xFF : 0x00);
         setup->AddPattern(pat1);
 
-        GalapagosPattern pat2 (2, "WordSteps50");
+        GalapagosPattern pat2 (3, "WordSteps50");
         for(int b=0;b<50;++b)
           pat2.AddByte((b % 4)==0 ? 0xFF : 0x00);
         setup->AddPattern(pat2);
 
-        GalapagosPattern pat3 (2, "Inc100");
+        GalapagosPattern pat3 (4, "Inc100");
         for(int b=0;b<100;++b)
         pat3.AddByte(b);
         setup->AddPattern(pat3);

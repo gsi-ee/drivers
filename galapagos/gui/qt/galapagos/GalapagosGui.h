@@ -62,6 +62,8 @@ protected:
 
    virtual void ConnectSlots();
 
+   void AddSubWindow(QWidget* sub);
+
 
  /** reset current slave, i.e. initialize it to defaults*/
   virtual void ResetSlave ();
@@ -183,6 +185,7 @@ virtual void SequenceLoad_clicked();
 virtual void SequenceSave_clicked();
 virtual void SequenceApply_clicked();
 virtual void SequenceEditCancel_clicked();
+virtual void SequenceDelete_clicked();
 
 
 virtual void PatternIDChanged (int ix);
@@ -193,7 +196,7 @@ virtual void PatternLoad_clicked();
 virtual void PatternSave_clicked();
 virtual void PatternApply_clicked();
 virtual void PatternEditCancel_clicked();
-
+virtual void PatternDelete_clicked();
 
 
 virtual void ReadSettings();

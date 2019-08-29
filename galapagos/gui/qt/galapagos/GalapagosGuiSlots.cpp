@@ -53,6 +53,7 @@ void GalapagosGui::ConnectSlots()
    QObject::connect (fGalSequenceWidget->SequenceSaveButton, SIGNAL(clicked()), this, SLOT(SequenceSave_clicked()));
    QObject::connect (fGalSequenceWidget->SequenceApplyButton, SIGNAL(clicked()), this, SLOT(SequenceApply_clicked()));
    QObject::connect (fGalSequenceWidget-> SequenceEditCancelButton, SIGNAL(clicked()), this, SLOT(SequenceEditCancel_clicked()));
+   QObject::connect (fGalSequenceWidget-> SequenceDeleteButton, SIGNAL(clicked()), this, SLOT(SequenceDelete_clicked()));
 
 
    QObject::connect (fGalPatternWidget->Pattern_comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(PatternIDChanged(int)));
@@ -63,6 +64,7 @@ void GalapagosGui::ConnectSlots()
     QObject::connect (fGalPatternWidget->PatternSaveButton, SIGNAL(clicked()), this, SLOT(PatternSave_clicked()));
     QObject::connect (fGalPatternWidget->PatternApplyButton, SIGNAL(clicked()), this, SLOT(PatternApply_clicked()));
     QObject::connect (fGalPatternWidget-> PatternEditCancelButton, SIGNAL(clicked()), this, SLOT(PatternEditCancel_clicked()));
+    QObject::connect (fGalPatternWidget-> PatternDeleteButton, SIGNAL(clicked()), this, SLOT(PatternDelete_clicked()));
 
 }
 
@@ -85,6 +87,18 @@ void GalapagosGui::ReadSettings()
     int oldix=0; // later take from settings
     fGalSequenceWidget->Sequence_comboBox->setCurrentIndex(oldix); // toggle refresh the editor?
     SequenceIDChanged(oldix);
+
+
+    int numpats=fSettings->value("/Numpatterns", 1).toInt();
+    for (int pix=4; pix<numpats; ++pix) // do not reload the default entries again
+             {
+               QString settingsname=QString("/Patterns/%1").arg(pix);
+               QString patfilename=fSettings->value(settingsname).toString();
+               //std::cout<< " GalapagosGui::ReasdSettings() will load sequence file"<<seqfilename.toLatin1().data()<< std::endl;
+               if(!LoadPattern(patfilename)) printm("Warning: Pattern %s from setup could not be loaded!",patfilename.toLatin1().data());
+             }
+       int oldpix=0; // later take from settings
+       fGalPatternWidget->Pattern_comboBox->setCurrentIndex(oldpix); // toggle refresh the editor?
     }
 }
 void GalapagosGui::WriteSettings()
@@ -106,6 +120,18 @@ void GalapagosGui::WriteSettings()
         SaveSequence(seqfilename, seq);
       }
     fSettings->setValue("Numsequences",(int) theSetup->NumKnownSequences());
+
+    for (int pix=0; pix<theSetup->NumKnownPatterns(); ++pix)
+         {
+           GalapagosPattern* pat=theSetup->GetKnownPattern(pix);
+           if(pat==0)  continue;
+           QString settingsname=QString("/Patterns/%1").arg(pix);
+           QString patfilename=QString("%1.gap").arg(pat->Name());
+           fSettings->setValue(settingsname, patfilename);
+           SavePattern(patfilename, pat);
+         }
+    fSettings->setValue("Numpatterns",(int) theSetup->NumKnownPatterns());
+
 
     }
 }
@@ -245,6 +271,7 @@ void GalapagosGui::SequenceEdit_clicked()
   fGalSequenceWidget->SequenceApplyButton->setEnabled(true);
   fGalSequenceWidget->SequenceEditCancelButton->setEnabled(true);
   fGalSequenceWidget->Sequence_comboBox->setEnabled(false);
+  fGalSequenceWidget->SequenceIDSpinBox->setEnabled(true);
 }
 
 void GalapagosGui::SequenceEditCancel_clicked()
@@ -256,6 +283,24 @@ void GalapagosGui::SequenceEditCancel_clicked()
   fGalSequenceWidget->SequenceApplyButton->setEnabled(false);
   fGalSequenceWidget->SequenceEditCancelButton->setEnabled(false);
   fGalSequenceWidget->Sequence_comboBox->setEnabled(true);
+  fGalSequenceWidget->SequenceIDSpinBox->setEnabled(false);
+}
+
+void  GalapagosGui::SequenceDelete_clicked()
+{
+  //std::cout << "GalapagosGui:: SequenceDelete_clicked"<< std::endl;
+  if(QMessageBox::question( this, fImplementationName, "Really Delete current sequence from list?",
+       QMessageBox::Yes | QMessageBox::No ,
+       QMessageBox::Yes) != QMessageBox::Yes ) {
+     return;
+   }
+   theSetup_GET_FOR_CLASS(GalapagosSetup);
+   int ix=fGalSequenceWidget->Sequence_comboBox->currentIndex();
+   theSetup->RemoveKnownSequence(ix);
+
+   GAPG_LOCK_SLOT
+   RefreshView();
+   GAPG_UNLOCK_SLOT
 }
 
 
@@ -322,6 +367,7 @@ void GalapagosGui::SequenceApply_clicked()
   //std::cout << "GalapagosGui::SequenceOK_clicked"<< std::endl;
   fGalSequenceWidget->SequenceTextEdit->setReadOnly(true);
   fGalSequenceWidget->SequenceApplyButton->setEnabled(false);
+  fGalSequenceWidget->SequenceIDSpinBox->setEnabled(false);
 
 
   theSetup_GET_FOR_CLASS(GalapagosSetup);
@@ -332,6 +378,7 @@ void GalapagosGui::SequenceApply_clicked()
     return;
    }
   seq->Clear();
+  seq->SetId(fGalSequenceWidget->SequenceIDSpinBox->value());
   const char* line=0;
    int l=0;
    QString theCode=fGalSequenceWidget->SequenceTextEdit->toPlainText();
@@ -354,33 +401,7 @@ void GalapagosGui::PatternIDChanged (int ix)
 {
   GAPG_LOCK_SLOT;
   //std::cout << "GalapagosGui::PatternIDChanged  ix="<<ix << std::endl;
-
   RefreshPatternIndex(ix);
-  // now take out commands from known sequences:
-//  theSetup_GET_FOR_CLASS(GalapagosSetup);
-//  GalapagosPattern* pat=theSetup->GetKnownPattern(ix);
-//  if(pat==0)  {
-//      printm("Warning: unknown pattern ID in combobox, NEVER COME HERE!!");
-//      return;
-//  }
-//
-//  // here provide okteta model from our pattern data:
-//
-//  // provide tempory bytearray:
-//  QByteArray theByteArray;
-//  size_t numbytes=pat->NumBytes();
-//  for(int c=0; c<numbytes; ++c)
-//    theByteArray.append(pat->GetByte(c));
-//
-//  Okteta::PieceTableByteArrayModel* theByteArrayModel =
-//      new Okteta::PieceTableByteArrayModel(theByteArray, fGalPatternWidget->oktetabyteview);
-//
-//
-//
-//  fGalPatternWidget->oktetabyteview->setByteArrayModel(theByteArrayModel);
-//  fGalPatternWidget->oktetabyteview->setReadOnly(true);
-//  fGalPatternWidget->oktetabyteview->setOverwriteMode(false);
-
   //std::cout<<"SequenceIDChanged gets sequence :"<<std::hex<< (ulong) seq<< ", id:"<<std::dec << seq->Id()<<", name:"<<seq->Name()<< std::endl;
   GAPG_UNLOCK_SLOT;
 }
@@ -391,21 +412,44 @@ void GalapagosGui::PatternIDChanged (int ix)
 void GalapagosGui::PatternNew_clicked()
 {
   std::cout << "GalapagosGui::PatternNew_clicked"<< std::endl;
+  theSetup_GET_FOR_CLASS(GalapagosSetup);
+    bool ok=false;
+    // automatic assignment of new id here: begin with id from index
+    size_t pid= theSetup->NumKnownPatterns()+1;
+    while (theSetup->GetPattern(pid)!=0) pid++;
+
+    QString defaultname=QString("Pattern_%1").arg(pid);
+    QString patname = QInputDialog::getText(this, tr("Create a new bit pattern"),
+                                           tr("Pattern name:"), QLineEdit::Normal,
+                                           defaultname, &ok);
+    if (!ok || patname.isEmpty()) return;
+    GalapagosPattern pat(pid,patname.toLatin1().constData());
+    pat.AddByte(0xFF); // some default value to fill editor
+    theSetup->AddPattern(pat);
+
+
+
+    GAPG_LOCK_SLOT;
+    RefreshView();
+    GAPG_UNLOCK_SLOT;
+    fGalPatternWidget->Pattern_comboBox->setCurrentIndex(pid-1);
+    PatternEdit_clicked();
 }
 
 void GalapagosGui::PatternEdit_clicked()
 {
-  std::cout << "GalapagosGui::PatternEdit_clicked"<< std::endl;
+  //std::cout << "GalapagosGui::PatternEdit_clicked"<< std::endl;
   fGalPatternWidget->oktetabyteview->setReadOnly(false);
    fGalPatternWidget->PatternApplyButton->setEnabled(true);
    fGalPatternWidget->PatternEditCancelButton->setEnabled(true);
    fGalPatternWidget->Pattern_comboBox->setEnabled(false);
+   fGalPatternWidget->PatternIDSpinBox->setEnabled(true);
 
 }
 
 void GalapagosGui::PatternLoad_clicked()
 {
-  std::cout << "GalapagosGui::PatternLoad_clicked"<< std::endl;
+  //std::cout << "GalapagosGui::PatternLoad_clicked"<< std::endl;
   QFileDialog fd( this,
                       "Select Files with New Galapagos bit pattern",
                       fLastFileDir,
@@ -433,7 +477,7 @@ void GalapagosGui::PatternLoad_clicked()
 
 void GalapagosGui::PatternSave_clicked()
 {
-  std::cout << "GalapagosGui::PatternSave_clicked"<< std::endl;
+  //std::cout << "GalapagosGui::PatternSave_clicked"<< std::endl;
   QFileDialog fd( this,
                        "Save Galapagos bit pattern to file",
                        fLastFileDir,
@@ -466,10 +510,10 @@ void GalapagosGui::PatternSave_clicked()
 
 void GalapagosGui::PatternApply_clicked()
 {
-  std::cout << "GalapagosGui::PatternApply_clicked"<< std::endl;
+  //std::cout << "GalapagosGui::PatternApply_clicked"<< std::endl;
   fGalPatternWidget->oktetabyteview->setReadOnly(true);
   fGalPatternWidget->PatternApplyButton->setEnabled(false);
-
+  fGalPatternWidget->PatternIDSpinBox->setEnabled(false);
 
    theSetup_GET_FOR_CLASS(GalapagosSetup);
    int ix=fGalPatternWidget->Pattern_comboBox->currentIndex();
@@ -482,6 +526,7 @@ void GalapagosGui::PatternApply_clicked()
    fGalPatternWidget->oktetabyteview->selectAll(true);
    QByteArray theData=fGalPatternWidget->oktetabyteview->selectedData();
    pat->Clear();
+   pat->SetId(fGalPatternWidget->PatternIDSpinBox->value());
    size_t numbytes=theData.size();
    for(int i=0; i<numbytes; ++i)
    {
@@ -494,17 +539,35 @@ void GalapagosGui::PatternApply_clicked()
 
 void GalapagosGui::PatternEditCancel_clicked()
 {
-  std::cout << "GalapagosGui::PatternEditCancel_clicked"<< std::endl;
+  //std::cout << "GalapagosGui::PatternEditCancel_clicked"<< std::endl;
   int ix=fGalPatternWidget->Pattern_comboBox->currentIndex();
   PatternIDChanged(ix);
   fGalPatternWidget->oktetabyteview->setReadOnly(true);
   fGalPatternWidget->PatternApplyButton->setEnabled(false);
   fGalPatternWidget->PatternEditCancelButton->setEnabled(false);
   fGalPatternWidget->Pattern_comboBox->setEnabled(true);
+  fGalPatternWidget->PatternIDSpinBox->setEnabled(false);
 
 
 
 }
 
 
+void  GalapagosGui::PatternDelete_clicked()
+{
+  //std::cout << "GalapagosGui::PatternDelete_clicked"<< std::endl;
+  if(QMessageBox::question( this, fImplementationName, "Really Delete current pattern from list?",
+      QMessageBox::Yes | QMessageBox::No ,
+      QMessageBox::Yes) != QMessageBox::Yes ) {
+    return;
+  }
+  theSetup_GET_FOR_CLASS(GalapagosSetup);
+  int ix=fGalPatternWidget->Pattern_comboBox->currentIndex();
+  theSetup->RemoveKnownPattern(ix);
+
+  GAPG_LOCK_SLOT
+  RefreshView();
+  GAPG_UNLOCK_SLOT
+
+}
 

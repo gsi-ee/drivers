@@ -5,8 +5,11 @@
 #include <QByteArray>
 #include <stdint.h>
 
-// magic number for pattern file header,  idintifier GALAPAGO in similar hex digits?:
-#define PATTERN_FILE_TAG 0xFA1AEAF0
+// magic number for pattern file header,  ASCII identifier GAPG:
+#define PATTERN_FILE_TAG 0x47415047
+
+//0xFA1AEAF0
+
 // pattern file format version
 #define PATTERN_FILE_VERSION 0x1
 
@@ -406,6 +409,9 @@ public:
       /** unique sequence id for each cheannel*/
      uint32_t fChannelSequenceID[GAPG_CHANNELS];
 
+     /** unique pattern  id for each cheannel*/
+     uint32_t fChannelPatternID[GAPG_CHANNELS];
+
 
      /* list of known pattern sequences as visible in the sequence editor*/
      std::vector<GalapagosSequence> fKnownSequences;
@@ -427,7 +433,11 @@ public:
       fKnownPatterns.clear();
       fKnownSequences.clear();
       for (int i=0; i< GAPG_CHANNELS; ++i)
-        fChannelSequenceID[i]=0;
+        {
+          fChannelSequenceID[i]=0;
+          fChannelPatternID[i]=0;
+        }
+
   }
 
     bool IsGeneratorActive()
@@ -542,6 +552,38 @@ public:
      }
 
 
+   /** remove sequence from list by index. also clean up all references in channels*/
+       void RemoveKnownSequence(size_t ix)
+       {
+           uint32_t sid=fKnownSequences[ix].Id();
+           fKnownSequences.erase(fKnownSequences.begin()+ix);
+           uint32_t newsid=0;
+           if(fKnownSequences.size()>0)
+             newsid=fKnownSequences[0].Id(); // channels with erased seqs will be assigned to first sequence
+           for (int i=0; i< GAPG_CHANNELS; ++i)
+           {
+             if(fChannelSequenceID[i]==sid)
+               fChannelSequenceID[i]=newsid;
+           }
+
+       }
+
+//       /** discard pattern of id from list*/
+//       bool RemoveSequence(uint32_t id)
+//       {
+//         for(int t=0; t<fKnownSequences.size();++t)
+//         {
+//           if(fKnownSequences[t].Id()==id)
+//           {
+//             RemoveKnownSequence(t);
+//             return true;
+//           }
+//         }
+//         return false;
+//       }
+
+
+
    bool SetChannelSequence(int chan, uint32_t id)
    {
      if(chan>GAPG_CHANNELS) return false;
@@ -613,6 +655,36 @@ public:
          return &(fKnownPatterns[ix]);
        }
 
+
+     /** remove pattern from list by index*/
+     void RemoveKnownPattern(size_t ix)
+     {
+         uint32_t pid=fKnownPatterns[ix].Id();
+         fKnownPatterns.erase(fKnownPatterns.begin()+ix);
+         uint32_t newpid=0;
+         if(fKnownPatterns.size()>0)
+           newpid=fKnownPatterns[0].Id(); // channels with erased patterns will be assigned to first pattern
+         for (int i=0; i< GAPG_CHANNELS; ++i)
+                {
+                  if(fChannelPatternID[i]==pid)
+                    fChannelPatternID[i]=newpid;
+                }
+     }
+
+//     /** discard pattern of id from list*/
+//     bool RemovePattern(uint32_t id)
+//         {
+//             for(int t=0; t<fKnownPatterns.size();++t)
+//                  {
+//                      if(fKnownPatterns[t].Id()==id)
+//                      {
+//                        RemoveKnownPattern(t);
+//                        return true;
+//                      }
+//                  }
+//             return false;
+//         }
+//
 
 
 };
