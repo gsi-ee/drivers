@@ -17,26 +17,26 @@ class QSignalMapper;
 
 
 #define GAPG_ACTION(X) \
-if(fInAction==false) { \
-fInAction=true;  \
+if(BasicGui::fInAction==false) { \
+  BasicGui::fInAction=true;  \
 X; \
-fInAction=false;\
+BasicGui::fInAction=false;\
 }
 
 
 
 
 #define GAPG_LOCK_SLOT \
-if(fSlotGuard) return; \
-fSlotGuard =true;
+if(BasicGui::fSlotGuard) return; \
+BasicGui::fSlotGuard =true;
 
 #define GAPG_UNLOCK_SLOT \
-fSlotGuard =false;
+BasicGui::fSlotGuard =false;
 
 
 /** JAM2018: the following pattern is used in most of the gui slots for autoapply:*/
 #define GAPG_AUTOAPPLY(X)\
-if (IsAutoApply() && !fInAction)\
+if (IsAutoApply() && !BasicGui::fInAction)\
      {\
        GAPG_ACTION(X);\
      }\
@@ -102,6 +102,8 @@ class BasicGui: public QMainWindow, public Ui::BasicGui
 {
   Q_OBJECT
 
+  friend class GalSubWidget;
+
 public:
   BasicGui (QWidget* parent = 0);
   virtual ~BasicGui ();
@@ -122,11 +124,20 @@ public:
 
   void FlushTextWindow();
 
+  void ShowStatusMessage (const QString& text);
+
+  BasicSetup* GetSetup(){return fSetup;}
+
 
   /** singleton pointer to forward galapagos lib output, also useful without galapagos lib:*/
 static BasicGui* fInstance;
 
+/** this flag protects some slots during broadcast write mode ? TODO: redundant with slotguard?*/
+ static bool fInAction;
 
+
+ /** protect mutually dependent slots by this.*/
+  static bool fSlotGuard;
 
 protected:
 
@@ -155,11 +166,6 @@ protected:
   /** we only need one setup structure since we do not have different slaves**/
   BasicSetup* fSetup;
 
-  // TODO: solve inheritance problems here!!!
-
-
-  /** contains currently configured slaves at the chains.*/
- // struct pex_sfp_links fSFPChains;
 
 
   /** text debug mode*/
@@ -168,12 +174,7 @@ protected:
   /** save configuration file instead of setting device values*/
   bool fSaveConfig;
 
-  /** this flag protects some slots during broadcast write mode*/
-  bool fInAction;
 
-
-  /** protect mutually dependent slots by this.*/
-   bool fSlotGuard;
 
    /** indicate full screen mode*/
    bool fFullScreen;

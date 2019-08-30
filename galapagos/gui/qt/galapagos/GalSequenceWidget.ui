@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>577</width>
-    <height>310</height>
+    <width>562</width>
+    <height>326</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -48,6 +48,22 @@
       </widget>
      </item>
      <item>
+      <widget class="QSpinBox" name="SequenceIDSpinBox">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>unique id of selected sequence</string>
+       </property>
+       <property name="readOnly">
+        <bool>false</bool>
+       </property>
+       <property name="buttonSymbols">
+        <enum>QAbstractSpinBox::NoButtons</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -85,6 +101,20 @@
        <property name="icon">
         <iconset resource="../galapicons.qrc">
          <normaloff>:/icons/analysiswin.png</normaloff>:/icons/analysiswin.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="SequenceDeleteButton">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Remove selected sequence from setup&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../galapicons.qrc">
+         <normaloff>:/icons/delete.png</normaloff>:/icons/delete.png</iconset>
        </property>
       </widget>
      </item>

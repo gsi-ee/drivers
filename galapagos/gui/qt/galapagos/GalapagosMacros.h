@@ -66,68 +66,68 @@ virtual void X##_toggled_00 (bool on); \
 
 
 
-#define GALAGUI_IMPLEMENT_MULTICHANNEL_TOGGLED_16(X)\
-void GalapagosGui::X##_toggled_00 (bool on)\
+#define GALAGUI_IMPLEMENT_MULTICHANNEL_TOGGLED_16(C,X)\
+void C::X##_toggled_00 (bool on)\
 {\
   X##_toggled(0,on);\
 }\
-void GalapagosGui::X##_toggled_01 (bool on)\
+void C::X##_toggled_01 (bool on)\
 {\
    X##_toggled(1,on);\
 }\
-void GalapagosGui::X##_toggled_02 (bool on)\
+void C::X##_toggled_02 (bool on)\
 {\
   X##_toggled(2,on);\
 }\
-void GalapagosGui::X##_toggled_03 (bool on)\
+void C::X##_toggled_03 (bool on)\
 {\
    X##_toggled(3,on);\
 }\
-void GalapagosGui::X##_toggled_04 (bool on)\
+void C::X##_toggled_04 (bool on)\
 {\
    X##_toggled(4,on);\
 }\
-void GalapagosGui::X##_toggled_05 (bool on)\
+void C::X##_toggled_05 (bool on)\
 {\
    X##_toggled(5,on);\
 }\
-void GalapagosGui::X##_toggled_06 (bool on)\
+void C::X##_toggled_06 (bool on)\
 {\
    X##_toggled(6,on);\
 }\
- void GalapagosGui::X##_toggled_07 (bool on)\
+ void C::X##_toggled_07 (bool on)\
  {\
    X##_toggled(7,on);\
  }\
- void GalapagosGui::X##_toggled_08 (bool on)\
+ void C::X##_toggled_08 (bool on)\
  {\
    X##_toggled(8,on);\
  }\
- void GalapagosGui::X##_toggled_09 (bool on)\
+ void C::X##_toggled_09 (bool on)\
  {\
    X##_toggled(9,on);\
  }\
- void GalapagosGui::X##_toggled_10 (bool on)\
+ void C::X##_toggled_10 (bool on)\
  {\
    X##_toggled(10,on);\
  }\
- void GalapagosGui::X##_toggled_11 (bool on)\
+ void C::X##_toggled_11 (bool on)\
  {\
    X##_toggled(11,on);\
  }\
- void GalapagosGui::X##_toggled_12 (bool on)\
+ void C::X##_toggled_12 (bool on)\
  {\
    X##_toggled(12,on);\
  }\
- void GalapagosGui::X##_toggled_13 (bool on)\
+ void C::X##_toggled_13 (bool on)\
  {\
    X##_toggled(13,on);\
  }\
- void GalapagosGui::X##_toggled_14 (bool on)\
+ void C::X##_toggled_14 (bool on)\
  {\
    X##_toggled(14,on);\
  }\
- void GalapagosGui::X##_toggled_15 (bool on)\
+ void C::X##_toggled_15 (bool on)\
  {\
     X##_toggled(15,on);\
  }
@@ -174,68 +174,68 @@ virtual void X##_changed_00 (int ix); \
   virtual void X##_changed_14 (int ix);\
   virtual void X##_changed_15 (int ix);
 
-#define GALAGUI_IMPLEMENT_MULTICHANNEL_CHANGED_16(X)\
-void GalapagosGui::X##_changed_00 (int ix)\
+#define GALAGUI_IMPLEMENT_MULTICHANNEL_CHANGED_16(C,X)\
+void C::X##_changed_00 (int ix)\
 {\
   X##_changed(0,ix);\
 }\
-void GalapagosGui::X##_changed_01 (int ix)\
+void C::X##_changed_01 (int ix)\
 {\
    X##_changed(1,ix);\
 }\
-void GalapagosGui::X##_changed_02 (int ix)\
+void C::X##_changed_02 (int ix)\
 {\
   X##_changed(2,ix);\
 }\
-void GalapagosGui::X##_changed_03 (int ix)\
+void C::X##_changed_03 (int ix)\
 {\
    X##_changed(3,ix);\
 }\
-void GalapagosGui::X##_changed_04 (int ix)\
+void C::X##_changed_04 (int ix)\
 {\
    X##_changed(4,ix);\
 }\
-void GalapagosGui::X##_changed_05 (int ix)\
+void C::X##_changed_05 (int ix)\
 {\
    X##_changed(5,ix);\
 }\
-void GalapagosGui::X##_changed_06 (int ix)\
+void C::X##_changed_06 (int ix)\
 {\
    X##_changed(6,ix);\
 }\
- void GalapagosGui::X##_changed_07 (int ix)\
+ void C::X##_changed_07 (int ix)\
  {\
    X##_changed(7,ix);\
  }\
- void GalapagosGui::X##_changed_08 (int ix)\
+ void C::X##_changed_08 (int ix)\
  {\
    X##_changed(8,ix);\
  }\
- void GalapagosGui::X##_changed_09 (int ix)\
+ void C::X##_changed_09 (int ix)\
  {\
    X##_changed(9,ix);\
  }\
- void GalapagosGui::X##_changed_10 (int ix)\
+ void C::X##_changed_10 (int ix)\
  {\
    X##_changed(10,ix);\
  }\
- void GalapagosGui::X##_changed_11 (int ix)\
+ void C::X##_changed_11 (int ix)\
  {\
    X##_changed(11,ix);\
  }\
- void GalapagosGui::X##_changed_12 (int ix)\
+ void C::X##_changed_12 (int ix)\
  {\
    X##_changed(12,ix);\
  }\
- void GalapagosGui::X##_changed_13 (int ix)\
+ void C::X##_changed_13 (int ix)\
  {\
    X##_changed(13,ix);\
  }\
- void GalapagosGui::X##_changed_14 (int ix)\
+ void C::X##_changed_14 (int ix)\
  {\
    X##_changed(14,ix);\
  }\
- void GalapagosGui::X##_changed_15 (int ix)\
+ void C::X##_changed_15 (int ix)\
  {\
     X##_changed(15,ix);\
  }

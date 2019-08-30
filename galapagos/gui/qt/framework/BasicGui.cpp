@@ -60,8 +60,8 @@ void BasicGui::I2c_sleep ()
 
 #endif
 
-
-
+bool BasicGui::fInAction=false;
+bool BasicGui::fSlotGuard=false;
 
 // *********************************************************
 
@@ -70,7 +70,10 @@ void BasicGui::I2c_sleep ()
  *  name 'name'.'
  */
 BasicGui::BasicGui (QWidget* parent) :
-    QMainWindow (parent), fSettings(0), fWinMapper(0), fSetup(0), fDebug (false), fSaveConfig(false), fInAction(false), fSlotGuard(false), fFullScreen(false), fMdiTabViewMode(true),
+    QMainWindow (parent), fSettings(0), fWinMapper(0), fSetup(0), fDebug (false), fSaveConfig(false),
+    //fInAction(false),
+    //fSlotGuard(false),
+    fFullScreen(false), fMdiTabViewMode(true),
       fConfigFile(NULL)
 {
 
@@ -449,62 +452,7 @@ void BasicGui::HexBox_changed(int on)
 }
 
 
-//void BasicGui::Slave_changed (int)
-//{
-////std::cout << "BasicGui::Slave_changed" << std::endl;
-//EvaluateSlave ();
-//bool refreshable = AssertNoBroadcast (false);
-////RefreshButton->setEnabled (refreshable);
-//RefreshChains();
-// //if(checkBox_AA->isChecked() && refreshable)
-// if(refreshable)
-// {
-//   // JAM note that we had a problem of prelling spinbox here (arrow buttons only, keyboard arrows are ok)
-//   // probably caused by too long response time of this slot?
-//   // workaround is to refresh the view delayed per single shot timer:
-//   //std::cout << "Timer started" << std::endl;
-//   QTimer::singleShot(10, this, SLOT(ShowBtn_clicked()));
-//   //std::cout << "Timer end" << std::endl;
-// }
-//
-//}
 
-
-
-
-//void BasicGui::RefreshChains ()
-//{
-//
-//#ifdef USE_GALAPAGOS_LIB
-//  // show status of configured chains:
-//  Chain0_Box->setValue (fSFPChains.numslaves[0]);
-//  Chain1_Box->setValue (fSFPChains.numslaves[1]);
-//  Chain2_Box->setValue (fSFPChains.numslaves[2]);
-//  Chain3_Box->setValue (fSFPChains.numslaves[3]);
-//
-//  // set maximum value of device spinbox according to init chains:
-//
-//  if (fSFP >= 0) // only for non broadcast mode of slaves
-//  {
-//    if (fSFPChains.numslaves[fSFP] > 0) // configured chains
-//    {
-//      SlavespinBox->setMaximum (fSFPChains.numslaves[fSFP] - 1);
-//      SlavespinBox->setEnabled (true);
-//    }
-//    else // non configured chains
-//    {
-//      SlavespinBox->setEnabled (false);
-//    }
-//  }
-//#else
-//    Chain0_Box->setEnabled (false);
-//    Chain1_Box->setEnabled (false);
-//    Chain2_Box->setEnabled (false);
-//    Chain3_Box->setEnabled (false);
-//
-//#endif
-//
-//}
 
 
 void BasicGui::RefreshStatus ()
@@ -517,7 +465,8 @@ void BasicGui::RefreshStatus ()
 //   statustext.append (text.setNum (fSlave));
    statustext.append (" - Last refresh:");
    statustext.append (QDateTime::currentDateTime ().toString (Qt::TextDate));
-   statusBar()->showMessage(statustext);
+   ShowStatusMessage(statustext);
+//   statusBar()->showMessage(statustext);
 }
 
 
@@ -532,13 +481,6 @@ RefreshStatus();
 }
 
 
-
-//void BasicGui::EvaluateSlave ()
-//{
-//  if(fInAction) return;
-//  fSFP = SFPspinBox->value ();
-//  fSlave = SlavespinBox->value ();
-//}
 
 
 
@@ -806,7 +748,10 @@ void BasicGui::FlushTextWindow ()
   TextOutput->repaint ();
 }
 
-
+void  BasicGui::ShowStatusMessage (const QString& text)
+{
+  statusBar()->showMessage(text);
+}
 
 //bool BasicGui::AssertNoBroadcast (bool verbose)
 //{
