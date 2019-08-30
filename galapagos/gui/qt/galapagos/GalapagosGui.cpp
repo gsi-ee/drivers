@@ -4,29 +4,10 @@
 #include <unistd.h>
 
 #include <iostream>
-//#include <QProcess>
-//#include <stdlib.h>
-
-//#include <QString>
-//#include <QMessageBox>
-//#include <QFileDialog>
-//#include <QInputDialog>
-//#include <QDateTime>
-//#include <QTimer>
 #include <QMdiSubWindow>
-
-//#include <QFile>
 
 #include <QDir>
 
-//#include <okteta/piecetablebytearraymodel.h>
-
-//#include <sstream>
-//#include <string.h>
-//#include <errno.h>
-//#include <math.h>
-
-// *********************************************************
 
 
 
@@ -34,10 +15,6 @@
 #include "GalSequenceWidget.h"
 #include "GalPatternWidget.h"
 
-/*
- *  Constructs a GalapagosGui which is a child of 'parent', with the
- *  name 'name'.'
- */
 GalapagosGui::GalapagosGui (QWidget* parent) : BasicGui (parent)
 {
   fSubWidgets.clear();
@@ -218,7 +195,7 @@ void GalapagosGui::RefreshView ()
 
 void GalapagosGui::EvaluateView ()
 {
-  std::cout << "GalapagosGui::EvaluateView"<<std::endl;
+  //std::cout << "GalapagosGui::EvaluateView"<<std::endl;
   for (std::vector<GalSubWidget*>::iterator it = fSubWidgets.begin() ; it != fSubWidgets.end(); ++it)
   {
       (*it)->EvaluateView();
@@ -236,6 +213,7 @@ void GalapagosGui::SetRegisters ()
   for(uint8_t channel=0; channel<GAPG_CHANNELS;++channel)
   {
     WriteGAPG ( GAPG_CHANNEL_SEQUENCE_BASE + channel*sizeof(uint32_t),  theSetup->GetChannelSequenceID(channel));
+    WriteGAPG ( GAPG_CHANNEL_PATTERN_BASE + channel*sizeof(uint32_t),  theSetup->GetChannelPatternID(channel));
   }
   /** channel enabled registers:*/
   WriteGAPG ( GAPG_CHANNEL_ENABLE_LOW, theSetup->GetChannelControl_0());
@@ -290,6 +268,13 @@ void GalapagosGui::GetRegisters ()
            printm ("GetRegisters Warning- channel %d has unknown sequence id %d on hardware, fallback to id 1",channel,seqid);
            theSetup->SetChannelSequence(channel,1);
          }
+
+       uint32_t patid=ReadGAPG ( GAPG_CHANNEL_PATTERN_BASE + channel*sizeof(uint32_t));
+       if(!theSetup->SetChannelPattern(channel,patid))
+       {
+         printm ("GetRegisters Warning- channel %d has unknown pattern id %d on hardware, fallback to id 1",channel,patid);
+         theSetup->SetChannelPattern(channel,1);
+       }
      }
 
   

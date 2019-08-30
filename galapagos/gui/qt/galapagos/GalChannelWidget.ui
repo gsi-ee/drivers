@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>630</width>
+    <width>638</width>
     <height>375</height>
    </rect>
   </property>
@@ -185,6 +185,23 @@
         </item>
        </widget>
       </item>
+      <item row="0" column="4">
+       <widget class="QComboBox" name="Channel_pattern_comboBox_ALL">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <item>
+         <property name="text">
+          <string>Alternating01</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>TwoStep</string>
+         </property>
+        </item>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -255,6 +272,9 @@
             </item>
             <item>
              <widget class="QComboBox" name="Channel_sequence_comboBox_00">
+              <property name="toolTip">
+               <string>Select sequence for pattern on channel</string>
+              </property>
               <item>
                <property name="text">
                 <string>Single Pulse</string>
@@ -268,6 +288,26 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="Channel_pattern_comboBox_00">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Select bit pattern to send on channel</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Alternating01</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -322,6 +362,9 @@
             </item>
             <item>
              <widget class="QComboBox" name="Channel_sequence_comboBox_01">
+              <property name="toolTip">
+               <string>Select sequence for pattern on channel</string>
+              </property>
               <item>
                <property name="text">
                 <string>Single Pulse</string>
@@ -335,6 +378,26 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="Channel_pattern_comboBox_01">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Select bit pattern to send on channel</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Alternating01</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -389,6 +452,9 @@
             </item>
             <item>
              <widget class="QComboBox" name="Channel_sequence_comboBox_02">
+              <property name="toolTip">
+               <string>Select sequence for pattern on channel</string>
+              </property>
               <item>
                <property name="text">
                 <string>Single Pulse</string>
@@ -402,6 +468,26 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="Channel_pattern_comboBox_02">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Select bit pattern to send on channel</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Alternating01</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -456,6 +542,9 @@
             </item>
             <item>
              <widget class="QComboBox" name="Channel_sequence_comboBox_03">
+              <property name="toolTip">
+               <string>Select sequence for pattern on channel</string>
+              </property>
               <item>
                <property name="text">
                 <string>Single Pulse</string>
@@ -469,6 +558,26 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="Channel_pattern_comboBox_03">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Select bit pattern to send on channel</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Alternating01</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -523,6 +632,9 @@
             </item>
             <item>
              <widget class="QComboBox" name="Channel_sequence_comboBox_04">
+              <property name="toolTip">
+               <string>Select sequence for pattern on channel</string>
+              </property>
               <item>
                <property name="text">
                 <string>Single Pulse</string>
@@ -536,6 +648,26 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="Channel_pattern_comboBox_04">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Select bit pattern to send on channel</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Alternating01</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -590,6 +722,9 @@
             </item>
             <item>
              <widget class="QComboBox" name="Channel_sequence_comboBox_05">
+              <property name="toolTip">
+               <string>Select sequence for pattern on channel</string>
+              </property>
               <item>
                <property name="text">
                 <string>Single Pulse</string>
@@ -603,6 +738,26 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="Channel_pattern_comboBox_05">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Select bit pattern to send on channel</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Alternating01</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -657,6 +812,9 @@
             </item>
             <item>
              <widget class="QComboBox" name="Channel_sequence_comboBox_06">
+              <property name="toolTip">
+               <string>Select sequence for pattern on channel</string>
+              </property>
               <item>
                <property name="text">
                 <string>Single Pulse</string>
@@ -670,6 +828,26 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="Channel_pattern_comboBox_06">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Select bit pattern to send on channel</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Alternating01</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -724,6 +902,9 @@
             </item>
             <item>
              <widget class="QComboBox" name="Channel_sequence_comboBox_07">
+              <property name="toolTip">
+               <string>Select sequence for pattern on channel</string>
+              </property>
               <item>
                <property name="text">
                 <string>Single Pulse</string>
@@ -737,6 +918,26 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="Channel_pattern_comboBox_07">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Select bit pattern to send on channel</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Alternating01</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -810,6 +1011,9 @@
             </item>
             <item>
              <widget class="QComboBox" name="Channel_sequence_comboBox_08">
+              <property name="toolTip">
+               <string>Select sequence for pattern to send on channel</string>
+              </property>
               <item>
                <property name="text">
                 <string>Single Pulse</string>
@@ -823,6 +1027,26 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="Channel_pattern_comboBox_08">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Select bit pattern to send on channel</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Alternating01</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -877,6 +1101,9 @@
             </item>
             <item>
              <widget class="QComboBox" name="Channel_sequence_comboBox_09">
+              <property name="toolTip">
+               <string>Select sequence for pattern to send on channel</string>
+              </property>
               <item>
                <property name="text">
                 <string>Single Pulse</string>
@@ -890,6 +1117,26 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="Channel_pattern_comboBox_09">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Select bit pattern to send on channel</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Alternating01</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -944,6 +1191,9 @@
             </item>
             <item>
              <widget class="QComboBox" name="Channel_sequence_comboBox_10">
+              <property name="toolTip">
+               <string>Select sequence for pattern to send on channel</string>
+              </property>
               <item>
                <property name="text">
                 <string>Single Pulse</string>
@@ -957,6 +1207,26 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="Channel_pattern_comboBox_10">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Select bit pattern to send on channel</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Alternating01</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -1011,6 +1281,9 @@
             </item>
             <item>
              <widget class="QComboBox" name="Channel_sequence_comboBox_11">
+              <property name="toolTip">
+               <string>Select sequence for pattern to send on channel</string>
+              </property>
               <item>
                <property name="text">
                 <string>Single Pulse</string>
@@ -1024,6 +1297,26 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="Channel_pattern_comboBox_11">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Select bit pattern to send on channel</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Alternating01</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -1078,6 +1371,9 @@
             </item>
             <item>
              <widget class="QComboBox" name="Channel_sequence_comboBox_12">
+              <property name="toolTip">
+               <string>Select sequence for pattern to send on channel</string>
+              </property>
               <item>
                <property name="text">
                 <string>Single Pulse</string>
@@ -1091,6 +1387,26 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="Channel_pattern_comboBox_12">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Select bit pattern to send on channel</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Alternating01</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -1145,6 +1461,9 @@
             </item>
             <item>
              <widget class="QComboBox" name="Channel_sequence_comboBox_13">
+              <property name="toolTip">
+               <string>Select sequence for pattern to send on channel</string>
+              </property>
               <item>
                <property name="text">
                 <string>Single Pulse</string>
@@ -1158,6 +1477,26 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="Channel_pattern_comboBox_13">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Select bit pattern to send on channel</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Alternating01</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -1212,6 +1551,9 @@
             </item>
             <item>
              <widget class="QComboBox" name="Channel_sequence_comboBox_14">
+              <property name="toolTip">
+               <string>Select sequence for pattern to send on channel</string>
+              </property>
               <item>
                <property name="text">
                 <string>Single Pulse</string>
@@ -1225,6 +1567,26 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="Channel_pattern_comboBox_14">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Select bit pattern to send on channel</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Alternating01</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -1279,6 +1641,9 @@
             </item>
             <item>
              <widget class="QComboBox" name="Channel_sequence_comboBox_15">
+              <property name="toolTip">
+               <string>Select sequence for pattern to send on channel</string>
+              </property>
               <item>
                <property name="text">
                 <string>Single Pulse</string>
@@ -1292,6 +1657,26 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="Channel_pattern_comboBox_15">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Select bit pattern to send on channel</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Alternating01</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -1325,12 +1710,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>331</x>
-     <y>32</y>
+     <x>231</x>
+     <y>41</y>
     </hint>
     <hint type="destinationlabel">
-     <x>347</x>
-     <y>32</y>
+     <x>302</x>
+     <y>42</y>
     </hint>
    </hints>
   </connection>
@@ -1341,12 +1726,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>305</x>
-     <y>36</y>
+     <x>231</x>
+     <y>41</y>
     </hint>
     <hint type="destinationlabel">
-     <x>454</x>
-     <y>36</y>
+     <x>383</x>
+     <y>42</y>
     </hint>
    </hints>
   </connection>
@@ -1357,12 +1742,28 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>309</x>
-     <y>32</y>
+     <x>231</x>
+     <y>41</y>
     </hint>
     <hint type="destinationlabel">
-     <x>544</x>
-     <y>41</y>
+     <x>509</x>
+     <y>42</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBox_ChannelsAlll</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>Channel_pattern_comboBox_ALL</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>215</x>
+     <y>38</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>564</x>
+     <y>38</y>
     </hint>
    </hints>
   </connection>

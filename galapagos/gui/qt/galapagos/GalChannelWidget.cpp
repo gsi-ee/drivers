@@ -82,7 +82,22 @@ GalChannelWidget::GalChannelWidget (QWidget* parent): GalSubWidget(parent)
      fChannelSequenceCombo[14] = Channel_sequence_comboBox_14;
      fChannelSequenceCombo[15] = Channel_sequence_comboBox_15;
 
-
+     fChannelPatternCombo[0] = Channel_pattern_comboBox_00;
+     fChannelPatternCombo[1] = Channel_pattern_comboBox_01;
+     fChannelPatternCombo[2] = Channel_pattern_comboBox_02;
+     fChannelPatternCombo[3] = Channel_pattern_comboBox_03;
+     fChannelPatternCombo[4] = Channel_pattern_comboBox_04;
+     fChannelPatternCombo[5] = Channel_pattern_comboBox_05;
+     fChannelPatternCombo[6] = Channel_pattern_comboBox_06;
+     fChannelPatternCombo[7] = Channel_pattern_comboBox_07;
+     fChannelPatternCombo[8] = Channel_pattern_comboBox_08;
+     fChannelPatternCombo[9] = Channel_pattern_comboBox_09;
+     fChannelPatternCombo[10] = Channel_pattern_comboBox_10;
+     fChannelPatternCombo[11] = Channel_pattern_comboBox_11;
+     fChannelPatternCombo[12] = Channel_pattern_comboBox_12;
+     fChannelPatternCombo[13] = Channel_pattern_comboBox_13;
+     fChannelPatternCombo[14] = Channel_pattern_comboBox_14;
+     fChannelPatternCombo[15] = Channel_pattern_comboBox_15;
 
 
 }
@@ -112,8 +127,14 @@ void GalChannelWidget::ConnectSlots()
    QObject::connect (Channel_sequence_comboBox_ALL, SIGNAL(currentIndexChanged(int)), this,  SLOT(ChannelSequence_changed_all(int)));
    GALAGUI_CONNECT_INDEXCHANGED_16(Channel_sequence_comboBox_,ChannelSequence_changed_);
 
+   QObject::connect (Channel_pattern_comboBox_ALL, SIGNAL(currentIndexChanged(int)), this,  SLOT(ChannelPattern_changed_all(int)));
+   GALAGUI_CONNECT_INDEXCHANGED_16(Channel_pattern_comboBox_,ChannelPattern_changed_);
 
 
+
+   QObject::connect (ChannelgroupBox_0, SIGNAL(toggled(bool)), this, SLOT(ChannelEnabled_toggled_group0(bool)));
+
+   QObject::connect (ChannelgroupBox_1, SIGNAL(toggled(bool)), this, SLOT(ChannelEnabled_toggled_group1(bool)));
 }
 
 
@@ -139,6 +160,19 @@ void GalChannelWidget::ChannelEnabled_toggled (int channel, bool on)
 {
   GAPG_AUTOAPPLY(ApplyChannelEnabled(channel, on));
 }
+
+void  GalChannelWidget::ChannelEnabled_toggled_group0(bool on)
+{
+  for(int chan=0;chan<8;++chan)
+      fChannelEnabledRadio[chan]->setChecked (on);
+}
+
+void  GalChannelWidget::ChannelEnabled_toggled_group1(bool on)
+{
+  for(int chan=8;chan<16;++chan)
+        fChannelEnabledRadio[chan]->setChecked (on);
+}
+
 
 GALAGUI_IMPLEMENT_MULTICHANNEL_TOGGLED_16(GalChannelWidget, ChannelEnabled);
 
@@ -183,9 +217,29 @@ GALAGUI_IMPLEMENT_MULTICHANNEL_CHANGED_16(GalChannelWidget, ChannelSequence);
 
 
 
+
+void GalChannelWidget::ChannelPattern_changed_all(int ix)
+{
+  for(int chan=0;chan<16;++chan)
+    fChannelPatternCombo[chan]->setCurrentIndex (ix);
+}
+
+
+void GalChannelWidget::ChannelPattern_changed (int channel, int ix)
+{
+  GAPG_LOCK_SLOT
+  //std::cout << "GalChannelWidget::ChannelSequence_changed ch="<<channel<<",  ix="<<ix << std::endl;
+  GAPG_AUTOAPPLY(ApplyChannelPattern(channel, ix));
+  GAPG_UNLOCK_SLOT
+}
+
+GALAGUI_IMPLEMENT_MULTICHANNEL_CHANGED_16(GalChannelWidget, ChannelPattern);
+
+
+
 void GalChannelWidget::EvaluateView ()
 {
-  std::cout << "GalChannelWidget::EvaluateView"<<std::endl;
+  //std::cout << "GalChannelWidget::EvaluateView"<<std::endl;
 
   // here the current gui display is just copied to setup structure in local memory
   theSetup_GET_FOR_CLASS(GalapagosSetup);
@@ -201,6 +255,10 @@ void GalChannelWidget::EvaluateView ()
      if(!rev) printm ("Evaluate View Warning: sequence %s of current channel %d not known",
          seqname,channel);
 
+     const char* patname= fChannelPatternCombo[channel]->currentText().toLatin1().data();
+     rev=theSetup->SetChannelPattern(channel, patname);
+     if(!rev) printm ("Evaluate View Warning: pattern %s of current channel %d not known",
+         patname,channel);
    }
 
 }
@@ -267,6 +325,39 @@ void GalChannelWidget::RefreshView ()
 
       }
 
+ ////////////// dito for the pattern combo boxes:
+
+  // setup combobox entries from known sequences:
+  Channel_pattern_comboBox_ALL->clear ();
+  for (int pix = 0; pix < theSetup->NumKnownPatterns (); ++pix)
+  {
+    GalapagosPattern* pat = theSetup->GetKnownPattern (pix);
+    if (pat == 0)
+      continue;
+    for (uint8_t channel = 0; channel < 16; ++channel)
+    {
+      if (pix == 0)
+        fChannelPatternCombo[channel]->clear ();
+      fChannelPatternCombo[channel]->addItem (pat->Name ());
+    }
+    Channel_pattern_comboBox_ALL->addItem (pat->Name ());
+  }
+
+  for (uint8_t channel = 0; channel < 16; ++channel)
+  {
+    GalapagosPattern* pat = theSetup->GetChannelPattern (channel);
+    if (pat == 0)
+    {
+      printm ("Never come here - channel %d has no pattern in setup !", channel);
+      continue;
+    }
+    int cix = fChannelPatternCombo[channel]->findText (QString (pat->Name ()));
+    if (cix < 0)
+      printm ("Never come here - channel %d has no combobox pattern entry %s", channel, pat->Name ());
+    else
+      fChannelPatternCombo[channel]->setCurrentIndex (cix);
+  }
+
 
 }
 
@@ -331,5 +422,18 @@ void GalChannelWidget::ApplyChannelSequence(int channel, int ix)
 }
 
 
+void GalChannelWidget::ApplyChannelPattern(int channel, int ix)
+{
+std::cout << "GalChannelWidget::ApplyChannelPattern chan="<<channel<<",  ix="<<ix << std::endl;
+ theSetup_GET_FOR_CLASS(GalapagosSetup);
+ const char* patname= fChannelPatternCombo[channel]->itemText(ix).toLatin1().data();
+ bool rev=theSetup->SetChannelPattern(channel, patname);
+ if(!rev) printm ("ApplyChannelPattern Warning: pattern %s of current channel %d not known",
+             patname,channel);
+ theSetup->SetChannelPattern(channel, patname);
+ fParent->WriteGAPG ( GAPG_CHANNEL_PATTERN_BASE + channel*sizeof(uint32_t),  theSetup->GetChannelPatternID(channel));
 
+// RefreshView();
+
+}
 

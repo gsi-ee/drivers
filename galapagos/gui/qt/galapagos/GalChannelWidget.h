@@ -24,7 +24,7 @@ protected:
    KLed* fChannelActiveLED[GAPG_CHANNELS];
 
    QComboBox* fChannelSequenceCombo[GAPG_CHANNELS];
-
+   QComboBox* fChannelPatternCombo[GAPG_CHANNELS];
 
 public:
  GalChannelWidget (QWidget* parent = 0);
@@ -62,15 +62,24 @@ public:
 
    void ApplyChannelSequence(int channel, int ix);
 
+   void ApplyChannelPattern(int channel, int ix);
 
-   /** evaluate change of disabled febex channel channel*/
+
+   /** evaluate sequence index for channel*/
    void ChannelSequence_changed(int channel, int ix);
+
+   /** evaluate pattern index for channel*/
+   void ChannelPattern_changed (int channel, int ix);
 
 
 public slots:
 
 
 virtual void ChannelEnabled_toggled_all(bool on);
+
+virtual void ChannelEnabled_toggled_group0(bool on);
+virtual void ChannelEnabled_toggled_group1(bool on);
+
 
  GALAGUI_DEFINE_MULTICHANNEL_TOGGLED_16(ChannelEnabled);
 
@@ -83,6 +92,10 @@ virtual void ChannelEnabled_toggled_all(bool on);
  virtual void ChannelSequence_changed_all(int ix);
 
  GALAGUI_DEFINE_MULTICHANNEL_CHANGED_16(ChannelSequence);
+
+ virtual void ChannelPattern_changed_all(int ix);
+
+ GALAGUI_DEFINE_MULTICHANNEL_CHANGED_16(ChannelPattern);
 
 virtual void GeneratorActive_clicked(bool checked);
 
