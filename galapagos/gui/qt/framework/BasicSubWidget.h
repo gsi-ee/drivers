@@ -1,24 +1,18 @@
 #ifndef GAPG_BASIC_SUBWIDGET_H
 #define GAPG_BASIC_SUBWIDGET_H
 
-
 #include <QWidget>
 
-
 class QSettings;
-
-//#include "BasicGui.h";
-//#include "GalapagosMacros.h"
-//#include "GalapagosDefines.h"
 
 /** base class for all subwidgets in the galapagos mdi gui.
  * Provides interface for refresh and update and shortcut to setup*/
 
-namespace gapg {
+namespace gapg
+{
 
 class BasicSetup;
 class BasicGui;
-
 
 class BasicSubWidget: public QWidget
 {
@@ -27,49 +21,43 @@ class BasicSubWidget: public QWidget
 protected:
 
   /** shortcut to parent setup structure. TODO: put this into common base class**/
-   BasicSetup* fSetup;
+  BasicSetup* fSetup;
 
-   /** Backpointer to parent gui*/
-   BasicGui* fParent;
+  /** Backpointer to parent gui*/
+  BasicGui* fParent;
 
-   /** Descriptor of this subwindow*/
-   QString fImpName;
+  /** Descriptor of this subwindow*/
+  QString fImpName;
 
-   /** remember most recent file directory*/
-   QString fLastFileDir;
-
+  /** remember most recent file directory*/
+  QString fLastFileDir;
 
 public:
- BasicSubWidget (QWidget* parent = 0);
+  BasicSubWidget (QWidget* parent = 0);
+
   virtual ~BasicSubWidget ();
 
+  void SetBasicParent (gapg::BasicGui* parent);
 
-  void SetBasicParent(gapg::BasicGui* parent);
+  bool IsAutoApply ();
 
-  bool IsAutoApply();
+  /** connection to our slots*/
+  virtual void ConnectSlots () =0;
 
- /** connection to our slots*/
- virtual void ConnectSlots() {;}
+  /** update register display*/
+  virtual void RefreshView () =0;
 
+  /** put values from gui into setup structure*/
+  virtual void EvaluateView ()=0;
 
- /** update register display*/
-   virtual void RefreshView () {;}
+  /** take values relevant for our widget from Qt settings file*/
+  virtual void ReadSettings (QSettings* set)=0;
 
-   /** put values from gui into setup structure*/
-   virtual void EvaluateView () {;}
-
-   /** take values relevant for our widget from Qt settings file*/
-   virtual void ReadSettings(QSettings* set){;}
-
-   /** put values relevant for our widget from Qt settings file*/
-   virtual void WriteSettings(QSettings* set){;}
-
-
-
-
+  /** put values relevant for our widget from Qt settings file*/
+  virtual void WriteSettings (QSettings* set) =0;
 
 };
 
-} // namespace
+}    // namespace
 
 #endif

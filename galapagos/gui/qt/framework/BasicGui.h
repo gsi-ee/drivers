@@ -252,21 +252,6 @@ protected:
   void RefreshStatus ();
 
 
-
-//  /** Read from address from sfp and slave, returns value*/
-//  int ReadGAPG (int address);
-//
-//  /** Write value to address from sfp and slave*/
-//  int WriteGAPG (int address, int value);
-//
-//  /** Save value to currently open *.gos configuration file*/
-//  int SaveGAPG (int address, int value);
-//
-//  /** execute (galap) command in shell. Return value is output of command*/
-//  QString ExecuteGAPGCmd (QString& command,  int timeout=5000);
-
- 
-
   void DebugTextWindow (const char*txt)
   {
     if (fDebug)
@@ -296,9 +281,6 @@ protected:
 
   /** put gui values into status structure*/
    virtual void EvaluateView ();
-
-//  /** get register contents from hardware to status structure*/
-//   virtual void GetRegisters ();
 
    /** set register contents from status structure to hardware*/
    virtual void SetRegisters ();

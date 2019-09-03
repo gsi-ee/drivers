@@ -16,54 +16,42 @@ protected:
 
   /** Refresh gui display for sequence index ix in list.
    * Returns unique object id in setup*/
-  virtual int RefreshObjectIndex(int ix){return -1;}
+  virtual int RefreshObjectIndex(int ix)=0;
 
   /** load sequence from file fullname. Returns false if no success*/
-   virtual bool LoadObject(const QString& fullname){return false;}
+   virtual bool LoadObject(const QString& fullname)=0;
 
    /** save sequence from setup to file fullname. Returns false if no success*/
-   virtual bool SaveObject(const QString& fullname, gapg::BasicObject* ob){return false;}
+   virtual bool SaveObject(const QString& fullname, gapg::BasicObject* ob)=0;
 
    /** implement in subclass: dedicated requester for kind of object load*/
-   virtual bool LoadObjectRequest(){return false;}
+   virtual bool LoadObjectRequest()=0;
 
    /** implement in subclass: dedicated requester for kind of object save*/
-   virtual bool SaveObjectRequest(){return false;}
+   virtual bool SaveObjectRequest()=0;
 
    /** implement in subclass: dedicated requester for kind of new object creation. */
-   virtual bool NewObjectRequest(){return false;}
+   virtual bool NewObjectRequest()=0;
 
    /** implement in subclass: dedicated requester for kind of new object deletion. */
-    virtual bool DeleteObjectRequest(){return false;}
+    virtual bool DeleteObjectRequest()=0;
 
    /** implement in subclass: activate dedicated editor for object kind*/
-   virtual void StartEditing(){;}
+   virtual void StartEditing()=0;
 
    /** implement in subclass: activate dedicated editor for object kind*/
-   virtual void CancelEditing(){;}
+   virtual void CancelEditing()=0;
 
    /** implement in subclass: activate dedicated editor for object kind*/
-    virtual void ApplyEditing(){;}
-
+    virtual void ApplyEditing()=0;
 
 public:
- BasicObjectEditorWidget (QWidget* parent = 0);
-  virtual ~BasicObjectEditorWidget ();
+    BasicObjectEditorWidget (QWidget* parent = 0);
+
+    virtual ~BasicObjectEditorWidget ();
 
 
   virtual void ConnectSlots();
-
-
-//  virtual void RefreshView ();
-//
-//  virtual void EvaluateView ();
-//
-//  /** take values relevant for our widget from Qt settings file*/
-//   virtual void ReadSettings(QSettings* set);
-//
-//   /** put values relevant for our widget from Qt settings file*/
-//  virtual void WriteSettings(QSettings* set);
-
 
 
 public slots:
@@ -77,8 +65,6 @@ virtual void ObjectSave_clicked();
 virtual void ObjectApply_clicked();
 virtual void ObjectEditCancel_clicked();
 virtual void ObjectDelete_clicked();
-
-
 
 };
 

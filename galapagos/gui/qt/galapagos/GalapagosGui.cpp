@@ -22,7 +22,7 @@ GalapagosGui::GalapagosGui (QWidget* parent) : gapg::BasicGui (parent)
   fSubWidgets.clear();
 
  fImplementationName="GALAPAGUI";
- fVersionString="Welcome to GalapaGUI!\n\t v0.2 of 3-Sep-2019 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to GalapaGUI!\n\t v0.21 of 3-Sep-2019 by JAM (j.adamczewski@gsi.de)";
  setWindowTitle(QString("%1").arg(fImplementationName));
 
  fSettings=new QSettings("GSI", fImplementationName);
@@ -39,11 +39,11 @@ GalapagosGui::GalapagosGui (QWidget* parent) : gapg::BasicGui (parent)
   ConnectSlots();
   ReadSettings();
   show ();
-  GAPG_LOCK_SLOT
+  GAPG_LOCK_SLOT;
   GetRegisters();
   RefreshView();
   ClearOutputBtn_clicked(); // use version string of subclass
-  GAPG_UNLOCK_SLOT
+  GAPG_UNLOCK_SLOT;
 }
 
 

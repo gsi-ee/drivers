@@ -23,9 +23,16 @@ gapg::BasicObjectEditorWidget(parent)
   fPatternEditor=new gapg::GalPatternEditor(this);
   Editor_scrollArea->setWidget(fPatternEditor);
 
-  ObjectNewButton->setToolTip("Create new Pattern");
+  Object_comboBox->setToolTip("Select known pattern by name");
+  ObjectIDSpinBox-> setToolTip("Unique id of selected pattern");
+
+  ObjectNewButton->setToolTip("Create new pattern");
   ObjectEditButton->setToolTip("Edit contents of selected pattern");
-  // TODO weiter
+  ObjectDeleteButton->setToolTip("Remove selected pattern");
+  ObjectLoadButton->setToolTip("Load pattern from *.gap file to the list");
+  ObjectSaveButton->setToolTip("Export selected pattern to a file (*.gap)");
+  ObjectEditCancelButton->setToolTip("Cancel edited code for selected pattern (restore last setup)");
+  ObjectApplyButton->setToolTip("Apply editor contents for selected pattern");
 
 }
 
@@ -38,7 +45,6 @@ void GalPatternWidget::ConnectSlots()
 {
   BasicObjectEditorWidget::ConnectSlots();
   // anything more here?
-
 
 }
 
@@ -229,6 +235,7 @@ void GalPatternWidget::RefreshView ()
     if(pat==0)  continue;
     Object_comboBox->addItem(pat->Name());
    }
+  if(oldpat>=theSetup->NumKnownPatterns()) oldpat=theSetup->NumKnownPatterns()-1;
   Object_comboBox->setCurrentIndex(oldpat); // restore active item
   RefreshObjectIndex(oldpat);
 
