@@ -12,10 +12,9 @@ RESOURCES += ../galapicons.qrc
 
 
 #SOURCES += main.cpp BasicGui.cpp
-SOURCES += BasicGui.cpp 
+SOURCES += BasicSubWidget.cpp BasicObjectEditorWidget.cpp BasicGui.cpp 
 
-HEADERS += BasicGui.h 
+HEADERS += BasicObject.h BasicSubWidget.h BasicObjectEditorWidget.h BasicGui.h 
 
-FORMS = BasicGui.ui
-#FORMS = BasicMainwindow.ui
+FORMS = BasicObjectEditorWidget.ui BasicGui.ui
 
