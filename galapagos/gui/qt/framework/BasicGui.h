@@ -1,7 +1,10 @@
-#ifndef GALBASICGUI_H
-#define GALBASICGUI_H
+#ifndef GAPG_BASICGUI_H
+#define GAPB_BASICGUI_H
 
 #include "ui_BasicGui.h"
+
+
+
 //#include "ui_BasicMainwindow.h"
 #include <stdio.h>
 #include <stdint.h>
@@ -10,8 +13,10 @@
 #include <QSettings>
 
 #include <iostream>
+#include <vector>
 
 class QSignalMapper;
+
 
 
 
@@ -84,17 +89,11 @@ extern "C"
 
 #endif
 
-/** the (A)BC for all frontend setup structures */
-class BasicSetup
-{
 
-  public:
+namespace gapg {
 
-  BasicSetup(){;}
-  virtual ~BasicSetup(){;}
-  virtual void Dump(){printm("Empty status structure - Please implement a new frontend first");}
-
-};
+class BasicSubWidget;
+class BasicSetup;
 
 
 
@@ -102,11 +101,22 @@ class BasicGui: public QMainWindow, public Ui::BasicGui
 {
   Q_OBJECT
 
-  friend class GalSubWidget;
+  friend class BasicSubWidget;
+  friend class BasicObjectEditorWidget;
+
+protected:
+
+  std::vector<BasicSubWidget*> fSubWidgets;
+
+  QString fLastFileDir;
 
 public:
   BasicGui (QWidget* parent = 0);
   virtual ~BasicGui ();
+
+  void AddSubWindow(gapg::BasicSubWidget* sub);
+
+
 
   int GetNumberBase(){return fNumberBase;}
 
@@ -127,6 +137,23 @@ public:
   void ShowStatusMessage (const QString& text);
 
   BasicSetup* GetSetup(){return fSetup;}
+
+
+
+  /** Read from address from sfp and slave, returns value*/
+    int ReadGAPG (int address);
+
+    /** Write value to address from sfp and slave*/
+    int WriteGAPG (int address, int value);
+
+    /** Save value to currently open *.gos configuration file*/
+    int SaveGAPG (int address, int value);
+
+    /** execute (galap) command in shell. Return value is output of command*/
+    QString ExecuteGAPGCmd (QString& command,  int timeout=5000);
+
+    /** get register contents from hardware to status structure*/
+      virtual void GetRegisters ();
 
 
   /** singleton pointer to forward galapagos lib output, also useful without galapagos lib:*/
@@ -226,17 +253,17 @@ protected:
 
 
 
-  /** Read from address from sfp and slave, returns value*/
-  int ReadGAPG (int address);
-
-  /** Write value to address from sfp and slave*/
-  int WriteGAPG (int address, int value);
-
-  /** Save value to currently open *.gos configuration file*/
-  int SaveGAPG (int address, int value);
-
-  /** execute (galap) command in shell. Return value is output of command*/
-  QString ExecuteGAPGCmd (QString& command,  int timeout=5000);
+//  /** Read from address from sfp and slave, returns value*/
+//  int ReadGAPG (int address);
+//
+//  /** Write value to address from sfp and slave*/
+//  int WriteGAPG (int address, int value);
+//
+//  /** Save value to currently open *.gos configuration file*/
+//  int SaveGAPG (int address, int value);
+//
+//  /** execute (galap) command in shell. Return value is output of command*/
+//  QString ExecuteGAPGCmd (QString& command,  int timeout=5000);
 
  
 
@@ -261,14 +288,17 @@ protected:
    * The following methods are the interface to the implementation:
    */
 
+  /** initialize all required slots. By default, we init slots of subwindos*/
+  virtual void ConnectSlots();
+
   /** update gui display from status structure*/
   virtual void RefreshView ();
 
   /** put gui values into status structure*/
    virtual void EvaluateView ();
 
-  /** get register contents from hardware to status structure*/
-   virtual void GetRegisters ();
+//  /** get register contents from hardware to status structure*/
+//   virtual void GetRegisters ();
 
    /** set register contents from status structure to hardware*/
    virtual void SetRegisters ();
@@ -300,12 +330,7 @@ protected:
 
    /* Factory method for the frontend setup structures.
     * To be re-implemented in subclass*/
-   virtual BasicSetup* CreateSetup()
-     {
-       //std::cout <<"BasicGui:: CreateSetup" <<std::endl;
-       return new BasicSetup();
-     }
-
+   virtual BasicSetup* CreateSetup();
 
 
    virtual void closeEvent( QCloseEvent * ce );
@@ -345,5 +370,8 @@ public slots:
 
 
 };
+
+
+} // namespace
 
 #endif

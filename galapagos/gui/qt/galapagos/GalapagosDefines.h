@@ -1,5 +1,5 @@
-#ifndef GAPGDEFINES_H
-#define GAPGDEFINES_H
+#ifndef GAPG_DEFINES_H
+#define GAPG_DEFINES_H
 
 
 // magic number for pattern file header,  ASCII identifier GAPG:

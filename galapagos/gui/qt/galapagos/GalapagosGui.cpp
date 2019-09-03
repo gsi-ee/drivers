@@ -15,12 +15,14 @@
 #include "GalSequenceWidget.h"
 #include "GalPatternWidget.h"
 
-GalapagosGui::GalapagosGui (QWidget* parent) : BasicGui (parent)
+namespace gapg {
+
+GalapagosGui::GalapagosGui (QWidget* parent) : gapg::BasicGui (parent)
 {
   fSubWidgets.clear();
 
  fImplementationName="GALAPAGUI";
- fVersionString="Welcome to GalapaGUI!\n\t v0.17 of 30-Aug-2019 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to GalapaGUI!\n\t v0.2 of 3-Sep-2019 by JAM (j.adamczewski@gsi.de)";
  setWindowTitle(QString("%1").arg(fImplementationName));
 
  fSettings=new QSettings("GSI", fImplementationName);
@@ -51,26 +53,14 @@ GalapagosGui::~GalapagosGui ()
 
 
 
-void GalapagosGui::AddSubWindow(GalSubWidget* widget)
-{
-  Qt::WindowFlags wflags= Qt::CustomizeWindowHint | Qt::WindowMinMaxButtonsHint | Qt::WindowTitleHint;
-  QMdiSubWindow* sub=mdiArea->addSubWindow(widget,wflags);
-  sub->setAttribute(Qt::WA_DeleteOnClose, false);
-  sub->setOption(QMdiSubWindow::RubberBandResize);
-  sub->setOption(QMdiSubWindow::RubberBandMove); // JAM required for qt5 performance
 
-  fSubWidgets.push_back(widget);
-  widget->SetGalParent(this);
-}
 
 
 
 void GalapagosGui::ConnectSlots()
 {
-  for (std::vector<GalSubWidget*>::iterator it = fSubWidgets.begin() ; it != fSubWidgets.end(); ++it)
-    {
-        (*it)->ConnectSlots();
-    }
+  BasicGui::ConnectSlots();
+  // any extra slots here?
 }
 
 
@@ -78,32 +68,14 @@ void GalapagosGui::ConnectSlots()
 void GalapagosGui::ReadSettings()
 {
   BasicGui::ReadSettings();
-  theSetup_GET_FOR_CLASS(GalapagosSetup);
-  if(fSettings)
-    {
-    for (std::vector<GalSubWidget*>::iterator it = fSubWidgets.begin() ; it != fSubWidgets.end(); ++it)
-       {
-           (*it)->ReadSettings(fSettings);
-       }
-    }
+  // anything more that is not yet in subwindows here?
+
 }
 void GalapagosGui::WriteSettings()
 {
   BasicGui::WriteSettings();
-
-  if(fSettings)
-    {
-    for (std::vector<GalSubWidget*>::iterator it = fSubWidgets.begin() ; it != fSubWidgets.end(); ++it)
-           {
-               (*it)->WriteSettings(fSettings);
-           }
-    }
+  // anything more that is not yet in subwindows here?
 }
-
-
-
-
-
 
 
 
@@ -181,11 +153,6 @@ void GalapagosGui::RefreshView ()
 //  QString pre;
 //  fNumberBase == 16 ? pre = "0x" : pre = "";
 
-  for (std::vector<GalSubWidget*>::iterator it = fSubWidgets.begin() ; it != fSubWidgets.end(); ++it)
-    {
-        (*it)->RefreshView();
-    }
-
   BasicGui::RefreshView ();
 }
 
@@ -196,10 +163,7 @@ void GalapagosGui::RefreshView ()
 void GalapagosGui::EvaluateView ()
 {
   //std::cout << "GalapagosGui::EvaluateView"<<std::endl;
-  for (std::vector<GalSubWidget*>::iterator it = fSubWidgets.begin() ; it != fSubWidgets.end(); ++it)
-  {
-      (*it)->EvaluateView();
-  }
+  BasicGui::EvaluateView ();
 }
 
 
@@ -331,6 +295,6 @@ BasicSetup* GalapagosGui::CreateSetup()
 
 
 
-
+}// namespace
     
 

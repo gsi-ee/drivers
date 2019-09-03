@@ -8,41 +8,42 @@
 
 #include <vector>
 
+namespace gapg {
 
+//class GalSubWidget;
 
-class GalSubWidget;
-
-class GalapagosGui:  public BasicGui
+class GalapagosGui:  public gapg::BasicGui
 {
   Q_OBJECT
 
-  friend class GalChannelWidget;
-  friend class GalSequenceWidget;
-  friend class GalPatternWidget;
-
-//  friend class GalSubWidget;
 
 public:
   GalapagosGui (QWidget* parent = 0);
   virtual ~GalapagosGui ();
 
+  /** get register contents to status structure*/
+   void GetRegisters ();
+
+   /** Write value to i2c bus address of currently selected slave. mcp433 chip id and local channel id are specified*/
+     int WriteDAC_GalapagosI2c (uint8_t mcpchip, uint8_t chan, uint8_t value);
+
+     /** Read value to i2c bus address of currently selected slave. mcp433 chip id and local channel id are specified*/
+     int ReadDAC_GalapagosI2c (uint8_t mcpchip, uint8_t chan);
+
+
+   /** helper function that either does enable i2c on board, or writes such commands to .gos file*/
+   void EnableI2C();
+
+   /** helper function that either does disable i2c on board, or writes such commands to .gos file*/
+   void DisableI2C ();
 
 
 protected:
-
-  std::vector<GalSubWidget*> fSubWidgets;
-
-
-
-   QString fLastFileDir;
 
 
    virtual BasicSetup* CreateSetup();
 
    virtual void ConnectSlots();
-
-   void AddSubWindow(GalSubWidget* sub);
-
 
  /** reset current slave, i.e. initialize it to defaults*/
   virtual void ResetSlave ();
@@ -64,23 +65,6 @@ protected:
   /** set register from status structure*/
   void SetRegisters ();
 
-  /** get register contents to status structure*/
-  void GetRegisters ();
-
-
-
-  /** Write value to i2c bus address of currently selected slave. mcp433 chip id and local channel id are specified*/
-    int WriteDAC_GalapagosI2c (uint8_t mcpchip, uint8_t chan, uint8_t value);
-
-    /** Read value to i2c bus address of currently selected slave. mcp433 chip id and local channel id are specified*/
-    int ReadDAC_GalapagosI2c (uint8_t mcpchip, uint8_t chan);
-
-
-  /** helper function that either does enable i2c on board, or writes such commands to .gos file*/
-  void EnableI2C();
-
-  /** helper function that either does disable i2c on board, or writes such commands to .gos file*/
-  void DisableI2C ();
 
   /** dump current ADC values of currently set GAPG*/
   void Dump();
@@ -93,8 +77,11 @@ public slots:
 
 
 virtual void ReadSettings();
+
 virtual void WriteSettings();
 
 };
+
+}// namespace gapg
 
 #endif

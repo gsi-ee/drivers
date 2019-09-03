@@ -1,61 +1,17 @@
-#ifndef GAPGOBJECTS_H
-#define GAPGOBJECTS_H
+#ifndef GAPG_GALAPAGOSOBJECTS_H
+#define GAPG_GALAPAGOSOBJECTS_H
 
 #include <QByteArray>
 #include <stdint.h>
+#include <vector>
+
+#include "BasicObject.h"
 
 
-
-/** Base class for identifieable objects*/
-class GalapagosObject
-{
-  public:
-
-  /** unique id number */
-  uint32_t fId;
-  /** user readable name, same as in sequencer control window */
-  std::string fName;
-
-  GalapagosObject(uint16_t id, const char* name): fId(id), fName(name){}
-
-  GalapagosObject(const GalapagosObject& ob)
-  {
-    //std::cout<< "GalapagosObject copy ctor for "<<ob.fName.c_str() << std::endl;
-    fId=ob.fId;
-    fName=ob.fName;
-
-  }
-
-  GalapagosObject& operator=(const GalapagosObject& rhs)
-  {
-    if (this != &rhs) {
-    //std::cout<< "GalapagosObject operator= for "<<rhs.fName.c_str() << std::endl;
-    fId=rhs.fId;
-    fName=rhs.fName;
-    }
-    return *this;
-  }
-
-  virtual ~GalapagosObject(){}
-
-  uint32_t Id() {return fId;}
-
-  void SetId(uint32_t val){fId=val;}
-
-  const char* Name() {return fName.c_str();}
-
-  void SetName(const char* nm){fName=nm;}
-
-  bool EqualsName(const char* nm)
-  {
-    return (fName.compare(std::string(nm)) ==0) ? true : false;
-  }
-
-};
-
+namespace gapg{
 
 /** container to keep the different basic bit patterns used in the signal sequences*/
-class GalapagosPattern : public GalapagosObject
+class GalapagosPattern : public gapg::BasicObject
 {
 
 public:
@@ -64,12 +20,12 @@ public:
   std::vector<uint8_t> fPattern;
 
 
-  GalapagosPattern(uint16_t id, const char* name): GalapagosObject(id, name)
+  GalapagosPattern(uint16_t id, const char* name): gapg::BasicObject(id, name)
     {
       Clear();
     }
 
-  GalapagosPattern(const GalapagosPattern& seq) : GalapagosObject(seq)
+  GalapagosPattern(const GalapagosPattern& seq) : gapg::BasicObject(seq)
    {
      //std::cout<< "GalapagosPattern copy ctor " << std::endl;
      fPattern=seq.fPattern;
@@ -78,7 +34,7 @@ public:
   GalapagosPattern& operator=(const GalapagosPattern& rhs)
       {
         if (this != &rhs) {
-          GalapagosObject::operator=(rhs);
+          BasicObject::operator=(rhs);
           fPattern=rhs.fPattern;
         }
         return *this;
@@ -131,7 +87,7 @@ public:
 
 
 /** this container will keep the bit sequence to play for each channel */
-class GalapagosSequence : public GalapagosObject
+class GalapagosSequence : public gapg::BasicObject
 {
 
 public:
@@ -144,12 +100,12 @@ public:
   std::vector<uint32_t> fCommandTokens;
 
 
-  GalapagosSequence(uint16_t id, const char* name): GalapagosObject(id, name)
+  GalapagosSequence(uint16_t id, const char* name): gapg::BasicObject(id, name)
   {
     Clear();
   }
 
-  GalapagosSequence(const GalapagosSequence& seq) : GalapagosObject(seq)
+  GalapagosSequence(const GalapagosSequence& seq) : gapg::BasicObject(seq)
   {
     //std::cout<< "GalapagosSequence copy ctor " << std::endl;
     fCommandSkript=seq.fCommandSkript;
@@ -160,7 +116,7 @@ public:
     {
       if (this != &rhs) {
         //std::cout<< "GalapagosSequence operator= "<< std::endl;
-        GalapagosObject::operator=(rhs);
+        BasicObject::operator=(rhs);
         fCommandSkript=rhs.fCommandSkript;
         fCommandTokens=rhs.fCommandTokens;
       }
@@ -216,7 +172,7 @@ public:
 };
 
 
-
+} // namespace
 
 
 #endif

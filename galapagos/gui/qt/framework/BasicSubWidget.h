@@ -1,19 +1,26 @@
-#ifndef GALSUBWIDGET_H
-#define GALSUBWIDGET_H
+#ifndef GAPG_BASIC_SUBWIDGET_H
+#define GAPG_BASIC_SUBWIDGET_H
 
 
 #include <QWidget>
 
-class BasicSetup;
+
 class QSettings;
-#include "GalapagosGui.h";
-#include "GalapagosMacros.h"
-#include "GalapagosDefines.h"
+
+//#include "BasicGui.h";
+//#include "GalapagosMacros.h"
+//#include "GalapagosDefines.h"
 
 /** base class for all subwidgets in the galapagos mdi gui.
  * Provides interface for refresh and update and shortcut to setup*/
 
-class GalSubWidget: public QWidget
+namespace gapg {
+
+class BasicSetup;
+class BasicGui;
+
+
+class BasicSubWidget: public QWidget
 {
   Q_OBJECT
 
@@ -23,7 +30,7 @@ protected:
    BasicSetup* fSetup;
 
    /** Backpointer to parent gui*/
-   GalapagosGui* fParent;
+   BasicGui* fParent;
 
    /** Descriptor of this subwindow*/
    QString fImpName;
@@ -33,22 +40,13 @@ protected:
 
 
 public:
- GalSubWidget (QWidget* parent = 0);
-  virtual ~GalSubWidget ();
+ BasicSubWidget (QWidget* parent = 0);
+  virtual ~BasicSubWidget ();
 
 
-  void SetGalParent(GalapagosGui* parent)
-    {
-      fParent=parent;
-      fSetup=fParent->GetSetup();
-      fImpName=fParent->fImplementationName;
-    }
+  void SetBasicParent(gapg::BasicGui* parent);
 
-
-  bool IsAutoApply()
-    {
-      return fParent->IsAutoApply();
-    }
+  bool IsAutoApply();
 
  /** connection to our slots*/
  virtual void ConnectSlots() {;}
@@ -71,5 +69,7 @@ public:
 
 
 };
+
+} // namespace
 
 #endif

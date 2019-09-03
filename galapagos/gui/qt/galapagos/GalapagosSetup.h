@@ -1,14 +1,16 @@
-#ifndef GAPGSETUP_H
-#define GAPGSETUP_H
+#ifndef GAPG_GALSETUP_H
+#define GAPG_GALSETUP_H
 
-#include "BasicGui.h"
+#include "BasicSetup.h"
 #include "GalapagosDefines.h"
 #include "GalapagosObjects.h"
 #include <stdint.h>
 
+namespace gapg {
+
 /** this is a class (structure) to remember the previous setup read, and the
  * next setup to apply on the currently selected febex device:*/
-class GalapagosSetup: public BasicSetup
+class GalapagosSetup: public gapg::BasicSetup
 {
 public:
 
@@ -126,5 +128,7 @@ public:
   uint32_t GetChannelPatternID (int chan);
 
 };
+
+} //namespace
 
 #endif

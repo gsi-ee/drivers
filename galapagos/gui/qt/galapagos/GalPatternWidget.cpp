@@ -1,4 +1,9 @@
 #include "GalPatternWidget.h"
+#include "GalPatternEditor.h"
+#include "GalapagosSetup.h"
+
+// TODO: need below include because of theSetup macros. include partitioning!
+#include "BasicGui.h"
 
 #include <QString>
 #include <QMessageBox>
@@ -10,11 +15,18 @@
 
 #include <okteta/piecetablebytearraymodel.h>
 
+namespace gapg {
 
 GalPatternWidget::GalPatternWidget (QWidget* parent) :
-    GalSubWidget (parent)
+gapg::BasicObjectEditorWidget(parent)
 {
-  setupUi (this);
+  fPatternEditor=new gapg::GalPatternEditor(this);
+  Editor_scrollArea->setWidget(fPatternEditor);
+
+  ObjectNewButton->setToolTip("Create new Pattern");
+  ObjectEditButton->setToolTip("Edit contents of selected pattern");
+  // TODO weiter
+
 }
 
 GalPatternWidget::~GalPatternWidget ()
@@ -24,34 +36,19 @@ GalPatternWidget::~GalPatternWidget ()
 
 void GalPatternWidget::ConnectSlots()
 {
-  QObject::connect (Pattern_comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(PatternIndexChanged(int)));
+  BasicObjectEditorWidget::ConnectSlots();
+  // anything more here?
 
-    QObject::connect (PatternNewButton, SIGNAL(clicked()), this, SLOT(PatternNew_clicked()));
-     QObject::connect (PatternEditButton, SIGNAL(clicked()), this, SLOT(PatternEdit_clicked()));
-     QObject::connect (PatternLoadButton, SIGNAL(clicked()), this, SLOT(PatternLoad_clicked()));
-     QObject::connect (PatternSaveButton, SIGNAL(clicked()), this, SLOT(PatternSave_clicked()));
-     QObject::connect (PatternApplyButton, SIGNAL(clicked()), this, SLOT(PatternApply_clicked()));
-     QObject::connect ( PatternEditCancelButton, SIGNAL(clicked()), this, SLOT(PatternEditCancel_clicked()));
-     QObject::connect ( PatternDeleteButton, SIGNAL(clicked()), this, SLOT(PatternDelete_clicked()));
 
-}
-
-void GalPatternWidget::PatternIndexChanged (int ix)
-{
-  GAPG_LOCK_SLOT;
-  //std::cout << "GalPatternWidget::PatternIDChanged  ix="<<ix << std::endl;
-  RefreshPatternIndex(ix);
-  //std::cout<<"SequenceIDChanged gets sequence :"<<std::hex<< (ulong) seq<< ", id:"<<std::dec << seq->Id()<<", name:"<<seq->Name()<< std::endl;
-  GAPG_UNLOCK_SLOT;
 }
 
 
 
 
-void GalPatternWidget::PatternNew_clicked()
+bool GalPatternWidget::NewObjectRequest()
 {
-  std::cout << "GalPatternWidget::PatternNew_clicked"<< std::endl;
-  theSetup_GET_FOR_CLASS(GalapagosSetup);
+  std::cout << "GalPatternWidget::NewObjectRequest"<< std::endl;
+  theSetup_GET_FOR_CLASS_RETURN_BOOL(GalapagosSetup);
     bool ok=false;
     // automatic assignment of new id here: begin with id from index
     size_t pid= theSetup->NumKnownPatterns()+1;
@@ -61,34 +58,23 @@ void GalPatternWidget::PatternNew_clicked()
     QString patname = QInputDialog::getText(this, tr("Create a new bit pattern"),
                                            tr("Pattern name:"), QLineEdit::Normal,
                                            defaultname, &ok);
-    if (!ok || patname.isEmpty()) return;
+    if (!ok || patname.isEmpty()) return false;
     GalapagosPattern pat(pid,patname.toLatin1().constData());
     pat.AddByte(0xFF); // some default value to fill editor
     theSetup->AddPattern(pat);
-
-
-
-    GAPG_LOCK_SLOT;
-    fParent->RefreshView();
-    GAPG_UNLOCK_SLOT;
-    Pattern_comboBox->setCurrentIndex(pid-1);
-    PatternEdit_clicked();
+    return true;
 }
 
-void GalPatternWidget::PatternEdit_clicked()
+void GalPatternWidget::StartEditing()
 {
-  //std::cout << "GalPatternWidget::PatternEdit_clicked"<< std::endl;
-  oktetabyteview->setReadOnly(false);
-   PatternApplyButton->setEnabled(true);
-   PatternEditCancelButton->setEnabled(true);
-   Pattern_comboBox->setEnabled(false);
-   PatternIDSpinBox->setEnabled(true);
+  //std::cout << "GalPatternWidget::StartEditing"<< std::endl;
+  fPatternEditor->oktetabyteview->setReadOnly(false);
 
 }
 
-void GalPatternWidget::PatternLoad_clicked()
+bool GalPatternWidget::LoadObjectRequest()
 {
-  //std::cout << "GalPatternWidget::PatternLoad_clicked"<< std::endl;
+  //std::cout << "GalPatternWidget::LoadObjectRequest()"<< std::endl;
   QFileDialog fd( this,
                       "Select Files with New Galapagos bit pattern",
                       fLastFileDir,
@@ -96,117 +82,101 @@ void GalPatternWidget::PatternLoad_clicked()
 
   fd.setFileMode( QFileDialog::ExistingFiles);
 
-  if ( fd.exec() != QDialog::Accepted ) return;
+  if ( fd.exec() != QDialog::Accepted ) return false;
   QStringList list = fd.selectedFiles();
   QStringList::Iterator fit = list.begin();
   while( fit != list.end() ) {
     QString fileName = *fit;
     fLastFileDir = QFileInfo(fileName).absolutePath();
-    if(!LoadPattern(fileName))
+    if(!LoadObject(fileName))
     {
       printm("Pattern load sees error with %s",fileName.toLatin1().data());
     }
     ++fit;
   }
-  GAPG_LOCK_SLOT;
-    fParent->RefreshView(); // populate comboboxes with all known sequences
-  GAPG_UNLOCK_SLOT;
+  return true;
 }
 
 
-void GalPatternWidget::PatternSave_clicked()
+bool GalPatternWidget::SaveObjectRequest()
 {
-  //std::cout << "GalPatternWidget::PatternSave_clicked"<< std::endl;
+  //std::cout << "GalPatternWidget::SaveObjectRequest()"<< std::endl;
   QFileDialog fd( this,
                        "Save Galapagos bit pattern to file",
                        fLastFileDir,
                        QString("Galapagos Pattern files (*.gap)"));
    fd.setFileMode( QFileDialog::AnyFile);
    fd.setAcceptMode(QFileDialog::AcceptSave);
-   QString defname=Pattern_comboBox->currentText();
+   QString defname=Object_comboBox->currentText();
    defname.append(".gap");
    fd.selectFile(defname);
-   if (fd.exec() != QDialog::Accepted) return;
+   if (fd.exec() != QDialog::Accepted) return false;
    QStringList flst = fd.selectedFiles();
-   if (flst.isEmpty()) return;
-   theSetup_GET_FOR_CLASS(GalapagosSetup);
+   if (flst.isEmpty()) return false;
+   theSetup_GET_FOR_CLASS_RETURN_BOOL(GalapagosSetup);
    QString fileName = flst[0];
    fLastFileDir = fd.directory().path();
-   int ix=Pattern_comboBox->currentIndex();
+   int ix=Object_comboBox->currentIndex();
     GalapagosPattern* pat=theSetup->GetKnownPattern(ix);
      if(pat==0)  {
          printm("NEVER COME HERE:unknown  pattern for index %d!",ix);
-         return;
+         return false;
      }
 
-   if(!SavePattern(fileName,pat)){
+   if(!SaveObject(fileName,pat)){
      printm("Could not save pattern of index %d to file %s!",ix,fileName.toLatin1().constData());
+     return false;
    }
-
-
-
+   return true;
 }
 
-void GalPatternWidget::PatternApply_clicked()
+void GalPatternWidget::ApplyEditing()
 {
-  //std::cout << "GalPatternWidget::PatternApply_clicked"<< std::endl;
-  oktetabyteview->setReadOnly(true);
-  PatternApplyButton->setEnabled(false);
-  PatternIDSpinBox->setEnabled(false);
+  //std::cout << "GalPatternWidget::ApplyEditing"<< std::endl;
+  fPatternEditor->oktetabyteview->setReadOnly(true);
 
    theSetup_GET_FOR_CLASS(GalapagosSetup);
-   int ix=Pattern_comboBox->currentIndex();
+   int ix=Object_comboBox->currentIndex();
    GalapagosPattern* pat=theSetup->GetKnownPattern(ix);
    if(pat==0)  {
      fParent->ShowStatusMessage("NEVER COME HERE: Pattern id not known in setup!");
      return;
     }
    // evaluate bytarray from model and put it to our pattern object:
-   oktetabyteview->selectAll(true);
-   QByteArray theData=oktetabyteview->selectedData();
+   fPatternEditor->oktetabyteview->selectAll(true);
+   QByteArray theData=fPatternEditor->oktetabyteview->selectedData();
    pat->Clear();
-   pat->SetId(PatternIDSpinBox->value());
+   pat->SetId(ObjectIDSpinBox->value());
    size_t numbytes=theData.size();
    for(int i=0; i<numbytes; ++i)
    {
      pat->AddByte(theData[i]);
    }
-
-   Pattern_comboBox->setEnabled(true);
-
 }
 
-void GalPatternWidget::PatternEditCancel_clicked()
+
+
+void GalPatternWidget::CancelEditing()
 {
   //std::cout << "GalPatternWidget::PatternEditCancel_clicked"<< std::endl;
-  int ix=Pattern_comboBox->currentIndex();
-  PatternIndexChanged(ix);
-  oktetabyteview->setReadOnly(true);
-  PatternApplyButton->setEnabled(false);
-  PatternEditCancelButton->setEnabled(false);
-  Pattern_comboBox->setEnabled(true);
-  PatternIDSpinBox->setEnabled(false);
 
-
+  fPatternEditor->oktetabyteview->setReadOnly(true);
 
 }
 
 
-void  GalPatternWidget::PatternDelete_clicked()
+bool  GalPatternWidget::DeleteObjectRequest()
 {
   //std::cout << "GalPatternWidget::PatternDelete_clicked"<< std::endl;
   if(QMessageBox::question( this, fImpName, "Really Delete current pattern from list?",
       QMessageBox::Yes | QMessageBox::No ,
       QMessageBox::Yes) != QMessageBox::Yes ) {
-    return;
+    return false;
   }
-  theSetup_GET_FOR_CLASS(GalapagosSetup);
-  int ix=Pattern_comboBox->currentIndex();
+  theSetup_GET_FOR_CLASS_RETURN_BOOL(GalapagosSetup);
+  int ix=Object_comboBox->currentIndex();
   theSetup->RemoveKnownPattern(ix);
-
-  GAPG_LOCK_SLOT
-  fParent->RefreshView();
-  GAPG_UNLOCK_SLOT
+  return true;
 
 }
 
@@ -217,13 +187,13 @@ void GalPatternWidget::EvaluateView ()
 
 }
 
-void GalPatternWidget::RefreshPatternIndex(int ix)
+int GalPatternWidget::RefreshObjectIndex(int ix)
 {
-  theSetup_GET_FOR_CLASS(GalapagosSetup);
+  theSetup_GET_FOR_CLASS_RETURN(GalapagosSetup);
    GalapagosPattern* pat=theSetup->GetKnownPattern(ix);
    if(pat==0)  {
        printm("Warning: unknown pattern index %d in combobox, NEVER COME HERE!!",ix);
-       return;
+       return -1;
    }
 
    // here provide okteta model from our pattern data:
@@ -235,15 +205,14 @@ void GalPatternWidget::RefreshPatternIndex(int ix)
      theByteArray.append(pat->GetByte(c));
 
    Okteta::PieceTableByteArrayModel* theByteArrayModel =
-       new Okteta::PieceTableByteArrayModel(theByteArray, oktetabyteview);
+       new Okteta::PieceTableByteArrayModel(theByteArray, fPatternEditor->oktetabyteview);
 
 
 
-   oktetabyteview->setByteArrayModel(theByteArrayModel);
-   oktetabyteview->setReadOnly(true);
-   oktetabyteview->setOverwriteMode(false);
-
-   PatternIDSpinBox->setValue(pat->Id());
+   fPatternEditor->oktetabyteview->setByteArrayModel(theByteArrayModel);
+   fPatternEditor->oktetabyteview->setReadOnly(true);
+   fPatternEditor->oktetabyteview->setOverwriteMode(false);
+   return (pat->Id());
 }
 
 
@@ -252,18 +221,18 @@ void GalPatternWidget::RefreshPatternIndex(int ix)
 void GalPatternWidget::RefreshView ()
 {
   theSetup_GET_FOR_CLASS(GalapagosSetup);
-  int oldpat=Pattern_comboBox->currentIndex(); // remember our active item
-  Pattern_comboBox->clear();
+  int oldpat=Object_comboBox->currentIndex(); // remember our active item
+  Object_comboBox->clear();
   for (int pix=0; pix<theSetup->NumKnownPatterns(); ++pix)
    {
     GalapagosPattern* pat=theSetup->GetKnownPattern(pix);
     if(pat==0)  continue;
-    Pattern_comboBox->addItem(pat->Name());
+    Object_comboBox->addItem(pat->Name());
    }
-  Pattern_comboBox->setCurrentIndex(oldpat); // restore active item
-  RefreshPatternIndex(oldpat);
+  Object_comboBox->setCurrentIndex(oldpat); // restore active item
+  RefreshObjectIndex(oldpat);
 
-  oktetabyteview->setValueCoding(fParent->GetNumberBase()==16 ? Okteta::AbstractByteArrayView::HexadecimalCoding : Okteta::AbstractByteArrayView::BinaryCoding);
+  fPatternEditor->oktetabyteview->setValueCoding(fParent->GetNumberBase()==16 ? Okteta::AbstractByteArrayView::HexadecimalCoding : Okteta::AbstractByteArrayView::BinaryCoding);
 
 
 }
@@ -274,7 +243,7 @@ void GalPatternWidget::RefreshView ()
 
 
 
-bool GalPatternWidget::LoadPattern(const QString& fileName)
+bool GalPatternWidget::LoadObject(const QString& fileName)
 {
   QFile pfile(fileName);
    if (!pfile.open( QIODevice::ReadOnly))
@@ -347,9 +316,10 @@ bool GalPatternWidget::LoadPattern(const QString& fileName)
 }
 
 
-bool GalPatternWidget::SavePattern(const QString& fileName, GalapagosPattern* pat)
+bool GalPatternWidget::SaveObject(const QString& fileName, gapg::BasicObject* ob)
 {
   // TODO: optionally change id when saving a pattern?
+  GalapagosPattern* pat = dynamic_cast<GalapagosPattern*>(ob);
   if(pat==0) return false;
   QFile pfile(fileName);
     if (!pfile.open( QIODevice::WriteOnly))
@@ -386,11 +356,11 @@ void GalPatternWidget::ReadSettings (QSettings* settings)
     QString settingsname = QString ("/Patterns/%1").arg (pix);
     QString patfilename = settings->value (settingsname).toString ();
     //std::cout<< " GalapagosGui::ReasdSettings() will load sequence file"<<seqfilename.toLatin1().data()<< std::endl;
-    if (!LoadPattern (patfilename))
+    if (!LoadObject (patfilename))
       printm ("Warning: Pattern %s from setup could not be loaded!", patfilename.toLatin1 ().data ());
   }
   int oldpix = 0;    // later take from settings
-  Pattern_comboBox->setCurrentIndex (oldpix);    // toggle refresh the editor?
+  Object_comboBox->setCurrentIndex (oldpix);    // toggle refresh the editor?
 
 }
 
@@ -405,10 +375,11 @@ void GalPatternWidget::WriteSettings (QSettings* settings)
     QString settingsname = QString ("/Patterns/%1").arg (pix);
     QString patfilename = QString ("%1.gap").arg (pat->Name ());
     settings->setValue (settingsname, patfilename);
-    SavePattern (patfilename, pat);
+    SaveObject (patfilename, pat);
   }
   settings->setValue ("Numpatterns", (int) theSetup->NumKnownPatterns ());
 
 }
 
 
+} // gapg

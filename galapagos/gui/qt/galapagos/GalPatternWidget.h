@@ -1,28 +1,56 @@
-#ifndef GALPATTERNGWIDGET_H
-#define GALPATTERNGWIDGET_H
+#ifndef GAPG_GALPATTERNGWIDGET_H
+#define GAPG_GALPATTERNGWIDGET_H
 
 
 
-#include "ui_GalPatternWidget.h"
-#include "GalSubWidget.h"
-
-Q_DECLARE_METATYPE(Okteta::AbstractByteArrayView::ValueCoding);
+#include "BasicObjectEditorWidget.h"
+#include "GalPatternEditor.h"
 
 
-class GalPatternWidget: public GalSubWidget, public Ui::GalPatternWidget
+namespace gapg{
+
+
+
+class GalPatternWidget: public BasicObjectEditorWidget
 {
   Q_OBJECT
 
 protected:
 
-  /** refresh editor content for pattern id*/
-    void RefreshPatternIndex(int ix);
+
+  gapg::GalPatternEditor* fPatternEditor;
+
+  /** refresh editor content for pattern id, return unique object id*/
+    int RefreshObjectIndex(int ix);
 
     /** load pattern from file fullname. Returns false if no success*/
-    bool LoadPattern(const QString& fullname);
+    bool LoadObject(const QString& fullname);
 
         /** save pattern from setup to file fullname. Returns false if no success*/
-    bool SavePattern(const QString& fullname, GalapagosPattern* pat);
+    bool SaveObject(const QString& fullname, BasicObject* pat);
+
+
+    virtual bool LoadObjectRequest();
+
+      /** implement in subclass: dedicated requester for kind of object save*/
+      virtual bool SaveObjectRequest();
+
+      /** implement in subclass: dedicated requester for kind of new object creation. */
+      virtual bool NewObjectRequest();
+
+      /** implement in subclass: dedicated requester for kind of new object deletion. */
+       virtual bool DeleteObjectRequest();
+
+      /** implement in subclass: activate dedicated editor for object kind*/
+      virtual void StartEditing();
+
+      /** implement in subclass: activate dedicated editor for object kind*/
+      virtual void CancelEditing();
+
+      /** implement in subclass: activate dedicated editor for object kind*/
+       virtual void ApplyEditing();
+
+
 
 public:
  GalPatternWidget (QWidget* parent = 0);
@@ -45,17 +73,10 @@ public:
 
 public slots:
 
-virtual void PatternIndexChanged (int ix);
-
-virtual void PatternNew_clicked();
-virtual void PatternEdit_clicked();
-virtual void PatternLoad_clicked();
-virtual void PatternSave_clicked();
-virtual void PatternApply_clicked();
-virtual void PatternEditCancel_clicked();
-virtual void PatternDelete_clicked();
 
 
 };
+
+} // gapg
 
 #endif

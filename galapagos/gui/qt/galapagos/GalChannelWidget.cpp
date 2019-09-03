@@ -1,9 +1,12 @@
 #include "GalChannelWidget.h"
+#include "GalapagosSetup.h"
 
 
 #include "BasicGui.h"
 
-GalChannelWidget::GalChannelWidget (QWidget* parent): GalSubWidget(parent)
+namespace gapg{
+
+GalChannelWidget::GalChannelWidget (QWidget* parent): gapg::BasicSubWidget(parent)
 {
 
   setupUi (this);
@@ -436,4 +439,6 @@ std::cout << "GalChannelWidget::ApplyChannelPattern chan="<<channel<<",  ix="<<i
 // RefreshView();
 
 }
+
+} // namespace
 

@@ -6,16 +6,13 @@
 int main(int argc, char *argv[])
 {
 
- // Q_INIT_RESOURCE(gosipicons);
-
-
-
+  Q_INIT_RESOURCE(galapicons);
 
   QApplication::setStyle("plastique");
   QApplication app(argc, argv);
 
 
-  GalapagosGui main(0);
+  gapg::GalapagosGui main(0);
   main.show();
   int ret = app.exec();
 return ret;

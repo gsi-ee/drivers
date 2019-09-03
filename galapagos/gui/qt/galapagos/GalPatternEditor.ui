@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>GalPatternEditor</class>
+ <widget class="QWidget" name="GalPatternEditor">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>778</width>
+    <height>344</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <widget class="Okteta::ByteArrayColumnView" name="oktetabyteview">
+     <property name="NoOfBytesPerLine">
+      <number>8</number>
+     </property>
+     <property name="Coding" stdset="0">
+      <enum>Okteta::AbstractByteArrayView::BinaryCoding</enum>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>Okteta::ByteArrayColumnView</class>
+   <extends>QFrame</extends>
+   <header>okteta/bytearraycolumnview.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,15 +1,18 @@
-#ifndef GALCHANNELGWIDGET_H
-#define GALCHANNELGWIDGET_H
+#ifndef GAPG_GALCHANNELGWIDGET_H
+#define GAPG_GALCHANNELGWIDGET_H
 
 #include "ui_GalChannelWidget.h"
-#include "GalSubWidget.h"
-
+#include "BasicSubWidget.h"
+#include "GalapagosDefines.h"
+#include "GalapagosMacros.h"
 
 #include <QRadioButton>
 #include <QComboBox>
 #include <kled.h>
 
-class GalChannelWidget: public GalSubWidget, public Ui::GalChannelWidget
+namespace gapg{
+
+class GalChannelWidget: public gapg::BasicSubWidget, public Ui::GalChannelWidget
 {
   Q_OBJECT
 
@@ -102,5 +105,7 @@ virtual void GeneratorActive_clicked(bool checked);
 
 
 };
+
+} // namespace
 
 #endif

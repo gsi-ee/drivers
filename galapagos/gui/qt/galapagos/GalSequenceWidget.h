@@ -1,26 +1,56 @@
-#ifndef GALSEQUENCEGWIDGET_H
-#define GALSEQUENCEGWIDGET_H
+#ifndef GAPG_GALSEQUENCEGWIDGET_H
+#define GAPG_GALSEQUENCEGWIDGET_H
 
-#include "ui_GalSequenceWidget.h"
-#include "GalSubWidget.h"
+#include "BasicObjectEditorWidget.h"
 
+namespace gapg {
 
-class GalSequenceWidget: public GalSubWidget, public Ui::GalSequenceWidget
+class GalSequenceEditor;
+
+class GalSequenceWidget: public gapg::BasicObjectEditorWidget
 {
   Q_OBJECT
 
 protected:
 
-  /** Refresh gui display for sequence index ix in list*/
-  void RefreshSequenceIndex(int ix);
 
-  /** load sequence from file fullname. Returns false if no success*/
-   bool LoadSequence(const QString& fullname);
+  gapg::GalSequenceEditor* fSequenceEditor;
 
-   /** save sequence from setup to file fullname. Returns false if no success*/
-   bool SaveSequence(const QString& fullname, GalapagosSequence* seq);
+
+
+  /** refresh editor content for pattern id, return unique object id*/
+    int RefreshObjectIndex(int ix);
+
+    /** load pattern from file fullname. Returns false if no success*/
+    bool LoadObject(const QString& fullname);
+
+        /** save pattern from setup to file fullname. Returns false if no success*/
+    bool SaveObject(const QString& fullname, BasicObject* pat);
+
+
+    virtual bool LoadObjectRequest();
+
+      /** implement in subclass: dedicated requester for kind of object save*/
+      virtual bool SaveObjectRequest();
+
+      /** implement in subclass: dedicated requester for kind of new object creation. */
+      virtual bool NewObjectRequest();
+
+      /** implement in subclass: dedicated requester for kind of new object deletion. */
+       virtual bool DeleteObjectRequest();
+
+      /** implement in subclass: activate dedicated editor for object kind*/
+      virtual void StartEditing();
+
+      /** implement in subclass: activate dedicated editor for object kind*/
+      virtual void CancelEditing();
+
+      /** implement in subclass: activate dedicated editor for object kind*/
+       virtual void ApplyEditing();
+
 
 public:
+
  GalSequenceWidget (QWidget* parent = 0);
   virtual ~GalSequenceWidget ();
 
@@ -40,20 +70,9 @@ public:
 
 
 
-public slots:
-
-virtual void SequenceIndexChanged (int ix);
-
-virtual void SequenceNew_clicked();
-virtual void SequenceEdit_clicked();
-virtual void SequenceLoad_clicked();
-virtual void SequenceSave_clicked();
-virtual void SequenceApply_clicked();
-virtual void SequenceEditCancel_clicked();
-virtual void SequenceDelete_clicked();
-
 
 
 };
 
+} // gapg
 #endif

@@ -1,4 +1,6 @@
 #include "BasicGui.h"
+#include "BasicSetup.h"
+#include "BasicSubWidget.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -17,12 +19,12 @@
 #include <QMdiSubWindow>
 #include <QSignalMapper>
 #include <QKeyEvent>
+#include <QMdiSubWindow>
 
 #include <sstream>
 
 
-// this we need to implement for output of galapagos library, but also useful to format output without it:
-BasicGui* BasicGui::fInstance = 0;
+
 
 #include <stdarg.h>
 
@@ -37,10 +39,10 @@ void printm (char *fmt, ...)
   va_start(args, fmt);
   vsprintf (c_str, fmt, args);
 //printf ("%s", c_str);
-  if(BasicGui::fInstance)
+  if (gapg::BasicGui::fInstance)
   {
-  BasicGui::fInstance->AppendTextWindow (c_str);
-  BasicGui::fInstance->FlushTextWindow();
+    gapg::BasicGui::fInstance->AppendTextWindow (c_str);
+    gapg::BasicGui::fInstance->FlushTextWindow ();
   }
   else
   {
@@ -48,6 +50,8 @@ void printm (char *fmt, ...)
   }
   va_end(args);
 }
+
+namespace gapg{
 
 #ifdef USE_GALAPAGOS_LIB
 /** this one is used to speed down direct galapagos io:*/
@@ -60,6 +64,11 @@ void BasicGui::I2c_sleep ()
 
 #endif
 
+
+
+// this we need to implement for output of galapagos library, but also useful to format output without it:
+BasicGui* BasicGui::fInstance = 0;
+
 bool BasicGui::fInAction=false;
 bool BasicGui::fSlotGuard=false;
 
@@ -71,13 +80,11 @@ bool BasicGui::fSlotGuard=false;
  */
 BasicGui::BasicGui (QWidget* parent) :
     QMainWindow (parent), fSettings(0), fWinMapper(0), fSetup(0), fDebug (false), fSaveConfig(false),
-    //fInAction(false),
-    //fSlotGuard(false),
     fFullScreen(false), fMdiTabViewMode(true),
       fConfigFile(NULL)
 {
 
- Q_INIT_RESOURCE(galapicons);
+ //Q_INIT_RESOURCE(galapicons);
 
 
   setupUi (this);
@@ -185,6 +192,30 @@ if(fSettings) delete fSettings;
 
 }
 
+
+void BasicGui::AddSubWindow(gapg::BasicSubWidget* widget)
+{
+  Qt::WindowFlags wflags= Qt::CustomizeWindowHint | Qt::WindowMinMaxButtonsHint | Qt::WindowTitleHint;
+  QMdiSubWindow* sub=mdiArea->addSubWindow(widget,wflags);
+  sub->setAttribute(Qt::WA_DeleteOnClose, false);
+  sub->setOption(QMdiSubWindow::RubberBandResize);
+  sub->setOption(QMdiSubWindow::RubberBandMove); // JAM required for qt5 performance
+
+  fSubWidgets.push_back(widget);
+  widget->SetBasicParent(this);
+}
+
+
+void BasicGui::ConnectSlots()
+{
+  for (std::vector<gapg::BasicSubWidget*>::iterator it = fSubWidgets.begin() ; it != fSubWidgets.end(); ++it)
+    {
+        (*it)->ConnectSlots();
+    }
+}
+
+
+
 void BasicGui::ShowBtn_clicked ()
 {
 
@@ -222,44 +253,6 @@ void BasicGui::ApplyBtn_clicked ()
 
 
 
-//void BasicGui::InitChainBtn_clicked ()
-//{
-//char buffer[1024];
-//EvaluateSlave ();
-////std::cout << "InitChainBtn_clicked()"<< std::endl;
-//bool ok;
-//snprintf (buffer, 1024, "Please specify NUMBER OF DEVICES to initialize at SFP %d ?", fSFP);
-//#if QT_VERSION >= QT_VERSION_CHECK(4,6,0)
-//int numslaves = QInputDialog::getInt(this, tr("Number of Slaves?"),
-//                                 tr(buffer), 1, 1, 1024, 1, &ok);
-//#else
-//int numslaves = QInputDialog::getInteger(this, tr("Number of Slaves?"),
-//                                 tr(buffer), 1, 1, 1024, 1, &ok);
-//
-//#endif
-//if (!ok) return;
-//if(fSFP<0)
-//{
-//    AppendTextWindow ("--- Error: Broadcast not allowed for init chain!");
-//    return;
-//}
-//
-//#ifdef USE_GALAPAGOS_LIB
-//  int rev = galapagos_slave_init (fPexFD, fSFP, numslaves);
-//
-//#else
-//
-//
-//snprintf (buffer, 1024, "galapcmd -i  %d %d", fSFP, numslaves);
-//QString com (buffer);
-//QString result = ExecuteGAPGCmd (com);
-//AppendTextWindow (result);
-//#endif
-//
-// GetSFPChainSetup();
-// RefreshChains();
-//
-//}
 
 void BasicGui::ResetBoardBtn_clicked ()
 {
@@ -309,7 +302,10 @@ void BasicGui::ResetSlave ()
 
 void BasicGui::EvaluateView()
 {
- printm("EvaluateView() not yet implemented, please design a subclass of BasicGui!\n");
+ for (std::vector<gapg::BasicSubWidget*>::iterator it = fSubWidgets.begin() ; it != fSubWidgets.end(); ++it)
+ {
+     (*it)->EvaluateView();
+ }
 }
 
 void BasicGui::SetRegisters ()
@@ -335,32 +331,6 @@ void BasicGui::ApplyGUISettings()
 
 
 
-
-
-
-
-
-//void BasicGui::BroadcastBtn_clicked (bool checked)
-//{
-////std::cout << "BasicGui::BroadcastBtn_clicked with checked="<<checked<< std::endl;
-//  if (checked)
-//  {
-//    fSFPSave = SFPspinBox->value ();
-//    fSlaveSave = SlavespinBox->value ();
-//    SFPspinBox->setValue (-1);
-//    SFPspinBox->setEnabled (false);
-//    SlavespinBox->setValue (-1);
-//    SlavespinBox->setEnabled (false);
-//
-//  }
-//  else
-//  {
-//    SFPspinBox->setEnabled (true);
-//    SlavespinBox->setEnabled (true);
-//    SFPspinBox->setValue (fSFPSave);
-//    SlavespinBox->setValue (fSlaveSave);
-//  }
-//}
 
 void BasicGui::DumpBtn_clicked ()
 {
@@ -475,8 +445,12 @@ void BasicGui::RefreshView ()
 {
 // display setup structure to gui:
 
-// for base class, we only update status messages etc.
-//RefreshChains();
+  // treat all registered subwindows:
+  for (std::vector<gapg::BasicSubWidget*>::iterator it = fSubWidgets.begin() ; it != fSubWidgets.end(); ++it)
+      {
+          (*it)->RefreshView();
+      }
+
 RefreshStatus();
 }
 
@@ -753,62 +727,7 @@ void  BasicGui::ShowStatusMessage (const QString& text)
   statusBar()->showMessage(text);
 }
 
-//bool BasicGui::AssertNoBroadcast (bool verbose)
-//{
-//if (fSFP < 0 || fSlave < 0)
-//{
-//  //std::cerr << "# BasicGui Error: broadcast not supported here!" << std::endl;
-//  if (verbose)
-//    AppendTextWindow ("#Error: broadcast not supported here!");
-//  return false;
-//}
-//return true;
-//}
-//
-//bool BasicGui::AssertChainConfigured (bool verbose)
-//{
-//#ifdef USE_GALAPAGOS_LIB
-//
-//  if (fSlave >= fSFPChains.numslaves[fSFP])
-//  {
-//    if (verbose)
-//      printm("#Error: device index %d not in initialized chain of length %d at SFP %d",fSlave,fSFPChains.numslaves[fSFP],fSFP);
-//    return false;
-//  }
-//#endif
-//return true;
-//}
-//
-//
-//void BasicGui::GetSFPChainSetup()
-//{
-////std::cout<<"GetSFPChainSetup... "<< std::endl;
-//#ifdef USE_GALAPAGOS_LIB
-//    // broadcast mode: find out number of slaves and loop over all registered slaves
-//    galapagos_get_configured_slaves(fPexFD, &fSFPChains);
-//#else
-//    // without galapagos lib, we just assume 4 devices for each chain:
-//    for(int sfp=0; sfp<4; ++sfp)
-//    {
-//      fSFPChains.numslaves[sfp]=4;
-//    }
-//#endif
-//
-//
-//    // dynamically increase array of setup structures:
-//    for(int sfp=0; sfp<4; ++sfp)
-//    {
-//      while(fSetup[sfp].size()<fSFPChains.numslaves[sfp])
-//      {
-//        fSetup[sfp].push_back(CreateSetup());
-//        //std::cout<<"GetSFPChainSetup increased setup at sfp "<<sfp<<" to "<<fSetup[sfp].size()<<" slaves." << std::endl;
-//      }
-//      // TODO note that we never drop/delete any structure that has been created.
-//      // the gui must be restarted when chain setup is reconfigured
-//    }
-//
-//
-//}
+
 
 void BasicGui::windowsMenuAboutToShow()
 {
@@ -990,7 +909,16 @@ void BasicGui::ReadSettings()
         //std::cout <<"ReadSettings restored subwindow panel geometry "<< i << std::endl;
       }
       //std::cout<< "ReadSettings gets numberbase:"<<fNumberBase<<", fDebug:"<<fDebug<<", autoapply:"<<autoapp << std::endl;
-    GAPG_UNLOCK_SLOT
+
+      // here we treat individual settings of each subwindow:
+      //theSetup_GET_FOR_CLASS(GalapagosSetup);
+      for (std::vector<gapg::BasicSubWidget*>::iterator it = fSubWidgets.begin() ; it != fSubWidgets.end(); ++it)
+             {
+                 (*it)->ReadSettings(fSettings);
+             }
+
+
+      GAPG_UNLOCK_SLOT
     }
 }
 
@@ -1017,10 +945,25 @@ void BasicGui::WriteSettings()
      // std::cout <<"WriteSettings stored subwindow panel size "<< i << std::endl;
     }
 
+    //theSetup_GET_FOR_CLASS(GalapagosSetup);
+    if(fSettings)
+        {
+        for (std::vector<gapg::BasicSubWidget*>::iterator it = fSubWidgets.begin() ; it != fSubWidgets.end(); ++it)
+           {
+               (*it)->ReadSettings(fSettings);
+           }
+        }
 
 
   }
 }
+
+
+BasicSetup* BasicGui::CreateSetup()
+    {
+      //std::cout <<"BasicGui:: CreateSetup" <<std::endl;
+      return new BasicSetup();
+    }
 
 
 void BasicGui::closeEvent( QCloseEvent* ce)
@@ -1036,3 +979,5 @@ void BasicGui::closeEvent( QCloseEvent* ce)
       }
    ce->accept();
 }
+
+} // namespace

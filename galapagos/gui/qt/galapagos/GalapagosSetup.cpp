@@ -2,6 +2,9 @@
 #include <QByteArray>
 #include <stdint.h>
 
+namespace gapg {
+
+
 GalapagosSetup::GalapagosSetup () :
     BasicSetup (), fGeneratorActive (false), fChannelControl_0 (0), fChannelControl_1 (0)
 {
@@ -269,3 +272,4 @@ uint32_t GalapagosSetup::GetChannelPatternID (int chan)
   return fChannelPatternID[chan];
 }
 
+} // gapg
