@@ -1,14 +1,16 @@
 #ifndef GAPG_BASICSETUP_H
 #define GAPG_BASICSETUP_H
 
-#ifdef USE_GALAPAGOS_LIB
+
 extern "C"
 {
+#ifdef USE_GALAPAGOS_LIB
 #include "galapagos/libgalapagos.h"
-}
 #else
-extern void printm (char *, ...);
+void printm (char *, ...);
 #endif
+}
+
 
 namespace gapg {
 

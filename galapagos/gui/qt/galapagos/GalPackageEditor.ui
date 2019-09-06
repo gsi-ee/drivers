@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>GalChannelWidget</class>
- <widget class="QWidget" name="GalChannelWidget">
+ <class>GalPackageEditor</class>
+ <widget class="QWidget" name="GalPackageEditor">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,11 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Output Channels</string>
+   <string>PackageEditor</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_5">
    <item row="0" column="0">
-    <widget class="QFrame" name="ChannelsControlframe">
+    <widget class="QFrame" name="CoresControlframe">
      <property name="frameShape">
       <enum>QFrame::StyledPanel</enum>
      </property>
@@ -26,7 +26,7 @@
       <item row="0" column="1">
        <widget class="QPushButton" name="GeneratorNewStartButton">
         <property name="toolTip">
-         <string>submit and start output of configured channel sequences</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;submit and start output of current package&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string/>
@@ -38,9 +38,9 @@
        </widget>
       </item>
       <item row="0" column="3">
-       <widget class="QPushButton" name="ChannelsSimulateButton">
+       <widget class="QPushButton" name="CoresSimulateButton">
         <property name="toolTip">
-         <string>begin simulation of configured channel sequences</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;begin simulation of current package setup&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string/>
@@ -54,7 +54,7 @@
       <item row="0" column="2">
        <widget class="QPushButton" name="GeneratorActiveButton">
         <property name="toolTip">
-         <string>start output of configured channel sequences</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;start/stop processing current package on galapagos cores&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string/>
@@ -74,7 +74,7 @@
        </widget>
       </item>
       <item row="0" column="0">
-       <widget class="KLed" name="Channel_active_LED_ALL">
+       <widget class="KLed" name="Core_active_LED_ALL">
         <property name="color">
          <color>
           <red>255</red>
@@ -101,7 +101,7 @@
     </spacer>
    </item>
    <item row="0" column="2">
-    <widget class="QFrame" name="Channels_all_frame">
+    <widget class="QFrame" name="Cores_all_frame">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -121,50 +121,8 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0">
-       <widget class="QCheckBox" name="checkBox_ChannelsAlll">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked all channel properties will be changed accordingly &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="text">
-         <string>All</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QRadioButton" name="Channel_enabled_radio_ALL">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="toolTip">
-         <string>Enable channel</string>
-        </property>
-        <property name="text">
-         <string>Enable</string>
-        </property>
-        <property name="autoExclusive">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="2">
-       <widget class="QRadioButton" name="Channel_simulate_radio_ALL">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="toolTip">
-         <string>Switch simulation  on for channel</string>
-        </property>
-        <property name="text">
-         <string>Simulate</string>
-        </property>
-        <property name="autoExclusive">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="3">
-       <widget class="QComboBox" name="Channel_sequence_comboBox_ALL">
+       <widget class="QComboBox" name="Core_sequence_comboBox_ALL">
         <property name="enabled">
          <bool>false</bool>
         </property>
@@ -185,28 +143,37 @@
         </item>
        </widget>
       </item>
-      <item row="0" column="4">
-       <widget class="QComboBox" name="Channel_pattern_comboBox_ALL">
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="checkBox_CoresAlll">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked all channel properties will be changed accordingly &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>All</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QRadioButton" name="Core_enabled_radio_ALL">
         <property name="enabled">
          <bool>false</bool>
         </property>
-        <item>
-         <property name="text">
-          <string>Alternating01</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>TwoStep</string>
-         </property>
-        </item>
+        <property name="toolTip">
+         <string>Enable channel</string>
+        </property>
+        <property name="text">
+         <string>Enable</string>
+        </property>
+        <property name="autoExclusive">
+         <bool>false</bool>
+        </property>
        </widget>
       </item>
      </layout>
     </widget>
    </item>
    <item row="1" column="0" colspan="3">
-    <widget class="QTabWidget" name="tabWidget">
+    <widget class="QTabWidget" name="Cores_tabWidget">
      <property name="currentIndex">
       <number>0</number>
      </property>
@@ -216,7 +183,10 @@
       </attribute>
       <layout class="QGridLayout" name="gridLayout_7">
        <item row="0" column="0">
-        <widget class="QGroupBox" name="ChannelgroupBox_0">
+        <widget class="QGroupBox" name="CoregroupBox_0">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="title">
           <string>Enabled</string>
          </property>
@@ -227,14 +197,14 @@
           <item row="0" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <item>
-             <widget class="QLabel" name="Channel_label_00">
+             <widget class="QLabel" name="Core_label_00">
               <property name="text">
                <string>00</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="KLed" name="Channel_active_LED_00">
+             <widget class="KLed" name="Core_active_LED_00">
               <property name="color">
                <color>
                 <red>255</red>
@@ -245,7 +215,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_enabled_radio_00">
+             <widget class="QRadioButton" name="Core_enabled_radio_00">
               <property name="toolTip">
                <string>Enable channel</string>
               </property>
@@ -258,20 +228,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_simulate_radio_00">
-              <property name="toolTip">
-               <string>Switch simulation  on for channel</string>
-              </property>
-              <property name="text">
-               <string>Simulate</string>
-              </property>
-              <property name="autoExclusive">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_sequence_comboBox_00">
+             <widget class="QComboBox" name="Core_sequence_comboBox_00">
               <property name="toolTip">
                <string>Select sequence for pattern on channel</string>
               </property>
@@ -288,26 +245,6 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_pattern_comboBox_00">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="toolTip">
-               <string>Select bit pattern to send on channel</string>
-              </property>
-              <item>
-               <property name="text">
-                <string>Alternating01</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -317,14 +254,14 @@
           <item row="1" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_5">
             <item>
-             <widget class="QLabel" name="Channel_label_01">
+             <widget class="QLabel" name="Core_label_01">
               <property name="text">
                <string>01</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="KLed" name="Channel_active_LED_01">
+             <widget class="KLed" name="Core_active_LED_01">
               <property name="color">
                <color>
                 <red>255</red>
@@ -335,7 +272,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_enabled_radio_01">
+             <widget class="QRadioButton" name="Core_enabled_radio_01">
               <property name="toolTip">
                <string>Enable channel</string>
               </property>
@@ -348,20 +285,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_simulate_radio_01">
-              <property name="toolTip">
-               <string>Switch simulation  on for channel</string>
-              </property>
-              <property name="text">
-               <string>Simulate</string>
-              </property>
-              <property name="autoExclusive">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_sequence_comboBox_01">
+             <widget class="QComboBox" name="Core_sequence_comboBox_01">
               <property name="toolTip">
                <string>Select sequence for pattern on channel</string>
               </property>
@@ -378,26 +302,6 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_pattern_comboBox_01">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="toolTip">
-               <string>Select bit pattern to send on channel</string>
-              </property>
-              <item>
-               <property name="text">
-                <string>Alternating01</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -407,14 +311,14 @@
           <item row="2" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_6">
             <item>
-             <widget class="QLabel" name="Channel_label_4">
+             <widget class="QLabel" name="Core_label_4">
               <property name="text">
                <string>02</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="KLed" name="Channel_active_LED_02">
+             <widget class="KLed" name="Core_active_LED_02">
               <property name="color">
                <color>
                 <red>255</red>
@@ -425,7 +329,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_enabled_radio_02">
+             <widget class="QRadioButton" name="Core_enabled_radio_02">
               <property name="toolTip">
                <string>Enable channel</string>
               </property>
@@ -438,20 +342,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_simulate_radio_02">
-              <property name="toolTip">
-               <string>Switch simulation  on for channel</string>
-              </property>
-              <property name="text">
-               <string>Simulate</string>
-              </property>
-              <property name="autoExclusive">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_sequence_comboBox_02">
+             <widget class="QComboBox" name="Core_sequence_comboBox_02">
               <property name="toolTip">
                <string>Select sequence for pattern on channel</string>
               </property>
@@ -468,26 +359,6 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_pattern_comboBox_02">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="toolTip">
-               <string>Select bit pattern to send on channel</string>
-              </property>
-              <item>
-               <property name="text">
-                <string>Alternating01</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -497,14 +368,14 @@
           <item row="3" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_7">
             <item>
-             <widget class="QLabel" name="Channel_label_5">
+             <widget class="QLabel" name="Core_label_5">
               <property name="text">
                <string>03</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="KLed" name="Channel_active_LED_03">
+             <widget class="KLed" name="Core_active_LED_03">
               <property name="color">
                <color>
                 <red>255</red>
@@ -515,7 +386,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_enabled_radio_03">
+             <widget class="QRadioButton" name="Core_enabled_radio_03">
               <property name="toolTip">
                <string>Enable channel</string>
               </property>
@@ -528,20 +399,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_simulate_radio_03">
-              <property name="toolTip">
-               <string>Switch simulation  on for channel</string>
-              </property>
-              <property name="text">
-               <string>Simulate</string>
-              </property>
-              <property name="autoExclusive">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_sequence_comboBox_03">
+             <widget class="QComboBox" name="Core_sequence_comboBox_03">
               <property name="toolTip">
                <string>Select sequence for pattern on channel</string>
               </property>
@@ -558,26 +416,6 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_pattern_comboBox_03">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="toolTip">
-               <string>Select bit pattern to send on channel</string>
-              </property>
-              <item>
-               <property name="text">
-                <string>Alternating01</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -587,14 +425,14 @@
           <item row="4" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_9">
             <item>
-             <widget class="QLabel" name="Channel_label_7">
+             <widget class="QLabel" name="Core_label_7">
               <property name="text">
                <string>04</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="KLed" name="Channel_active_LED_04">
+             <widget class="KLed" name="Core_active_LED_04">
               <property name="color">
                <color>
                 <red>255</red>
@@ -605,7 +443,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_enabled_radio_04">
+             <widget class="QRadioButton" name="Core_enabled_radio_04">
               <property name="toolTip">
                <string>Enable channel</string>
               </property>
@@ -618,20 +456,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_simulate_radio_04">
-              <property name="toolTip">
-               <string>Switch simulation  on for channel</string>
-              </property>
-              <property name="text">
-               <string>Simulate</string>
-              </property>
-              <property name="autoExclusive">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_sequence_comboBox_04">
+             <widget class="QComboBox" name="Core_sequence_comboBox_04">
               <property name="toolTip">
                <string>Select sequence for pattern on channel</string>
               </property>
@@ -648,26 +473,6 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_pattern_comboBox_04">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="toolTip">
-               <string>Select bit pattern to send on channel</string>
-              </property>
-              <item>
-               <property name="text">
-                <string>Alternating01</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -677,14 +482,14 @@
           <item row="5" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_10">
             <item>
-             <widget class="QLabel" name="Channel_label_8">
+             <widget class="QLabel" name="Core_label_8">
               <property name="text">
                <string>05</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="KLed" name="Channel_active_LED_05">
+             <widget class="KLed" name="Core_active_LED_05">
               <property name="color">
                <color>
                 <red>255</red>
@@ -695,7 +500,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_enabled_radio_05">
+             <widget class="QRadioButton" name="Core_enabled_radio_05">
               <property name="toolTip">
                <string>Enable channel</string>
               </property>
@@ -708,20 +513,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_simulate_radio_05">
-              <property name="toolTip">
-               <string>Switch simulation  on for channel</string>
-              </property>
-              <property name="text">
-               <string>Simulate</string>
-              </property>
-              <property name="autoExclusive">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_sequence_comboBox_05">
+             <widget class="QComboBox" name="Core_sequence_comboBox_05">
               <property name="toolTip">
                <string>Select sequence for pattern on channel</string>
               </property>
@@ -738,26 +530,6 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_pattern_comboBox_05">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="toolTip">
-               <string>Select bit pattern to send on channel</string>
-              </property>
-              <item>
-               <property name="text">
-                <string>Alternating01</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -767,14 +539,14 @@
           <item row="6" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_11">
             <item>
-             <widget class="QLabel" name="Channel_label_9">
+             <widget class="QLabel" name="Core_label_9">
               <property name="text">
                <string>06</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="KLed" name="Channel_active_LED_06">
+             <widget class="KLed" name="Core_active_LED_06">
               <property name="color">
                <color>
                 <red>255</red>
@@ -785,7 +557,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_enabled_radio_06">
+             <widget class="QRadioButton" name="Core_enabled_radio_06">
               <property name="toolTip">
                <string>Enable channel</string>
               </property>
@@ -798,20 +570,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_simulate_radio_06">
-              <property name="toolTip">
-               <string>Switch simulation  on for channel</string>
-              </property>
-              <property name="text">
-               <string>Simulate</string>
-              </property>
-              <property name="autoExclusive">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_sequence_comboBox_06">
+             <widget class="QComboBox" name="Core_sequence_comboBox_06">
               <property name="toolTip">
                <string>Select sequence for pattern on channel</string>
               </property>
@@ -828,26 +587,6 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_pattern_comboBox_06">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="toolTip">
-               <string>Select bit pattern to send on channel</string>
-              </property>
-              <item>
-               <property name="text">
-                <string>Alternating01</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -857,14 +596,14 @@
           <item row="7" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_12">
             <item>
-             <widget class="QLabel" name="Channel_label_10">
+             <widget class="QLabel" name="Core_label_10">
               <property name="text">
                <string>07</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="KLed" name="Channel_active_LED_07">
+             <widget class="KLed" name="Core_active_LED_07">
               <property name="color">
                <color>
                 <red>255</red>
@@ -875,7 +614,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_enabled_radio_07">
+             <widget class="QRadioButton" name="Core_enabled_radio_07">
               <property name="toolTip">
                <string>Enable channel</string>
               </property>
@@ -888,20 +627,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_simulate_radio_07">
-              <property name="toolTip">
-               <string>Switch simulation  on for channel</string>
-              </property>
-              <property name="text">
-               <string>Simulate</string>
-              </property>
-              <property name="autoExclusive">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_sequence_comboBox_07">
+             <widget class="QComboBox" name="Core_sequence_comboBox_07">
               <property name="toolTip">
                <string>Select sequence for pattern on channel</string>
               </property>
@@ -918,26 +644,6 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_pattern_comboBox_07">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="toolTip">
-               <string>Select bit pattern to send on channel</string>
-              </property>
-              <item>
-               <property name="text">
-                <string>Alternating01</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -955,7 +661,7 @@
       </attribute>
       <layout class="QGridLayout" name="gridLayout_6">
        <item row="0" column="0">
-        <widget class="QGroupBox" name="ChannelgroupBox_1">
+        <widget class="QGroupBox" name="CoregroupBox_1">
          <property name="title">
           <string>Enabled</string>
          </property>
@@ -966,14 +672,14 @@
           <item row="0" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_13">
             <item>
-             <widget class="QLabel" name="Channel_label_08">
+             <widget class="QLabel" name="Core_label_08">
               <property name="text">
                <string>08</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="KLed" name="Channel_active_LED_08">
+             <widget class="KLed" name="Core_active_LED_08">
               <property name="color">
                <color>
                 <red>255</red>
@@ -984,7 +690,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_enabled_radio_08">
+             <widget class="QRadioButton" name="Core_enabled_radio_08">
               <property name="toolTip">
                <string>Enable channel</string>
               </property>
@@ -997,20 +703,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_simulate_radio_08">
-              <property name="toolTip">
-               <string>Switch simulation  on for channel</string>
-              </property>
-              <property name="text">
-               <string>Simulate</string>
-              </property>
-              <property name="autoExclusive">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_sequence_comboBox_08">
+             <widget class="QComboBox" name="Core_sequence_comboBox_08">
               <property name="toolTip">
                <string>Select sequence for pattern to send on channel</string>
               </property>
@@ -1027,26 +720,6 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_pattern_comboBox_08">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="toolTip">
-               <string>Select bit pattern to send on channel</string>
-              </property>
-              <item>
-               <property name="text">
-                <string>Alternating01</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -1056,14 +729,14 @@
           <item row="1" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_14">
             <item>
-             <widget class="QLabel" name="Channel_label_09">
+             <widget class="QLabel" name="Core_label_09">
               <property name="text">
                <string>09</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="KLed" name="Channel_active_LED_09">
+             <widget class="KLed" name="Core_active_LED_09">
               <property name="color">
                <color>
                 <red>255</red>
@@ -1074,7 +747,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_enabled_radio_09">
+             <widget class="QRadioButton" name="Core_enabled_radio_09">
               <property name="toolTip">
                <string>Enable channel</string>
               </property>
@@ -1087,20 +760,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_simulate_radio_09">
-              <property name="toolTip">
-               <string>Switch simulation  on for channel</string>
-              </property>
-              <property name="text">
-               <string>Simulate</string>
-              </property>
-              <property name="autoExclusive">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_sequence_comboBox_09">
+             <widget class="QComboBox" name="Core_sequence_comboBox_09">
               <property name="toolTip">
                <string>Select sequence for pattern to send on channel</string>
               </property>
@@ -1117,26 +777,6 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_pattern_comboBox_09">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="toolTip">
-               <string>Select bit pattern to send on channel</string>
-              </property>
-              <item>
-               <property name="text">
-                <string>Alternating01</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -1146,14 +786,14 @@
           <item row="2" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_15">
             <item>
-             <widget class="QLabel" name="Channel_label_11">
+             <widget class="QLabel" name="Core_label_11">
               <property name="text">
                <string>10</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="KLed" name="Channel_active_LED_10">
+             <widget class="KLed" name="Core_active_LED_10">
               <property name="color">
                <color>
                 <red>255</red>
@@ -1164,7 +804,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_enabled_radio_10">
+             <widget class="QRadioButton" name="Core_enabled_radio_10">
               <property name="toolTip">
                <string>Enable channel</string>
               </property>
@@ -1177,20 +817,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_simulate_radio_10">
-              <property name="toolTip">
-               <string>Switch simulation  on for channel</string>
-              </property>
-              <property name="text">
-               <string>Simulate</string>
-              </property>
-              <property name="autoExclusive">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_sequence_comboBox_10">
+             <widget class="QComboBox" name="Core_sequence_comboBox_10">
               <property name="toolTip">
                <string>Select sequence for pattern to send on channel</string>
               </property>
@@ -1207,26 +834,6 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_pattern_comboBox_10">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="toolTip">
-               <string>Select bit pattern to send on channel</string>
-              </property>
-              <item>
-               <property name="text">
-                <string>Alternating01</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -1236,14 +843,14 @@
           <item row="3" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_16">
             <item>
-             <widget class="QLabel" name="Channel_label_12">
+             <widget class="QLabel" name="Core_label_12">
               <property name="text">
                <string>11</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="KLed" name="Channel_active_LED_11">
+             <widget class="KLed" name="Core_active_LED_11">
               <property name="color">
                <color>
                 <red>255</red>
@@ -1254,7 +861,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_enabled_radio_11">
+             <widget class="QRadioButton" name="Core_enabled_radio_11">
               <property name="toolTip">
                <string>Enable channel</string>
               </property>
@@ -1267,20 +874,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_simulate_radio_11">
-              <property name="toolTip">
-               <string>Switch simulation  on for channel</string>
-              </property>
-              <property name="text">
-               <string>Simulate</string>
-              </property>
-              <property name="autoExclusive">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_sequence_comboBox_11">
+             <widget class="QComboBox" name="Core_sequence_comboBox_11">
               <property name="toolTip">
                <string>Select sequence for pattern to send on channel</string>
               </property>
@@ -1297,26 +891,6 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_pattern_comboBox_11">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="toolTip">
-               <string>Select bit pattern to send on channel</string>
-              </property>
-              <item>
-               <property name="text">
-                <string>Alternating01</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -1326,14 +900,14 @@
           <item row="4" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_17">
             <item>
-             <widget class="QLabel" name="Channel_label_13">
+             <widget class="QLabel" name="Core_label_13">
               <property name="text">
                <string>12</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="KLed" name="Channel_active_LED_12">
+             <widget class="KLed" name="Core_active_LED_12">
               <property name="color">
                <color>
                 <red>255</red>
@@ -1344,7 +918,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_enabled_radio_12">
+             <widget class="QRadioButton" name="Core_enabled_radio_12">
               <property name="toolTip">
                <string>Enable channel</string>
               </property>
@@ -1357,20 +931,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_simulate_radio_12">
-              <property name="toolTip">
-               <string>Switch simulation  on for channel</string>
-              </property>
-              <property name="text">
-               <string>Simulate</string>
-              </property>
-              <property name="autoExclusive">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_sequence_comboBox_12">
+             <widget class="QComboBox" name="Core_sequence_comboBox_12">
               <property name="toolTip">
                <string>Select sequence for pattern to send on channel</string>
               </property>
@@ -1387,26 +948,6 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_pattern_comboBox_12">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="toolTip">
-               <string>Select bit pattern to send on channel</string>
-              </property>
-              <item>
-               <property name="text">
-                <string>Alternating01</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -1416,14 +957,14 @@
           <item row="5" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_18">
             <item>
-             <widget class="QLabel" name="Channel_label_14">
+             <widget class="QLabel" name="Core_label_14">
               <property name="text">
                <string>13</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="KLed" name="Channel_active_LED_13">
+             <widget class="KLed" name="Core_active_LED_13">
               <property name="color">
                <color>
                 <red>255</red>
@@ -1434,7 +975,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_enabled_radio_13">
+             <widget class="QRadioButton" name="Core_enabled_radio_13">
               <property name="toolTip">
                <string>Enable channel</string>
               </property>
@@ -1447,20 +988,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_simulate_radio_13">
-              <property name="toolTip">
-               <string>Switch simulation  on for channel</string>
-              </property>
-              <property name="text">
-               <string>Simulate</string>
-              </property>
-              <property name="autoExclusive">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_sequence_comboBox_13">
+             <widget class="QComboBox" name="Core_sequence_comboBox_13">
               <property name="toolTip">
                <string>Select sequence for pattern to send on channel</string>
               </property>
@@ -1477,26 +1005,6 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_pattern_comboBox_13">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="toolTip">
-               <string>Select bit pattern to send on channel</string>
-              </property>
-              <item>
-               <property name="text">
-                <string>Alternating01</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -1506,14 +1014,14 @@
           <item row="6" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_19">
             <item>
-             <widget class="QLabel" name="Channel_label_15">
+             <widget class="QLabel" name="Core_label_15">
               <property name="text">
                <string>14</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="KLed" name="Channel_active_LED_14">
+             <widget class="KLed" name="Core_active_LED_14">
               <property name="color">
                <color>
                 <red>255</red>
@@ -1524,7 +1032,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_enabled_radio_14">
+             <widget class="QRadioButton" name="Core_enabled_radio_14">
               <property name="toolTip">
                <string>Enable channel</string>
               </property>
@@ -1537,20 +1045,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_simulate_radio_14">
-              <property name="toolTip">
-               <string>Switch simulation  on for channel</string>
-              </property>
-              <property name="text">
-               <string>Simulate</string>
-              </property>
-              <property name="autoExclusive">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_sequence_comboBox_14">
+             <widget class="QComboBox" name="Core_sequence_comboBox_14">
               <property name="toolTip">
                <string>Select sequence for pattern to send on channel</string>
               </property>
@@ -1567,26 +1062,6 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_pattern_comboBox_14">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="toolTip">
-               <string>Select bit pattern to send on channel</string>
-              </property>
-              <item>
-               <property name="text">
-                <string>Alternating01</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -1596,14 +1071,14 @@
           <item row="7" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_20">
             <item>
-             <widget class="QLabel" name="Channel_label_16">
+             <widget class="QLabel" name="Core_label_16">
               <property name="text">
                <string>15</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="KLed" name="Channel_active_LED_15">
+             <widget class="KLed" name="Core_active_LED_15">
               <property name="color">
                <color>
                 <red>255</red>
@@ -1614,7 +1089,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_enabled_radio_15">
+             <widget class="QRadioButton" name="Core_enabled_radio_15">
               <property name="toolTip">
                <string>Enable channel</string>
               </property>
@@ -1627,20 +1102,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="Channel_simulate_radio_15">
-              <property name="toolTip">
-               <string>Switch simulation  on for channel</string>
-              </property>
-              <property name="text">
-               <string>Simulate</string>
-              </property>
-              <property name="autoExclusive">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_sequence_comboBox_15">
+             <widget class="QComboBox" name="Core_sequence_comboBox_15">
               <property name="toolTip">
                <string>Select sequence for pattern to send on channel</string>
               </property>
@@ -1657,26 +1119,6 @@
               <item>
                <property name="text">
                 <string>Pulse Sequence</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="Channel_pattern_comboBox_15">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="toolTip">
-               <string>Select bit pattern to send on channel</string>
-              </property>
-              <item>
-               <property name="text">
-                <string>Alternating01</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>TwoStep</string>
                </property>
               </item>
              </widget>
@@ -1704,9 +1146,9 @@
  </resources>
  <connections>
   <connection>
-   <sender>checkBox_ChannelsAlll</sender>
+   <sender>checkBox_CoresAlll</sender>
    <signal>toggled(bool)</signal>
-   <receiver>Channel_enabled_radio_ALL</receiver>
+   <receiver>Core_enabled_radio_ALL</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1720,25 +1162,9 @@
    </hints>
   </connection>
   <connection>
-   <sender>checkBox_ChannelsAlll</sender>
+   <sender>checkBox_CoresAlll</sender>
    <signal>toggled(bool)</signal>
-   <receiver>Channel_simulate_radio_ALL</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>231</x>
-     <y>41</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>383</x>
-     <y>42</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>checkBox_ChannelsAlll</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>Channel_sequence_comboBox_ALL</receiver>
+   <receiver>Core_sequence_comboBox_ALL</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1748,22 +1174,6 @@
     <hint type="destinationlabel">
      <x>509</x>
      <y>42</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>checkBox_ChannelsAlll</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>Channel_pattern_comboBox_ALL</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>215</x>
-     <y>38</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>564</x>
-     <y>38</y>
     </hint>
    </hints>
   </connection>

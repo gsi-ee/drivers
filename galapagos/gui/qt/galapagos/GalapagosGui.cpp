@@ -11,8 +11,8 @@
 
 
 
-#include "GalChannelWidget.h"
-#include "GalSequenceWidget.h"
+#include "GalPackageWidget.h"
+#include "GalKernelWidget.h"
 #include "GalPatternWidget.h"
 
 namespace gapg {
@@ -22,7 +22,7 @@ GalapagosGui::GalapagosGui (QWidget* parent) : gapg::BasicGui (parent)
   fSubWidgets.clear();
 
  fImplementationName="GALAPAGUI";
- fVersionString="Welcome to GalapaGUI!\n\t v0.21 of 3-Sep-2019 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to GalapaGUI!\n\t v0.30 of 6-Sep-2019 by JAM (j.adamczewski@gsi.de)";
  setWindowTitle(QString("%1").arg(fImplementationName));
 
  fSettings=new QSettings("GSI", fImplementationName);
@@ -31,10 +31,9 @@ GalapagosGui::GalapagosGui (QWidget* parent) : gapg::BasicGui (parent)
  BuildSetup();
 
 
-  AddSubWindow(new GalChannelWidget(this));
-  AddSubWindow(new GalSequenceWidget(this));
+  AddSubWindow(new GalPackageWidget(this));
+  AddSubWindow(new GalKernelWidget(this));
   AddSubWindow(new GalPatternWidget(this));
-
 
   ConnectSlots();
   ReadSettings();
@@ -112,7 +111,7 @@ void GalapagosGui::Dump()
 
   //  printm("SFP %d DEV:%d :)",fSFP, fSlave);
     for(int adc=0; adc<1; ++adc){
-      for (int chan=0; chan<GAPG_CHANNELS; ++chan){
+      for (int chan=0; chan<GAPG_CORES; ++chan){
         //int val=ReadADC_Galapagos(adc,chan);
         int val=adc*chan; // dummy
         if(val<0)
@@ -174,14 +173,21 @@ void GalapagosGui::SetRegisters ()
 
   QApplication::setOverrideCursor (Qt::WaitCursor);
 
-  for(uint8_t channel=0; channel<GAPG_CHANNELS;++channel)
-  {
-    WriteGAPG ( GAPG_CHANNEL_SEQUENCE_BASE + channel*sizeof(uint32_t),  theSetup->GetChannelSequenceID(channel));
-    WriteGAPG ( GAPG_CHANNEL_PATTERN_BASE + channel*sizeof(uint32_t),  theSetup->GetChannelPatternID(channel));
-  }
-  /** channel enabled registers:*/
-  WriteGAPG ( GAPG_CHANNEL_ENABLE_LOW, theSetup->GetChannelControl_0());
-  WriteGAPG ( GAPG_CHANNEL_ENABLE_HI,  theSetup->GetChannelControl_1());
+//  for(uint8_t channel=0; channel<GAPG_CORES;++channel)
+//  {
+//    WriteGAPG ( GAPG_CHANNEL_SEQUENCE_BASE + channel*sizeof(uint32_t),  theSetup->GetChannelKernelID(channel));
+//    WriteGAPG ( GAPG_CHANNEL_PATTERN_BASE + channel*sizeof(uint32_t),  theSetup->GetChannelPatternID(channel));
+//  }
+//  /** channel enabled registers:*/
+
+
+    // before we have a running package, at least we mock up the enabled channels on hardware from current edited package:
+    GalapagosPackage* pak=theSetup->GetKnownPackage(theSetup->GetCurrentPackageIndex());
+    if(pak)
+    {
+        WriteGAPG ( GAPG_CHANNEL_ENABLE_LOW, pak->GetCoreControl_0());
+        WriteGAPG ( GAPG_CHANNEL_ENABLE_HI,  pak->GetCoreControl_1());
+    }
 
   /** possible master control register to start/stop processing*/
   uint32_t controlword=0;
@@ -202,7 +208,8 @@ void GalapagosGui::SetRegisters ()
 
 void GalapagosGui::GetRegisters ()
 {
-// read register values into structure with gosipcmd
+  // TODO: what do we want to see here once the package has been compiled and started?
+
 
  // return; //no readback from driver for the moment!
 
@@ -216,30 +223,32 @@ void GalapagosGui::GetRegisters ()
   theSetup->SetGeneratorActive((status & GAPG_BIT_MAIN_ENABLE) == GAPG_BIT_MAIN_ENABLE);
 
 
+  // active state ()
+
   /** channel enabled registers:*/
     uint32_t chanlo= ReadGAPG ( GAPG_CHANNEL_ENABLE_LOW);
     uint32_t chanhi= ReadGAPG ( GAPG_CHANNEL_ENABLE_HI);
 
-    theSetup->SetChannelControl_0(chanlo);
-    theSetup->SetChannelControl_1(chanhi);
+    theSetup->SetCoreStatus_0(chanlo);
+    theSetup->SetCoreStatus_1(chanhi);
 
 
-    for(uint8_t channel=0; channel<GAPG_CHANNELS;++channel)
-     {
-       uint32_t seqid=ReadGAPG ( GAPG_CHANNEL_SEQUENCE_BASE + channel*sizeof(uint32_t));
-       if(!theSetup->SetChannelSequence(channel,seqid))
-         {
-           printm ("GetRegisters Warning- channel %d has unknown sequence id %d on hardware, fallback to id 1",channel,seqid);
-           theSetup->SetChannelSequence(channel,1);
-         }
-
-       uint32_t patid=ReadGAPG ( GAPG_CHANNEL_PATTERN_BASE + channel*sizeof(uint32_t));
-       if(!theSetup->SetChannelPattern(channel,patid))
-       {
-         printm ("GetRegisters Warning- channel %d has unknown pattern id %d on hardware, fallback to id 1",channel,patid);
-         theSetup->SetChannelPattern(channel,1);
-       }
-     }
+//    for(uint8_t channel=0; channel<GAPG_CORES;++channel)
+//     {
+//       uint32_t seqid=ReadGAPG ( GAPG_CHANNEL_SEQUENCE_BASE + channel*sizeof(uint32_t));
+//       if(!theSetup->SetChannelKernel(channel,seqid))
+//         {
+//           printm ("GetRegisters Warning- channel %d has unknown sequence id %d on hardware, fallback to id 1",channel,seqid);
+//           theSetup->SetChannelKernel(channel,1);
+//         }
+//
+//       uint32_t patid=ReadGAPG ( GAPG_CHANNEL_PATTERN_BASE + channel*sizeof(uint32_t));
+//       if(!theSetup->SetChannelPattern(channel,patid))
+//       {
+//         printm ("GetRegisters Warning- channel %d has unknown pattern id %d on hardware, fallback to id 1",channel,patid);
+//         theSetup->SetChannelPattern(channel,1);
+//       }
+//     }
 
   
   QApplication::restoreOverrideCursor ();
@@ -252,21 +261,31 @@ BasicSetup* GalapagosGui::CreateSetup()
 
         // here we mock up some default patterns that might be always available
 
-        GalapagosSequence seq0(1,"SinglePulse");
+        GalapagosPackage pak0(1,"Default package");
+        for(int i=0; i< GAPG_CORES; ++i)
+          pak0.SetKernelID(i,2);
+        setup->AddPackage(pak0);
+
+        GalapagosPackage pak1(2,"TRB5");
+        for(int i=0; i< GAPG_CORES; ++i)
+          pak1.SetKernelID(i,1);
+        setup->AddPackage(pak1);
+
+        GalapagosKernel seq0(1,"SinglePulse");
         seq0.AddCommand("SINGLE PULSE 100;");
         seq0.Compile();
-        setup->AddSequence(seq0);
-        GalapagosSequence seq1(2,"DoublePulse");
+        setup->AddKernel(seq0);
+        GalapagosKernel seq1(2,"DoublePulse");
         seq1.AddCommand("DOUBLE PULSE 100 500;");
         seq1.Compile();
-        setup->AddSequence(seq1);
-        GalapagosSequence seq2(3,"PulseSequenceNew");
+        setup->AddKernel(seq1);
+        GalapagosKernel seq2(3,"PulseKernelNew");
         seq2.AddCommand("SEQUENCE PULSE 100 20 20000;");
         seq2.AddCommand("KEEP 0 200;");
         seq2.AddCommand("SEQUENCE PULSE 100 20 30000;");
         seq2.AddCommand("KEEP 0 100;");
         seq2.Compile();
-        setup->AddSequence(seq2);
+        setup->AddKernel(seq2);
 
 
         GalapagosPattern pat0 (1, "Alternating10");

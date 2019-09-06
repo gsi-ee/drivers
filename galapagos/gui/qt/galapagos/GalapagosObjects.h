@@ -2,7 +2,7 @@
 #define GAPG_GALAPAGOSOBJECTS_H
 
 #include <QByteArray>
-#include <stdint.h>
+//#include <stdint.h>
 #include <vector>
 
 #include "BasicObject.h"
@@ -10,164 +10,232 @@
 
 namespace gapg{
 
+
+typedef enum CoreType
+{
+  NOP,
+  CHN,
+  TRG,
+  USP,
+  LJP,
+  DAC
+}CoreType_t;
+
+
+
 /** container to keep the different basic bit patterns used in the signal sequences*/
 class GalapagosPattern : public gapg::BasicObject
 {
 
-public:
+private:
 
   /** the full stream of the bit pattern will be chunked and put into infinitively extendable vector ?*/
-  std::vector<uint8_t> fPattern;
+  std::vector<uint8_t> fData;
 
+public:
 
-  GalapagosPattern(uint16_t id, const char* name): gapg::BasicObject(id, name)
-    {
-      Clear();
-    }
+  GalapagosPattern(uint32_t id, const char* name);
 
-  GalapagosPattern(const GalapagosPattern& seq) : gapg::BasicObject(seq)
-   {
-     //std::cout<< "GalapagosPattern copy ctor " << std::endl;
-     fPattern=seq.fPattern;
-   }
+  GalapagosPattern();
 
-  GalapagosPattern& operator=(const GalapagosPattern& rhs)
-      {
-        if (this != &rhs) {
-          BasicObject::operator=(rhs);
-          fPattern=rhs.fPattern;
-        }
-        return *this;
-      }
+  GalapagosPattern(const GalapagosPattern& seq);
 
+  GalapagosPattern& operator=(const GalapagosPattern& rhs);
 
+  virtual ~GalapagosPattern();
 
-  virtual ~GalapagosPattern(){}
-
-  void Clear()
-    {
-      fPattern.clear();
-    }
+  void Clear();
 
   /** fill pattern*/
-  void AddByte (uint8_t patty)
-  {
-    fPattern.push_back(patty);
-  }
+  void AddByte (uint8_t patty);
 
-  size_t NumBits()
-  {
-    /** for the moment, do not support patterns that are below one byte units*/
-    return fPattern.size() * sizeof(uint8_t);
-  }
+  /** number of bits in the pattern (needed?)*/
+  size_t NumBits();
 
-  size_t NumBytes()
-  {
-    return fPattern.size();
-  }
+  /** number of bytes forming the pattern*/
+  size_t NumBytes();
 
-  /** read next byte of bit pattern at given vector index.*/
-  uint8_t GetByte(int ix)
-  {
-    if(ix>fPattern.size()) return 0;
-    return fPattern[ix];
-  }
+  /** read next byte of bit pattern at given byte index.*/
+  uint8_t GetByte(int ix);
 
-  // provide tempory bytearray:
-  QByteArray GetByteArray()
-  {
-     QByteArray theByteArray;
-     for(int c=0; c<NumBytes(); ++c)
-       theByteArray.append(GetByte(c));
-     return theByteArray;
-  }
+  /**provide tempory bytearray from pattern data: */
+  QByteArray GetByteArray();
 };
 
 
 
 
-/** this container will keep the bit sequence to play for each channel */
-class GalapagosSequence : public gapg::BasicObject
+/** this container will keep the command code and pattern to play for each channel */
+class GalapagosKernel : public gapg::BasicObject
 {
 
-public:
+private:
+
+  gapg::CoreType_t fCoretype;
+
+
+  /**unique id of pattern assigned to this kernel*/
+  uint32_t fPatternID;
+
+  /** temporary copy of the referenced pattern*/
+  gapg::GalapagosPattern fPattern;
 
 
   /** the actual command sequence as strings*/
   std::vector<std::string> fCommandSkript;
 
-  /* to do: translate in bit sequence recognizable in fpga?*/
-  std::vector<uint32_t> fCommandTokens;
+
+  /** the compiled instruction code*/
+  std::vector<uint8_t> fCompiledCode;
+
+public:
+
+  GalapagosKernel(uint32_t id, const char* name);
+
+  GalapagosKernel();
+
+  GalapagosKernel(const GalapagosKernel& ker);
+
+  GalapagosKernel& operator=(const GalapagosKernel& rhs);
+
+  virtual ~GalapagosKernel();
 
 
-  GalapagosSequence(uint16_t id, const char* name): gapg::BasicObject(id, name)
-  {
-    Clear();
-  }
+  uint32_t GetPatternID(){ return fPatternID;}
+  void SetPatternID(uint32_t id){fPatternID=id;}
 
-  GalapagosSequence(const GalapagosSequence& seq) : gapg::BasicObject(seq)
-  {
-    //std::cout<< "GalapagosSequence copy ctor " << std::endl;
-    fCommandSkript=seq.fCommandSkript;
-    fCommandTokens=seq.fCommandTokens;
-  }
 
-  GalapagosSequence& operator=(const GalapagosSequence& rhs)
+  gapg::CoreType_t GetCoreType(){ return fCoretype;}
+  void SetCoreType(gapg::CoreType_t id){fCoretype=id;}
+
+  /** add single command expression (with arguments) to the kernel code*/
+  void AddCommand(const char* cmd);
+
+  /** access command line at index ix as text*/
+  const char* GetCommandLine(int ix);
+
+  /** number of bytes of the compiled kernel code */
+  size_t NumCodeBytes();
+
+  /** read next byte of compiled code at given byte index.*/
+   uint8_t GetCodeByte(int ix);
+
+    // provide tempory bytearray of the command code:
+    QByteArray GetCodeByteArray();
+
+    /** number of bytes the pattern of this kernelconsists of*/
+    size_t NumPatternBytes();
+
+      /** read next byte of bit pattern at given byte index.*/
+    uint8_t GetPatternByte(int ix);
+
+    /** provide tempory bytearray of pattern data: */
+      QByteArray GetPatternByteArray();
+
+      /** set the full pattern data for this kernel*/
+      void UpdatePattern(const GalapagosPattern& src);
+
+      /** compile the code*/
+      void Compile();
+
+
+      /** reset this kernel to nothing*/
+      void Clear();
+
+
+      /** cleanup all references to the pattern object of unique id id.
+        * may specify a new unique id to replace the old reference*/
+      void CleanupRemovedPattern(uint32_t id, uint32_t newid=0);
+
+};
+
+/** This object composes the complete core setup of the board*/
+class GalapagosPackage : public gapg::BasicObject
+{
+
+  private:
+
+
+  /* mockup of a future channel control/status register
+    * each bit may set corresponding channel active*/
+   uint32_t fCoreControl_0;
+
+   /* mockup of a future channel control/status register
+    * each bit may set corresponding channel active*/
+   uint32_t fCoreControl_1;
+
+
+   /* this array holds the unique id of the kernels assigned to the cores of given index*/
+   std::vector<uint32_t> fCoreKernelIDs;
+
+  /* this array holds the kernels assigned to the cores of given index*/
+  std::vector<gapg::GalapagosKernel> fCoreKernels;
+
+
+
+ public:
+
+  GalapagosPackage(uint32_t id, const char* name);
+
+  GalapagosPackage(const GalapagosPackage& ker);
+
+  GalapagosPackage& operator=(const GalapagosPackage& rhs);
+
+  virtual ~GalapagosPackage();
+
+  void Clear();
+
+  /** set kernel object for core of index*/
+  bool SetKernel(int core, const gapg::GalapagosKernel& src);
+
+  /** get reference to kernel object for core of index. Returns 0 pointer is out of range*/
+  gapg::GalapagosKernel* GetKernel(int index);
+
+
+  /** set planned kernel object id for core of index*/
+  bool SetKernelID(int core, uint32_t id);
+
+  /** get reference to kernel object for core of index. Returns 0 pointer is out of range*/
+  uint32_t GetKernelID(int index);
+
+  uint64_t GetCoreControl ();
+
+    uint32_t GetCoreControl_0 ()
     {
-      if (this != &rhs) {
-        //std::cout<< "GalapagosSequence operator= "<< std::endl;
-        BasicObject::operator=(rhs);
-        fCommandSkript=rhs.fCommandSkript;
-        fCommandTokens=rhs.fCommandTokens;
-      }
-      return *this;
+      return fCoreControl_0;
     }
 
-  virtual ~GalapagosSequence(){}
-
-
-
-  void AddCommand(const char* cmd)
-  {
-    if(cmd==0) return;
-    fCommandSkript.push_back(std::string(cmd));
-  }
-
-
-  const char* GetCommandLine(int ix)
-   {
-     if(ix>=fCommandSkript.size()) return 0;
-     return fCommandSkript[ix].c_str();
-   }
-
-  void Compile()
-  {
-    fCommandTokens.clear();
-
-    // TODO: translate command language into the fpga byte code here
-    fCommandTokens.push_back(42);
-    fCommandTokens.push_back(0);
-    fCommandTokens.push_back(1); // just dummies to test io
-
-  }
-
-  /** read command token of given index*/
-   uint32_t GetCommandToken(int ix)
-   {
-     if(ix>=fCommandTokens.size()) return 0;
-     return fCommandTokens[ix];
-   }
-
-   size_t NumCommandTokens()
+    void SetCoreControl_0 (uint32_t val)
     {
-      return fCommandTokens.size();
+      fCoreControl_0 = val;
     }
 
-  void Clear()
-  {
-    fCommandSkript.clear();
-    fCommandTokens.clear();
-  }
+    uint32_t GetCoreControl_1 ()
+    {
+      return fCoreControl_1;
+    }
+    void SetCoreControl_1 (uint32_t val)
+    {
+      fCoreControl_1 = val;
+    }
+
+    void SetCoreControl (uint64_t val);
+
+    void SetCoreEnabled (uint8_t ch, bool on);
+
+    bool IsCoreEnabled (uint8_t ch);
+
+
+    /** cleanup all references to the kernel object of unique id id.
+     * may specify a new unique id to replace the old reference*/
+    void CleanupRemovedKernel(uint32_t id, uint32_t newid=0);
+
+
+    /** cleanup all references to the pattern object of unique id id.
+     * may specify a new unique id to replace the old reference*/
+    void CleanupRemovedPattern(uint32_t id, uint32_t newid=0);
+
+
 
 };
 

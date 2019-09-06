@@ -16,7 +16,7 @@ class BasicObject
   /** user readable name, same as in sequencer control window */
   std::string fName;
 
-  BasicObject(uint16_t id, const char* name): fId(id), fName(name){}
+  BasicObject(uint32_t id, const char* name): fId(id), fName(name){}
 
   BasicObject(const BasicObject& ob)
   {

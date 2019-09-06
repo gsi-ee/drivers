@@ -13,8 +13,8 @@
 
 /** total number of output channels of pattern generator*/
 //#define GAPG_CHANNELS 64
-#define GAPG_CHANNELS 16
-#define GAPG_SEQUENCES 128
+#define GAPG_CORES 68
+#define GAPG_KERNELS 128
 #define GAPG_PATTLETS 128
 
 /** following just fake addresses at the moment to test kernel module*/

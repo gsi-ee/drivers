@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>GalKernelEditor</class>
+ <widget class="QWidget" name="GalKernelEditor">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>KernelEditor</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QComboBox" name="Pattern_comboBox">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select bit pattern to apply with this kernel&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <item>
+        <property name="text">
+         <string>Alternating01</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>TwoStep</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="PatternLow_spinBox">
+       <property name="toolTip">
+        <string>Lowel limit of selected pattern</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="PatternHi_spinBox">
+       <property name="toolTip">
+        <string>Upper imit of selected pattern</string>
+       </property>
+       <property name="maximum">
+        <number>65536</number>
+       </property>
+       <property name="value">
+        <number>1024</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="PatternLimitsPickButton">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;pick applicable limits of selected pattern&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../galapicons.qrc">
+         <normaloff>:/icons/cursormarkersmall.png</normaloff>:/icons/cursormarkersmall.png</iconset>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="1" column="0">
+    <widget class="QPlainTextEdit" name="KernelTextEdit">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Command code of selected kernel&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QComboBox" name="CommandPrototype_comboBox">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>200</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of available commands&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <item>
+        <property name="text">
+         <string>RunSequence</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Sync</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="CommandPrototypeInsertButton">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Insert selected command protype at current code editor location&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../galapicons.qrc">
+         <normaloff>:/icons/OK16.png</normaloff>:/icons/OK16.png</iconset>
+       </property>
+       <property name="checkable">
+        <bool>false</bool>
+       </property>
+       <property name="checked">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../galapicons.qrc"/>
+ </resources>
+ <connections/>
+</ui>

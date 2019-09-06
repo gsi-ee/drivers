@@ -6,173 +6,267 @@ namespace gapg {
 
 
 GalapagosSetup::GalapagosSetup () :
-    BasicSetup (), fGeneratorActive (false), fChannelControl_0 (0), fChannelControl_1 (0)
+    BasicSetup (), fGeneratorActive (false), fCoreStatus_0(0), fCoreStatus_1(1), fCurrentPackageIndex(0)
 {
 
   fKnownPatterns.clear ();
-  fKnownSequences.clear ();
-  for (int i = 0; i < GAPG_CHANNELS; ++i)
-  {
-    fChannelSequenceID[i] = 0;
-    fChannelPatternID[i] = 0;
-  }
+  fKnownKernels.clear ();
+  fKnownPackages.clear();
 
 }
 
-uint64_t GalapagosSetup::GetChannelControl ()
+
+
+uint64_t GalapagosSetup::GetCoreStatus ()
 {
   uint64_t reg = 0;
-  reg = fChannelControl_0 | (fChannelControl_1 << 32);
+  reg = fCoreStatus_0 | (fCoreStatus_1 << 32);
   return reg;
 }
 
-void GalapagosSetup::SetChannelControl (uint64_t val)
+
+void GalapagosSetup::SetCoreStatus (uint64_t val)
 {
-  fChannelControl_0 = (val & 0xFFFFFFFF);
-  fChannelControl_1 = (val >> 32) & 0xFFFFFFFF;
-  //std::cout<< "GalapagosSetup::SetChannelControl for"<< std::hex << val<< "sets 0:"<< std::hex << fChannelControl_0<<", 1:" << std::hex<< fChannelControl_1 << std::endl;
+  fCoreStatus_0 = (val & 0xFFFFFFFF);
+  fCoreStatus_1 = (val >> 32) & 0xFFFFFFFF;
+
 }
 
-void GalapagosSetup::SetChannelEnabled (uint8_t ch, bool on)
+
+void GalapagosSetup::SetCoreRunning (uint8_t ch, bool on)
 {
-  //std::cout<< "GalapagosSetup::SetChannelEnabled ch="<< (int) ch<<", on="<<on << std::endl;
-  if (ch > GAPG_CHANNELS)
-    return;
-  uint64_t reg = GetChannelControl ();
-  uint64_t flags = (1 << ch);
-  if (on)
-    reg |= flags;
-  else
-    reg &= ~flags;
-  SetChannelControl (reg);
+  //std::cout<< "GalapagosPackage::SetCoreEnabled ch="<< (int) ch<<", on="<<on << std::endl;
+           if (ch > GAPG_CORES)
+             return;
+           uint64_t reg = GetCoreStatus ();
+           uint64_t flags = (1 << ch);
+           if (on)
+             reg |= flags;
+           else
+             reg &= ~flags;
+           SetCoreStatus (reg);
 }
 
-bool GalapagosSetup::IsChannelEnabled (uint8_t ch)
+bool GalapagosSetup::IsCoreRunning (uint8_t ch)
+  {
+  if (ch > GAPG_CORES)
+            return true;
+          uint64_t reg = GetCoreStatus ();
+          uint64_t flags = (1 << ch);
+          bool rev = ((reg & flags) == flags);
+          return rev;
+  }
+
+
+void GalapagosSetup::SetCoreEnabled (uint8_t core, bool on)
 {
-  if (ch > GAPG_CHANNELS)
-    return true;
-  uint64_t reg = GetChannelControl ();
-  uint64_t flags = (1 << ch);
-  bool rev = ((reg & flags) == flags);
-  return rev;
+  GalapagosPackage* curpak=GetPackage(fCurrentPackageIndex);
+    if(!curpak) return ;
+    return (curpak->SetCoreEnabled (core, on));
 }
 
-void GalapagosSetup::ClearSequences ()
+bool GalapagosSetup::IsCoreEnabled (uint8_t core)
+  {
+    GalapagosPackage* curpak=GetPackage(fCurrentPackageIndex);
+     if(!curpak) return false;
+     return (curpak->IsCoreEnabled (core));
+  }
+
+
+
+GalapagosPackage& GalapagosSetup::AddPackage (GalapagosPackage& pak)
 {
-  fKnownSequences.clear ();
-  for (int i = 0; i < GAPG_CHANNELS; ++i)
-    fChannelSequenceID[i] = 0;
+     fKnownPackages.push_back (pak);
+     return pak;
 }
 
-GalapagosSequence& GalapagosSetup::AddSequence (GalapagosSequence& seq)
+GalapagosPackage* GalapagosSetup::GetPackage (uint32_t id)
 {
-  // TODO: may need ot check if sequence of this id/name already exists?
-  fKnownSequences.push_back (seq);
+  for (int t = 0; t < fKnownPackages.size (); ++t)
+    {
+      if (fKnownPackages[t].Id () == id)
+        return &(fKnownPackages[t]);
+    }
+    return 0;
+}
+
+GalapagosPackage* GalapagosSetup::GetPackage (const char* name)
+{
+  for (int t = 0; t < fKnownPackages.size (); ++t)
+   {
+     if (fKnownPackages[t].EqualsName (name))
+       return &(fKnownPackages[t]);
+   }
+   return 0;
+}
+
+size_t GalapagosSetup::NumKnownPackages ()
+{
+  return fKnownPackages.size ();
+}
+
+GalapagosPackage* GalapagosSetup::GetKnownPackage (size_t ix)
+{
+  if (ix > fKnownPackages.size ())
+     return 0;
+   return &(fKnownPackages[ix]);
+}
+
+
+/** remove pattern from list by index*/
+void GalapagosSetup::RemoveKnownPackage (size_t ix)
+{
+  uint32_t pid = fKnownPackages[ix].Id ();
+  fKnownPackages.erase (fKnownPackages.begin () + ix);
+
+  // no further cleanup requireed here, package is top level object
+}
+
+bool GalapagosSetup::CompilePackage(size_t ix)
+{
+  GalapagosPackage* pak=GetPackage(ix);
+  if(pak==0) return false;
+  // now compile all participating kernel objects:
+  for(int core=0; core<GAPG_CORES; ++core)
+  {
+    if(!pak->IsCoreEnabled(core)) continue;
+    uint32_t cid=pak->GetKernelID(core);
+    GalapagosKernel* ker=GetKernel(cid);
+    if(ker==0){
+      printm("GalapagosSetup::CompilePackage error (package:%s) - core %d has configured unknown kernel of id %d! skip it.",
+          pak->Name(), core, cid);
+      continue;
+    }
+    ker->Compile(); //this we do anyway, even for kernels without pattern data
+      uint32_t pid=ker->GetPatternID();
+    GalapagosPattern* pat=GetPattern(pid);
+    if(pat!=0) {
+       ker->UpdatePattern(*pat);
+    }
+    else
+    {
+      printm("GalapagosSetup::CompilePackage error (package:%s)  - core %d with kernel %s has unknown pattern of id %d!",
+             pak->Name(), core,ker->Name()); // this case may appear regularly for special cores! later suppress message?
+      }
+   pak->SetKernel(core,*ker);
+   printm("GalapagosSetup::CompilePackage :%s - has assigned kernel %s to core %dit.",
+            pak->Name(), ker->Name(), core);
+  } // for core
+
+
+}
+
+
+
+
+void GalapagosSetup::ClearKernels ()
+{
+  fKnownKernels.clear ();
+
+}
+
+GalapagosKernel& GalapagosSetup::AddKernel (GalapagosKernel& seq)
+{
+  // TODO: may need ot check if kernel of this id/name already exists?
+  fKnownKernels.push_back (seq);
   return seq;
 }
 
 /* Access a known sequence by unique id number. May be redundant if we rely on name*/
-GalapagosSequence* GalapagosSetup::GetSequence (uint32_t id)
+GalapagosKernel* GalapagosSetup::GetKernel (uint32_t id)
 {
-  for (int t = 0; t < fKnownSequences.size (); ++t)
+  for (int t = 0; t < fKnownKernels.size (); ++t)
   {
-    if (fKnownSequences[t].Id () == id)
-      return &(fKnownSequences[t]);
+    if (fKnownKernels[t].Id () == id)
+      return &(fKnownKernels[t]);
   }
   return 0;
 }
 
 /* Access a known sequence by unique name*/
-GalapagosSequence* GalapagosSetup::GetSequence (const char* name)
+GalapagosKernel* GalapagosSetup::GetKernel (const char* name)
 {
-  for (int t = 0; t < fKnownSequences.size (); ++t)
+  for (int t = 0; t < fKnownKernels.size (); ++t)
   {
-    if (fKnownSequences[t].EqualsName (name))
-      return &(fKnownSequences[t]);
+    if (fKnownKernels[t].EqualsName (name))
+      return &(fKnownKernels[t]);
   }
   return 0;
 }
 
-size_t GalapagosSetup::NumKnownSequences ()
+size_t GalapagosSetup::NumKnownKernels ()
 {
-  return fKnownSequences.size ();
+  return fKnownKernels.size ();
 }
 
 /** access to list of known sequences by index */
-GalapagosSequence* GalapagosSetup::GetKnownSequence (size_t ix)
+GalapagosKernel* GalapagosSetup::GetKnownKernel (size_t ix)
 {
-  if (ix > fKnownSequences.size ())
+  if (ix > fKnownKernels.size ())
     return 0;
-  return &(fKnownSequences[ix]);
+  return &(fKnownKernels[ix]);
 }
 
 /** remove sequence from list by index. also clean up all references in channels*/
-void GalapagosSetup::RemoveKnownSequence (size_t ix)
+void GalapagosSetup::RemoveKnownKernel (size_t ix)
 {
-  uint32_t sid = fKnownSequences[ix].Id ();
-  fKnownSequences.erase (fKnownSequences.begin () + ix);
+  uint32_t sid = fKnownKernels[ix].Id ();
+  fKnownKernels.erase (fKnownKernels.begin () + ix);
+
   uint32_t newsid = 0;
-  if (fKnownSequences.size () > 0)
-    newsid = fKnownSequences[0].Id ();    // channels with erased seqs will be assigned to first sequence
-  for (int i = 0; i < GAPG_CHANNELS; ++i)
+  if (fKnownKernels.size () > 0)
+    newsid = fKnownKernels[0].Id ();    // channels with erased seqs will be assigned to first sequence
+
+// proper cleanup of all references in the packages:
+  for(int p=0; p<NumKnownPackages();++p)
   {
-    if (fChannelSequenceID[i] == sid)
-      fChannelSequenceID[i] = newsid;
+    GalapagosPackage* pak=GetKnownPackage(p);
+    if(!pak) continue;
+    pak->CleanupRemovedKernel(sid,newsid);
   }
 
 }
 
-//       /** discard pattern of id from list*/
-//       bool GalapagosSetup::RemoveSequence(uint32_t id)
-//       {
-//         for(int t=0; t<fKnownSequences.size();++t)
-//         {
-//           if(fKnownSequences[t].Id()==id)
-//           {
-//             RemoveKnownSequence(t);
-//             return true;
-//           }
-//         }
-//         return false;
-//       }
 
-bool GalapagosSetup::SetChannelSequence (int chan, uint32_t id)
+
+
+bool GalapagosSetup::SetCoreKernel (int core, uint32_t id)
 {
-  if (chan > GAPG_CHANNELS)
+  GalapagosKernel* ker = GetKernel (id);
+  if (ker == 0)
     return false;
-  GalapagosSequence* seq = GetSequence (id);
-  if (seq == 0)
-    return false;
-  fChannelSequenceID[chan] = seq->Id ();
-  return true;
+  GalapagosPackage* curpak=GetPackage(fCurrentPackageIndex);
+  if(!curpak) return 0;
+  return (curpak->SetKernelID (core, ker->Id()));
 }
 
-bool GalapagosSetup::SetChannelSequence (int chan, const char* name)
+bool GalapagosSetup::SetCoreKernel (int core, const char* name)
 {
-  if (chan > GAPG_CHANNELS)
+  GalapagosKernel* ker = GetKernel (name);
+  if (ker == 0)
     return false;
-  GalapagosSequence* seq = GetSequence (name);
-  if (seq == 0)
-    return false;
-  fChannelSequenceID[chan] = seq->Id ();
-  return true;
+  GalapagosPackage* curpak=GetPackage(fCurrentPackageIndex);
+   if(!curpak) return 0;
+   return (curpak->SetKernelID (core, ker->Id()));
 }
 
-GalapagosSequence* GalapagosSetup::GetChannelSequence (int chan)
+GalapagosKernel* GalapagosSetup::GetCoreKernel (int core)
 {
-  if (chan > GAPG_CHANNELS)
-    return 0;
-  uint32_t id = GetChannelSequenceID (chan);
+  GalapagosPackage* curpak=GetPackage(fCurrentPackageIndex);
+  if(!curpak) return 0;
+  uint32_t id = curpak->GetKernelID (core);
   if (id == 0)
     return 0;
-  return GetSequence (id);
+  return GetKernel (id);
 }
 
-uint32_t GalapagosSetup::GetChannelSequenceID (int chan)
+uint32_t GalapagosSetup::GetCoreKernelID (int chan)
 {
-  if (chan > GAPG_CHANNELS)
+  if (chan > GAPG_CORES)
     return 0;
-  return fChannelSequenceID[chan];
+  GalapagosPackage* curpak=GetPackage(fCurrentPackageIndex);
+  if(!curpak) return 0;
+  return curpak->GetKernelID (chan);
 }
 /////////////////////////////77
 
@@ -226,50 +320,21 @@ void GalapagosSetup::RemoveKnownPattern (size_t ix)
   uint32_t newpid = 0;
   if (fKnownPatterns.size () > 0)
     newpid = fKnownPatterns[0].Id ();    // channels with erased patterns will be assigned to first pattern
-  for (int i = 0; i < GAPG_CHANNELS; ++i)
-  {
-    if (fChannelPatternID[i] == pid)
-      fChannelPatternID[i] = newpid;
-  }
-}
+// TODO: clean up references to patterns in kernels/Packages? maybe redundant, we will use names instead of ids there
 
-bool GalapagosSetup::SetChannelPattern (int chan, uint32_t id)
-{
-  if (chan > GAPG_CHANNELS)
-    return false;
-  GalapagosPattern* pat = GetPattern (id);
-  if (pat == 0)
-    return false;
-  fChannelPatternID[chan] = pat->Id ();
-  return true;
-}
+  for(int p=0; p<NumKnownKernels();++p)
+   {
+     GalapagosKernel* ker=GetKnownKernel(p);
+     if(!ker) continue;
+     ker->CleanupRemovedPattern(pid,newpid);
+   }
+  for(int p=0; p<NumKnownPackages();++p)
+   {
+     GalapagosPackage* pak=GetKnownPackage(p);
+     if(!pak) continue;
+     pak->CleanupRemovedPattern(pid,newpid);
+   }
 
-bool GalapagosSetup::SetChannelPattern (int chan, const char* name)
-{
-  if (chan > GAPG_CHANNELS)
-    return false;
-  GalapagosPattern* pat = GetPattern (name);
-  if (pat == 0)
-    return false;
-  fChannelPatternID[chan] = pat->Id ();
-  return true;
-}
-
-GalapagosPattern* GalapagosSetup::GetChannelPattern (int chan)
-{
-  if (chan > GAPG_CHANNELS)
-    return 0;
-  uint32_t id = GetChannelPatternID (chan);
-  if (id == 0)
-    return 0;
-  return GetPattern (id);
-}
-
-uint32_t GalapagosSetup::GetChannelPatternID (int chan)
-{
-  if (chan > GAPG_CHANNELS)
-    return 0;
-  return fChannelPatternID[chan];
 }
 
 } // gapg

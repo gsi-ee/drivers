@@ -198,8 +198,8 @@ void BasicGui::AddSubWindow(gapg::BasicSubWidget* widget)
   Qt::WindowFlags wflags= Qt::CustomizeWindowHint | Qt::WindowMinMaxButtonsHint | Qt::WindowTitleHint;
   QMdiSubWindow* sub=mdiArea->addSubWindow(widget,wflags);
   sub->setAttribute(Qt::WA_DeleteOnClose, false);
-  sub->setOption(QMdiSubWindow::RubberBandResize);
-  sub->setOption(QMdiSubWindow::RubberBandMove); // JAM required for qt5 performance
+  //sub->setOption(QMdiSubWindow::RubberBandResize);
+  //sub->setOption(QMdiSubWindow::RubberBandMove); // JAM required for qt5 performance
 
   fSubWidgets.push_back(widget);
   widget->SetBasicParent(this);
@@ -613,20 +613,25 @@ int value = -1;
   }
   //QApplication::restoreOverrideCursor ();
 #else
-char buffer[1024];
-snprintf (buffer, 1024, "galapcmd -r -- 0x%x",address);
-QString com (buffer);
-QString result = ExecuteGAPGCmd (com);
-if (result != "ERROR")
-{
-  DebugTextWindow (result);
-  value = result.toInt (0, 0);
-}
-else
-{
 
-  value = -1;
-}
+value =0;
+
+//char buffer[1024];
+//snprintf (buffer, 1024, "galapcmd -r -- 0x%x",address);
+//QString com (buffer);
+//QString result = ExecuteGAPGCmd (com);
+//if (result != "ERROR")
+//{
+//  DebugTextWindow (result);
+//  value = result.toInt (0, 0);
+//}
+//else
+//{
+//
+//  value = -1;
+//}
+
+
 #endif
 
 return value;
@@ -654,12 +659,12 @@ int BasicGui::WriteGAPG (int address, int value)
 
 
 
-char buffer[1024];
-snprintf (buffer, 1024, "galapcmd -w -- 0x%x 0x%x", address, value);
-QString com (buffer);
-QString result = ExecuteGAPGCmd (com);
-if (result == "ERROR")
-  rev = -1;
+//char buffer[1024];
+//snprintf (buffer, 1024, "galapcmd -w -- 0x%x 0x%x", address, value);
+//QString com (buffer);
+//QString result = ExecuteGAPGCmd (com);
+//if (result == "ERROR")
+//  rev = -1;
 
 #endif
 return rev;
@@ -950,7 +955,7 @@ void BasicGui::WriteSettings()
         {
         for (std::vector<gapg::BasicSubWidget*>::iterator it = fSubWidgets.begin() ; it != fSubWidgets.end(); ++it)
            {
-               (*it)->ReadSettings(fSettings);
+               (*it)->WriteSettings(fSettings);
            }
         }
 

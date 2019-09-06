@@ -1,20 +1,20 @@
-#ifndef GAPG_GALSEQUENCEGWIDGET_H
-#define GAPG_GALSEQUENCEGWIDGET_H
+#ifndef GAPG_GALKERNELWIDGET_H
+#define GAPG_GALKERNELWIDGET_H
 
 #include "BasicObjectEditorWidget.h"
 
 namespace gapg
 {
 
-class GalSequenceEditor;
+class GalKernelEditor;
 
-class GalSequenceWidget: public gapg::BasicObjectEditorWidget
+class GalKernelWidget: public gapg::BasicObjectEditorWidget
 {
   Q_OBJECT
 
 protected:
 
-  gapg::GalSequenceEditor* fSequenceEditor;
+  gapg::GalKernelEditor* fKernelEditor;
 
   /** refresh editor content for pattern id, return unique object id*/
   int RefreshObjectIndex (int ix);
@@ -47,8 +47,8 @@ protected:
 
 public:
 
-  GalSequenceWidget (QWidget* parent = 0);
-  virtual ~GalSequenceWidget ();
+  GalKernelWidget (QWidget* parent = 0);
+  virtual ~GalKernelWidget ();
 
   virtual void ConnectSlots ();
 
@@ -61,6 +61,17 @@ public:
 
   /** put values relevant for our widget from Qt settings file*/
   virtual void WriteSettings (QSettings* set);
+
+
+  public slots:
+
+  virtual void CommandPrototypeInsert_clicked();
+  virtual void PatternLimitsPick_clicked();
+  virtual void PatternLow_spinBox_changed(int);
+  virtual void PatternHi_spinBox_changed(int);
+  virtual void PatternIndexChanged(int);
+
+
 
 };
 

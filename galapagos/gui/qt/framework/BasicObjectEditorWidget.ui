@@ -28,7 +28,7 @@
         </size>
        </property>
        <property name="toolTip">
-        <string>Select known Sequence by name</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select known Object by name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <item>
         <property name="text">

@@ -22,6 +22,7 @@ gapg::BasicObjectEditorWidget(parent)
 {
   fPatternEditor=new gapg::GalPatternEditor(this);
   Editor_scrollArea->setWidget(fPatternEditor);
+  setWindowTitle("Pattern Editor");
 
   Object_comboBox->setToolTip("Select known pattern by name");
   ObjectIDSpinBox-> setToolTip("Unique id of selected pattern");
@@ -255,13 +256,12 @@ bool GalPatternWidget::LoadObject(const QString& fileName)
   QFile pfile(fileName);
    if (!pfile.open( QIODevice::ReadOnly))
      {
-     printm ("!!! Could not open sequence file %s", fileName.toLatin1().constData());
+     printm ("!!! Could not open pattern file %s", fileName.toLatin1().constData());
      return false;
      }
    theSetup_GET_FOR_CLASS_RETURN_BOOL(GalapagosSetup);
    QString patname=fileName.split("/").last();
    patname.chop(4);
-   //std::cout << "Loading sequence from file "<< seqname.toLatin1().constData()<< std::endl;
    GalapagosPattern pat(0, patname.toLatin1().constData()); // pattern id will be taken from file
 
 // read back our own binary format:
