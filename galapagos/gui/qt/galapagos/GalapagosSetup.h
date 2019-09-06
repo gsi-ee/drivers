@@ -2,6 +2,7 @@
 #define GAPG_GALSETUP_H
 
 #include "BasicSetup.h"
+#include "BasicObjectManager.h"
 #include "GalapagosDefines.h"
 #include "GalapagosObjects.h"
 #include <stdint.h>
@@ -28,17 +29,23 @@ protected:
     uint32_t fCoreStatus_1;
 
 
-  /* list of known kernels  as visible in the kernel editor*/
-  std::vector<GalapagosKernel> fKnownKernels;
+    BasicObjectManager<GalapagosKernel> fKernelManager;
 
-  /* list of known patterns  as visible in the pattern editor*/
-  std::vector<GalapagosPattern> fKnownPatterns;
+    BasicObjectManager<GalapagosPattern> fPatternManager;
 
-  /* list of known patterns  as visible in the pattern editor*/
-  std::vector<GalapagosPackage> fKnownPackages;
+    BasicObjectManager<GalapagosPackage> fPackageManager;
 
-  /* index of the currently active package in the list of known*/
-  size_t fCurrentPackageIndex;
+//  /* list of known kernels  as visible in the kernel editor*/
+//  std::vector<GalapagosKernel> fKnownKernels;
+//
+//  /* list of known patterns  as visible in the pattern editor*/
+//  std::vector<GalapagosPattern> fKnownPatterns;
+//
+//  /* list of known patterns  as visible in the pattern editor*/
+//  std::vector<GalapagosPackage> fKnownPackages;
+//
+//  /* index of the currently active package in the list of known*/
+//  size_t fCurrentPackageIndex;
 
 public:
 
@@ -92,14 +99,15 @@ public:
       bool IsCoreEnabled (uint8_t core);
 
 
-  size_t GetCurrentPackageIndex(){return fCurrentPackageIndex;}
+      size_t GetCurrentPackageIndex();
 
-  void SetCurrentPackageIndex(size_t ix){
-    if(fCurrentPackageIndex>=fKnownPackages.size())
-      fCurrentPackageIndex=fKnownPackages.size()-1;
-    else
-      fCurrentPackageIndex=ix;
-  }
+      void SetCurrentPackageIndex(size_t ix);
+
+//    if(fCurrentPackageIndex>=fKnownPackages.size())
+//      fCurrentPackageIndex=fKnownPackages.size()-1;
+//    else
+//      fCurrentPackageIndex=ix;
+//  }
 
 
   GalapagosPackage& AddPackage (GalapagosPackage& pak);
@@ -114,6 +122,8 @@ public:
 
     /** access to list of known package by index */
     GalapagosPackage* GetKnownPackage (size_t ix);
+
+
 
     /** compile the package at given list index: Compile all referenced kernel objects and copy them into the package object.
      * After compilation the package will hold the bytecode ready to be loaded into the active cores*/
@@ -156,7 +166,7 @@ public:
 
   void ClearKernels ();
 
-/////////////////////////////77
+/////////////////////////////
 
   GalapagosPattern& AddPattern (GalapagosPattern& pat);
 
@@ -173,8 +183,6 @@ public:
 
   /** remove pattern from list by index*/
   void RemoveKnownPattern (size_t ix);
-
-
 
 
 

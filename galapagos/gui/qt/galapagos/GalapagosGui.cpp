@@ -182,8 +182,8 @@ void GalapagosGui::SetRegisters ()
 
 
     // before we have a running package, at least we mock up the enabled channels on hardware from current edited package:
-    GalapagosPackage* pak=theSetup->GetKnownPackage(theSetup->GetCurrentPackageIndex());
-    if(pak)
+  GalapagosPackage* pak=theSetup->GetKnownPackage(theSetup->GetCurrentPackageIndex());
+  if(pak)
     {
         WriteGAPG ( GAPG_CHANNEL_ENABLE_LOW, pak->GetCoreControl_0());
         WriteGAPG ( GAPG_CHANNEL_ENABLE_HI,  pak->GetCoreControl_1());
