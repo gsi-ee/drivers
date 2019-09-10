@@ -8,15 +8,16 @@
 
 #define USE_MBSPEX_LIB       1 // this define will switch on usage of mbspex lib with locked ioctls
                                // instead of direct register mapping usage
-//#define WR_TIME_STAMP        1 // white rabbit latched time stamp
+#define WR_TIME_STAMP        1 // white rabbit latched time stamp
 #define WRITE_ANALYSIS_PARAM 1 
 //#define DEBUG                1
 
 #ifdef WR_TIME_STAMP
 #define USE_TLU_FINE_TIME   1
  
-//#define WR_USE_TLU_DIRECT 1  // JAM8-2018: new for direct tlu access
- #define SERIALIZE_IO __asm__ volatile ("eieio")
+#define WR_USE_TLU_DIRECT 1  // JAM8-2018: new for direct tlu access
+ //#define SERIALIZE_IO __asm__ volatile ("eieio")
+#define SERIALIZE_IO __asm__ volatile ("mfence" ::: "memory")
 #endif
 
 //----------------------------------------------------------------------------
@@ -66,7 +67,10 @@
 //                     |   |   |   |
 //#define NR_SLAVES    { 1,  1,  0,  0}
 //#define NR_SLAVES    { 1,  1,  0,  0}
+// following for wr /tlu tests only:
 #define NR_SLAVES    { 0,  0,  0,  0}
+
+//#define NR_SLAVES    { 1,  0,  0,  0}
 
                               // maximum trace length 8000 (133 us)
                               // attention
@@ -987,16 +991,20 @@ int f_user_readout (unsigned char   bh_trig_typ,
 
 #ifdef WR_USE_TLU_DIRECT
 
-    eb_stat_before= *fifo_ready;
+/* JAM 2019: note that on 64bit OS the ebdata_t is also 64 bit!
+   we need to mask it to 32 bit when reading from mapped PCIe*/
+
+
+    eb_stat_before= (*fifo_ready) & 0xFFFFFFFF;
     //sleep(10);
-    eb_fifo_ct_brd= *fifo_cnt;
+    eb_fifo_ct_brd= (*fifo_cnt) & 0xFFFFFFFF ;
     *fifo_pop=0xF;
     SERIALIZE_IO;
-    eb_tlu_high_ts = *ft_shi;
+    eb_tlu_high_ts = (*ft_shi) & 0xFFFFFFFF;
     //sleep(10);
-    eb_tlu_low_ts = *ft_slo;
+    eb_tlu_low_ts = (*ft_slo) & 0xFFFFFFFF ;
     //sleep(10);
-    eb_tlu_fine_ts = *ft_ssub;
+    eb_tlu_fine_ts = (*ft_ssub) & 0xFFFFFFFF ;
     //sleep(10);
     //printm ("---- Event %d DUMP:\n", l_tr_ct[0]);
     //printm ("stat before: 0x%x\n", eb_stat_before);
@@ -1008,7 +1016,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
     //exit(0);
 
     //sleep(3);
-    eb_stat_after=*fifo_ready;
+    eb_stat_after= (*fifo_ready) & 0xFFFFFFFF;
     //sleep(3);
     //printm ("stat after: 0x%x\n", eb_stat_after);
 
@@ -1148,6 +1156,13 @@ int f_user_readout (unsigned char   bh_trig_typ,
     ll_actu_timestamp = ll_timestamp;
     ll_diff_timestamp = ll_actu_timestamp - ll_prev_timestamp;   
 
+
+       if (ll_prev_timestamp > ll_actu_timestamp)
+       {
+         printf ("ERROR>> actual time stamp earlier than previous one \n");
+         printf ("        actual   ts: 0x%llx \n", ll_actu_timestamp);
+         printf ("        previous ts: 0x%llx \n", ll_prev_timestamp);
+        }
     ll_prev_timestamp = ll_actu_timestamp;
   } 
   #endif // WR_TIME_STAMP  
