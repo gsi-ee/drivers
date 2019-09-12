@@ -1,6 +1,14 @@
 #include "GalapagosObjects.h"
 #include "GalapagosDefines.h"
 
+#ifdef USE_GALAPAGOS_LIB
+extern "C"
+{
+#include "galapagos/libgalapagos.h"
+}
+#endif
+
+#include <QString>
 
 namespace gapg
 {
@@ -64,11 +72,11 @@ namespace gapg
   }
 
   // provide tempory bytearray:
-  QByteArray GalapagosPattern::GetByteArray()
+  QByteArray* GalapagosPattern::CreateByteArray()
   {
-     QByteArray theByteArray;
+     QByteArray* theByteArray = new QByteArray;
      for(int c=0; c<NumBytes(); ++c)
-       theByteArray.append(GetByte(c));
+       theByteArray->append(GetByte(c));
      return theByteArray;
   }
 
@@ -91,7 +99,7 @@ namespace gapg
       fCoretype=ker.fCoretype;
       fCommandSkript=ker.fCommandSkript;
       fPatternID=ker.fPatternID;
-      fCompiledCode=ker.fCompiledCode;
+      ::galapagos_copy_kernel(&(ker.fKernelBinary),&fKernelBinary);
       fPattern=ker.fPattern;
       //fCommandTokens=seq.fCommandTokens;
     }
@@ -104,8 +112,8 @@ namespace gapg
           fCoretype=rhs.fCoretype;
           fCommandSkript=rhs.fCommandSkript;
           fPatternID=rhs.fPatternID;
-          fCompiledCode=rhs.fCompiledCode;
           fPattern=rhs.fPattern;
+          ::galapagos_copy_kernel(&(rhs.fKernelBinary),&fKernelBinary);
         }
         return *this;
       }
@@ -129,27 +137,39 @@ namespace gapg
        return fCommandSkript[ix].c_str();
      }
 
+     QString* GalapagosKernel::GetSourceCode()
+     {
+        QString* theSource = new QString;
+        for(int c=0; c<fCommandSkript.size(); ++c)
+        {
+          theSource->append(fCommandSkript[c].c_str());
+          theSource->append("\n");
+        }
+          return theSource;
+     }
 
-    size_t GalapagosKernel::NumCodeBytes()
-      {
-        return fCompiledCode.size();
-      }
 
-      /** read next byte of bit pattern at given vector index.*/
-      uint8_t GalapagosKernel::GetCodeByte(int ix)
-      {
-        if(ix>fCompiledCode.size()) return 0;
-        return fCompiledCode[ix];
-      }
 
-      // provide tempory bytearray:
-      QByteArray GalapagosKernel::GetCodeByteArray()
-      {
-         QByteArray theByteArray;
-         for(int c=0; c<NumCodeBytes(); ++c)
-           theByteArray.append(GetCodeByte(c));
-         return theByteArray;
-      }
+//    size_t GalapagosKernel::NumCodeBytes()
+//      {
+//        return fCompiledCode.size();
+//      }
+//
+//      /** read next byte of bit pattern at given vector index.*/
+//      uint8_t GalapagosKernel::GetCodeByte(int ix)
+//      {
+//        if(ix>fCompiledCode.size()) return 0;
+//        return fCompiledCode[ix];
+//      }
+//
+//      // provide tempory bytearray:
+//      QByteArray GalapagosKernel::GetCodeByteArray()
+//      {
+//         QByteArray theByteArray;
+//         for(int c=0; c<NumCodeBytes(); ++c)
+//           theByteArray.append(GetCodeByte(c));
+//         return theByteArray;
+//      }
 
 
       size_t GalapagosKernel::NumPatternBytes()
@@ -164,9 +184,9 @@ namespace gapg
         }
 
         // provide tempory bytearray:
-        QByteArray GalapagosKernel::GetPatternByteArray()
+        QByteArray* GalapagosKernel::CreatePatternByteArray()
         {
-           return fPattern.GetByteArray();
+           return fPattern.CreateByteArray();
         }
 
 
@@ -175,18 +195,26 @@ namespace gapg
           fPattern=src;
         }
 
-    void GalapagosKernel::Compile()
+    bool  GalapagosKernel::Compile()
     {
        // here use galapagos library
       // may get back the bytecode from it
-
-  //    fCommandTokens.clear();
-  //
-  //    // TODO: translate command language into the fpga byte code here
-  //    fCommandTokens.push_back(42);
-  //    fCommandTokens.push_back(0);
-  //    fCommandTokens.push_back(1); // just dummies to test io
-
+      QString* srcstring=GetSourceCode();
+      if(srcstring==0) return false;
+      const char* sourcecode=srcstring->toLatin1().data();
+      size_t length=srcstring->size();
+      if(::galapagos_compile_kernel(sourcecode, length, &fKernelBinary)!=0)
+        {
+          delete srcstring;
+          return false;
+        }
+      QByteArray* patternarray=CreatePatternByteArray();
+      size_t len=NumPatternBytes();
+      if(len>GALAPAGOS_KERNELPATTERNSIZE) len=GALAPAGOS_KERNELPATTERNSIZE;
+      memcpy(&(fKernelBinary.pattern_buffer), patternarray->data(),len);
+      delete srcstring;
+      delete patternarray;
+      return true;
     }
 
 
@@ -197,6 +225,7 @@ namespace gapg
       fPatternID=0;
       fCommandSkript.clear();
       fPattern.Clear();
+      memset(&fKernelBinary,0,sizeof(::galapagos_kernel));
     }
 
 

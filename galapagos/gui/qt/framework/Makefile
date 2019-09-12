@@ -24,8 +24,8 @@ nogalapagos: gui-nogalapagos
 
 gui:
 	@echo "Generating Makefile.qt"
-#	$(QMAKE) BasicGui.pro -o Makefile.qt "DEFINES+=USE_GALAPAGOS_LIB" "QMAKE_LFLAGS += -Wl,-rpath,$(GAPG_LIBPATH)" "INCLUDEPATH += $(GAPG_INCPATH)" "LIBS+= -L $(GAPG_LIBPATH) -lgalapagos"
-	$(QMAKE) BasicGui.pro -o Makefile.qt  "QMAKE_LFLAGS += -Wl,-rpath,$(GAPG_LIBPATH)" "INCLUDEPATH += $(GAPG_INCPATH)" "LIBS+= -L $(GAPG_LIBPATH) -lgalapagos"
+	$(QMAKE) BasicGui.pro -o Makefile.qt "DEFINES+=USE_GALAPAGOS_LIB" "QMAKE_LFLAGS += -Wl,-rpath,$(GAPG_LIBPATH)" "INCLUDEPATH += $(GAPG_INCPATH)" "LIBS+= -L $(GAPG_LIBPATH) -lgalapagos"
+#	$(QMAKE) BasicGui.pro -o Makefile.qt  "QMAKE_LFLAGS += -Wl,-rpath,$(GAPG_LIBPATH)" "INCLUDEPATH += $(GAPG_INCPATH)" "LIBS+= -L $(GAPG_LIBPATH) -lgalapagos"
 	+$(MAKE) -f Makefile.qt
 
 gui-nogalapagos: 

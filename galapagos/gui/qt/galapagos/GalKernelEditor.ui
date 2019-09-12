@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>610</width>
     <height>300</height>
    </rect>
   </property>
@@ -91,7 +91,7 @@
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Command code of selected kernel&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="readOnly">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
     </widget>
    </item>
@@ -124,6 +124,19 @@
       </widget>
      </item>
      <item>
+      <widget class="QLabel" name="CommandHelpLabel">
+       <property name="minimumSize">
+        <size>
+         <width>250</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>argumentlist</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer_2">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -146,7 +159,7 @@
        </property>
        <property name="icon">
         <iconset resource="../galapicons.qrc">
-         <normaloff>:/icons/OK16.png</normaloff>:/icons/OK16.png</iconset>
+         <normaloff>:/icons/shiftup.png</normaloff>:/icons/shiftup.png</iconset>
        </property>
        <property name="checkable">
         <bool>false</bool>

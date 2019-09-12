@@ -11,8 +11,13 @@
  */
 
 
+#include <stddef.h>
+#include <stdint.h>
+
 
 #include "../include/gapg_user.h"
+
+
 
 #ifdef GALAPAGOS_NOMBS
 #define printm printf
@@ -33,6 +38,97 @@ void printm (char *, ...); /* use mbs logger, or for gosipcmd this will be reimp
       return -1;                                                   \
     }
 
+
+#define GALAPAGOS_MAXCOMMANDNAME 128
+#define GALAPAGOS_NUMCOMMMANDS 32
+#define GALAPAGOS_MAXSOURCELENGTH 65536
+
+#define GALAPAGOS_NUMKERNELS 68
+#define GALAPAGOS_KERNELINSTRUCTIONSIZE 0x9000
+#define GALAPAGOS_KERNELPATTERNSIZE     0x80000
+
+
+
+
+/** the allowed command ids*/
+typedef enum
+{
+  GAPG_NOP,             //NoOperation
+  GAPG_END_KERNEL,      //EndKernel
+  GAPG_RUN_SEQUENCE,    //RunSequence
+  GAPG_KEEP_LEVEL,      //KeepLevel
+  GAPG_LOOP,            //Loop
+  GAPG_JUMP,            //Jump
+  GAPG_SYNC_CORES,      //SyncCores
+  GAPG_SYNC_HOST,       //SyncHost
+  GAPG_SYNC_HOSTBRANCH, //SyncHostAndBranch
+  GAPG_ALERTSTOP,       //AlertAndStop
+  GAPG_WAIT_DOCKPATTERN,    //WaitDockPattern
+  GAPG_CHECK_DOCKBRANCH,    //CheckDockAndBranch
+  GAPG_SET_LOCALDELAY,  //SetLocalDelay
+  GAPG_INC_LOCALDELAY,  //IncLocalDelay
+  GAPG_DEC_LOCALDELAY,   //DecLocalDelay
+  GAPG_SET_DOCKDELAY,   //SetDockDelay
+  GAPG_INC_DOCKDELAY,   //IncDockDelay
+  GAPG_DEC_DOCKDELAY,   //DecDockDelay
+  GAPG_SET_ATTEN,       //SetAttenuation
+  GAPG_INC_ATTEN,       //IncAttenuation
+  GAPG_DEC_ATTEN        //DecAttenuation
+}
+galapagos_cmd_id;
+
+
+
+  /** command structure*/
+typedef struct{
+    galapagos_cmd_id id;       /**< command identifier*/
+    char             opcode;        /**< operation code*/
+    uint64_t       argument;        /**< contains command parameters after compilation*/
+    char commandname[GALAPAGOS_MAXCOMMANDNAME]; /** explicit commmand name in source code*/
+    char argnames  [GALAPAGOS_MAXCOMMANDNAME]; /** description of command arguments*/
+    char numargs; /**< number of command arguments required at compile time */
+} galapagos_cmd ;
+
+
+
+/** type of kernel. must match the core*/
+typedef enum
+{
+  GAPG_CORE_NO,         //No kernel
+  GAPG_CORE_CH,         //regular signal output channel
+  GAPG_CORE_TRG,        // trigger
+  GAPG_CORE_USP,        // ultra short pulse
+  GAPG_CORE_LJP,        // low jitter pulse
+  GAPG_CORE_RFDAC       // 2 RF DACs
+}
+galapagos_core_t;
+
+
+/** the compiled kernel code for a single core*/
+typedef struct
+{
+  galapagos_core_t kind; /**< specifies the core this kernel is dedicated for */
+  int is_enabled; /**<     switch execution of this kernel on/off*/
+  int is_compiled; /**<    non-zero value indicates that compiled code has been provided*/
+  char sketch_buffer[GALAPAGOS_KERNELINSTRUCTIONSIZE]; /**< buffer of instruction code*/
+  size_t sketch_size; /**< length of instruction code actually used*/
+  char pattern_buffer[GALAPAGOS_KERNELPATTERNSIZE]; /**< buffer of bit pattern*/
+  size_t pattern_size; /**< length of pattern memory actually used*/
+} galapagos_kernel;
+
+
+/** The list of all registered commands*/
+extern galapagos_cmd galapagos_commandlist[GALAPAGOS_NUMCOMMMANDS];
+
+extern int galapagos_numcommands;
+
+
+/** This is host memory buffer of compiled kernel before uploading*/
+static galapagos_kernel galapagos_kernelbuffers[GALAPAGOS_NUMKERNELS];
+
+
+
+
 /** open file handle of pex device number devnum. Return value is handle*/
 int galapagos_open (int devnum);
 
@@ -42,74 +138,6 @@ int galapagos_close (int handle);
 /** reset dma and sfp engines */
 int galapagos_reset (int handle);
 
-///** read data word *l_dat from sfp, slave and memory offset l_slave_off*/
-//int galapagos_slave_rd (int handle, long l_sfp, long l_slave, long l_slave_off, long *l_dat);
-//
-///** write data word l_dat to sfp, slave and memory offset l_slave_off*/
-//int galapagos_slave_wr (int handle, long l_sfp, long l_slave, long l_slave_off, long l_dat);
-//
-///** initialize chain at l_sfp with l_s_slaves number of slaves*/
-//int galapagos_slave_init (int handle, long l_sfp, long l_n_slaves);
-//
-///** write block of configuration data to driver*/
-//int galapagos_slave_config (int handle, struct pex_bus_config* config);
-
-/** send token request to pexor device of handle at chain sfp
- *  with l_toggle word (sets frontend buffer)
- * l_ldma_target specifies physical address of target buffer for token data DMA
- * returns some result check words:
- * pl_transfersize:  size of transferred dma in bytes
- * pl_check_comm: l_comm
- * pl_check_token: toggle and mode bits
- * pl_check_slaves: nr. of slaves connected to token chain
- */
-//int galapagos_send_and_receive_tok (int handle, long l_sfp, long l_toggle, unsigned long l_dma_target,
-//    unsigned long* pl_transfersize, long *pl_check_comm, long *pl_check_token, long *pl_check_slaves);
-//
-
-/**
- * Sends token request and receive data from all SFPs of pexor device handle,
- * marked bitwise in l_sfp_p pattern: 1: sfp 0, 2: sfp 1, 4: sfp 2, 8: sfp 3, 0xf: all four SFPs.
- *  with l_toggle word (sets frontend buffer).
- * l_ldma_target specifies physical address of target buffer for token data DMA.
- * returns some result check words:
- * pl_transfersize:  size of transferred dma in bytes.
- * pl_check_comm: l_comm.
- * pl_check_token: toggle and mode bits.
- * pl_check_slaves: nr. of slaves connected to token chain.
- * The data written to l_ldma_target contains DMA read token contents of all sfps, separated by the
- * optional DMA padding words 0xaddXXXXX as defined for MBS readout.
- */
-//int galapagos_send_and_receive_parallel_tok (int handle, long l_sfp_p, long l_toggle, unsigned long l_dma_target,
-//    unsigned long* pl_transfersize, long *pl_check_comm, long *pl_check_token, long *pl_check_slaves);
-//
-//
-//
-///** sends token to all SFPs of pexor device handle,
-// * marked bitwise in l_sfp_p pattern: 1: sfp 0, 2: sfp 1, 4: sfp 2, 8: sfp 3, 0xf: all four SFPs
-// * toggle specifies */
-//int galapagos_send_tok (int handle, long l_sfp_p, long l_toggle);
-
-/** receive token data from l_sfp after previous request from pexor device handle
- *  l_ldma_target specifies physical address of target buffer for token data DMA
- * returns some result check words:
- * pl_transfersize:  size of transferred dma in bytes
- * pl_check_comm: l_comm
- * pl_check_token: toggle bit
- * pl_check_slaves: nr. of slaves connected to token chain
- */
-//int galapagos_receive_tok (int handle, long l_sfp, unsigned long l_dma_target, unsigned long *pl_transfersize,
-//    long *pl_check_comm, long *pl_check_token, long *pl_check_slaves);
-//
-//
-///** read token data size of sfp and slave id from internal pex registers*/
-//long galapagos_get_tok_datasize(int handle, long l_sfp,  long slave_id );
-//
-///** read token memory size of sfp from internal pex registers*/
-//long galapagos_get_tok_memsize(int handle , long l_sfp );
-//
-///** retrieve actual slave configuration at sfp chains and put to external structure*/
-//int galapagos_get_configured_slaves(int handle , struct pex_sfp_links* setup);
 
 
 
@@ -119,32 +147,42 @@ int galapagos_register_wr (int handle, unsigned char s_bar, long l_address, long
 /** read value of &l_dat from board l_address on mapped bar*/
 int galapagos_register_rd (int handle, unsigned char s_bar, long l_address, long * l_dat);
 
-///** transfer dma of size bytes from board source to host dest addresses.
-// * burst size may be specified, or 0 for automatic burst adjustment in driver
-// * returns real number of bytes transferred, or -1 in case of error
-// * This function will no sooner return than dma is complete*/
-//int galapagos_dma_rd (int handle, long source, long dest, long size, int burst);
-//
-///** transfer dma of size bytes from board source to virtual user space dest address.
-// * Destination memory must be part of the virtual mbs pipe that has been mapped at iniatializatio to sg list
-// * burst size may be specified, or 0 for automatic burst adjustment in driver
-// * returns real number of bytes transferred, or -1 in case of error
-// * This function will no sooner return than dma is complete*/
-//int galapagos_dma_rd_virt (int handle, unsigned int source, unsigned long virtdest, unsigned int size, unsigned int burst);
+
+/** check syntax/validty of source command with variable list of arguments.
+ * Will return index of command in commandlist if expression is valid, or a negative value otherwise*/
+int galapagos_check_command(const char* command, int* arguments, char numargs);
+
+/** compile source command with variable list of arguments.
+ * Will return reference to command object with compiled code*/
+galapagos_cmd* galapagos_compile_command(const char* command, int* arguments, char numargs);
+
+/** compiles text buffer with sourcecode and puts result into the binary code buffer of galapagos kernel object.
+ * returns 0 on success, or any other value in case of problems (TODO: error codes?)*/
+int galapagos_compile_kernel(const char* sourcecode, int length, galapagos_kernel* target);
+
+
+/** compiles text buffer with sourcecode and puts result into the binary code buffer for upload to fpga core.
+ * returns 0 on success, or any other value in case of problems (TODO: error codes?)*/
+int galapagos_compile_core(int corenum, const char* sourcecode, int length);
+
+/** copy contents of kernel code objects from source to target*/
+int galapagos_copy_kernel(const galapagos_kernel* source, galapagos_kernel* target);
+
+/** set compiled kernel code source for core corenum into library buffer.
+ * The kernel Will be applied no sooner than call of galapagos_upload_kernel*/
+int galapagos_set_kernel(int corenum, const galapagos_kernel* source);
+
+/** retrieve compiled kernel code source for core corenum into library buffer.
+ * */
+int galapagos_get_kernel(int corenum, galapagos_kernel* target);
+
+/** upload precompiled kernel code to core of given number.
+ * Returns 0 on success, or other value in case of errors*/
+int galapagos_upload_kernel(int corenum);
 
 
 
-///* map user space mbs pipe for dma into sg list in driver
-// * startaddress is virtual adress in mbs process, size is pipe length*/
-//int galapagos_map_pipe (int handle, unsigned long startaddress, unsigned long size);
-//
-///* unmap internal sg list*/
-//int galapagos_unmap_pipe (int handle);
 
-
-
-
-/*void f_feb_init ();*/
 
 
 

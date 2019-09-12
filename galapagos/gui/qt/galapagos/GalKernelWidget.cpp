@@ -13,6 +13,14 @@
 #include <QDateTime>
 #include "GalKernelEditor.h"
 
+#ifdef USE_GALAPAGOS_LIB
+extern "C"
+{
+#include "galapagos/libgalapagos.h"
+}
+
+#endif
+
 namespace gapg
 {
 
@@ -34,6 +42,25 @@ GalKernelWidget::GalKernelWidget (QWidget* parent) :
   ObjectEditCancelButton->setToolTip("Cancel edited code for selected kernel (restore last setup)");
   ObjectApplyButton->setToolTip("Apply editor contents for selected kernel");
 
+#ifdef USE_GALAPAGOS_LIB
+  // here populate list of available commands:
+  fKernelEditor->CommandPrototype_comboBox->clear();
+  std::cout<<"GalKernelWidget ctor sees galapagos commands in list: "<<::galapagos_numcommands << std::endl;
+
+   for(int c=0; c<galapagos_numcommands; ++c)
+   {
+     galapagos_cmd& theCommand= ::galapagos_commandlist[c];
+     fKernelEditor->CommandPrototype_comboBox->addItem(theCommand.commandname);
+
+   }
+#endif
+
+
+
+
+
+  fKernelEditor->setEnabled(false);
+
 }
 
 GalKernelWidget::~GalKernelWidget ()
@@ -45,6 +72,7 @@ void GalKernelWidget::ConnectSlots ()
   BasicObjectEditorWidget::ConnectSlots ();
   // anything more here?
   QObject::connect (fKernelEditor->CommandPrototypeInsertButton, SIGNAL(clicked()), this, SLOT(CommandPrototypeInsert_clicked()));
+  QObject::connect (fKernelEditor->CommandPrototype_comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(CommandPrototypeIndexChanged(int)));
   QObject::connect (fKernelEditor->PatternLimitsPickButton, SIGNAL(clicked()), this, SLOT(PatternLimitsPick_clicked()));
   QObject::connect (fKernelEditor->PatternLow_spinBox, SIGNAL(valueChanged(int)), this, SLOT(PatternLow_spinBox_changed(int)));
   QObject::connect (fKernelEditor->PatternHi_spinBox, SIGNAL(valueChanged(int)), this, SLOT(PatternHi_spinBox_changed(int)));
@@ -77,14 +105,17 @@ bool GalKernelWidget::NewObjectRequest ()
 void GalKernelWidget::StartEditing ()
 {
   //std::cout << "GalKernelWidget:: KernelEdit_clicked"<< std::endl;
-  fKernelEditor->KernelTextEdit->setReadOnly (false);
+  //fKernelEditor->KernelTextEdit->setReadOnly (false);
 
+  fKernelEditor->setEnabled (true);
 }
 
 void GalKernelWidget::CancelEditing ()
 {
   //std::cout << "GalKernelWidget:: CancelEditing"<< std::endl;
-  fKernelEditor->KernelTextEdit->setReadOnly (true);
+  //fKernelEditor->KernelTextEdit->setReadOnly (true);
+  fKernelEditor->setEnabled (false);
+
 }
 
 bool GalKernelWidget::DeleteObjectRequest ()
@@ -163,7 +194,9 @@ bool GalKernelWidget::SaveObjectRequest ()
 void GalKernelWidget::ApplyEditing ()
 {
   //std::cout << "GalKernelWidget::ApplyEditing()"<< std::endl;
-  fKernelEditor->KernelTextEdit->setReadOnly (true);
+  //fKernelEditor->KernelTextEdit->setReadOnly (true);
+  fKernelEditor->setEnabled(false);
+
   theSetup_GET_FOR_CLASS(GalapagosSetup);
   int ix = Object_comboBox->currentIndex ();
   GalapagosKernel* seq = theSetup->GetKnownKernel (ix);
@@ -289,32 +322,48 @@ void GalKernelWidget::EvaluateView ()
 
 int GalKernelWidget::RefreshObjectIndex (int ix)
 {
+  std::cout << "GalKernelWidget::RefreshObjectIndex "<< ix<< std::endl;
   fKernelEditor->KernelTextEdit->clear ();
 
   // now take out commands from known kernels:
   theSetup_GET_FOR_CLASS_RETURN(GalapagosSetup);
-  GalapagosKernel* seq = theSetup->GetKnownKernel (ix);
-  if (seq == 0)
+  GalapagosKernel* ker = theSetup->GetKnownKernel (ix);
+  if (ker == 0)
   {
     //KernelTextEdit->appendPlainText("unknown ID!");
     printm ("Warning: unknown kernel index %d in combobox, NEVER COME HERE!!", ix);
     return -1;
   }
-  //std::cout<<"RefreshKernelIndex gets kernel :"<<std::hex<< (ulong) seq<< ", id:"<<std::dec << seq->Id()<<", name:"<<seq->Name()<< std::endl;
+
+  uint32_t pid=ker->GetPatternID();
+  GalapagosPattern* pat= theSetup->GetPattern(pid);
+  if(pat)
+  {
+    int pix = fKernelEditor->Pattern_comboBox->findText (QString (pat->Name ()));
+    if (pix < 0)
+      printm ("GalKernelWidget::RefreshObjectIndex  Never come here - kernel %d has no combobox pattern entry %s", ix, ker->Name ());
+    else
+      fKernelEditor->Pattern_comboBox->setCurrentIndex (pix);
+  }
+  else
+  {
+    printm ("GalKernelWidget::RefreshObjectIndex  ERROR - kernel %d has assigned unknown pattern of unique id %d", ix, pid);
+  }
+
   const char* line = 0;
   int l = 0;
-  while ((line = seq->GetCommandLine (l++)) != 0)
+  while ((line = ker->GetCommandLine (l++)) != 0)
   {
-    //std::cout<<"RefreshKernelIndex reading  line:"<<line  << std::endl;
     QString txt (line);
     fKernelEditor->KernelTextEdit->appendPlainText (txt);
   }
-  return (seq->Id ());
+  return (ker->Id ());
 }
 
 void GalKernelWidget::RefreshView ()
 {
   theSetup_GET_FOR_CLASS(GalapagosSetup);
+
   int oldsid = Object_comboBox->currentIndex ();    // remember our active item
   Object_comboBox->clear ();
   for (int six = 0; six < theSetup->NumKnownKernels (); ++six)
@@ -325,6 +374,16 @@ void GalKernelWidget::RefreshView ()
     // populate names in kernel editor window:
     Object_comboBox->addItem (seq->Name ());
   }
+  // now populate the combobox of patterns with all known:
+  fKernelEditor->Pattern_comboBox->clear();
+   for (int pix=0; pix<theSetup->NumKnownPatterns(); ++pix)
+    {
+     GalapagosPattern* pat=theSetup->GetKnownPattern(pix);
+     if(pat==0)  continue;
+     fKernelEditor->Pattern_comboBox->addItem(pat->Name());
+    }
+   // note that actual pattern is selected when refreshing the kernel display
+
   if (oldsid >= theSetup->NumKnownKernels ())
     oldsid = theSetup->NumKnownKernels () - 1;
   Object_comboBox->setCurrentIndex (oldsid);    // restore active item
@@ -369,7 +428,52 @@ void GalKernelWidget::WriteSettings (QSettings* settings)
 void GalKernelWidget::CommandPrototypeInsert_clicked()
 {
   std::cout << "GalKernelWidget::CommandPrototypeInsert_clicked()" << std::endl;
+#ifdef USE_GALAPAGOS_LIB
+  int ix=fKernelEditor->CommandPrototype_comboBox->currentIndex();
+  if(ix>=::galapagos_numcommands)
+   {
+     printm("NEVER COME HERE: combobox index exceeds galapagos library list of commands!!!");
+     ix=::galapagos_numcommands-1;
+   }
+  galapagos_cmd& theCommand= ::galapagos_commandlist[ix];
+  QString suggestion;
+  if(theCommand.id==GAPG_RUN_SEQUENCE)
+  {
+    // special for sequence: use limits from patter pick fields
+    suggestion=QString("%1 %2 %3 repetitions").arg(theCommand.commandname).arg(fKernelEditor->PatternLow_spinBox->value()).arg(fKernelEditor->PatternHi_spinBox->value());
+  }
+  else
+  {
+    suggestion=QString("%1 %2").arg(theCommand.commandname).arg(theCommand.argnames);
+  }
+  fKernelEditor->KernelTextEdit->insertPlainText(suggestion);
+#endif
 }
+
+
+
+
+void GalKernelWidget::CommandPrototypeIndexChanged(int ix)
+{
+  std::cout << "GalKernelWidget::CommandPrototypeIndexChanged  ix="<<ix << std::endl;
+
+#ifdef USE_GALAPAGOS_LIB
+  if(ix>=::galapagos_numcommands)
+  {
+    printm("NEVER COME HERE: combobox index exceeds galapagos library list of commands!!!");
+    ix=galapagos_numcommands-1;
+  }
+
+  galapagos_cmd& theCommand= ::galapagos_commandlist[ix];
+  fKernelEditor->CommandHelpLabel->setText(theCommand.argnames);
+#endif
+
+
+
+}
+
+
+
 void GalKernelWidget::PatternLimitsPick_clicked()
 {
   std::cout << "GalKernelWidget::PatternLimitsPick_clicked()" << std::endl;

@@ -341,16 +341,17 @@ bool GalPatternWidget::SaveObject(const QString& fileName, gapg::BasicObject* ob
     outStream << (qint32) PATTERN_FILE_TAG; // GALAPAGOS gap format identifier
     outStream << (qint32) PATTERN_FILE_VERSION; // format version number
     outStream << (quint32) pat->Id(); // unique setup id of pattern
-    QByteArray byteArray=pat->GetByteArray();
+    QByteArray* byteArray=pat->CreateByteArray();
 
 //    size_t bytesize=byteArray.size()
 //    outStream << (qint32) bytesize; // pattern length information
 //    outStream.writeRawData(byteArray.data(), byteArray.size()); // the actual pattern data
-    outStream.writeBytes(byteArray.data(), byteArray.size()); // the actual pattern data
+    outStream.writeBytes(byteArray->data(), byteArray->size()); // the actual pattern data
 
 
     outStream << (qint32) PATTERN_FILE_TAG; // GALAPAGOS gap format identifier trailer
 
+    delete byteArray;
     printm("Saved Pattern with id %d to file %s ",pat->Id(), fileName.toLatin1().constData());
     return true;
 }

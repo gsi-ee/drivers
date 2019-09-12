@@ -66,6 +66,7 @@ public:
   public slots:
 
   virtual void CommandPrototypeInsert_clicked();
+  virtual void CommandPrototypeIndexChanged(int);
   virtual void PatternLimitsPick_clicked();
   virtual void PatternLow_spinBox_changed(int);
   virtual void PatternHi_spinBox_changed(int);

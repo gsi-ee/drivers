@@ -22,7 +22,7 @@ GalapagosGui::GalapagosGui (QWidget* parent) : gapg::BasicGui (parent)
   fSubWidgets.clear();
 
  fImplementationName="GALAPAGUI";
- fVersionString="Welcome to GalapaGUI!\n\t v0.30 of 6-Sep-2019 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to GalapaGUI!\n\t v0.37 of 12-Sep-2019 by JAM (j.adamczewski@gsi.de)";
  setWindowTitle(QString("%1").arg(fImplementationName));
 
  fSettings=new QSettings("GSI", fImplementationName);
@@ -274,10 +274,12 @@ BasicSetup* GalapagosGui::CreateSetup()
         GalapagosKernel seq0(1,"SinglePulse");
         seq0.AddCommand("SINGLE PULSE 100;");
         seq0.Compile();
+        seq0.SetPatternID(1);
         setup->AddKernel(seq0);
         GalapagosKernel seq1(2,"DoublePulse");
         seq1.AddCommand("DOUBLE PULSE 100 500;");
         seq1.Compile();
+        seq1.SetPatternID(3);
         setup->AddKernel(seq1);
         GalapagosKernel seq2(3,"PulseKernelNew");
         seq2.AddCommand("SEQUENCE PULSE 100 20 20000;");
@@ -285,6 +287,7 @@ BasicSetup* GalapagosGui::CreateSetup()
         seq2.AddCommand("SEQUENCE PULSE 100 20 30000;");
         seq2.AddCommand("KEEP 0 100;");
         seq2.Compile();
+        seq2.SetPatternID(4);
         setup->AddKernel(seq2);
 
 

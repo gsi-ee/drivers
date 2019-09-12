@@ -2,11 +2,18 @@
 #define GAPG_GALAPAGOSOBJECTS_H
 
 #include <QByteArray>
+#include <QString>
 //#include <stdint.h>
 #include <vector>
 
 #include "BasicObject.h"
 
+#ifdef USE_GALAPAGOS_LIB
+extern "C"
+{
+#include "galapagos/libgalapagos.h"
+}
+#endif
 
 namespace gapg{
 
@@ -58,8 +65,8 @@ public:
   /** read next byte of bit pattern at given byte index.*/
   uint8_t GetByte(int ix);
 
-  /**provide tempory bytearray from pattern data: */
-  QByteArray GetByteArray();
+  /**provide tempory bytearray from pattern data on heap. Must be deleted by user */
+  QByteArray* CreateByteArray();
 };
 
 
@@ -85,8 +92,9 @@ private:
   std::vector<std::string> fCommandSkript;
 
 
-  /** the compiled instruction code*/
-  std::vector<uint8_t> fCompiledCode;
+  /** binary compiled kernel for upload to the obard*/
+  ::galapagos_kernel fKernelBinary;
+
 
 public:
 
@@ -114,14 +122,18 @@ public:
   /** access command line at index ix as text*/
   const char* GetCommandLine(int ix);
 
-  /** number of bytes of the compiled kernel code */
-  size_t NumCodeBytes();
+//  /** number of bytes of the compiled kernel code */
+//  size_t NumCodeBytes();
+//
+//  /** read next byte of compiled code at given byte index.*/
+//   uint8_t GetCodeByte(int ix);
+//
+//    // provide tempory bytearray of the command code:
+//    QByteArray GetCodeByteArray();
 
-  /** read next byte of compiled code at given byte index.*/
-   uint8_t GetCodeByte(int ix);
-
-    // provide tempory bytearray of the command code:
-    QByteArray GetCodeByteArray();
+    /** deliver string object on heap with continuous sourcecode buffer.
+     * must be deleted by user afterwards*/
+    QString* GetSourceCode();
 
     /** number of bytes the pattern of this kernelconsists of*/
     size_t NumPatternBytes();
@@ -130,13 +142,13 @@ public:
     uint8_t GetPatternByte(int ix);
 
     /** provide tempory bytearray of pattern data: */
-      QByteArray GetPatternByteArray();
+      QByteArray* CreatePatternByteArray();
 
       /** set the full pattern data for this kernel*/
       void UpdatePattern(const GalapagosPattern& src);
 
-      /** compile the code*/
-      void Compile();
+      /** compile the code into the binary kernel object. Returns false if something is wrong*/
+      bool Compile();
 
 
       /** reset this kernel to nothing*/
