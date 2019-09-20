@@ -14,6 +14,7 @@
 #include "GalPackageWidget.h"
 #include "GalKernelWidget.h"
 #include "GalPatternWidget.h"
+#include "GalPatternDisplay.h"
 
 namespace gapg {
 
@@ -22,7 +23,7 @@ GalapagosGui::GalapagosGui (QWidget* parent) : gapg::BasicGui (parent)
   fSubWidgets.clear();
 
  fImplementationName="GALAPAGUI";
- fVersionString="Welcome to GalapaGUI!\n\t v0.37 of 12-Sep-2019 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to GalapaGUI!\n\t v0.40 of 20-Sep-2019 by JAM (j.adamczewski@gsi.de)";
  setWindowTitle(QString("%1").arg(fImplementationName));
 
  fSettings=new QSettings("GSI", fImplementationName);
@@ -31,9 +32,17 @@ GalapagosGui::GalapagosGui (QWidget* parent) : gapg::BasicGui (parent)
  BuildSetup();
 
 
+  fPatternWidget = new GalPatternWidget(this);
+  fKernelWidget = new GalKernelWidget(this);
+  fPatternDisplay=new GalPatternDisplay(this);
+  fKernelWidget->SetPatternDisplay(fPatternDisplay);
+  fPatternWidget->SetPatternDisplay(fPatternDisplay);
+
   AddSubWindow(new GalPackageWidget(this));
-  AddSubWindow(new GalKernelWidget(this));
-  AddSubWindow(new GalPatternWidget(this));
+  AddSubWindow(fKernelWidget);
+  AddSubWindow(fPatternWidget);
+  AddSubWindow(fPatternDisplay);
+
 
   ConnectSlots();
   ReadSettings();
@@ -60,6 +69,8 @@ void GalapagosGui::ConnectSlots()
 {
   BasicGui::ConnectSlots();
   // any extra slots here?
+
+
 }
 
 

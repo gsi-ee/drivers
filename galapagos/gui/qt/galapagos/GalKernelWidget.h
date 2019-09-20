@@ -7,6 +7,7 @@ namespace gapg
 {
 
 class GalKernelEditor;
+class GalPatternDisplay;
 
 class GalKernelWidget: public gapg::BasicObjectEditorWidget
 {
@@ -15,6 +16,8 @@ class GalKernelWidget: public gapg::BasicObjectEditorWidget
 protected:
 
   gapg::GalKernelEditor* fKernelEditor;
+
+  gapg::GalPatternDisplay* fPatternDisplay;
 
   /** refresh editor content for pattern id, return unique object id*/
   int RefreshObjectIndex (int ix);
@@ -50,6 +53,8 @@ public:
   GalKernelWidget (QWidget* parent = 0);
   virtual ~GalKernelWidget ();
 
+  void SetPatternDisplay(gapg::GalPatternDisplay* disp){fPatternDisplay=disp;}
+
   virtual void ConnectSlots ();
 
   virtual void RefreshView ();
@@ -63,11 +68,14 @@ public:
   virtual void WriteSettings (QSettings* set);
 
 
+
+
   public slots:
 
   virtual void CommandPrototypeInsert_clicked();
   virtual void CommandPrototypeIndexChanged(int);
   virtual void PatternLimitsPick_clicked();
+  virtual void PatternImport_clicked();
   virtual void PatternLow_spinBox_changed(int);
   virtual void PatternHi_spinBox_changed(int);
   virtual void PatternIndexChanged(int);

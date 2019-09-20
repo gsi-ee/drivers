@@ -9,6 +9,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include <stdlib.h>
+
 
 
 #define RON  "\x1B[7m"
@@ -424,6 +426,8 @@ int galapagos_compile_kernel(const char* sourcecode, int length, galapagos_kerne
   char sourcebuffer[GALAPAGOS_MAXSOURCELENGTH];
   char commandbuffer[GALAPAGOS_MAXCOMMANDNAME];
   char* commandline=0;;
+  char* argumentline=0;
+  char *saveptr1, *saveptr2;
 
   int arguments[10];
   if(length<=0) return -2;
@@ -434,31 +438,21 @@ int galapagos_compile_kernel(const char* sourcecode, int length, galapagos_kerne
   target->sketch_size=0;
   target->is_compiled=0;
   // here we scan all lines of sourcecode:
-  commandline = strtok (sourcebuffer,"\n");
+  commandline = strtok_r (sourcebuffer,"\n", &saveptr1);
   while(commandline!=0)
   {
-    // TODO: this does not work returns always 0?. maybe replace by sgtrtok
-
-    rev=sscanf("%s %d %d %d %d %d %d %d %d",commandline,
-      commandbuffer, &arguments[0],&arguments[1],&arguments[2], &arguments[3], &arguments[4], &arguments[5], &arguments[6], &arguments[7]);
-  if(rev==EOF)
-  {
-    printm("galapagos_compile_kernel: reached end of commandline buffer.");
-    break;
-  }
-
-  if(rev<0 )//(rev<=0 )
-  {
-    printm ("galapagos_compile_kernel: ERROR %d scanning commandline %s!!!", rev, commandline);
-    return -3;
-  }
-  numargs=rev-1;
+    argumentline = strtok_r (commandline," ",&saveptr2); // for this we need strtok_r !!!!
+    if(argumentline==0) break;
+    snprintf(commandbuffer,GALAPAGOS_MAXCOMMANDNAME,"%s",argumentline); // first argument is always command name
+    numargs=0;
+    while(argumentline!=0)
+    {
+      arguments[numargs++]=atoi(argumentline);
+      argumentline = strtok_r (NULL," ", &saveptr2);
+    }
+  numargs--; // maybe extra part after last argument?
   numinstructions++;
   printm ("galapagos_compile_kernel: found command %s with %d arguments as instruction %d",commandbuffer, numargs, numinstructions);
-  for(t=0;t<rev-1;++t)
-  {
-    printm("%d");
-  }
 
   // now do actual compilation:
   galapagos_cmd* com=galapagos_compile_command(commandbuffer, arguments, numargs);
@@ -484,8 +478,9 @@ int galapagos_compile_kernel(const char* sourcecode, int length, galapagos_kerne
       break;
     }
 
-  commandline = strtok (NULL,"\n");
+  commandline = strtok_r (NULL,"\n",&saveptr1);
   } // while
+
   target->is_compiled=1;
   return 0;
 }

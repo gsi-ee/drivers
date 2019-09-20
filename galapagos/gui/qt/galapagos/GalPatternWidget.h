@@ -7,6 +7,8 @@
 namespace gapg
 {
 
+class GalPatternDisplay;
+
 class GalPatternWidget: public BasicObjectEditorWidget
 {
   Q_OBJECT
@@ -14,6 +16,8 @@ class GalPatternWidget: public BasicObjectEditorWidget
 protected:
 
   gapg::GalPatternEditor* fPatternEditor;
+
+  gapg::GalPatternDisplay* fPatternDisplay;
 
   /** refresh editor content for pattern id, return unique object id*/
   int RefreshObjectIndex (int ix);
@@ -48,6 +52,8 @@ public:
   GalPatternWidget (QWidget* parent = 0);
   virtual ~GalPatternWidget ();
 
+  void SetPatternDisplay(gapg::GalPatternDisplay* disp){fPatternDisplay=disp;}
+
   virtual void ConnectSlots ();
 
   virtual void RefreshView ();
@@ -61,6 +67,8 @@ public:
   virtual void WriteSettings (QSettings* set);
 
 public slots:
+
+virtual void PatternPreview_clicked();
 
 };
 

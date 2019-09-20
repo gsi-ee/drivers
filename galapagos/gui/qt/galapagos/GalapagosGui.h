@@ -10,7 +10,9 @@
 
 namespace gapg {
 
-//class GalSubWidget;
+class GalPatternWidget;
+class GalPatternDisplay;
+class GalKernelWidget;
 
 class GalapagosGui:  public gapg::BasicGui
 {
@@ -40,6 +42,9 @@ public:
 
 protected:
 
+   gapg::GalPatternWidget* fPatternWidget;
+   gapg::GalPatternDisplay* fPatternDisplay;
+   gapg::GalKernelWidget* fKernelWidget;
 
    virtual BasicSetup* CreateSetup();
 

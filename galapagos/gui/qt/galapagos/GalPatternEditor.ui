@@ -14,13 +14,40 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
+   <item row="0" column="0" colspan="2">
     <widget class="Okteta::ByteArrayColumnView" name="oktetabyteview">
      <property name="NoOfBytesPerLine">
       <number>8</number>
      </property>
      <property name="Coding" stdset="0">
       <enum>Okteta::AbstractByteArrayView::BinaryCoding</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <spacer name="horizontalSpacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>717</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="1" column="1">
+    <widget class="QPushButton" name="PatternPreviewButton">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;preview selected pattern&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="icon">
+      <iconset resource="../galapicons.qrc">
+       <normaloff>:/icons/cursormarkersmall.png</normaloff>:/icons/cursormarkersmall.png</iconset>
      </property>
     </widget>
    </item>
@@ -33,6 +60,8 @@
    <header>okteta/bytearraycolumnview.h</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../galapicons.qrc"/>
+ </resources>
  <connections/>
 </ui>

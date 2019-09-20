@@ -11,7 +11,9 @@
 #include <QFile>
 #include <QSettings>
 #include <QDateTime>
+
 #include "GalKernelEditor.h"
+#include "GalPatternDisplay.h"
 
 #ifdef USE_GALAPAGOS_LIB
 extern "C"
@@ -45,7 +47,7 @@ GalKernelWidget::GalKernelWidget (QWidget* parent) :
 #ifdef USE_GALAPAGOS_LIB
   // here populate list of available commands:
   fKernelEditor->CommandPrototype_comboBox->clear();
-  std::cout<<"GalKernelWidget ctor sees galapagos commands in list: "<<::galapagos_numcommands << std::endl;
+  //std::cout<<"GalKernelWidget ctor sees galapagos commands in list: "<<::galapagos_numcommands << std::endl;
 
    for(int c=0; c<galapagos_numcommands; ++c)
    {
@@ -74,6 +76,7 @@ void GalKernelWidget::ConnectSlots ()
   QObject::connect (fKernelEditor->CommandPrototypeInsertButton, SIGNAL(clicked()), this, SLOT(CommandPrototypeInsert_clicked()));
   QObject::connect (fKernelEditor->CommandPrototype_comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(CommandPrototypeIndexChanged(int)));
   QObject::connect (fKernelEditor->PatternLimitsPickButton, SIGNAL(clicked()), this, SLOT(PatternLimitsPick_clicked()));
+  QObject::connect (fKernelEditor->PatternImportButton, SIGNAL(clicked()), this, SLOT(PatternImport_clicked()));
   QObject::connect (fKernelEditor->PatternLow_spinBox, SIGNAL(valueChanged(int)), this, SLOT(PatternLow_spinBox_changed(int)));
   QObject::connect (fKernelEditor->PatternHi_spinBox, SIGNAL(valueChanged(int)), this, SLOT(PatternHi_spinBox_changed(int)));
   QObject::connect (fKernelEditor->Pattern_comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(PatternIndexChanged(int)));
@@ -199,14 +202,30 @@ void GalKernelWidget::ApplyEditing ()
 
   theSetup_GET_FOR_CLASS(GalapagosSetup);
   int ix = Object_comboBox->currentIndex ();
-  GalapagosKernel* seq = theSetup->GetKnownKernel (ix);
-  if (seq == 0)
+  GalapagosKernel* ker = theSetup->GetKnownKernel (ix);
+  if (ker == 0)
   {
-    fParent->ShowStatusMessage ("NEVER COME HERE: kernel id not known in setup!");
+    fParent->ShowStatusMessage ("GalKernelWidget::ApplyEditing () NEVER COME HERE: kernel is not known in setup!");
     return;
   }
-  seq->Clear ();
-  seq->SetId (ObjectIDSpinBox->value ());
+  ker->Clear ();
+  ker->SetId (ObjectIDSpinBox->value ());
+
+
+  // here find out pattern id_
+
+
+  int pid=0;
+  QString pname=fKernelEditor->Pattern_comboBox->currentText();
+  GalapagosPattern* pat= theSetup->GetPattern (pname.toLatin1().constData());
+  if(pat ==0)
+  {
+    printm("GalKernelWidget::ApplyEditing () NEVER COME HERE: pattern %s is not known in setup!",pname.toLatin1().constData());
+    return;
+  }
+
+  ker->SetPatternID(pat->Id());
+
   const char* line = 0;
   int l = 0;
   QString theCode = fKernelEditor->KernelTextEdit->toPlainText ();
@@ -217,10 +236,10 @@ void GalKernelWidget::ApplyEditing ()
   {
     QString cmd = *it;
     //cmd.append(";");
-    seq->AddCommand (cmd.toLatin1 ().constData ());
+    ker->AddCommand (cmd.toLatin1 ().constData ());
     //std::cout<< "   Added command "<<cmd.toLatin1().constData() << std::endl;
   }
-  seq->Compile ();    // TODO: here we may check if kernel is valid and give feedback output
+  ker->Compile ();    // TODO: here we may check if kernel is valid and give feedback output
 }
 
 bool GalKernelWidget::LoadObject (const QString& fileName)
@@ -248,7 +267,6 @@ bool GalKernelWidget::LoadObject (const QString& fileName)
     QString line (cmd);
     if (!hasKernelId)
     {
-      QString line (cmd);
       if (!line.contains ("KernelID"))
         continue;
       //std::cout<< "kernel id keyword was found!"<< std::endl;
@@ -260,6 +278,17 @@ bool GalKernelWidget::LoadObject (const QString& fileName)
       //std::cout<< "Found kernel id "<<sid << std::endl;
       seq.SetId (sid);
       hasKernelId = true;
+    }
+    if (line.contains ("PatternID"))
+    {
+      bool ok = false;
+      QString value = line.split ("=").last ();
+      int pid = value.toInt (&ok);
+            if (ok)
+            {
+              //std::cout<< "Found pattern id "<<pid << std::endl;
+              seq.SetPatternID(pid);
+            }
     }
     if (line.contains ("#"))
       continue;
@@ -300,9 +329,12 @@ bool GalKernelWidget::SaveObject (const QString& fileName, BasicObject* ob)
   QString header = QString ("#Kernel %1 saved on %2").arg (seq->Name ()).arg (
       QDateTime::currentDateTime ().toString ("dd.MM.yyyy - hh:mm:ss."));
   QString idtag = QString ("#KernelID = %1").arg (seq->Id ());
+  QString patterntag=  QString ("#PatternID = %1").arg (seq->GetPatternID());
   sfile.write (header.toLatin1 ().constData ());
   sfile.write ("\n");
   sfile.write (idtag.toLatin1 ().constData ());
+  sfile.write ("\n");
+  sfile.write (patterntag.toLatin1 ().constData ());
   sfile.write ("\n");
   const char* line = 0;
   int l = 0;
@@ -322,7 +354,7 @@ void GalKernelWidget::EvaluateView ()
 
 int GalKernelWidget::RefreshObjectIndex (int ix)
 {
-  std::cout << "GalKernelWidget::RefreshObjectIndex "<< ix<< std::endl;
+  //std::cout << "GalKernelWidget::RefreshObjectIndex "<< ix<< std::endl;
   fKernelEditor->KernelTextEdit->clear ();
 
   // now take out commands from known kernels:
@@ -427,7 +459,7 @@ void GalKernelWidget::WriteSettings (QSettings* settings)
 
 void GalKernelWidget::CommandPrototypeInsert_clicked()
 {
-  std::cout << "GalKernelWidget::CommandPrototypeInsert_clicked()" << std::endl;
+  //std::cout << "GalKernelWidget::CommandPrototypeInsert_clicked()" << std::endl;
 #ifdef USE_GALAPAGOS_LIB
   int ix=fKernelEditor->CommandPrototype_comboBox->currentIndex();
   if(ix>=::galapagos_numcommands)
@@ -455,7 +487,7 @@ void GalKernelWidget::CommandPrototypeInsert_clicked()
 
 void GalKernelWidget::CommandPrototypeIndexChanged(int ix)
 {
-  std::cout << "GalKernelWidget::CommandPrototypeIndexChanged  ix="<<ix << std::endl;
+  //std::cout << "GalKernelWidget::CommandPrototypeIndexChanged  ix="<<ix << std::endl;
 
 #ifdef USE_GALAPAGOS_LIB
   if(ix>=::galapagos_numcommands)
@@ -476,22 +508,62 @@ void GalKernelWidget::CommandPrototypeIndexChanged(int ix)
 
 void GalKernelWidget::PatternLimitsPick_clicked()
 {
-  std::cout << "GalKernelWidget::PatternLimitsPick_clicked()" << std::endl;
+ // std::cout << "GalKernelWidget::PatternLimitsPick_clicked()" << std::endl;
+  theSetup_GET_FOR_CLASS(GalapagosSetup);
+  int pid=fKernelEditor->Pattern_comboBox->currentIndex();
+
+  GalapagosPattern* pat= theSetup->GetKnownPattern(pid);
+  if(pat==0)
+  {
+    printm("NEVER COME HERE: PatternLimitsPick_clicked cannot find pattern for index %d!!!",pid);
+    return;
+  }
+
+  // provide tempory bytearray:
+  QByteArray theByteArray;
+  size_t numbytes=pat->NumBytes();
+  for(int c=0; c<numbytes; ++c)
+    theByteArray.append(pat->GetByte(c));
+  fPatternDisplay->PlotPattern(theByteArray, pat->Name());
+
+
+
+}
+
+
+void GalKernelWidget::PatternImport_clicked()
+{
+  //std::cout << "GalKernelWidget::PatternImport_clicked()" << std::endl;
+  QString pname= fPatternDisplay->GetPatternName();
+
+  int ix=fKernelEditor->Pattern_comboBox->findText(pname);
+  if(ix<0)
+  {
+    printm("Error in pattern import: pattern %s is not found in list of known patterns!", pname.toLatin1 ().constData ());
+    return;
+  }
+  fKernelEditor->Pattern_comboBox->setCurrentIndex(ix);
+
+  int lo=fPatternDisplay->GetLowLimit();
+  int hi=fPatternDisplay->GetHighLimit();
+  fKernelEditor->PatternLow_spinBox->setValue(lo);
+  fKernelEditor->PatternHi_spinBox->setValue(hi);
+
 }
 
 void GalKernelWidget::PatternLow_spinBox_changed(int val)
 {
-  std::cout << "GalKernelWidget::PatternLow_spinBox_changed  val="<<val << std::endl;
+  //std::cout << "GalKernelWidget::PatternLow_spinBox_changed  val="<<val << std::endl;
 }
 
 void GalKernelWidget::PatternHi_spinBox_changed(int val)
 {
-  std::cout << "GalKernelWidget::PatternHi_spinBox_changed  val="<<val << std::endl;
+  //std::cout << "GalKernelWidget::PatternHi_spinBox_changed  val="<<val << std::endl;
 }
 
 void GalKernelWidget::PatternIndexChanged(int ix)
 {
-  std::cout << "GalKernelWidget::PatternIndexChanged  ix="<<ix << std::endl;
+  //std::cout << "GalKernelWidget::PatternIndexChanged  ix="<<ix << std::endl;
 }
 
 

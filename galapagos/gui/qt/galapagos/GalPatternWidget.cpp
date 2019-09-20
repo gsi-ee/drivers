@@ -5,6 +5,8 @@
 // TODO: need below include because of theSetup macros. include partitioning!
 #include "BasicGui.h"
 
+#include "GalPatternDisplay.h"
+
 #include <QString>
 #include <QMessageBox>
 #include <QFileDialog>
@@ -47,6 +49,8 @@ void GalPatternWidget::ConnectSlots()
   BasicObjectEditorWidget::ConnectSlots();
   // anything more here?
 
+
+  QObject::connect (fPatternEditor->PatternPreviewButton, SIGNAL(clicked()), this, SLOT(PatternPreview_clicked()));
 }
 
 
@@ -389,5 +393,24 @@ void GalPatternWidget::WriteSettings (QSettings* settings)
 
 }
 
+void GalPatternWidget::PatternPreview_clicked()
+{
+  //std::cout << "GalPatternWidget::PatternPreview_clicked()" << std::endl;
+   theSetup_GET_FOR_CLASS(GalapagosSetup);
+   int pid=Object_comboBox->currentIndex();
+   GalapagosPattern* pat= theSetup->GetKnownPattern(pid);
+   if(pat==0)
+   {
+     printm("NEVER COME HERE: GalPatternWidget::PatternPreview_clicked cannot find pattern for index %d!!!",pid);
+     return;
+   }
+
+   // provide tempory bytearray:
+   QByteArray theByteArray;
+   size_t numbytes=pat->NumBytes();
+   for(int c=0; c<numbytes; ++c)
+     theByteArray.append(pat->GetByte(c));
+   fPatternDisplay->PlotPattern(theByteArray, pat->Name());
+}
 
 } // gapg
