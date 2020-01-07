@@ -143,11 +143,15 @@ static galapagos_kernel galapagos_kernelbuffers[]={
 };
 
 
+//galapagos_label label[GALAPAGOS_MAXLABELS]; /** <list of source labels with corresponding positions in sketch buffer */
+// size_t size; /**< entries in label list actually used*/
 
+static galapagos_label_list galapagos_current_labels ={};
 
-
-
-
+//=       {
+//           .label[0]       = {0,"DUMMY"},
+//           .size      = 1
+//       };
 
 
 
@@ -243,7 +247,7 @@ galapagos_cmd* galapagos_compile_command(const char* command, int* arguments, ch
     case GAPG_LOOP:
     {
         cmd->argument =     ((uint64_t)(arguments[0]) & 0xFF) << 56; // level
-        cmd->argument |=    ((uint64_t)(arguments[1]) & 0x1FF) << 47; // target
+        cmd->argument |=    ((uint64_t)(arguments[1]) & 0x1FF) << 47; // target  have used list of labels to calculate real offset here
         cmd->argument |=    ((uint64_t)(arguments[2]) & 0xFFFFFFFF); // number of iterations
     }
     break;
@@ -251,7 +255,7 @@ galapagos_cmd* galapagos_compile_command(const char* command, int* arguments, ch
     case GAPG_JUMP:
     {
         cmd->argument =     ((uint64_t)(arguments[0]) & 0xFF) << 56; // level
-        cmd->argument |=    ((uint64_t)(arguments[1]) & 0x1FF) << 47; // target
+        cmd->argument |=    ((uint64_t)(arguments[1]) & 0x1FF) << 47; // target have used list of labels to calculate real offset here
     }
     break;
 
@@ -408,7 +412,22 @@ int galapagos_check_command(const char* command, int* arguments, char numargs)
   return -1;
 }
 
-
+int galapagos_check_label(const char* label)
+{
+  if(label==0 ) return -1;
+  int i=0;
+  for (i=0; i<galapagos_current_labels.size; ++i)
+  {
+    //printf ("galapagos_check_label loop %d of %d \n", i, galapagos_current_labels.size);
+    if(strcmp(label ,galapagos_current_labels.label[i].labelname)==0)
+    {
+      printm ("galapagos_check_label finds position 0x%x for label %s", galapagos_current_labels.label[i].jump_position, label);
+      //printf ("galapagos_check_label finds position 0x%x for label %s\n", galapagos_current_labels.label[i].jump_position, label);
+      return galapagos_current_labels.label[i].jump_position;
+    }
+  }
+  return -1;
+}
 
 /** compiles text buffer with sourcecode and puts result into the binary code buffer of core corenum.
  * returns 0 on success, or any other value in case of problems (TODO: error codes? TESTING!!!)*/
@@ -422,38 +441,99 @@ int galapagos_compile_core(int corenum, const char* sourcecode, int length)
 
 int galapagos_compile_kernel(const char* sourcecode, int length, galapagos_kernel* target)
 {
-  int rev=0, t=0, numargs=0, numinstructions=0;;
+  int rev=0, t=0, numargs=0, numinstructions=0, lix=0;
+  size_t sizeof_onecommand=sizeof(char) + sizeof(uint64_t);
+  char labelbuffer[GALAPAGOS_MAXSOURCELENGTH];
   char sourcebuffer[GALAPAGOS_MAXSOURCELENGTH];
   char commandbuffer[GALAPAGOS_MAXCOMMANDNAME];
   char* commandline=0;;
   char* argumentline=0;
-  char *saveptr1, *saveptr2;
+  char* sourceline=0;;
+  char* labelline=0;
+  char *saveptr1, *saveptr2, *saveptr3, *saveptr4;
 
   int arguments[10];
+
   if(length<=0) return -2;
   if(length>GALAPAGOS_MAXSOURCELENGTH) length=GALAPAGOS_MAXSOURCELENGTH;
-  snprintf(sourcebuffer,length,"%s",sourcecode);
-  printm ("galapagos_compile_kernel: sourcecode:%s, length:%d",sourcebuffer, length);
-
+  snprintf(labelbuffer,length,"%s",sourcecode);
+  snprintf(sourcebuffer,length,"%s",labelbuffer);
+  // JAM 1-2020: somehow the second buffer is not copied correctly from sourcecode when this is done a second time. Compiler optimization business?
+  // with the above way, it works.
+//  printm ("galapagos_compile_kernel: labelcode:\n %s,\n length:%d",labelbuffer, length);
+//  printm ("galapagos_compile_kernel: sourcebuffer:\n %s,\n length:%d",sourcebuffer, length);
   target->sketch_size=0;
   target->is_compiled=0;
-  // here we scan all lines of sourcecode:
+
+  // first pass scans for label names and generates offset table
+  galapagos_current_labels.size=0; // clear label registry from previous compilation
+  sourceline = strtok_r (labelbuffer,"\n", &saveptr3);
+   while(sourceline!=0)
+   {
+     labelline = strtok_r (sourceline," ",&saveptr4); // for this we need strtok_r !!!!
+     if(labelline==0) break;
+
+     // check if we have a label (by the trailing : character). for the moment, the : may be everywhere in the label name...
+     if(strstr(labelline,":")==0)
+     {
+         numinstructions++; // just count real instructions
+     }
+     else
+     {
+       if(lix>=GALAPAGOS_MAXLABELS)
+       {
+         printm ("galapagos_compile_kernel: ERROR: too many labels in code (%d,  maximum is %d)", lix, GALAPAGOS_MAXLABELS);
+         return -5;
+       }
+       // here check for duplicate label names:
+       if(galapagos_check_label(labelline)!=-1)
+         {
+           printm ("galapagos_compile_kernel: ERROR: duplicate labels in code: %s", labelline);
+           return -6;
+         }
+       galapagos_current_labels.label[lix].jump_position= numinstructions * sizeof_onecommand;
+       snprintf( galapagos_current_labels.label[lix].labelname,GALAPAGOS_MAXCOMMANDNAME, "%s", labelline);
+       galapagos_current_labels.size++;
+       printm ("galapagos_compile_kernel: found label %s at position %d", galapagos_current_labels.label[lix].labelname, galapagos_current_labels.label[lix].jump_position);
+       lix++;
+     }
+     sourceline = strtok_r (NULL,"\n",&saveptr3);
+   } //  while(commandline!=0) first pass
+
+// NOTE JAM 2019 - with this first pass, the second will not work correctly -TODO
+
+
+  // second pass: here we scan all lines of sourcecode:
+  numinstructions=0;
   commandline = strtok_r (sourcebuffer,"\n", &saveptr1);
   while(commandline!=0)
   {
     argumentline = strtok_r (commandline," ",&saveptr2); // for this we need strtok_r !!!!
     if(argumentline==0) break;
+    //printm ("galapagos_compile_kernel: found argumentline %s ",argumentline);
+    if(strstr(argumentline,":")!=0){ 
+        commandline = strtok_r (NULL,"\n",&saveptr1);
+    	continue; // skip any label at the beginning
+    	}
     snprintf(commandbuffer,GALAPAGOS_MAXCOMMANDNAME,"%s",argumentline); // first argument is always command name
+    argumentline = strtok_r (NULL," ", &saveptr2);
     numargs=0;
     while(argumentline!=0)
     {
-      arguments[numargs++]=atoi(argumentline);
+      //printm ("galapagos_compile_kernel: found argument %s of command %s",argumentline, commandbuffer);
+      // first check if our argument is a registered label, then get label position as numeric value:
+      rev=galapagos_check_label(argumentline);
+      arguments[numargs++]= (rev==-1 ? atoi(argumentline) : rev);
       argumentline = strtok_r (NULL," ", &saveptr2);
     }
-  numargs--; // maybe extra part after last argument?
+  //numargs--; // maybe extra part after last argument?
   numinstructions++;
-  printm ("galapagos_compile_kernel: found command %s with %d arguments as instruction %d",commandbuffer, numargs, numinstructions);
-
+  printm ("galapagos_compile_kernel: found instruction %d - command %s with %d arguments:\t", numinstructions, commandbuffer, numargs);
+  for(t=0; t<numargs;++t)
+  {
+    printm("%d\t",arguments[t]);
+  }
+  printm("\n");
   // now do actual compilation:
   galapagos_cmd* com=galapagos_compile_command(commandbuffer, arguments, numargs);
   if(com==0)

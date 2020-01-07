@@ -42,6 +42,7 @@ void printm (char *, ...); /* use mbs logger, or for gosipcmd this will be reimp
 #define GALAPAGOS_MAXCOMMANDNAME 128
 #define GALAPAGOS_NUMCOMMMANDS 32
 #define GALAPAGOS_MAXSOURCELENGTH 65536
+#define GALAPAGOS_MAXLABELS 64
 
 #define GALAPAGOS_NUMKERNELS 68
 #define GALAPAGOS_KERNELINSTRUCTIONSIZE 0x9000
@@ -104,6 +105,24 @@ typedef enum
 galapagos_core_t;
 
 
+
+/** a label with absolute position in the kernel colde*/
+typedef struct
+{
+  size_t jump_position; /**< position of label in kernel instruction code from the beginning*/
+  char labelname[GALAPAGOS_MAXCOMMANDNAME]; /**< explicit label name in source code*/
+} galapagos_label;
+
+
+/** This list will keep source labels and jump offsets during compilation*/
+typedef struct
+{
+  galapagos_label label[GALAPAGOS_MAXLABELS]; /** <list of source labels with corresponding positions in sketch buffer */
+  size_t size; /**< entries in label list actually used*/
+ } galapagos_label_list;
+
+
+
 /** the compiled kernel code for a single core*/
 typedef struct
 {
@@ -117,6 +136,8 @@ typedef struct
 } galapagos_kernel;
 
 
+
+
 /** The list of all registered commands*/
 extern galapagos_cmd galapagos_commandlist[GALAPAGOS_NUMCOMMMANDS];
 
@@ -127,6 +148,8 @@ extern int galapagos_numcommands;
 static galapagos_kernel galapagos_kernelbuffers[GALAPAGOS_NUMKERNELS];
 
 
+
+static galapagos_label_list galapagos_current_labels;
 
 
 /** open file handle of pex device number devnum. Return value is handle*/
@@ -151,6 +174,10 @@ int galapagos_register_rd (int handle, unsigned char s_bar, long l_address, long
 /** check syntax/validty of source command with variable list of arguments.
  * Will return index of command in commandlist if expression is valid, or a negative value otherwise*/
 int galapagos_check_command(const char* command, int* arguments, char numargs);
+
+/** check if label of name is known to the table of current compilation.
+ * returns the corresponding label position in sketch buffer, otherwise -1 if label not found*/
+int galapagos_check_label(const char* label);
 
 /** compile source command with variable list of arguments.
  * Will return reference to command object with compiled code*/
