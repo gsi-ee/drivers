@@ -8,7 +8,7 @@ extern "C"
 }
 #endif
 
-#include <QString>
+#include <iostream>
 
 namespace gapg
 {
@@ -261,7 +261,7 @@ namespace gapg
        GalapagosPackage& GalapagosPackage::operator=(const GalapagosPackage& rhs)
          {
            if (this != &rhs) {
-             //std::cout<< "GalapagosPackage operator= "<< std::endl;
+             ///std::cout<< "GalapagosPackage operator= "<< std::endl;
              BasicObject::operator=(rhs);
              fCoreKernels=rhs.fCoreKernels;
              fCoreKernelIDs=rhs.fCoreKernelIDs;
@@ -356,7 +356,7 @@ namespace gapg
 
        void GalapagosPackage::SetCoreEnabled (uint8_t ch, bool on)
        {
-         //std::cout<< "GalapagosPackage::SetCoreEnabled ch="<< (int) ch<<", on="<<on << std::endl;
+         //std::cout<< "GalapagosPackage::SetCoreEnabled ch="<< (int) ch<<", on="<<on << " for package "<<Name() <<std::endl;
          if (ch > GAPG_CORES)
            return;
          uint64_t reg = GetCoreControl ();
@@ -370,11 +370,13 @@ namespace gapg
 
        bool GalapagosPackage::IsCoreEnabled (uint8_t ch)
        {
+
          if (ch > GAPG_CORES)
            return true;
          uint64_t reg = GetCoreControl ();
          uint64_t flags = (1 << ch);
          bool rev = ((reg & flags) == flags);
+         //std::cout<< "GalapagosPackage::IsCoreEnabled ch="<< (int) ch<<", rev="<<rev << " for package "<<Name() <<std::endl;
          return rev;
        }
 

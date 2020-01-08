@@ -5,6 +5,11 @@
 
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QInputDialog>
+#include <QFile>
+#include <QSettings>
+#include <QDateTime>
+#include <QString>
 
 namespace gapg
 {
@@ -63,22 +68,6 @@ GalPackageWidget::GalPackageWidget (QWidget* parent) :
   fCoreActiveLED[14] = fPackageEditor->Core_active_LED_14;
   fCoreActiveLED[15] = fPackageEditor->Core_active_LED_15;
 
-//  fCoreSimulatedRadio[0] = fPackageEditor->Core_simulate_radio_00;
-//  fCoreSimulatedRadio[1] = fPackageEditor->Core_simulate_radio_01;
-//  fCoreSimulatedRadio[2] = fPackageEditor->Core_simulate_radio_02;
-//  fCoreSimulatedRadio[3] = fPackageEditor->Core_simulate_radio_03;
-//  fCoreSimulatedRadio[4] = fPackageEditor->Core_simulate_radio_04;
-//  fCoreSimulatedRadio[5] = fPackageEditor->Core_simulate_radio_05;
-//  fCoreSimulatedRadio[6] = fPackageEditor->Core_simulate_radio_06;
-//  fCoreSimulatedRadio[7] = fPackageEditor->Core_simulate_radio_07;
-//  fCoreSimulatedRadio[8] = fPackageEditor->Core_simulate_radio_08;
-//  fCoreSimulatedRadio[9] = fPackageEditor->Core_simulate_radio_09;
-//  fCoreSimulatedRadio[10] = fPackageEditor->Core_simulate_radio_10;
-//  fCoreSimulatedRadio[11] = fPackageEditor->Core_simulate_radio_11;
-//  fCoreSimulatedRadio[12] = fPackageEditor->Core_simulate_radio_12;
-//  fCoreSimulatedRadio[13] = fPackageEditor->Core_simulate_radio_13;
-//  fCoreSimulatedRadio[14] = fPackageEditor->Core_simulate_radio_14;
-//  fCoreSimulatedRadio[15] = fPackageEditor->Core_simulate_radio_15;
 
   fCoreKernelCombo[0] = fPackageEditor->Core_sequence_comboBox_00;
   fCoreKernelCombo[1] = fPackageEditor->Core_sequence_comboBox_01;
@@ -97,23 +86,9 @@ GalPackageWidget::GalPackageWidget (QWidget* parent) :
   fCoreKernelCombo[14] = fPackageEditor->Core_sequence_comboBox_14;
   fCoreKernelCombo[15] = fPackageEditor->Core_sequence_comboBox_15;
 
-//  fCorePatternCombo[0] = fPackageEditor->Core_pattern_comboBox_00;
-//  fCorePatternCombo[1] = fPackageEditor->Core_pattern_comboBox_01;
-//  fCorePatternCombo[2] = fPackageEditor->Core_pattern_comboBox_02;
-//  fCorePatternCombo[3] = fPackageEditor->Core_pattern_comboBox_03;
-//  fCorePatternCombo[4] = fPackageEditor->Core_pattern_comboBox_04;
-//  fCorePatternCombo[5] = fPackageEditor->Core_pattern_comboBox_05;
-//  fCorePatternCombo[6] = fPackageEditor->Core_pattern_comboBox_06;
-//  fCorePatternCombo[7] = fPackageEditor->Core_pattern_comboBox_07;
-//  fCorePatternCombo[8] = fPackageEditor->Core_pattern_comboBox_08;
-//  fCorePatternCombo[9] = fPackageEditor->Core_pattern_comboBox_09;
-//  fCorePatternCombo[10] = fPackageEditor->Core_pattern_comboBox_10;
-//  fCorePatternCombo[11] = fPackageEditor->Core_pattern_comboBox_11;
-//  fCorePatternCombo[12] = fPackageEditor->Core_pattern_comboBox_12;
-//  fCorePatternCombo[13] = fPackageEditor->Core_pattern_comboBox_13;
-//  fCorePatternCombo[14] = fPackageEditor->Core_pattern_comboBox_14;
-//  fCorePatternCombo[15] = fPackageEditor->Core_pattern_comboBox_15;
 
+
+  CancelEditing();
 }
 
 GalPackageWidget::~GalPackageWidget ()
@@ -124,7 +99,9 @@ void GalPackageWidget::ConnectSlots ()
 {
   BasicObjectEditorWidget::ConnectSlots();
 
-  QObject::connect (fPackageEditor->GeneratorActiveButton, SIGNAL(clicked(bool)), this, SLOT(GeneratorActive_clicked(bool)));
+  QObject::connect (fPackageEditor->GeneratorActiveButton, SIGNAL(toggled(bool)), this, SLOT(GeneratorActive_clicked(bool)));
+  QObject::connect (fPackageEditor->CoresSimulateButton, SIGNAL(clicked()), this, SLOT(CoresSimulate_clicked()));
+  QObject::connect (fPackageEditor->GeneratorNewStartButton, SIGNAL(clicked()), this, SLOT(GeneratorNewStart_clicked()));
 
   QObject::connect (fPackageEditor->Core_enabled_radio_ALL, SIGNAL(toggled(bool)), this, SLOT(CoreEnabled_toggled_all(bool)));
   GALAGUI_CONNECT_TOGGLED_16(fPackageEditor->Core_enabled_radio_, CoreEnabled_toggled_);
@@ -146,23 +123,21 @@ QObject::connect (fPackageEditor->CoregroupBox_1, SIGNAL(toggled(bool)), this, S
 
 bool GalPackageWidget::NewObjectRequest ()
 {
-  std::cout << "GalPackageWidget:: NewObjectRequest "<< std::endl;
+  //std::cout << "GalPackageWidget:: NewObjectRequest "<< std::endl;
   theSetup_GET_FOR_CLASS_RETURN_BOOL(GalapagosSetup);
   bool ok = false;
 //  // automatic assignment of new id here: begin with id from index
-//  size_t sid = theSetup->NumKnownKernels () + 1;
-//  while (theSetup->GetKernel (sid) != 0)
-//    sid++;
+  size_t sid = theSetup->NumKnownPackages () + 1;
+  while (theSetup->GetPackage (sid) != 0)
+    sid++;
 //
-//  QString defaultname = QString ("Kernel_%1").arg (sid);
-//  QString seqname = QInputDialog::getText (this, tr ("Create a new kernel"), tr ("Kernel name:"), QLineEdit::Normal,
-//      defaultname, &ok);
-//  if (!ok || seqname.isEmpty ())
-//    return false;
-//  GalapagosKernel seq (sid, seqname.toLatin1 ().constData ());
-//  seq.AddCommand ("NOP");
-//  seq.Compile ();
-//  theSetup->AddKernel (seq);
+  QString defaultname = QString ("Package_%1").arg (sid);
+  QString pakname = QInputDialog::getText (this, tr ("Create a new package"), tr ("Package name:"), QLineEdit::Normal,
+      defaultname, &ok);
+  if (!ok || pakname.isEmpty ())
+    return false;
+  GalapagosPackage pak (sid, pakname.toLatin1 ().constData ());
+  theSetup->AddPackage (pak);
   return true;
 }
 
@@ -171,20 +146,20 @@ void GalPackageWidget::StartEditing ()
   //std::cout << "GalPackageWidget:: KernelEdit_clicked"<< std::endl;
   fPackageEditor->Cores_tabWidget->setEnabled (true);
   fPackageEditor->Cores_all_frame->setEnabled (true);
+  fPackageEditor->CoresControlframe->setEnabled (false);
 }
 
 void GalPackageWidget::CancelEditing ()
 {
-  std::cout << "GalPackageWidget:: CancelEditing"<< std::endl;
+  //std::cout << "GalPackageWidget:: CancelEditing"<< std::endl;
   fPackageEditor->Cores_tabWidget->setEnabled (false);
   fPackageEditor->Cores_all_frame->setEnabled (false);
-
-  //fKernelEditor->KernelTextEdit->setReadOnly (true);
+  fPackageEditor->CoresControlframe->setEnabled (true);
 }
 
 bool GalPackageWidget::DeleteObjectRequest ()
 {
-  std::cout << "GalPackageWidget:: DeleteObjectRequest"<< std::endl;
+  //std::cout << "GalPackageWidget:: DeleteObjectRequest"<< std::endl;
   if (QMessageBox::question (this, fImpName, "Really Delete current package from list?",
       QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) != QMessageBox::Yes)
   {
@@ -259,10 +234,12 @@ bool GalPackageWidget::SaveObjectRequest ()
 
 void GalPackageWidget::ApplyEditing ()
 {
-  std::cout << "GalPackageWidget::ApplyEditing()"<< std::endl;
+ // std::cout << "GalPackageWidget::ApplyEditing()"<< std::endl;
 
   fPackageEditor->Cores_tabWidget->setEnabled (false);
   fPackageEditor->Cores_all_frame->setEnabled (false);
+  fPackageEditor->CoresControlframe->setEnabled (true);
+
   theSetup_GET_FOR_CLASS(GalapagosSetup);
   int ix = Object_comboBox->currentIndex ();
   GalapagosPackage* pak = theSetup->GetKnownPackage (ix);
@@ -307,55 +284,85 @@ bool GalPackageWidget::LoadObject (const QString& fileName)
   pakname.chop (4);
   //std::cout << "Loading kernel from file "<< seqname.toLatin1().constData()<< std::endl;
 
-// TODO:specify format to describe the package setup! maybe ASCII using the names?
+
+  GalapagosPackage pak (0, pakname.toLatin1 ().constData ());    // package id will be taken from file
+  QByteArray content = sfile.readAll ();
+  QList<QByteArray> inlines = content.split (QChar::LineFeed);
+  QList<QByteArray>::const_iterator lit;
+  bool hasId = false;
+  for (lit = inlines.constBegin (); lit != inlines.constEnd (); ++lit)
+  {
+    QByteArray oneline = *lit;
+    //std::cout<< "   scanning line "<<oneline.data() << std::endl;
+    QString line (oneline);
+    if (!hasId)
+    {
+      QString line (oneline);
+      if (!line.contains ("PackageID"))
+        continue;
+      //std::cout<< "package id keyword was found!"<< std::endl;
+      bool ok = false;
+      QString value = line.split ("=").last ();
+      int sid = value.toInt (&ok);
+      if (!ok)
+        continue;
+      //std::cout<< "Found package id "<<sid << std::endl;
+      pak.SetId (sid);
+      hasId = true;
+    }
+    if (line.contains ("#"))
+      continue;
+
+    // here parse the kernels of the package line by line:
+    QList<QByteArray> params = oneline.split (QChar::Space);
+    if(params.size()<4) break;
+    QByteArray score=params[0];
+    QString core (score);
+    int corenum=core.toInt();
+    QByteArray sname=params[1];
+    QString name(sname);
+    QByteArray skid=params[2];
+    QString kid(skid);
+    int idnum=kid.toInt();
+    QByteArray senab=params[3];
+    QString enab(senab);
+    bool enabled=enab.toInt();
+
+    //std::cout<< "Found setup for core "<<corenum <<": kernel "<<name.toLatin1 ().constData ()<<" of id "<<idnum<<", enabled:"<<enabled << std::endl;
+    // here countercheck if kernel id matches the name in current setup:
+    GalapagosKernel* ker = theSetup->GetKernel(idnum);
+    if (ker == 0)
+    {
+      printm ("GalPackageWidget::LoadObject warning - core %d wants to be assigned to kernel of id %d that is not known!!", corenum,idnum);
+      continue;
+    }
+    if(QString(ker->Name()) != name)
+    {
+        printm ("GalPackageWidget::LoadObject warning - core %d has assigned kernel id %d of name %s that does not match to existing kernel name %s of that id!!!", corenum,idnum, name.toLatin1 ().constData (), ker->Name());
+        continue;
+    }
+
+    pak.SetKernelID(corenum,idnum);
+    pak.SetCoreEnabled(corenum,enabled);
+  }
 
 
-//  GalapagosKernel seq (0, seqname.toLatin1 ().constData ());    // kernel id will be taken from file
-//  QByteArray content = sfile.readAll ();
-//  QList<QByteArray> commands = content.split (QChar::LineFeed);
-//  QList<QByteArray>::const_iterator cit;
-//  bool hasKernelId = false;
-//  for (cit = commands.constBegin (); cit != commands.constEnd (); ++cit)
-//  {
-//    QByteArray cmd = *cit;
-//    //std::cout<< "   scanning line "<<cmd.data() << std::endl;
-//    QString line (cmd);
-//    if (!hasKernelId)
-//    {
-//      QString line (cmd);
-//      if (!line.contains ("KernelID"))
-//        continue;
-//      //std::cout<< "kernel id keyword was found!"<< std::endl;
-//      bool ok = false;
-//      QString value = line.split ("=").last ();
-//      int sid = value.toInt (&ok);
-//      if (!ok)
-//        continue;
-//      //std::cout<< "Found kernel id "<<sid << std::endl;
-//      seq.SetId (sid);
-//      hasKernelId = true;
-//    }
-//    if (line.contains ("#"))
-//      continue;
-//    //cmd.append(";");
-//    seq.AddCommand (cmd.data ());
-//    //std::cout<< "   Added command "<<cmd.data() << std::endl;
-//  }
-//  if (seq.Id () == 0)
-//  {
-//    printm ("LoadKernel %s error: could not read kernel ID!", seqname.toLatin1 ().constData ());
-//    return false;
-//  }
-//
-//  seq.Compile ();
-//  GalapagosKernel* oldseq = 0;
-//  if ((oldseq = theSetup->GetKernel (seq.Id ())) != 0)
-//  {
-//    printm ("LoadKernel %s error: kernel %s had already assigned specified unique id %d !",
-//        seqname.toLatin1 ().constData (), oldseq->Name (), seq.Id ());
-//    return false;
-//  }
-//  theSetup->AddKernel (seq);
+  if (pak.Id () == 0)
+  {
+    printm ("GalPackageWidget::LoadObject %s error: could not read package ID!", pakname.toLatin1 ().constData ());
+    return false;
+  }
+
+
+  GalapagosPackage* oldpak = 0;
+  if ((oldpak= theSetup->GetPackage (pak.Id ())) != 0)
+  {
+    printm ("GalPackageWidget::LoadObject %s warning: overwriting existing package %s with same unique id %d as the new package %s.",
+        pakname.toLatin1 ().constData (), oldpak->Name (), pak.Id (), pak.Name());
+    theSetup->RemovePackageById(pak.Id());
+  }
+  theSetup->AddPackage (pak);
+  printm ("Package %s of id %d has been loaded from file.", pakname.toLatin1 ().constData (), pak.Id () );
   return true;
 }
 
@@ -372,37 +379,41 @@ bool GalPackageWidget::SaveObject (const QString& fileName, BasicObject* ob)
     return false;
   }
 
-  // TODO:specify format to describe the package setup! maybe ASCII using the names?
-
-
-//  QString header = QString ("#Kernel %1 saved on %2").arg (seq->Name ()).arg (
-//      QDateTime::currentDateTime ().toString ("dd.MM.yyyy - hh:mm:ss."));
-//  QString idtag = QString ("#KernelID = %1").arg (seq->Id ());
-//  sfile.write (header.toLatin1 ().constData ());
-//  sfile.write ("\n");
-//  sfile.write (idtag.toLatin1 ().constData ());
-//  sfile.write ("\n");
-//  const char* line = 0;
-//  int l = 0;
-//  while ((line = seq->GetCommandLine (l++)) != 0)
-//  {
-//    //std::cout<<"KernelSave_clicked writes line:"<<line  << std::endl;
-//    sfile.write (line);
-//    sfile.write ("\n");
-//  }
+  theSetup_GET_FOR_CLASS_RETURN_BOOL(GalapagosSetup);
+  QString header = QString ("#Package %1 saved on %2").arg (pak->Name ()).arg (
+      QDateTime::currentDateTime ().toString ("dd.MM.yyyy - hh:mm:ss."));
+  QString idtag = QString ("#PackageID = %1").arg (pak->Id ());
+  sfile.write (header.toLatin1 ().constData ());
+  sfile.write ("\n");
+  sfile.write (idtag.toLatin1 ().constData ());
+  sfile.write ("\n");
+  for (uint8_t core = 0; core < 16; ++core)
+    {
+      bool enabled = pak->IsCoreEnabled (core);
+      uint32_t kid=pak->GetKernelID (core);
+      if (kid == 0)
+      {
+        printm ("GalPackageWidget::SaveObject Never come here - core %d has no kernel in setup !", core);
+        continue;
+      }
+      GalapagosKernel* ker = theSetup->GetKernel(kid);
+      if (ker == 0)
+      {
+        printm ("GalPackageWidget::SaveObject warning - core %d has assigned kernel of id %d that is not known!!", core,kid);
+        continue;
+      }
+      QString kline= QString("%1 %2 %3 %4").arg(core).arg (ker->Name ()).arg(kid).arg(enabled);
+      sfile.write (kline.toLatin1 ().constData ());
+      sfile.write ("\n");
+    }
+  printm ("Package %s of id %d has been saved to file %s", pak->Name(), pak->Id () ,fileName.toLatin1 ().constData ());
   return true;
 }
 
-//void GalPackageWidget::EvaluateView ()
-//{
-//
-//}
+
 
 int GalPackageWidget::RefreshObjectIndex (int ix)
 {
-//  fKernelEditor->KernelTextEdit->clear ();
-//
-//  // now take out commands from known kernels:
   theSetup_GET_FOR_CLASS_RETURN(GalapagosSetup);
   GalapagosPackage* pak = theSetup->GetKnownPackage (ix);
   if (pak == 0)
@@ -410,19 +421,23 @@ int GalPackageWidget::RefreshObjectIndex (int ix)
     printm ("GalPackageWidget::RefreshObjectIndex Warning: unknown package index %d in combobox, NEVER COME HERE!!", ix);
     return -1;
   }
-
-  // now refresh the combobox from configured kernel
+  //std::cout<< "GalPackageWidget::RefreshObjectIndex for "<< ix <<" with package "<< pak->Name() <<std::endl;
+  // now refresh the combobox, radiobutton and lamps from configured kernel
+  bool isrunning = theSetup->IsGeneratorActive ();
     for (uint8_t core = 0; core < 16; ++core)
     {
       bool enabled = pak->IsCoreEnabled (core);
       fCoreEnabledRadio[core]->setChecked (enabled);
 
-//      GalapagosKernel* ker = pak->GetKernel (core);
-//      if (ker == 0)
-//      {
-//        printm ("Never come here - core %d has no kernel in setup !", core);
-//        continue;
-//      }
+      QColor lampcolor;
+      if (enabled && isrunning)
+        lampcolor = QColor (Qt::green);
+      else if (enabled)
+        lampcolor = QColor (Qt::yellow);
+      else
+        lampcolor = QColor (Qt::red);
+
+      fCoreActiveLED[core]->setColor (lampcolor);
 
       uint32_t kid=pak->GetKernelID (core);
       if (kid == 0)
@@ -444,10 +459,7 @@ int GalPackageWidget::RefreshObjectIndex (int ix)
       else
         fCoreKernelCombo[core]->setCurrentIndex (cix);
     }
-
    theSetup->SetCurrentPackageIndex(ix);
-
-
   return pak->Id();
 }
 
@@ -455,35 +467,37 @@ int GalPackageWidget::RefreshObjectIndex (int ix)
 
 void GalPackageWidget::ReadSettings (QSettings* settings)
 {
-//  int numseqs = settings->value ("/Numpackages", 1).toInt ();
-//  for (int six = 3; six < numseqs; ++six)    // do not reload the default entries again
-//  {
-//    QString settingsname = QString ("/Packages/%1").arg (six);
-//    QString seqfilename = settings->value (settingsname).toString ();
-//    //std::cout<< " GalapagosGui::ReasdSettings() will load kernel file"<<seqfilename.toLatin1().data()<< std::endl;
-//    if (!LoadObject (seqfilename))
-//      printm ("Warning: Package %s from setup could not be loaded!", seqfilename.toLatin1 ().data ());
-//  }
-//  int oldix = 0;    // later take from settings
-//  Object_comboBox->setCurrentIndex (oldix);    // toggle refresh the editor?
-//  ObjectIndexChanged (oldix);
+
+    int numpaks = settings->value ("/Numpackages", 1).toInt ();
+    for (int six = 0; six < numpaks; ++six)    // 2 do not reload the default entries again
+    {
+      QString settingsname = QString ("/Packages/%1").arg (six);
+      QString pakfilename = settings->value (settingsname).toString ();
+      //std::cout<< " GalPackageWidget::ReadSettings() will load package file"<<pakfilename.toLatin1().data()<< std::endl;
+      if (!LoadObject (pakfilename))
+        printm ("Warning: Package %s from setup could not be loaded!", pakfilename.toLatin1 ().data ());
+    }
+    int oldix = 0;    // later take from settings
+    Object_comboBox->setCurrentIndex (oldix);    // toggle refresh the editor?
+    ObjectIndexChanged (oldix);
 }
 
 void GalPackageWidget::WriteSettings (QSettings* settings)
 {
   theSetup_GET_FOR_CLASS(GalapagosSetup);
-//  for (int six = 0; six < theSetup->NumKnownKernels (); ++six)
-//  {
-//    GalapagosKernel* seq = theSetup->GetKnownKernel (six);
-//    if (seq == 0)
-//      continue;
-//    QString settingsname = QString ("/Kernels/%1").arg (six);
-//    QString seqfilename = QString ("%1.gak").arg (seq->Name ());
-//    settings->setValue (settingsname, seqfilename);
-//    //std::cout<< " GalPackageWidget::WriteSettings() saves kernel file"<<seqfilename.toLatin1().data()<< std::endl;
-//    SaveObject (seqfilename, seq);
-//  }
-//  settings->setValue ("Numkernels", (int) theSetup->NumKnownKernels ());
+
+    for (int six = 0; six < theSetup->NumKnownPackages() ; ++six)
+    {
+      GalapagosPackage* pak = theSetup->GetKnownPackage (six);
+      if (pak == 0)
+        continue;
+      QString settingsname = QString ("/Packages/%1").arg (six);
+      QString pakfilename = QString ("%1.gac").arg (pak->Name ());
+      settings->setValue (settingsname, pakfilename);
+      //std::cout<< " GalPackageWidget::WriteSettings() saves package file "<<pakfilename.toLatin1().data()<< std::endl;
+      SaveObject (pakfilename, pak);
+    }
+    settings->setValue ("Numpackages", (int) theSetup->NumKnownPackages ());
 
 }
 
@@ -494,9 +508,25 @@ void GalPackageWidget::WriteSettings (QSettings* settings)
 void GalPackageWidget::GeneratorActive_clicked (bool checked)
 {
 //std::cout<< "GeneratorActive_clicked with checked="<< checked << std::endl;
+// when generator is active, we disable to change the current package:
+ObjectProtect_enabled(checked);
+
 GAPG_AUTOAPPLY(ApplyGeneratorActive (checked));
 
 }
+
+
+void GalPackageWidget::CoresSimulate_clicked ()
+{
+  std::cout<< "CoresSimulate_clicked"<< std::endl;
+}
+
+void GalPackageWidget::GeneratorNewStart_clicked()
+{
+  //std::cout<< "GeneratorNewStart_clicked" << std::endl;
+  fPackageEditor->GeneratorActiveButton->setChecked(true);
+}
+
 
 void GalPackageWidget::CoreEnabled_toggled_all (bool on)
 {
@@ -506,7 +536,9 @@ for (int chan = 0; chan < 16; ++chan)
 
 void GalPackageWidget::CoreEnabled_toggled (int core, bool on)
 {
+GAPG_LOCK_SLOT;
 GAPG_AUTOAPPLY(ApplyCoreEnabled (core, on));
+GAPG_UNLOCK_SLOT;
 }
 
 void GalPackageWidget::CoreEnabled_toggled_group0 (bool on)
@@ -562,24 +594,8 @@ void GalPackageWidget::RefreshView ()
   theSetup_GET_FOR_CLASS(GalapagosSetup);
   // first update some status display, if desired:
    bool isrunning = theSetup->IsGeneratorActive ();
-
    fPackageEditor->Core_active_LED_ALL->setColor (isrunning ? QColor (Qt::green) : QColor (Qt::red));
-
-   for (uint8_t core = 0; core < 16; ++core)
-   {
-     // change leds depending on enabled and running state
-     bool enabled = theSetup->IsCoreRunning (core);
-     //fCoreEnabledRadio[core]->setChecked (enabled);
-     QColor lampcolor;
-     if (enabled && isrunning)
-       lampcolor = QColor (Qt::green);
-     else if (enabled)
-       lampcolor = QColor (Qt::yellow);
-     else
-       lampcolor = QColor (Qt::red);
-
-     fCoreActiveLED[core]->setColor (lampcolor);
-   }
+   // note: colors of package lamps are done in RefreshObjectIndex()
 
   // then populate the editor selection with registered packages:
   int oldsid = Object_comboBox->currentIndex ();    // remember our active item
@@ -598,7 +614,6 @@ void GalPackageWidget::RefreshView ()
 
 
    fPackageEditor->GeneratorActiveButton->setChecked (theSetup->IsGeneratorActive ());
-  ;
 
 // setup combobox entries from known packages:
   fPackageEditor->Core_sequence_comboBox_ALL->clear ();
@@ -616,12 +631,8 @@ void GalPackageWidget::RefreshView ()
     fPackageEditor->Core_sequence_comboBox_ALL->addItem (ker->Name ());
   }
 
-
   // this will refresh the display of the currently edited package:
   RefreshObjectIndex (oldsid);
-
-
-
 }
 
 void GalPackageWidget::ApplyGeneratorActive (bool on)
@@ -653,9 +664,9 @@ void GalPackageWidget::ApplyCoreEnabled (int core, bool on)
     // TODO: possible to enable current core on the fly here?
 //  fParent->WriteGAPG ( GAPG_CHANNEL_ENABLE_LOW, theSetup->GetCoreStatus_0 ());
 //  fParent->WriteGAPG ( GAPG_CHANNEL_ENABLE_HI, theSetup->GetCoreControl_1 ());
-  GAPG_LOCK_SLOT
+//  GAPG_LOCK_SLOT
   RefreshView();
-  GAPG_UNLOCK_SLOT
+//  GAPG_UNLOCK_SLOT
 
 }
 

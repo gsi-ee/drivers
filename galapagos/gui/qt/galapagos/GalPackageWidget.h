@@ -126,7 +126,8 @@ public slots:
 
 
   virtual void GeneratorActive_clicked (bool checked);
-
+  virtual void CoresSimulate_clicked ();
+  virtual void GeneratorNewStart_clicked();
 };
 
 }    // namespace

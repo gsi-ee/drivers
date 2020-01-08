@@ -23,7 +23,7 @@ GalapagosGui::GalapagosGui (QWidget* parent) : gapg::BasicGui (parent)
   fSubWidgets.clear();
 
  fImplementationName="GALAPAGUI";
- fVersionString="Welcome to GalapaGUI!\n\t v0.40 of 20-Sep-2019 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to GalapaGUI!\n\t v0.50 of 8-Jan-2020 by JAM (j.adamczewski@gsi.de)";
  setWindowTitle(QString("%1").arg(fImplementationName));
 
  fSettings=new QSettings("GSI", fImplementationName);
@@ -38,10 +38,12 @@ GalapagosGui::GalapagosGui (QWidget* parent) : gapg::BasicGui (parent)
   fKernelWidget->SetPatternDisplay(fPatternDisplay);
   fPatternWidget->SetPatternDisplay(fPatternDisplay);
 
-  AddSubWindow(new GalPackageWidget(this));
-  AddSubWindow(fKernelWidget);
+  // JAM 2020: mind the order of subeditors, this is the order that ReadSettings will use
+  // -> patterns must exist before kernels, kernels must exist before packages!
   AddSubWindow(fPatternWidget);
+  AddSubWindow(fKernelWidget);
   AddSubWindow(fPatternDisplay);
+  AddSubWindow(new GalPackageWidget(this));
 
 
   ConnectSlots();

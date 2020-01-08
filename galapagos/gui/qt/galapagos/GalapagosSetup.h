@@ -35,17 +35,6 @@ protected:
 
     BasicObjectManager<GalapagosPackage> fPackageManager;
 
-//  /* list of known kernels  as visible in the kernel editor*/
-//  std::vector<GalapagosKernel> fKnownKernels;
-//
-//  /* list of known patterns  as visible in the pattern editor*/
-//  std::vector<GalapagosPattern> fKnownPatterns;
-//
-//  /* list of known patterns  as visible in the pattern editor*/
-//  std::vector<GalapagosPackage> fKnownPackages;
-//
-//  /* index of the currently active package in the list of known*/
-//  size_t fCurrentPackageIndex;
 
 public:
 
@@ -103,11 +92,7 @@ public:
 
       void SetCurrentPackageIndex(size_t ix);
 
-//    if(fCurrentPackageIndex>=fKnownPackages.size())
-//      fCurrentPackageIndex=fKnownPackages.size()-1;
-//    else
-//      fCurrentPackageIndex=ix;
-//  }
+
 
 
   GalapagosPackage& AddPackage (GalapagosPackage& pak);
@@ -131,7 +116,10 @@ public:
 
 
     /** remove package from list by index*/
-      void RemoveKnownPackage (size_t ix);
+    void RemoveKnownPackage (size_t ix);
+
+    /** remove package from list by unique  id. Returns false if not found*/
+    bool RemovePackageById(uint32_t id);
 
 //////////////////////////////////////////////////////
 
@@ -150,6 +138,10 @@ public:
 
   /** remove kernel from list by index. also clean up all references in channels*/
   void RemoveKnownKernel (size_t ix);
+
+
+  /** remove kernel from list by unique  id. Returns false if not found*/
+  bool RemoveKernelById(uint32_t id);
 
   /** Set kernel of unique id to core number chan */
   bool SetCoreKernel (int core, uint32_t id);
@@ -184,7 +176,8 @@ public:
   /** remove pattern from list by index*/
   void RemoveKnownPattern (size_t ix);
 
-
+  /** remove pattern from list by unique  id. Returns false if not found*/
+  bool RemovePatternById(uint32_t id);
 
 };
 

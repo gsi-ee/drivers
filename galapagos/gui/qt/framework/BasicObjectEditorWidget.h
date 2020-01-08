@@ -65,6 +65,7 @@ virtual void ObjectSave_clicked();
 virtual void ObjectApply_clicked();
 virtual void ObjectEditCancel_clicked();
 virtual void ObjectDelete_clicked();
+virtual void ObjectProtect_enabled(bool on);
 
 };
 

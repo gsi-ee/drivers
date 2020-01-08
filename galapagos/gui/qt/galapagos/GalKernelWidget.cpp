@@ -306,11 +306,12 @@ bool GalKernelWidget::LoadObject (const QString& fileName)
   GalapagosKernel* oldseq = 0;
   if ((oldseq = theSetup->GetKernel (seq.Id ())) != 0)
   {
-    printm ("LoadKernel %s error: kernel %s had already assigned specified unique id %d !",
+    printm ("LoadKernel %s warning: ovverwriting existing kernel %s with same specified unique id %d !",
         seqname.toLatin1 ().constData (), oldseq->Name (), seq.Id ());
-    return false;
+    theSetup->RemoveKernelById(seq.Id());
   }
   theSetup->AddKernel (seq);
+  printm ("Kernel %s of id %d has been loaded from file.", seqname.toLatin1 ().constData (), seq.Id () );
   return true;
 }
 
@@ -344,6 +345,8 @@ bool GalKernelWidget::SaveObject (const QString& fileName, BasicObject* ob)
     sfile.write (line);
     sfile.write ("\n");
   }
+  printm ("Kernel %s of id %d has been saved to file %s", seq->Name(), seq->Id () ,fileName.toLatin1 ().constData ());
+
   return true;
 }
 
@@ -426,7 +429,7 @@ void GalKernelWidget::RefreshView ()
 void GalKernelWidget::ReadSettings (QSettings* settings)
 {
   int numseqs = settings->value ("/Numkernels", 1).toInt ();
-  for (int six = 3; six < numseqs; ++six)    // do not reload the default entries again
+  for (int six = 0; six < numseqs; ++six)    // 3 do not reload the default entries again
   {
     QString settingsname = QString ("/Kernels/%1").arg (six);
     QString seqfilename = settings->value (settingsname).toString ();

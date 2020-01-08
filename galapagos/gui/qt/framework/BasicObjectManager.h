@@ -43,16 +43,22 @@ public:
       fCurrentObjectIndex = ix;
   }
 
-  /* Access the currently active Object in list*/
+  /** Access the currently active Object in list*/
   T* GetCurrentObject ();
 
   T& AddObject (T& pak);
 
-  /* Access a known  Object by unique id number. May be redundant if we rely on name*/
+  /** Access a known  Object by unique id number. May be redundant if we rely on name*/
   T* GetObject (uint32_t id);
 
-  /* Access a known Object by unique name*/
+  /** Access a known Object by unique name*/
   T* GetObject (const char* name);
+
+  /** find out the index of object in the list of known by id. returns -1 if not found*/
+  int GetObjectIndex (uint32_t id);
+
+  /** find out the index of object in the list of known by unique name. returns -1 if not found*/
+  int GetObjectIndex (const char* name);
 
   size_t NumKnownObjects ();
 
@@ -92,6 +98,19 @@ T* BasicObjectManager<T>::GetObject (uint32_t id)
   return 0;
 }
 
+
+template<class T>
+int BasicObjectManager<T>::GetObjectIndex (uint32_t id)
+{
+  for (int t = 0; t < fKnownObjects.size (); ++t)
+  {
+    if (fKnownObjects[t].Id () == id)
+      return t;
+  }
+  return -1;
+}
+
+
 template<class T>
 T* BasicObjectManager<T>::GetObject (const char* name)
 {
@@ -102,6 +121,19 @@ T* BasicObjectManager<T>::GetObject (const char* name)
   }
   return 0;
 }
+
+template<class T>
+int BasicObjectManager<T>::GetObjectIndex (const char* name)
+{
+  for (int t = 0; t < fKnownObjects.size (); ++t)
+  {
+    if (fKnownObjects[t].EqualsName (name))
+      return t;
+  }
+  return -1;
+}
+
+
 
 template<class T>
 T* BasicObjectManager<T>::GetCurrentObject ()
@@ -126,9 +158,13 @@ T* BasicObjectManager<T>::GetKnownObject (size_t ix)
 template<class T>
 void BasicObjectManager<T>::RemoveKnownObject (size_t ix)
 {
-  uint32_t pid = fKnownObjects[ix].Id ();
+  //uint32_t pid = fKnownObjects[ix].Id ();
   fKnownObjects.erase (fKnownObjects.begin () + ix);
 }
+
+
+
+
 
 template<class T>
 void BasicObjectManager<T>::ClearObjects ()

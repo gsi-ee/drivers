@@ -311,8 +311,8 @@ bool GalPatternWidget::LoadObject(const QString& fileName)
    GalapagosPattern* oldpat=0;
    if((oldpat=theSetup->GetPattern(pat.Id()))!=0)
    {
-     printm("LoadPattern %s error: pattern %s had already assigned specified unique id %d !",patname.toLatin1().constData(), oldpat->Name(), pat.Id());
-     return false;
+     printm("LoadPattern %s warning: overwriting existing pattern %s with same unique id %d !",patname.toLatin1().constData(), oldpat->Name(), pat.Id());
+     theSetup->RemovePatternById(pat.Id());
    }
 
    // everything from file was ok, now put it into new pattern:
@@ -363,7 +363,7 @@ bool GalPatternWidget::SaveObject(const QString& fileName, gapg::BasicObject* ob
 void GalPatternWidget::ReadSettings (QSettings* settings)
 {
   int numpats = settings->value ("/Numpatterns", 1).toInt ();
-  for (int pix = 4; pix < numpats; ++pix)    // do not reload the default entries again
+  for (int pix = 0; pix < numpats; ++pix)    // 4 do not reload the default entries again
   {
     QString settingsname = QString ("/Patterns/%1").arg (pix);
     QString patfilename = settings->value (settingsname).toString ();

@@ -100,6 +100,16 @@ void GalapagosSetup::RemoveKnownPackage (size_t ix)
 }
 
 
+bool GalapagosSetup::RemovePackageById(uint32_t id)
+{
+  int index=fPackageManager.GetObjectIndex(id);
+  if(index<0) return false;
+  RemoveKnownPackage(index);
+  return true;
+}
+
+
+
 size_t GalapagosSetup::GetCurrentPackageIndex()
 {
   return fPackageManager.GetCurrentObjectIndex();
@@ -203,6 +213,17 @@ void GalapagosSetup::RemoveKnownKernel (size_t ix)
 
 }
 
+
+bool GalapagosSetup::RemoveKernelById(uint32_t id)
+{
+  int index=fKernelManager.GetObjectIndex(id);
+  if(index<0) return false;
+  RemoveKnownKernel(index);
+  return true;
+}
+
+
+
 bool GalapagosSetup::SetCoreKernel (int core, uint32_t id)
 {
   GalapagosKernel* ker = GetKernel (id);
@@ -302,5 +323,16 @@ void GalapagosSetup::RemoveKnownPattern (size_t ix)
   }
 
 }
+
+
+bool GalapagosSetup::RemovePatternById(uint32_t id)
+{
+  int index=fPatternManager.GetObjectIndex(id);
+  if(index<0) return false;
+  RemoveKnownPattern(index);
+  return true;
+}
+
+
 
 }    // gapg

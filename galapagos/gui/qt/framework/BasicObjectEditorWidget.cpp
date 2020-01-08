@@ -116,6 +116,16 @@ void BasicObjectEditorWidget::ObjectApply_clicked()
   Object_comboBox->setEnabled(true);
 }
 
+void BasicObjectEditorWidget::ObjectProtect_enabled(bool on)
+{
+  //std::cout << "BasicObjectEditorWidget::ObjectProtect_enabled "<<on<< std::endl;
+  Object_comboBox->setEnabled(!on);
+  ObjectNewButton->setEnabled(!on);
+  ObjectEditButton->setEnabled(!on);
+  ObjectDeleteButton->setEnabled(!on);
+  ObjectLoadButton->setEnabled(!on);
+
+}
 
 } // namespace
 

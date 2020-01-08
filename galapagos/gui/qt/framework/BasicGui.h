@@ -35,6 +35,7 @@ BasicGui::fInAction=false;\
 if(BasicGui::fSlotGuard) return; \
 BasicGui::fSlotGuard =true;
 
+
 #define GAPG_UNLOCK_SLOT \
 BasicGui::fSlotGuard =false;
 
