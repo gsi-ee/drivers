@@ -23,7 +23,7 @@ GalapagosGui::GalapagosGui (QWidget* parent) : gapg::BasicGui (parent)
   fSubWidgets.clear();
 
  fImplementationName="GALAPAGUI";
- fVersionString="Welcome to GalapaGUI!\n\t v0.50 of 8-Jan-2020 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to GalapaGUI!\n\t v0.60 of 10-Jan-2020 by JAM (j.adamczewski@gsi.de)";
  setWindowTitle(QString("%1").arg(fImplementationName));
 
  fSettings=new QSettings("GSI", fImplementationName);
@@ -277,6 +277,8 @@ BasicSetup* GalapagosGui::CreateSetup()
         GalapagosPackage pak0(1,"Default package");
         for(int i=0; i< GAPG_CORES; ++i)
           pak0.SetKernelID(i,2);
+
+        // TODO here: specify core types already in package setup
         setup->AddPackage(pak0);
 
         GalapagosPackage pak1(2,"TRB5");

@@ -337,7 +337,31 @@ namespace gapg
        }
 
 
-
+       // TODO: use core type definitions from libgalapagos.h directly instead?
+       gapg::CoreType_t GalapagosPackage::GetCoreType(int core)
+       {
+         gapg::CoreType_t kind=NOP;
+         if(core<0 || core>=GAPG_CORES) return NOP;
+         switch(core)
+           {
+             case 64:
+               kind=TRG;
+               break;
+             case 65:
+               kind=USP;
+               break;
+             case 66:
+               kind=LJP;
+               break;
+             case 67:
+               kind=DAC;
+               break;
+             default:
+               kind=CHN;
+               break;
+           }
+           return kind;
+       }
 
 
        uint64_t GalapagosPackage::GetCoreControl ()

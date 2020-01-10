@@ -10,6 +10,7 @@
 #include <QSettings>
 #include <QDateTime>
 #include <QString>
+#include <QVBoxLayout>
 
 namespace gapg
 {
@@ -17,8 +18,23 @@ namespace gapg
 GalPackageWidget::GalPackageWidget (QWidget* parent) :
      gapg::BasicObjectEditorWidget (parent)
 {
-
+  fCoreWidgets.clear();
   fPackageEditor = new gapg::GalPackageEditor (this);
+
+  QVBoxLayout *vbox = new QVBoxLayout();
+  vbox->setSpacing(-1);
+  vbox->setContentsMargins(1,1,1,1);
+  for(int ix=0; ix<GAPG_CORES; ++ix)
+  {
+    GalCoreWidget* core=new GalCoreWidget(ix, this, fPackageEditor);
+    fCoreEnabledRadio[ix]=core->Core_enabled_radio;
+    fCoreActiveLED[ix]=core->Core_active_LED;
+    fCoreKernelCombo[ix]=  core->CoreKernel_comboBox;
+    fCoreWidgets.push_back(core);
+    vbox->addWidget(core);
+  } // for ix
+  //vbox->addStretch(1);
+  fPackageEditor->CoresAreaWidget->setLayout(vbox);
    Editor_scrollArea->setWidget (fPackageEditor);
    setWindowTitle("Package of core setup");
 
@@ -33,67 +49,14 @@ GalPackageWidget::GalPackageWidget (QWidget* parent) :
    ObjectEditCancelButton->setToolTip("Cancel edited code for selected package (restore last setup)");
    ObjectApplyButton->setToolTip("Apply editor contents for selected package");
 
-
-  fCoreEnabledRadio[0] = fPackageEditor->Core_enabled_radio_00;
-  fCoreEnabledRadio[1] = fPackageEditor->Core_enabled_radio_01;
-  fCoreEnabledRadio[2] = fPackageEditor->Core_enabled_radio_02;
-  fCoreEnabledRadio[3] = fPackageEditor->Core_enabled_radio_03;
-  fCoreEnabledRadio[4] = fPackageEditor->Core_enabled_radio_04;
-  fCoreEnabledRadio[5] = fPackageEditor->Core_enabled_radio_05;
-  fCoreEnabledRadio[6] = fPackageEditor->Core_enabled_radio_06;
-  fCoreEnabledRadio[7] = fPackageEditor->Core_enabled_radio_07;
-  fCoreEnabledRadio[8] = fPackageEditor->Core_enabled_radio_08;
-  fCoreEnabledRadio[9] = fPackageEditor->Core_enabled_radio_09;
-  fCoreEnabledRadio[10] = fPackageEditor->Core_enabled_radio_10;
-  fCoreEnabledRadio[11] = fPackageEditor->Core_enabled_radio_11;
-  fCoreEnabledRadio[12] = fPackageEditor->Core_enabled_radio_12;
-  fCoreEnabledRadio[13] = fPackageEditor->Core_enabled_radio_13;
-  fCoreEnabledRadio[14] = fPackageEditor->Core_enabled_radio_14;
-  fCoreEnabledRadio[15] = fPackageEditor->Core_enabled_radio_15;
-
-  fCoreActiveLED[0] = fPackageEditor->Core_active_LED_00;
-  fCoreActiveLED[1] = fPackageEditor->Core_active_LED_01;
-  fCoreActiveLED[2] = fPackageEditor->Core_active_LED_02;
-  fCoreActiveLED[3] = fPackageEditor->Core_active_LED_03;
-  fCoreActiveLED[4] = fPackageEditor->Core_active_LED_04;
-  fCoreActiveLED[5] = fPackageEditor->Core_active_LED_05;
-  fCoreActiveLED[6] = fPackageEditor->Core_active_LED_06;
-  fCoreActiveLED[7] = fPackageEditor->Core_active_LED_07;
-  fCoreActiveLED[8] = fPackageEditor->Core_active_LED_08;
-  fCoreActiveLED[9] = fPackageEditor->Core_active_LED_09;
-  fCoreActiveLED[10] = fPackageEditor->Core_active_LED_10;
-  fCoreActiveLED[11] = fPackageEditor->Core_active_LED_11;
-  fCoreActiveLED[12] = fPackageEditor->Core_active_LED_12;
-  fCoreActiveLED[13] = fPackageEditor->Core_active_LED_13;
-  fCoreActiveLED[14] = fPackageEditor->Core_active_LED_14;
-  fCoreActiveLED[15] = fPackageEditor->Core_active_LED_15;
-
-
-  fCoreKernelCombo[0] = fPackageEditor->Core_sequence_comboBox_00;
-  fCoreKernelCombo[1] = fPackageEditor->Core_sequence_comboBox_01;
-  fCoreKernelCombo[2] = fPackageEditor->Core_sequence_comboBox_02;
-  fCoreKernelCombo[3] = fPackageEditor->Core_sequence_comboBox_03;
-  fCoreKernelCombo[4] = fPackageEditor->Core_sequence_comboBox_04;
-  fCoreKernelCombo[5] = fPackageEditor->Core_sequence_comboBox_05;
-  fCoreKernelCombo[6] = fPackageEditor->Core_sequence_comboBox_06;
-  fCoreKernelCombo[7] = fPackageEditor->Core_sequence_comboBox_07;
-  fCoreKernelCombo[8] = fPackageEditor->Core_sequence_comboBox_08;
-  fCoreKernelCombo[9] = fPackageEditor->Core_sequence_comboBox_09;
-  fCoreKernelCombo[10] = fPackageEditor->Core_sequence_comboBox_10;
-  fCoreKernelCombo[11] = fPackageEditor->Core_sequence_comboBox_11;
-  fCoreKernelCombo[12] = fPackageEditor->Core_sequence_comboBox_12;
-  fCoreKernelCombo[13] = fPackageEditor->Core_sequence_comboBox_13;
-  fCoreKernelCombo[14] = fPackageEditor->Core_sequence_comboBox_14;
-  fCoreKernelCombo[15] = fPackageEditor->Core_sequence_comboBox_15;
-
-
-
   CancelEditing();
 }
 
 GalPackageWidget::~GalPackageWidget ()
 {
 }
+
+
 
 void GalPackageWidget::ConnectSlots ()
 {
@@ -103,21 +66,9 @@ void GalPackageWidget::ConnectSlots ()
   QObject::connect (fPackageEditor->CoresSimulateButton, SIGNAL(clicked()), this, SLOT(CoresSimulate_clicked()));
   QObject::connect (fPackageEditor->GeneratorNewStartButton, SIGNAL(clicked()), this, SLOT(GeneratorNewStart_clicked()));
 
-  QObject::connect (fPackageEditor->Core_enabled_radio_ALL, SIGNAL(toggled(bool)), this, SLOT(CoreEnabled_toggled_all(bool)));
-  GALAGUI_CONNECT_TOGGLED_16(fPackageEditor->Core_enabled_radio_, CoreEnabled_toggled_);
-
-//  QObject::connect (fPackageEditor->Core_simulate_radio_ALL, SIGNAL(toggled(bool)), this, SLOT(CoreSimulated_toggled_all(bool)));
-//  GALAGUI_CONNECT_TOGGLED_16(fPackageEditor->Core_simulate_radio_, CoreSimulated_toggled_);
-
-  QObject::connect (fPackageEditor->Core_sequence_comboBox_ALL, SIGNAL(currentIndexChanged(int)), this, SLOT(CoreKernel_changed_all(int)));
-  GALAGUI_CONNECT_INDEXCHANGED_16(fPackageEditor->Core_sequence_comboBox_,CoreKernel_changed_);
-
-//  QObject::connect (fPackageEditor->Core_pattern_comboBox_ALL, SIGNAL(currentIndexChanged(int)), this, SLOT(CorePattern_changed_all(int)));
-//  GALAGUI_CONNECT_INDEXCHANGED_16(fPackageEditor->Core_pattern_comboBox_,CorePattern_changed_);
-
-QObject::connect (fPackageEditor->CoregroupBox_0, SIGNAL(toggled(bool)), this, SLOT(CoreEnabled_toggled_group0(bool)));
-
-QObject::connect (fPackageEditor->CoregroupBox_1, SIGNAL(toggled(bool)), this, SLOT(CoreEnabled_toggled_group1(bool)));
+ QObject::connect (fPackageEditor->Core_enabled_radio_ALL, SIGNAL(toggled(bool)), this, SLOT(CoreEnabled_toggled_all(bool)));
+ QObject::connect (fPackageEditor->Core_sequence_comboBox_ALL, SIGNAL(currentIndexChanged(int)), this, SLOT(CoreKernel_changed_all(int)));
+ 
 }
 
 
@@ -144,7 +95,7 @@ bool GalPackageWidget::NewObjectRequest ()
 void GalPackageWidget::StartEditing ()
 {
   //std::cout << "GalPackageWidget:: KernelEdit_clicked"<< std::endl;
-  fPackageEditor->Cores_tabWidget->setEnabled (true);
+  fPackageEditor->CoresAreaWidget->setEnabled (true);
   fPackageEditor->Cores_all_frame->setEnabled (true);
   fPackageEditor->CoresControlframe->setEnabled (false);
 }
@@ -152,7 +103,7 @@ void GalPackageWidget::StartEditing ()
 void GalPackageWidget::CancelEditing ()
 {
   //std::cout << "GalPackageWidget:: CancelEditing"<< std::endl;
-  fPackageEditor->Cores_tabWidget->setEnabled (false);
+  fPackageEditor->CoresAreaWidget->setEnabled (false);
   fPackageEditor->Cores_all_frame->setEnabled (false);
   fPackageEditor->CoresControlframe->setEnabled (true);
 }
@@ -236,7 +187,7 @@ void GalPackageWidget::ApplyEditing ()
 {
  // std::cout << "GalPackageWidget::ApplyEditing()"<< std::endl;
 
-  fPackageEditor->Cores_tabWidget->setEnabled (false);
+  fPackageEditor->CoresAreaWidget->setEnabled (false);
   fPackageEditor->Cores_all_frame->setEnabled (false);
   fPackageEditor->CoresControlframe->setEnabled (true);
 
@@ -253,7 +204,7 @@ void GalPackageWidget::ApplyEditing ()
     pak->SetId (ObjectIDSpinBox->value ());
 
 
-    for (uint8_t core = 0; core < 16; ++core)
+    for (uint8_t core = 0; core < GAPG_CORES; ++core)
       {
         bool enabled = fCoreEnabledRadio[core]->isChecked ();
         pak->SetCoreEnabled(core,enabled);
@@ -266,6 +217,8 @@ void GalPackageWidget::ApplyEditing ()
             continue;
         }
         pak->SetKernelID(core, ker->Id());
+
+        // TODO: assign the core type to the kernel here? or always fixed type depending on index?
       }
 
 }
@@ -387,7 +340,7 @@ bool GalPackageWidget::SaveObject (const QString& fileName, BasicObject* ob)
   sfile.write ("\n");
   sfile.write (idtag.toLatin1 ().constData ());
   sfile.write ("\n");
-  for (uint8_t core = 0; core < 16; ++core)
+  for (uint8_t core = 0; core < GAPG_CORES; ++core)
     {
       bool enabled = pak->IsCoreEnabled (core);
       uint32_t kid=pak->GetKernelID (core);
@@ -424,8 +377,15 @@ int GalPackageWidget::RefreshObjectIndex (int ix)
   //std::cout<< "GalPackageWidget::RefreshObjectIndex for "<< ix <<" with package "<< pak->Name() <<std::endl;
   // now refresh the combobox, radiobutton and lamps from configured kernel
   bool isrunning = theSetup->IsGeneratorActive ();
-    for (uint8_t core = 0; core < 16; ++core)
+
+  // TODO: later each galcorewidget will refresh separately like this?
+
+
+    for (uint8_t core = 0; core <GAPG_CORES; ++core)
     {
+
+      fCoreWidgets[core]->RefreshCoreType(pak->GetCoreType(core));
+
       bool enabled = pak->IsCoreEnabled (core);
       fCoreEnabledRadio[core]->setChecked (enabled);
 
@@ -458,6 +418,8 @@ int GalPackageWidget::RefreshObjectIndex (int ix)
         printm ("RefreshObjectIndex  Never come here - core %d has no combobox sequence entry %s", core, ker->Name ());
       else
         fCoreKernelCombo[core]->setCurrentIndex (cix);
+
+
     }
    theSetup->SetCurrentPackageIndex(ix);
   return pak->Id();
@@ -524,13 +486,24 @@ void GalPackageWidget::CoresSimulate_clicked ()
 void GalPackageWidget::GeneratorNewStart_clicked()
 {
   //std::cout<< "GeneratorNewStart_clicked" << std::endl;
+
+  // TODO: here compile current package first:
+  theSetup_GET_FOR_CLASS(GalapagosSetup);
+  int cix=theSetup->GetCurrentPackageIndex();
+  printm ("Compiling current package of index %d", cix);
+  bool rev=theSetup->CompilePackage(cix);
+  if(!rev)
+  {
+    printm ("ERROR on compilation of package! Do not start generator!");
+    return;
+  }
   fPackageEditor->GeneratorActiveButton->setChecked(true);
 }
 
 
 void GalPackageWidget::CoreEnabled_toggled_all (bool on)
 {
-for (int chan = 0; chan < 16; ++chan)
+for (int chan = 0; chan < GAPG_CORES; ++chan)
   fCoreEnabledRadio[chan]->setChecked (on);
 }
 
@@ -541,26 +514,13 @@ GAPG_AUTOAPPLY(ApplyCoreEnabled (core, on));
 GAPG_UNLOCK_SLOT;
 }
 
-void GalPackageWidget::CoreEnabled_toggled_group0 (bool on)
-{
-for (int chan = 0; chan < 8; ++chan)
-  fCoreEnabledRadio[chan]->setChecked (on);
-}
-
-void GalPackageWidget::CoreEnabled_toggled_group1 (bool on)
-{
-for (int chan = 8; chan < 16; ++chan)
-  fCoreEnabledRadio[chan]->setChecked (on);
-}
-
-GALAGUI_IMPLEMENT_MULTICHANNEL_TOGGLED_16(GalPackageWidget, CoreEnabled);
 
 
 
 
 void GalPackageWidget::CoreKernel_changed_all (int ix)
 {
-for (int chan = 0; chan < 16; ++chan)
+for (int chan = 0; chan < GAPG_CORES; ++chan)
   fCoreKernelCombo[chan]->setCurrentIndex (ix);
 }
 
@@ -572,7 +532,6 @@ GAPG_AUTOAPPLY(ApplyCoreKernel(core, ix));
 GAPG_UNLOCK_SLOT;
 }
 
-GALAGUI_IMPLEMENT_MULTICHANNEL_CHANGED_16(GalPackageWidget, CoreKernel);
 
 
 void GalPackageWidget::EvaluateView ()
@@ -622,7 +581,7 @@ void GalPackageWidget::RefreshView ()
     GalapagosKernel* ker = theSetup->GetKnownKernel (six);
     if (ker == 0)
       continue;
-    for (uint8_t core = 0; core < 16; ++core)
+    for (uint8_t core = 0; core < GAPG_CORES; ++core)
     {
       if (six == 0)
         fCoreKernelCombo[core]->clear ();

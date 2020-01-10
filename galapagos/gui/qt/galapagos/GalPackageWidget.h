@@ -6,10 +6,12 @@
 #include "GalapagosMacros.h"
 
 #include "GalPackageEditor.h"
+#include "GalCoreWidget.h"
 
 #include <QRadioButton>
 #include <QComboBox>
 #include <kled.h>
+#include <vector>
 
 namespace gapg
 {
@@ -29,7 +31,15 @@ protected:
   QComboBox* fCoreKernelCombo[GAPG_CORES];
 
 
+
+
   gapg::GalPackageEditor* fPackageEditor;
+
+  /** keep here widget elements for each single core */
+  std::vector<GalCoreWidget*> fCoreWidgets;
+
+
+
 
    /** refresh editor content for pattern id, return unique object id*/
    int RefreshObjectIndex (int ix);
@@ -91,38 +101,22 @@ public:
   /** evaluate change of enabled pattern generator channel channel*/
   void CoreEnabled_toggled (int channel, bool on);
 
-//  /** apply simulation modechannel channel
-//   * This function is capable of usage in GAPG_AUTOAPPLY macro*/
-//  void ApplyPackageSimulated (int channel, bool on);
-
-//  /** evaluate simulation mode of channel channel*/
-//  void PackageSimulated_toggled (int channel, bool on);
 
   void ApplyCoreKernel (int channel, int ix);
 
- // void ApplyCorePattern (int channel, int ix);
 
   /** evaluate sequence index for channel*/
   void CoreKernel_changed (int channel, int ix);
 
-//  /** evaluate pattern index for channel*/
-//  void CorePattern_changed (int channel, int ix);
 
 public slots:
 
   virtual void CoreEnabled_toggled_all(bool on);
 
-  virtual void CoreEnabled_toggled_group0 (bool on);
-  virtual void CoreEnabled_toggled_group1 (bool on);
-
-  GALAGUI_DEFINE_MULTICHANNEL_TOGGLED_16(CoreEnabled)
-  ;
 
 
   virtual void CoreKernel_changed_all (int ix);
 
-  GALAGUI_DEFINE_MULTICHANNEL_CHANGED_16(CoreKernel)
-  ;
 
 
   virtual void GeneratorActive_clicked (bool checked);

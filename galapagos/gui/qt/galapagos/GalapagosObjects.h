@@ -122,14 +122,6 @@ public:
   /** access command line at index ix as text*/
   const char* GetCommandLine(int ix);
 
-//  /** number of bytes of the compiled kernel code */
-//  size_t NumCodeBytes();
-//
-//  /** read next byte of compiled code at given byte index.*/
-//   uint8_t GetCodeByte(int ix);
-//
-//    // provide tempory bytearray of the command code:
-//    QByteArray GetCodeByteArray();
 
     /** deliver string object on heap with continuous sourcecode buffer.
      * must be deleted by user afterwards*/
@@ -209,6 +201,10 @@ class GalapagosPackage : public gapg::BasicObject
 
   /** get reference to kernel object for core of index. Returns 0 pointer is out of range*/
   uint32_t GetKernelID(int index);
+
+  /** define fixed channel types depending on the core number. This is not reconfigurable*/
+  gapg::CoreType_t GetCoreType(int core);
+
 
   uint64_t GetCoreControl ();
 

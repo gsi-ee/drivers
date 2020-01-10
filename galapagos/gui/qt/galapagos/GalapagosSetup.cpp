@@ -123,7 +123,7 @@ void GalapagosSetup:: SetCurrentPackageIndex(size_t ix)
 
 bool GalapagosSetup::CompilePackage (size_t ix)
 {
-  GalapagosPackage* pak = GetPackage (ix);
+  GalapagosPackage* pak = GetKnownPackage (ix);
   if (pak == 0)
     return false;
   // now compile all participating kernel objects:
@@ -140,7 +140,14 @@ bool GalapagosSetup::CompilePackage (size_t ix)
           pak->Name (), core, cid);
       continue;
     }
-    ker->Compile ();    //this we do anyway, even for kernels without pattern data
+    bool crev=ker->Compile ();    //this we do anyway, even for kernels without pattern data
+    if(!crev)
+    {
+      printm (
+        "GalapagosSetup::CompilePackage error (package:%s) - core %d could not compile kernel code of id %d! stopped.",
+        pak->Name (), core, cid);
+        return crev;
+    }
     uint32_t pid = ker->GetPatternID ();
     GalapagosPattern* pat = GetPattern (pid);
     if (pat != 0)
@@ -154,10 +161,10 @@ bool GalapagosSetup::CompilePackage (size_t ix)
           pak->Name (), core, ker->Name ());    // this case may appear regularly for special cores! later suppress message?
     }
     pak->SetKernel (core, *ker);
-    printm ("GalapagosSetup::CompilePackage :%s - has assigned kernel %s to core %dit.", pak->Name (), ker->Name (),
+    printm ("GalapagosSetup::CompilePackage :%s - has assigned kernel %s to core %d .", pak->Name (), ker->Name (),
         core);
   }    // for core
-
+  return true;
 }
 
 void GalapagosSetup::ClearKernels ()
