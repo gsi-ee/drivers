@@ -6,113 +6,125 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>392</width>
-    <height>41</height>
+    <width>378</width>
+    <height>61</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>CoreSetup</string>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout">
-   <item>
-    <widget class="KLed" name="Core_active_LED">
-     <property name="color">
-      <color>
-       <red>255</red>
-       <green>0</green>
-       <blue>0</blue>
-      </color>
+  <layout class="QGridLayout" name="gridLayout_2">
+   <item row="0" column="0">
+    <widget class="QFrame" name="frame">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
      </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QComboBox" name="CoreTypeComboBox">
-     <property name="enabled">
-      <bool>false</bool>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
      </property>
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Type of this core&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <item>
-      <property name="text">
-       <string>CHN</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>USP</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>TRG</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>LJP</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>RFD</string>
-      </property>
-     </item>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="Core_label">
-     <property name="text">
-      <string>00</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <spacer name="horizontalSpacer">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>70</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item>
-    <widget class="QRadioButton" name="Core_enabled_radio">
-     <property name="toolTip">
-      <string>Enable core</string>
-     </property>
-     <property name="text">
-      <string>Enable</string>
-     </property>
-     <property name="autoExclusive">
-      <bool>false</bool>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QComboBox" name="CoreKernel_comboBox">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select kernel for core&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <item>
-      <property name="text">
-       <string>Single Pulse</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Double Pulse</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Pulse Sequence</string>
-      </property>
-     </item>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="KLed" name="Core_active_LED">
+        <property name="color">
+         <color>
+          <red>255</red>
+          <green>0</green>
+          <blue>0</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="Core_label">
+        <property name="text">
+         <string>00</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QComboBox" name="CoreTypeComboBox">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Type of this core&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <item>
+         <property name="text">
+          <string>CHN</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>USP</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>TRG</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>LJP</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>RFD</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>30</width>
+          <height>16</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="0" column="4">
+       <widget class="QRadioButton" name="Core_enabled_radio">
+        <property name="toolTip">
+         <string>Enable core</string>
+        </property>
+        <property name="text">
+         <string>Enable</string>
+        </property>
+        <property name="autoExclusive">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="5">
+       <widget class="QComboBox" name="CoreKernel_comboBox">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select kernel for core&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <item>
+         <property name="text">
+          <string>Single Pulse</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Double Pulse</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Pulse Sequence</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
   </layout>

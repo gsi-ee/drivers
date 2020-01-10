@@ -23,7 +23,7 @@ GalapagosGui::GalapagosGui (QWidget* parent) : gapg::BasicGui (parent)
   fSubWidgets.clear();
 
  fImplementationName="GALAPAGUI";
- fVersionString="Welcome to GalapaGUI!\n\t v0.60 of 10-Jan-2020 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to GalapaGUI!\n\t v0.61 of 10-Jan-2020 by JAM (j.adamczewski@gsi.de)";
  setWindowTitle(QString("%1").arg(fImplementationName));
 
  fSettings=new QSettings("GSI", fImplementationName);

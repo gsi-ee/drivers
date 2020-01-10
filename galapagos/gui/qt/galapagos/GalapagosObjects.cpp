@@ -201,6 +201,7 @@ namespace gapg
       // may get back the bytecode from it
       QString* srcstring=GetSourceCode();
       if(srcstring==0) return false;
+      if(IsCompiled()) return true; // kernel editor will call Clear() before recompiling
       const char* sourcecode=srcstring->toLatin1().data();
       size_t length=srcstring->size();
       if(::galapagos_compile_kernel(sourcecode, length, &fKernelBinary)!=0)

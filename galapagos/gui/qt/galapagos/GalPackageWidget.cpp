@@ -21,9 +21,14 @@ GalPackageWidget::GalPackageWidget (QWidget* parent) :
   fCoreWidgets.clear();
   fPackageEditor = new gapg::GalPackageEditor (this);
 
-  QVBoxLayout *vbox = new QVBoxLayout();
-  vbox->setSpacing(-1);
-  vbox->setContentsMargins(1,1,1,1);
+//  QVBoxLayout *vbox = new QVBoxLayout();
+//  vbox->setSpacing(-1);
+//  vbox->setContentsMargins(1,1,1,1);
+
+  QGridLayout *gbox = new QGridLayout();
+   gbox->setSpacing(-1);
+   gbox->setContentsMargins(1,1,1,1);
+
   for(int ix=0; ix<GAPG_CORES; ++ix)
   {
     GalCoreWidget* core=new GalCoreWidget(ix, this, fPackageEditor);
@@ -31,10 +36,13 @@ GalPackageWidget::GalPackageWidget (QWidget* parent) :
     fCoreActiveLED[ix]=core->Core_active_LED;
     fCoreKernelCombo[ix]=  core->CoreKernel_comboBox;
     fCoreWidgets.push_back(core);
-    vbox->addWidget(core);
+    //vbox->addWidget(core);
+    int y= ix % 8;
+    int x= ix/8;
+    gbox->addWidget(core,y,x,1,1);
   } // for ix
   //vbox->addStretch(1);
-  fPackageEditor->CoresAreaWidget->setLayout(vbox);
+  fPackageEditor->CoresAreaWidget->setLayout(gbox);
    Editor_scrollArea->setWidget (fPackageEditor);
    setWindowTitle("Package of core setup");
 
@@ -486,8 +494,6 @@ void GalPackageWidget::CoresSimulate_clicked ()
 void GalPackageWidget::GeneratorNewStart_clicked()
 {
   //std::cout<< "GeneratorNewStart_clicked" << std::endl;
-
-  // TODO: here compile current package first:
   theSetup_GET_FOR_CLASS(GalapagosSetup);
   int cix=theSetup->GetCurrentPackageIndex();
   printm ("Compiling current package of index %d", cix);

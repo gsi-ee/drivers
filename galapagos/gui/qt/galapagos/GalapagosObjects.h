@@ -151,6 +151,12 @@ public:
         * may specify a new unique id to replace the old reference*/
       void CleanupRemovedPattern(uint32_t id, uint32_t newid=0);
 
+      /** check if compilation of this kernel has been already done.*/
+      bool IsCompiled()
+      {
+        return fKernelBinary.is_compiled;
+      }
+
 };
 
 /** This object composes the complete core setup of the board*/
