@@ -20,7 +20,8 @@ PEXORTEST  = $(PEXORSYS)/user/Tests/pexor
 PEXORDABC =  $(PEXORSYS)/user/DabcV2/plugins/
 PEXORGO4 =  $(PEXORSYS)/user/Go4
 GOSIPCMD =  $(PEXORSYS)/user/gosipcmd
-GOSIPGUI =  $(PEXORSYS)/user/qtgui
+GOSIPGUI =  $(PEXORSYS)/user/qtgui-new
+#GOSIPGUI =  $(PEXORSYS)/user/qtgui
 
 PEXORPACKAGE = PexorDriver
 PEXORPACKDABC = PexorDABC

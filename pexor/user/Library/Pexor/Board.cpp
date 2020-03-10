@@ -137,6 +137,7 @@ int Board::Write(int *source, int length, int boardoffset)
 int Board::SetDMA(pexor::DmaMode mode)
 {
 	fDmaMode = mode;
+	return 0;
 }
 
 int pexor::Board::Add_DMA_Pool(size_t size, int numbufs, const std::string name)

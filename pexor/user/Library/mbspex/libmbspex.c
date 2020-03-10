@@ -6,7 +6,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 
 #define RON  "\x1B[7m"

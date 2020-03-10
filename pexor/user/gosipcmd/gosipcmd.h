@@ -135,6 +135,9 @@ int goscmd_configure(struct gosip_cmd* com);
 /** compare register values with configuration file*/
 int goscmd_verify(struct gosip_cmd* com);
 
+/** compare register values with configuration file*/
+int goscmd_verify_single (struct gosip_cmd* com);
+
 /** broadcast: loop command operation over several slaves*/
 int goscmd_broadcast(struct gosip_cmd* com);
 

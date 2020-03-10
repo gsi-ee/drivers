@@ -133,6 +133,7 @@ int User_Pool::RemoveBuffer(pexor::Buffer* buf)
 	 int ix=pexor::BufferPool::RemoveBuffer(buf);
 	 if(ix<0) return ix;
 	 RemoveFreeIndex(ix);
+	 return 0;
 }
 
 } // namespace

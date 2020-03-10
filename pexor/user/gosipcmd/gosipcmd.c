@@ -270,11 +270,13 @@ int goscmd_next_config_values (struct gosip_cmd* com)
   if (cmdlen > 4)
   {
     // parse optional command identifier
-    if (strcasestr (cmd[4], "setbit") != 0)
+   // if (strcasestr (cmd[4], "setbit") != 0) // deprecated? JAM2020
+   if (strcasecmp (cmd[4], "setbit") == 0)
     {
       com->command = GOSIP_SETBIT;
     }
-    else if (strcasestr (cmd[4], "clearbit") != 0)
+  // else if (strcasestr (cmd[4], "clearbit") != 0) // deprecated? JAM2020
+   else if (strcasecmp (cmd[4], "clearbit") == 0)
     {
       com->command = GOSIP_CLEARBIT;
     }
