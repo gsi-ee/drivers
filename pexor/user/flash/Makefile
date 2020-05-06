@@ -9,14 +9,18 @@ LDFLAGS += -Wl,-rpath,/usr/lib -lrt
 #PEXLIB = -Wl,-rpath,/usr/lib -Wl,-rpath,$(LIBDIR) -lmbspex
 PEXLIB = $(LIBDIR)/libmbspex.a
 
-BINARIES = m_test5 gosiptest gosipcmd m_load_poland_flash_mbspex
+BINARIES = m_load_poland_flash_mbspex
 
 ###############################################################
 # Target definitions
 
-.PHONY: exall dirs depend clean
+.PHONY: all liball dirs depend clean
 
-exall: dirs depend $(BINARIES)
+all: liball
+
+liball: dirs depend $(BINARIES)
+
+
 
 
 # Relate all exec names to it exec in the bin dir
@@ -28,21 +32,10 @@ $(BINDIR)/%: $(OBJDIR)/%.o
 #	$(Q)$(CXX) $(LDINC) $(LDFLAGS) $(PEXLIB) $(CFLAGS) -o $@ $<
 	$(Q)$(CXX) $(LDFLAGS) $(CFLAGS) -o  $@  $< $(PEXLIB)
 
-$(BINDIR)/gosiptest: $(OBJDIR)/gosiptest.o $(OBJDIR)/timing.o
-	@echo -e "LD \t$@"
-	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/gosiptest.o $(OBJDIR)/timing.o $(PEXLIB)
-#	$(Q)$(CC) $(LDINC) $(LDFLAGS) $(PEXLIB) $(CFLAGS) -o $@ $(OBJDIR)/gosiptest.o $(OBJDIR)/timing.o
-
-
-
-# dummy for included common.mk
-liball: exall
 
 
 clean:
 	@echo -e "CLEAN \t$(shell pwd)"
 	-$(Q)rm -f $(addprefix $(BINDIR)/,$(BINARIES))
-	-$(Q)rm -f $(BINDIR)/m_test5
 	-$(Q)rm -f $(OBJ)
-	-$(Q)rm -f $(OBJDIR)/gosiptest.o $(OBJDIR)/timing.o
 	-$(Q)rm -f $(DEPEND)

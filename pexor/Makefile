@@ -1,5 +1,6 @@
 # this is the top level Makefile of the pexor package
-# JAM 2-Jul-2014
+# JAM 2-Jul-2014 -
+# JAM 6-MAY-2020 -added flash tools
 #
 
 	PEXORSYS ?= $(PWD)
@@ -20,6 +21,7 @@ PEXORTEST  = $(PEXORSYS)/user/Tests/pexor
 PEXORDABC =  $(PEXORSYS)/user/DabcV2/plugins/
 PEXORGO4 =  $(PEXORSYS)/user/Go4
 GOSIPCMD =  $(PEXORSYS)/user/gosipcmd
+FLASH =  $(PEXORSYS)/user/flash
 GOSIPGUI =  $(PEXORSYS)/user/qtgui-new
 #GOSIPGUI =  $(PEXORSYS)/user/qtgui
 
@@ -39,7 +41,7 @@ LIBINSTALLDIR ?= /usr/lib64
 
 .PHONY: all clean driver lib examples dabc gui cleangui install uninstall driver-install driver-uninstall lib-install lib-uninstall pack
 
-all: driver lib gosiplib examples gosipcmd 
+all: driver lib gosiplib examples gosipcmd flash
 
 install: driver-install lib-install
 
@@ -50,6 +52,7 @@ clean:
 	cd $(PEXORTEST); make clean
 	cd $(PEXORLIB); make clean
 	cd $(GOSIPCMD); make clean
+	cd $(FLASH); make clean
 	cd $(MBSPEXLIB); make clean	
 	cd $(PEXORDRIVER); make clean
 	
@@ -70,6 +73,10 @@ gosiplib: driver
 
 gosipcmd: gosiplib
 	cd $(GOSIPCMD); make all
+	
+flash: gosiplib
+	cd $(FLASH); make all
+	
 	
 examples: lib
 	cd $(PEXORTEST); make all
