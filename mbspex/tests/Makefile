@@ -9,7 +9,7 @@ LDFLAGS += -Wl,-rpath,/usr/lib -lrt
 #PEXLIB = -Wl,-rpath,/usr/lib -Wl,-rpath,$(LIBDIR) -lmbspex
 PEXLIB = $(LIBDIR)/libmbspex.a
 
-BINARIES = m_test5 gosiptest gosipcmd m_load_poland_flash_mbspex
+BINARIES = m_test5 gosiptest gosipcmd m_load_poland_flash_mbspex m_reset_poland_fpga
 
 ###############################################################
 # Target definitions

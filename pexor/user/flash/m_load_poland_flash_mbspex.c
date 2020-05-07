@@ -2,7 +2,7 @@
 // N.Kurz, EE, GSI, 11-Dec-2015: adoted for nyxor board
 // N.Kurz, EE, GSI, 28-Sep-2016: adoted for poland
 //                               use big .rpd of exactly 16 mbytes to load the poland flash. 
-// JAM, EE, GSI, 06-May-2020: adjusted to mbspex/pexor driver library to avoid mapping bar 0
+// JAM, EE, GSI, 07-May-2020: adjusted to mbspex/pexor driver library to avoid mapping bar 0
 
 #define USE_MBSPEX_LIB 1
 
@@ -38,34 +38,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-
-// address map for slave (exploder1): this is user specific data concering frontends , so it is not available from libmbspex
-// #define REG_BUF0     0xFFFFD0 // base address for buffer 0 : 0x0000
-// #define REG_BUF1     0xFFFFD4  // base address for buffer 1 : 0x20000
-// #define REG_SUBMEM_NUM   0xFFFFD8 //num of channels 8
-// #define REG_SUBMEM_OFF   0xFFFFDC // offset of channels 0x4000
-// #define REG_MODID     0xFFFFE0
-// #define REG_HEADER    0xFFFFE4
-// #define REG_FOOTER    0xFFFFE8
-// #define REG_DATA_LEN  0xFFFFEC
-// #define REG_DATA_REDUCTION  0xFFFFB0  // Nth bit = 1 enable data reduction of  Nth channel from block transfer readout. (bit0:time, bit1-8:adc)
-// #define REG_MEM_DISABLE     0xFFFFB4  // Nth bit =1  disable Nth channel from block transfer readout.(bit0:time, bit1-8:adc)
-// #define REG_MEM_FLAG_0      0xFFFFB8  // read only:
-// #define REG_MEM_FLAG_1      0xFFFFBc  // read only:
-// 
-// 
-// #define REG_BUF0_DATA_LEN     0xFFFD00  // buffer 0 submemory data length
-// #define REG_BUF1_DATA_LEN     0xFFFE00  // buffer 1 submemory data length
-// 
-// 
-// #define REG_DATA_REDUCTION  0xFFFFB0  // Nth bit = 1 enable data reduction of  Nth channel from block transfer readout. (bit0:time, bit1-8:adc)
-// #define REG_MEM_DISABLE     0xFFFFB4  // Nth bit =1  disable Nth channel from block transfer readout.(bit0:time, bit1-8:adc)
-// #define REG_MEM_FLAG_0      0xFFFFB8  // read only:
-// #define REG_MEM_FLAG_1      0xFFFFBc  // read only:
-// 
-// #define REG_RST 0xFFFFF4
-// #define REG_LED 0xFFFFF8
-// #define REG_VERSION 0xFFFFFC
 
 
 #include <stdarg.h>
@@ -993,14 +965,15 @@ int f_pex_slave_init (long l_sfp, long l_n_slaves)
 
 int f_pex_slave_wr (long l_sfp, long l_slave, long l_slave_off, long l_dat)
 {
+  int  l_ret;
 #ifdef USE_MBSPEX_LIB
 
-  return mbspex_slave_wr (fd_pex, l_sfp, l_slave, l_slave_off, l_dat);
+  l_ret = mbspex_slave_wr (fd_pex, l_sfp, l_slave, l_slave_off, l_dat);
 
 #else
  
     
-  int  l_ret;
+
   long l_comm;
   long l_addr;
 
@@ -1045,21 +1018,25 @@ int f_pex_slave_wr (long l_sfp, long l_slave, long l_slave_off, long l_dat)
       #endif // DEBUG
     }
   }
+
+#endif //MBSPEX LIB
   f_i2c_sleep ();
   return (l_ret);
-#endif //MBSPEX LIB
+
 }
 
 /*****************************************************************************/
 
 int f_pex_slave_rd (long l_sfp, long l_slave, long l_slave_off, long *l_dat)
 {
+
+ int  l_ret;
 #ifdef USE_MBSPEX_LIB
 
-  return mbspex_slave_rd (fd_pex, l_sfp, l_slave, l_slave_off, l_dat);
+ l_ret=mbspex_slave_rd (fd_pex, l_sfp, l_slave, l_slave_off, l_dat);
 
 #else
-  int  l_ret;
+
   long l_comm;
   long l_addr;
 
@@ -1105,10 +1082,12 @@ int f_pex_slave_rd (long l_sfp, long l_slave, long l_slave_off, long *l_dat)
       #endif // DEBUG
     }
   }
+
+ #endif //MBSPEX LIB
   f_i2c_sleep ();
   return (l_ret);
   
-#endif //MBSPEX LIB
+
 }
 
 /*****************************************************************************/
