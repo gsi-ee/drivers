@@ -2964,7 +2964,12 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
         cleanup_device (privdata);
         return -EIO;
       }pexor_dbg( "requested memory at %lx with length %lx\n", privdata->bases[ix], privdata->reglen[ix]);
+//JAM2020:Linux tumbleweed at homeoffice shows it!
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,5,19)
+      privdata->iomem[ix] = ioremap(privdata->bases[ix], privdata->reglen[ix]);
+#else
       privdata->iomem[ix] = ioremap_nocache (privdata->bases[ix], privdata->reglen[ix]);
+#endif
       if (privdata->iomem[ix] == NULL )
       {
         pexor_dbg(KERN_ERR "Could not remap memory  at bar %d for device \"%s\"\n", ix, kobject_name(&dev->dev.kobj));
