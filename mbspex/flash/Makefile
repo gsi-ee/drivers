@@ -9,7 +9,7 @@ LDFLAGS += -Wl,-rpath,/usr/lib -lrt
 #PEXLIB = -Wl,-rpath,/usr/lib -Wl,-rpath,$(LIBDIR) -lmbspex
 PEXLIB = $(LIBDIR)/libmbspex.a
 
-BINARIES = flash_poland reset_poland
+BINARIES = flash_poland reset_poland flash_febex3 reset_febex3 flash_tamex reset_tamex
 
 ###############################################################
 # Target definitions
@@ -28,11 +28,6 @@ $(BINDIR)/%: $(OBJDIR)/%.o
 #	$(Q)$(CXX) $(LDINC) $(LDFLAGS) $(PEXLIB) $(CFLAGS) -o $@ $<
 	$(Q)$(CXX) $(LDFLAGS) $(CFLAGS) -o  $@  $< $(PEXLIB)
 
-#$(BINDIR)/gosiptest: $(OBJDIR)/gosiptest.o $(OBJDIR)/timing.o
-#	@echo -e "LD \t$@"
-#	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/gosiptest.o $(OBJDIR)/timing.o $(PEXLIB)
-##	$(Q)$(CC) $(LDINC) $(LDFLAGS) $(PEXLIB) $(CFLAGS) -o $@ $(OBJDIR)/gosiptest.o $(OBJDIR)/timing.o
-
 $(BINDIR)/flash_poland: $(OBJDIR)/m_load_poland_flash.o 
 	@echo -e "LD \t$@"
 	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/m_load_poland_flash.o  $(PEXLIB) 
@@ -40,6 +35,24 @@ $(BINDIR)/flash_poland: $(OBJDIR)/m_load_poland_flash.o
 $(BINDIR)/reset_poland: $(OBJDIR)/m_reset_poland_fpga.o 
 	@echo -e "LD \t$@"
 	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/m_reset_poland_fpga.o  $(PEXLIB) 
+	
+	
+$(BINDIR)/flash_febex3: $(OBJDIR)/m_load_febex3tamex_flash.o 
+	@echo -e "LD \t$@"
+	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/m_load_febex3tamex_flash.o  $(PEXLIB) 
+
+$(BINDIR)/reset_febex3: $(OBJDIR)/m_reset_febex3tamex_fpga.o 
+	@echo -e "LD \t$@"
+	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/m_reset_febex3tamex_fpga.o  $(PEXLIB) 	
+	
+$(BINDIR)/flash_tamex: $(OBJDIR)/m_load_febex3tamex_flash.o 
+	@echo -e "LD \t$@"
+	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/m_load_febex3tamex_flash.o  $(PEXLIB) 
+
+$(BINDIR)/reset_tamex: $(OBJDIR)/m_reset_febex3tamex_fpga.o 
+	@echo -e "LD \t$@"
+	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/m_reset_febex3tamex_fpga.o  $(PEXLIB) 		
+	
 
 
 # dummy for included common.mk
