@@ -16,11 +16,12 @@ PEXORLIBINSTALL = libmbspex.so
 PEXORDRIVER = $(PEXORSYS)/driver
 PEXORLIB  = $(PEXORSYS)/library
 PEXORTEST  = $(PEXORSYS)/tests
+PEXORFLASH  = $(PEXORSYS)/flash
 
 PEXORPACKAGE = MBSPexDriver
 
 PACKDIR = pexor_$(VERSION)
-PACKAGEFILES = $(PACKDIR)/driver/ $(PACKDIR)/library $(PACKDIR)/tests $(PACKDIR)/common.mk $(PACKDIR)/Makefile $(PACKDIR)/README.txt
+PACKAGEFILES = $(PACKDIR)/driver/ $(PACKDIR)/library $(PACKDIR)/tests $(PACKDIR)/flash $(PACKDIR)/common.mk $(PACKDIR)/Makefile $(PACKDIR)/README.txt
 
 
 
@@ -40,10 +41,10 @@ uninstall: driver-uninstall lib-uninstall
 
 clean:
 
+	cd $(PEXORFLASH); make clean
 	cd $(PEXORTEST); make clean
 	cd $(PEXORLIB); make clean
 	cd $(PEXORDRIVER); make clean
-	
 
 driver:
 	cd $(PEXORDRIVER); make all
@@ -53,6 +54,7 @@ lib: driver
 	
 examples: lib
 	cd $(PEXORTEST); make all
+	cd $(PEXORFLASH); make all	
 
 driver-install:
 	@mkdir -p $(INSTALLDIR)
@@ -90,7 +92,8 @@ lib-uninstall:
 pack: clean 
 	@mkdir -p $(PACKDIR)
 	@cp -rfd  $(PEXORSYS)/driver $(PACKDIR)
-	@cp -rfd  $(PEXORSYS)/user $(PACKDIR)
+	@cp -rfd  $(PEXORSYS)/tests $(PACKDIR)
+	@cp -rfd  $(PEXORSYS)/flash $(PACKDIR)	
 	@cp -rfd  $(PEXORSYS)/Makefile $(PACKDIR)
 	@cp -rfd  $(PEXORSYS)/README.txt $(PACKDIR)
 	@cp -rfd  $(PEXORSYS)/README_DABC.txt $(PACKDIR)
