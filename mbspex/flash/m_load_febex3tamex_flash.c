@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libgen.h>
+#include <ctype.h>
 
 
 #include <stdarg.h>
@@ -136,6 +137,10 @@ static  INTU4         *pl_im_verify_tmp;
 static  int            l_wait       = 0;  
 static  int            l_ec_running = 0;
 
+static char  progname [128];
+static char  devname [128];
+
+
 int  f_pex_slave_rd (long, long, long, long*);
 int  f_pex_slave_wr (long, long, long,  long);
 int  f_pex_slave_init (long, long);
@@ -146,7 +151,7 @@ void f_flash_block_erase (int);
 void f_flash_chip_erase (int);
 void f_flash_load (int);
 void f_flash_readback_verify (int);
-void f_usage (const char*);
+void f_usage ();
 
 int main(argc, argv)
 int argc;
@@ -157,15 +162,35 @@ char *argv[];
   int            flags;
   #endif // Linux
 
+
   char c_opt1 [20];
   char c_opt2 [20];
   int  l_ec=0;
   int  l_nv=0;
   int  l_vo=0;
 
+  // JAM 2020 -here evaluate actual name of device for runtime messages:
+  char* theSlave=0;
+  int l_t=0;
+  strncpy (progname, basename(argv[0]),128);
+  theSlave=strstr(progname,"_");
+  if(theSlave)
+	  theSlave++;
+  else
+	  theSlave="slave";
+  strncpy (devname, theSlave, 128);
+  for(l_t=0;l_t<strlen(devname); ++l_t)
+  {
+	  devname[l_t]=toupper(devname[l_t]);
+  }
+
+
+  printf ("Starting program %s for frontend slave %s\n", progname, devname);
+
+
   if ( (argc < 5) || (argc > 7) )
   {
-    f_usage (basename (argv[0]));
+    f_usage ();
     exit (1);
   }
   else
@@ -215,29 +240,31 @@ char *argv[];
       else
       {
         printf ("\n unkown option >%s< \n\n", c_opt2);
-        f_usage (basename (argv[0]));;
+        f_usage ();
       } 
     }
 
     if ( (l_vo == 1) && ((l_ec == 1) || (l_nv == 1)) )
     { 
       printf ("\n options are in contradiction \n\n");    
-      f_usage (basename (argv[0]));
+      f_usage ();
     }
 
 
     l_las_feb_id = l_fir_feb_id + l_n_feb - 1;
     if (l_n_feb > 1)
     {
-      printf ("use flash on sfp %d on all febex3/tamex from id %d to %d \n",
-                               l_sfp_id, l_fir_feb_id, l_las_feb_id);
+      printf ("use flash on sfp %d on all %ss from id %d to %d \n",
+                               l_sfp_id, devname, l_fir_feb_id, l_las_feb_id);
     }
     else
     {
-      printf ("use flash on sfp %d on febex3/tamex id %d \n", l_sfp_id, l_fir_feb_id);
+      printf ("use flash on sfp %d on %s id %d \n", l_sfp_id, devname,  l_fir_feb_id);
     }
     printf ("fpga bit file specified: %s \n", c_in_file);   
   }
+
+
 
   // open PEXOR device 
 #ifdef USE_MBSPEX_LIB
@@ -318,7 +345,7 @@ char *argv[];
   l_stat = f_pex_slave_init (l_sfp_id, l_las_feb_id+1);  
   if (l_stat == -1)
   {
-    printf ("ERROR>> febex initialization failed on sfp %d \n", l_sfp_id);
+    printf ("ERROR>> %s initialization failed on sfp %d \n", devname, l_sfp_id);
     printf ("exiting...\n"); 
     exit (0); 
   }  
@@ -414,18 +441,18 @@ char *argv[];
     f_pex_slave_rd (l_sfp_id, l_i, 0x300004, &l_data);    // read memory data out 
     if ((l_data & 0xffffff) == FLASH_MAN_ID)
     {
-      printf ("FEBEX3 SFP %d, ID %2d: flash memory manufacturer id found: 0x%x is ok! \n", l_sfp_id, l_i, l_data & 0xffffff);
+      printf ("%s SFP %d, ID %2d: flash memory manufacturer id found: 0x%x is ok! \n", devname, l_sfp_id, l_i, l_data & 0xffffff);
     }
     else if (l_data == 0xadadadad)
     {
-      printf ("ERROR>> wrong flash memory manufacturer id found on   sfp %d, febex %d \n", l_sfp_id, l_i);
+      printf ("ERROR>> wrong flash memory manufacturer id found on   sfp %d, %s %d \n", l_sfp_id, devname, l_i);
       printf ("        must be: 0x%x, found: 0x%x, exiting.. \n", FLASH_MAN_ID, l_data);
       printf ("0xadadadad indicates that no SPI master interface is available, exiting..\n");
       exit (0);  
     }
     else
     {
-      printf ("ERROR>> wrong flash memory manufacturer id found on   sfp %d, febex %d \n", l_sfp_id, l_i);
+      printf ("ERROR>> wrong flash memory manufacturer id found on   sfp %d, %s %d \n", l_sfp_id, devname, l_i);
       printf ("        must be: 0x%x, found: 0x%x, exiting.. \n", FLASH_MAN_ID, l_data);
       exit (0);  
     }
@@ -445,7 +472,7 @@ char *argv[];
     printf ("\n\n Summmary: \n");
     for (l_i=l_fir_feb_id; l_i<=l_las_feb_id; l_i++)
     {
-      printf ("FEBEX3 SFP %d, ID %2d: flash loading and verification successfully finished \n", l_sfp_id, l_i);
+      printf ("%s SFP %d, ID %2d: flash loading and verification successfully finished \n", devname, l_sfp_id, l_i);
     }
   }
 
@@ -460,7 +487,7 @@ char *argv[];
     printf ("\n\n Summmary: \n");
     for (l_i=l_fir_feb_id; l_i<=l_las_feb_id; l_i++)
     {
-      printf ("FEBEX3 SFP %d, ID %2d: flash successfully programmed. no verification \n", l_sfp_id, l_i);
+      printf ("%s SFP %d, ID %2d: flash successfully programmed. no verification \n", devname, l_sfp_id, l_i);
     }
   }
 
@@ -484,7 +511,7 @@ char *argv[];
         l_ec_running = 0;
       }
       f_flash_check_write_in_progress (l_i);
-      printf ("FEBEX3 SFP %d, ID %2d: erase finished\n", l_sfp_id, l_i);      
+      printf ("%s SFP %d, ID %2d: erase finished\n", devname, l_sfp_id, l_i);
     }
     l_ec_running = 0;
     for (l_i=l_fir_feb_id; l_i<=l_las_feb_id; l_i++)
@@ -495,7 +522,7 @@ char *argv[];
     printf ("\n\n Summmary: \n");
     for (l_i=l_fir_feb_id; l_i<=l_las_feb_id; l_i++)
     {
-      printf ("FEBEX3 SFP %d, ID %2d: flash loading and verification successfully finished \n", l_sfp_id, l_i);
+      printf ("%s SFP %d, ID %2d: flash loading and verification successfully finished \n", devname, l_sfp_id, l_i);
     }
   }
 
@@ -519,7 +546,7 @@ char *argv[];
         l_ec_running = 0;
       }
       f_flash_check_write_in_progress (l_i);
-      printf ("FEBEX3 SFP %d, ID %2d: erase finished\n", l_sfp_id, l_i);
+      printf ("%s SFP %d, ID %2d: erase finished\n", devname, l_sfp_id, l_i);
     }
     l_ec_running = 0;
     for (l_i=l_fir_feb_id; l_i<=l_las_feb_id; l_i++)
@@ -529,7 +556,7 @@ char *argv[];
     printf ("\n\n Summmary: \n");
     for (l_i=l_fir_feb_id; l_i<=l_las_feb_id; l_i++)
     {
-      printf ("FEBEX3 SFP %d, ID %2d: flash loading successfully finished. no verifcation \n", l_sfp_id, l_i);
+      printf ("%s SFP %d, ID %2d: flash loading successfully finished. no verifcation \n", devname, l_sfp_id, l_i);
     }
   }
 
@@ -542,7 +569,7 @@ char *argv[];
     printf ("\n\n Summmary: \n");
     for (l_i=l_fir_feb_id; l_i<=l_las_feb_id; l_i++)
     {
-      printf ("FEBEX3 SFP %d, ID %2d: flash verification successfully finished \n", l_sfp_id, l_i);
+      printf ("%s SFP %d, ID %2d: flash verification successfully finished \n", devname, l_sfp_id, l_i);
     }
   }
 return 0;
@@ -641,7 +668,7 @@ void f_flash_unprotect (int l_feb_id)
 void f_flash_block_erase (int l_feb_id)
 {
   // erase first 4 MB of flash (64 blocks x 0x10000 bytes), flash total: 8 MB
-  printf ("\nFEBEX3 SFP %d, ID %2d: start erasing first 4 MB (out of 8 MB) in flash memory \n", l_sfp_id, l_feb_id);
+  printf ("\n%s SFP %d, ID %2d: start erasing first 4 MB (out of 8 MB) in flash memory \n", devname, l_sfp_id, l_feb_id);
   for (l_j=0; l_j<64; l_j++)
   {
     // flash write enable
@@ -656,17 +683,17 @@ void f_flash_block_erase (int l_feb_id)
     f_flash_check_write_in_progress (l_feb_id);
     if (((l_j%10) == 0) && (l_j !=0) )
     { 
-      printf ("FEBEX3 SFP %d, ID %2d: %3d blocks of 64 Kbytes erased \n", l_sfp_id, l_feb_id, l_j);
+      printf ("%s SFP %d, ID %2d: %3d blocks of 64 Kbytes erased \n", devname, l_sfp_id, l_feb_id, l_j);
     }
   }
-  printf ("FEBEX3 SFP %d, ID %2d: %3d blocks of 64 Kbytes erased \n", l_sfp_id, l_feb_id, l_j);
-  printf ("FEBEX3 SFP %d, ID %2d: erase finished\n", l_sfp_id, l_feb_id);
+  printf ("%s SFP %d, ID %2d: %3d blocks of 64 Kbytes erased \n", devname, l_sfp_id, l_feb_id, l_j);
+  printf ("%s SFP %d, ID %2d: erase finished\n", devname, l_sfp_id, l_feb_id);
 }
 
 /*****************************************************************************/
 void f_flash_chip_erase (int l_feb_id)
 {
-  printf ("FEBEX3 SFP %d, ID %2d: start erasing full flash memory (needs about a minute)\n", l_sfp_id, l_feb_id);
+  printf ("%s SFP %d, ID %2d: start erasing full flash memory (needs about a minute)\n", devname, l_sfp_id, l_feb_id);
   // flash write enable
   f_pex_slave_wr (l_sfp_id, l_feb_id, 0x300010, 0x6000000);
   f_pex_slave_wr (l_sfp_id, l_feb_id, 0x300018, 0x1000);
@@ -681,7 +708,7 @@ void f_flash_chip_erase (int l_feb_id)
 void f_flash_load (int l_feb_id)
 {
   // load flash
-  printf ("\nFEBEX3 SFP %d, ID %2d: start loading fpga bit file into flash memory \n", l_sfp_id, l_feb_id);
+  printf ("\n%s SFP %d, ID %2d: start loading fpga bit file into flash memory \n", devname, l_sfp_id, l_feb_id);
   pl_im_tmp = (INTU4*) pc_im_buf; 
   l_im_remain_size = l_im_size;
   for (l_j=0; l_j<l_im_n_pages; l_j++)
@@ -724,11 +751,11 @@ void f_flash_load (int l_feb_id)
 
     if (((l_j%1000) == 0) && (l_j !=0) )
     { 
-      printf ("FEBEX3 SFP %d, ID %2d: %5d pages of 256 bytes loaded \n", l_sfp_id, l_feb_id, l_j);
+      printf ("%s SFP %d, ID %2d: %5d pages of 256 bytes loaded \n", devname, l_sfp_id, l_feb_id, l_j);
     }
   } 
-  printf ("FEBEX3 SFP %d, ID %2d: %5d pages of 256 bytes loaded \n", l_sfp_id, l_feb_id, l_j);
-  printf ("FEBEX3 SFP %d, ID %2d: loading finished \n", l_sfp_id, l_feb_id);
+  printf ("%s SFP %d, ID %2d: %5d pages of 256 bytes loaded \n",devname, l_sfp_id, l_feb_id, l_j);
+  printf ("%s SFP %d, ID %2d: loading finished \n",devname,  l_sfp_id, l_feb_id);
 }
 
 /*****************************************************************************/
@@ -736,7 +763,7 @@ void f_flash_readback_verify (int l_feb_id)
 {
   int l_ct = 0;
   // read back flash and compare with image buffer from input file
-  printf ("\nFEBEX3 SFP %d, ID %2d: start reading flash memory \n", l_sfp_id, l_feb_id);
+  printf ("\n%s SFP %d, ID %2d: start reading flash memory \n", devname, l_sfp_id, l_feb_id);
   pl_im_verify_tmp  = (INTU4*) pc_im_verify_buf; 
   pc_im_verify_tmp2 = pc_im_verify_buf;
   pc_im_tmp2        = pc_im_buf;
@@ -799,11 +826,11 @@ void f_flash_readback_verify (int l_feb_id)
 
     if (((l_j%1000) == 0) && (l_j !=0) )
     { 
-      printf ("FEBEX3 SFP %d, ID %2d: %5d pages of 256 bytes read back and verified with input file, ok!\n", l_sfp_id, l_feb_id, l_j);
+      printf ("%s SFP %d, ID %2d: %5d pages of 256 bytes read back and verified with input file, ok!\n",devname, l_sfp_id, l_feb_id, l_j);
     }
   } 
-  printf ("FEBEX3 SFP %d, ID %2d: %5d pages of 256 bytes read back and verified with input file, ok!\n", l_sfp_id, l_feb_id, l_j);
-  printf ("FEBEX3 SFP %d, ID %2d: verification finished \n", l_sfp_id, l_feb_id);
+  printf ("%s SFP %d, ID %2d: %5d pages of 256 bytes read back and verified with input file, ok!\n",devname, l_sfp_id, l_feb_id, l_j);
+  printf ("%s SFP %d, ID %2d: verification finished \n", devname, l_sfp_id, l_feb_id);
 }
 
 /*****************************************************************************/
@@ -1014,21 +1041,20 @@ void f_i2c_sleep ()
 
 /*****************************************************************************/
 
-void f_usage (const char *progname)
+void f_usage ()
 {
-  printf ("\n*** %s v 1.0 02-June 2020 by NK, JAM (GSI EEL department) *** \n", progname);
-  printf ("\nusage of %s,  < > are mandatory parameters   \n\n",progname);
-  printf ("%s <sfp id> <first febex3/tamex id> <# of febex3/tamex> <bitfile input fn> \n",progname); 
-  printf ("%s <sfp id> <first febex3/tamex id> <# of febex3/tamex> <bitfile input fn> -nv \n",progname); 
-  printf ("%s <sfp id> <first febex3/tamex id> <# of febex3/tamex> <bitfile input fn> -ec\n",progname); 
-  printf ("%s <sfp id> <first febex3/tamex id> <# of febex3/tamex> <bitfile input fn> -ec -nv \n",progname);
-  printf ("%s <sfp id> <first febex3/tamex id> <# of febex3/tamex> <bitfile input fn> -vo \n,progname",progname);  
+  printf ("\n*** %s v 1.05 03-June 2020 by NK, JAM (GSI EEL department) *** \n", progname);
+  printf ("\nusage of %s,  < > are mandatory parameters   \n\n", progname);
+  printf ("%s <sfp id> <first %s id> <# of %ss> <bitfile input fn> \n", progname, devname, devname);
+  printf ("%s <sfp id> <first %s id> <# of %ss> <bitfile input fn> -nv \n", progname, devname, devname);
+  printf ("%s <sfp id> <first %s id> <# of %ss> <bitfile input fn> -ec\n", progname, devname, devname);
+  printf ("%s <sfp id> <first %s id> <# of %ss> <bitfile input fn> -ec -nv \n", progname, devname, devname);
+  printf ("%s <sfp id> <first %s id> <# of %ss> <bitfile input fn> -vo \n", progname, devname, devname);
   printf ("\n");
   printf ("no option: block erase, load, verify \n");
   printf (" -nv     : no verify \n");
-  printf (" -ec     : chip  erase (parallel erase, faster if more than 2 febex3/tamex specified) \n");
+  printf (" -ec     : chip  erase (parallel erase, faster if more than 2 %ss specified) \n",devname);
   printf (" -vo     : only verify (-nv and -vo are exclusive) \n");
-
   exit (0);
 }
 

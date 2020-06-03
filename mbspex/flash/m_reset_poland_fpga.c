@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libgen.h>
+#include <ctype.h>
 
 #include <stdarg.h>
 
@@ -115,11 +116,14 @@ static  int            l_fir_pol_id;
 static  int            l_las_pol_id;
 static  int            l_n_pol;
 
+static char  progname [128];
+static char  devname [128];
+
 int  f_pex_slave_rd (long, long, long, long*);
 int  f_pex_slave_wr (long, long, long,  long);
 int  f_pex_slave_init (long, long);
 void f_i2c_sleep ();
-void f_usage (const char *progname);
+void f_usage ();
 
 int main(argc, argv)
 int argc;
@@ -130,9 +134,29 @@ char *argv[];
   int            flags;
   #endif // Linux
 
+ // JAM 2020 -here evaluate actual name of device for runtime messages:
+  char* theSlave=0;
+  int l_t=0;
+  strncpy (progname, basename(argv[0]),128);
+  theSlave=strstr(progname,"_");
+  if(theSlave)
+	  theSlave++;
+  else
+	  theSlave="slave";
+  strncpy (devname, theSlave, 128);
+  for(l_t=0;l_t<strlen(devname); ++l_t)
+  {
+	  devname[l_t]=toupper(devname[l_t]);
+  }
+
+
+  printf ("Starting program %s for frontend slave %s\n", progname, devname);
+
+
+
   if ( argc != 4 )
   {
-    f_usage (basename (argv[0]));
+    f_usage ();
     exit (1);
   }
   else
@@ -144,12 +168,12 @@ char *argv[];
     l_las_pol_id = l_fir_pol_id + l_n_pol - 1;
     if (l_n_pol > 1)
     {
-      printf ("reset fpgas on sfp %d on all poland from id %d to %d \n",
-                               l_sfp_id, l_fir_pol_id, l_las_pol_id);
+      printf ("reset fpgas on sfp %d on all %ss from id %d to %d \n",
+                               l_sfp_id, devname, l_fir_pol_id, l_las_pol_id);
     }
     else
     {
-      printf ("reset fpga on sfp %d on poland id %d \n", l_sfp_id, l_fir_pol_id);
+      printf ("reset fpga on sfp %d on %s id %d \n", l_sfp_id, devname, l_fir_pol_id);
     }
   }
 
@@ -232,7 +256,7 @@ char *argv[];
   l_stat = f_pex_slave_init (l_sfp_id, l_las_pol_id+1);  
   if (l_stat == -1)
   {
-    printf ("ERROR>> poland initialization failed on sfp %d \n", l_sfp_id);
+    printf ("ERROR>> %s initialization failed on sfp %d \n", devname, l_sfp_id);
     printf ("exiting...\n"); 
     exit (0); 
   }  
@@ -264,25 +288,25 @@ char *argv[];
     f_pex_slave_rd (l_sfp_id, l_i, 0x300004, &l_data);    // read memory data out 
     if ((l_data & 0xffffff) == FLASH_MAN_ID)
     {
-      printf ("POLAND SFP %d, ID %2d: flash memory manufacturer id found: 0x%x is ok! \n", l_sfp_id, l_i, l_data & 0xffffff);
+      printf ("%s SFP %d, ID %2d: flash memory manufacturer id found: 0x%x is ok! \n", devname, l_sfp_id, l_i, l_data & 0xffffff);
     }
     else if (l_data == 0xadadadad)
     {
-      printf ("ERROR>> wrong flash memory manufacturer id found on sfp %d, poland %d \n", l_sfp_id, l_i); 
+      printf ("ERROR>> wrong flash memory manufacturer id found on   sfp %d, %s %d \n", l_sfp_id, devname, l_i);
       printf ("        must be: 0x%x, found: 0x%x, exiting.. \n", FLASH_MAN_ID, l_data);
       printf ("0xadadadad indicates that no SPI master interface is available, exiting..\n");
       exit (0);  
     }
     else
     {
-      printf ("ERROR>> wrong flash memory manufacturer id found on sfp %d, poland %d \n", l_sfp_id, l_i);
+      printf ("ERROR>> wrong flash memory manufacturer id found on   sfp %d, %s %d \n", l_sfp_id, devname, l_i);
       printf ("        must be: 0x%x, found: 0x%x, exiting.. \n", FLASH_MAN_ID, l_data);
       exit (0);  
     }
   }
   for (l_i=l_las_pol_id; l_i>=l_fir_pol_id; l_i--)
   {
-    printf ("POLAND SFP %d, ID %2d: reloading of fpaga from flash and fpga restart started.. \n", l_sfp_id, l_i);
+    printf ("%s SFP %d, ID %2d: reloading of fpga from flash and fpga restart started.. \n", devname, l_sfp_id, l_i);
     usleep (1); 
     f_pex_slave_wr (l_sfp_id, l_i, 0x300018, 0x80000000);
     //f_pex_slave_wr (l_sfp_id, l_i, 0x8010, 0x7d000000);
@@ -498,13 +522,14 @@ void f_i2c_sleep ()
 }
 
 /*****************************************************************************/
-
-void f_usage (const char *progname)
+void f_usage ()
 {
-  printf ("\n*** %s v 1.0 29-May 2020 by NK, JAM (GSI EEL department) *** \n", progname);
-  printf ("\nwrong parameter list specified, usage: \n\n");
-  printf ("%s <sfp id> <first poland id> <# of polands>  \n\n",progname);
-  exit (0);
+	printf("\n*** %s v 1.05 03-June 2020 by NK, JAM (GSI EEL department) *** \n",
+			progname);
+	printf("\nwrong parameter list specified, usage: \n\n");
+	printf("%s <sfp id> <first %s id> <# of %ss>  \n\n", progname, devname,
+			devname);
+	exit(0);
 }
 
 /*****************************************************************************/

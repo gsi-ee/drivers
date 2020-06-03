@@ -9,7 +9,7 @@ LDFLAGS += -Wl,-rpath,/usr/lib -lrt
 #PEXLIB = -Wl,-rpath,/usr/lib -Wl,-rpath,$(LIBDIR) -lmbspex
 PEXLIB = $(LIBDIR)/libmbspex.a
 
-BINARIES = flash_poland reset_poland flash_febex3 reset_febex3 flash_tamex reset_tamex
+BINARIES = flash_poland reset_poland flash_febex3 reset_febex3 flash_tamex reset_tamex flash_febex4 reset_febex4 flash_clock_tdc reset_clock_tdc flash_kilom reset_kilom flash_mppc_rob  reset_mppc_rob  
 
 ###############################################################
 # Target definitions
@@ -53,6 +53,40 @@ $(BINDIR)/reset_tamex: $(OBJDIR)/m_reset_febex3tamex_fpga.o
 	@echo -e "LD \t$@"
 	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/m_reset_febex3tamex_fpga.o  $(PEXLIB) 		
 	
+$(BINDIR)/flash_febex4: $(OBJDIR)/m_load_febex4_flash.o 
+	@echo -e "LD \t$@"
+	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/m_load_febex4_flash.o  $(PEXLIB) 
+
+$(BINDIR)/reset_febex4: $(OBJDIR)/m_reset_febex4_fpga.o 
+	@echo -e "LD \t$@"
+	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/m_reset_febex4_fpga.o  $(PEXLIB) 	
+
+
+$(BINDIR)/flash_clock_tdc: $(OBJDIR)/m_load_clock_tdc_flash.o 
+	@echo -e "LD \t$@"
+	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/m_load_clock_tdc_flash.o  $(PEXLIB) 
+
+$(BINDIR)/reset_clock_tdc: $(OBJDIR)/m_reset_clock_tdc_fpga.o 
+	@echo -e "LD \t$@"
+	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/m_reset_clock_tdc_fpga.o  $(PEXLIB) 
+
+$(BINDIR)/flash_kilom: $(OBJDIR)/m_load_clock_tdc_flash.o 
+	@echo -e "LD \t$@"
+	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/m_load_clock_tdc_flash.o  $(PEXLIB) 
+
+$(BINDIR)/reset_kilom: $(OBJDIR)/m_reset_clock_tdc_fpga.o 
+	@echo -e "LD \t$@"
+	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/m_reset_clock_tdc_fpga.o  $(PEXLIB) 
+
+$(BINDIR)/flash_mppc_rob: $(OBJDIR)/m_load_clock_tdc_flash.o 
+	@echo -e "LD \t$@"
+	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/m_load_clock_tdc_flash.o  $(PEXLIB) 
+
+$(BINDIR)/reset_mppc_rob: $(OBJDIR)/m_reset_clock_tdc_fpga.o 
+	@echo -e "LD \t$@"
+	$(Q)$(CC) $(LDFLAGS) $(CFLAGS)  -o $@ $(OBJDIR)/m_reset_clock_tdc_fpga.o  $(PEXLIB) 
+
+
 
 
 # dummy for included common.mk

@@ -1,9 +1,7 @@
 // N.Kurz, EE, GSI, 10-Jun-2013
-// N.Kurz, EE, GSI, 11-Dec-2015: adoted for nyxor board
-// N.Kurz, EE, GSI, 28-Sep-2016: adoted for poland
-//                               use big .rpd of exactly 16 mbytes to load the poland flash. 
-// JAM, EE, GSI, 07-May-2020: adjusted to mbspex/pexor driver library to avoid mapping bar 0
-// JAM, EE, GSI, 29-May-2020: renamed executable. Usage prints out real exec name
+// N.Kurz, EE, GSI, 11-Dec-2015: adopted for clock tdc board
+
+// JAM, EE, GSI, 02-Jun-2020: adjusted to mbspex/pexor driver library to avoid mapping bar 0
 
 #define USE_MBSPEX_LIB 1
 
@@ -87,11 +85,10 @@ typedef unsigned long long ADDR64; // JAM for 64 bit status structure receiving
 //#define DEBUG
 //#define DEBUG2
 
-
+#define printm printf
 
 #define MAX_INP_LEN      256
-#define FLASH_MAN_ID     0x182020
-//#define IM_N_PAGES       0x8000   
+#define FLASH_MAN_ID     0x19ba20
 #define IM_N_PAGES       0x10000   
 #define FLASH_PAGE_SIZE  0x100
 #define IM_BUF_SIZE      FLASH_PAGE_SIZE * IM_N_PAGES
@@ -106,25 +103,21 @@ typedef unsigned long long ADDR64; // JAM for 64 bit status structure receiving
 #define PCI_BAR0_NAME     "PCI_BAR0_MBS"
 #define PCI_BAR0_SIZE     0x800000  // in bytes
 
-
-
 static int  l_i, l_j, l_k;
-static long            l_first=1;  
-
-static long            l_stat;
-static int             fd_pex; 
+//static s_pexor        sPEXOR;
+static long           l_stat;
+static int            fd_pex; 
 #ifndef Linux
- static int            l_bar0_base;
+ static int           l_bar0_base;
 #endif //Linux
 static INTU4 volatile *pl_virt_bar0;
-static long            l_dat1, l_dat2, l_dat3;
-static long            l_data; 
-static unsigned char   l_d;
+static long           l_dat1, l_dat2, l_dat3;
+static long           l_data; 
 
 static  int            l_sfp_id;
-static  int            l_fir_pol_id;
-static  int            l_las_pol_id;
-static  int            l_n_pol;
+static  int            l_fir_nyx_id;
+static  int            l_las_nyx_id;
+static  int            l_n_nyx;
 static  char           c_in_file [MAX_INP_LEN];
 static  unsigned char *pc_im_buf;
 static  unsigned char *pc_im_tmp;
@@ -135,12 +128,8 @@ static  int            l_im_size;
 static  int            l_wip; 
 static  int            l_im_n_pages;
 
-//static  unsigned int   l_im_remain_size;
-//static  unsigned int   l_spi_trans_size;
-
-static  size_t   l_im_remain_size;
-static  size_t   l_spi_trans_size;
-
+static  unsigned int   l_im_remain_size;
+static  unsigned int   l_spi_trans_size;
 static  unsigned int   l_spi_trans_size_code;
 static  unsigned char *pc_im_verify_buf;
 static  unsigned char *pc_im_verify_tmp;
@@ -150,14 +139,14 @@ static  int            l_wait       = 0;
 static  int            l_ec_running = 0;
 static  unsigned long  l_shift_im_size;
 
-//#ifdef DEBUG2
+#ifdef DEBUG2
 static  unsigned char *pc_flash;
 static  unsigned char *pc_file;
-//#endif // DEBUG2
-
+#endif // DEBUG2
 
 static char  progname [128];
 static char  devname [128];
+
 
 
 int  f_pex_slave_rd (long, long, long, long*);
@@ -180,7 +169,6 @@ char *argv[];
   int            prot;
   int            flags;
   #endif // Linux
-
 
   char c_opt1 [20];
   char c_opt2 [20];
@@ -215,8 +203,8 @@ char *argv[];
   else
   {
     sscanf (argv[1], "%d", &l_sfp_id);
-    sscanf (argv[2], "%d", &l_fir_pol_id);
-    sscanf (argv[3], "%d", &l_n_pol);
+    sscanf (argv[2], "%d", &l_fir_nyx_id);
+    sscanf (argv[3], "%d", &l_n_nyx);
     sscanf (argv[4], "%s", c_in_file);
     if (argc > 5)
     {
@@ -270,15 +258,15 @@ char *argv[];
     }
 
 
-    l_las_pol_id = l_fir_pol_id + l_n_pol - 1;
-    if (l_n_pol > 1)
+    l_las_nyx_id = l_fir_nyx_id + l_n_nyx - 1;
+    if (l_n_nyx > 1)
     {
       printf ("use flash on sfp %d on all %ss from id %d to %d \n",
-                               l_sfp_id, devname, l_fir_pol_id, l_las_pol_id);
+                               l_sfp_id, devname, l_fir_nyx_id, l_las_nyx_id);
     }
     else
     {
-      printf ("use flash on sfp %d on %s id %d \n", l_sfp_id, devname,  l_fir_pol_id);
+      printf ("use flash on sfp %d on %s id %d \n", l_sfp_id, devname,  l_fir_nyx_id);
     }
     printf ("fpga bit file specified: %s \n", c_in_file);   
   }
@@ -351,15 +339,12 @@ char *argv[];
     printf ("ERROR>> could not close PEXOR device \n");
   }
 
-  // initialize gosip on all connected POLANDs
+  // initialize gosip on all connected clock tdcs
   PEXOR_GetPointer(0, pl_virt_bar0, &sPEXOR); 
 
-#endif // mbspex lib  
-  
+#endif // mbspex lib 
 
-
-  
-  l_stat = f_pex_slave_init (l_sfp_id, l_las_pol_id+1);  
+  l_stat = f_pex_slave_init (l_sfp_id, l_las_nyx_id+1);  
   if (l_stat == -1)
   {
     printf ("ERROR>> %s initialization failed on sfp %d \n", devname, l_sfp_id);
@@ -367,9 +352,6 @@ char *argv[];
     exit (0); 
   }  
 
-  
-  
-  
   pc_im_buf = (char*) malloc (sizeof(char) * IM_BUF_SIZE);
   if (pc_im_buf == NULL)
   {
@@ -402,7 +384,7 @@ char *argv[];
     printf ("ERROR>> could not open fpga bit file %s, exiting... \n", c_in_file);
     exit (0);
   }
-
+ 
   l_im_size = 0;
   do
   {
@@ -411,59 +393,28 @@ char *argv[];
 
   fclose (fd_im_file);
 
-
-  l_im_size = 0x700000;  // file.rpd has a size of exactly 16 mbytes, but file.rpd contains a lot of 0xff
-                         // at the end, which don't have to be loaded... cross your fingers!
-                        
-                         // in case of suspicion/troubles comment the setting of l_im_size to 0x700000,
-                         // then it will load the full file, but loading and checking will take mor than
-                         // twice longer.
-
   printf ("fpga bit file %s of 0x%x (%d) bytes read into buffer \n", c_in_file, l_im_size, l_im_size); 
 
   // do some necessary byte gymnastics with input file buffer
-  // mirror all bits in each byte
-  pc_im_tmp = pc_im_buf;
-  for (l_i=0; l_i<l_im_size; l_i++)
-  { 
-    l_d = *pc_im_tmp;
-    *pc_im_tmp++ = (   ((l_d &  1)<<7) | ((l_d &  2)<<5) | ((l_d &  4)<<3) | ((l_d &   8)<<1)
-                     | ((l_d & 16)>>1) | ((l_d & 32)>>3) | ((l_d & 64)>>5) | ((l_d & 128)>>7) );
-  }
+  pc_im_tmp       = pc_im_buf;
+  pc_im_tmp2      = pc_im_buf + 113;
+  l_shift_im_size = l_im_size - 113;
 
-  /*
-  printf ("*(pc_im_buf+41) 0x%x \n", *(pc_im_buf+41));
-  printf ("*(pc_im_buf+69) 0x%x \n", *(pc_im_buf+69));
-  printf ("*(pc_im_buf+70) 0x%x \n", *(pc_im_buf+70));
-  printf ("*(pc_im_buf+73) 0x%x \n", *(pc_im_buf+73));
-  printf ("*(pc_im_buf+74) 0x%x \n", *(pc_im_buf+74));
-  */
- 
-  // the commented changes have been necessary for file.rbf (which we don't use anymore)
-  
-  // do some necesary, but not fully understood manipulation
-  // fpga doesn'n start without these changes!
-/*
-  *(pc_im_buf+41) = 0xdb;
-  *(pc_im_buf+69) = 0x9f;
-  *(pc_im_buf+70) = 0x9f;
-  *(pc_im_buf+73) = 0xb;
-  *(pc_im_buf+74) = 0x6e;
-*/
-  /*
-  printf ("*(pc_im_buf+41) 0x%x \n", *(pc_im_buf+41));
-  printf ("*(pc_im_buf+69) 0x%x \n", *(pc_im_buf+69));
-  printf ("*(pc_im_buf+70) 0x%x \n", *(pc_im_buf+70));
-  printf ("*(pc_im_buf+73) 0x%x \n", *(pc_im_buf+73));
-  printf ("*(pc_im_buf+74) 0x%x \n", *(pc_im_buf+74));
-  */
+  for (l_i=0; l_i<l_shift_im_size; l_i++)
+  { 
+    *pc_im_tmp++ = *pc_im_tmp2++;
+  }
+  for (l_i=0; l_i<113; l_i++)
+  {
+    *pc_im_tmp++ = 0xff;
+  }
 
   l_im_n_pages = (l_im_size/FLASH_PAGE_SIZE) + 1;
   printm ("%d pages of 256 bytes to load \n", l_im_n_pages);
 
 
   printf ("\n\ncheck if all flash memories specified show the correct manufacturer id \n");   
-  for (l_i=l_fir_pol_id; l_i<=l_las_pol_id; l_i++)
+  for (l_i=l_fir_nyx_id; l_i<=l_las_nyx_id; l_i++)
   {
     //read flash status register
     f_pex_slave_wr (l_sfp_id, l_i, 0x300010, 0x0);        // max data word to spi data in  
@@ -475,7 +426,7 @@ char *argv[];
     f_pex_slave_wr (l_sfp_id, l_i, 0x300008, 0x100);      // memory read command + address
     l_data = 0;
     f_pex_slave_rd (l_sfp_id, l_i, 0x300004, &l_data);    // read memory data out 
-    //printf ("flash status of                           sfp %d, poland %d: 0x%x \n", l_sfp_id, l_i, l_data & 0xff);
+    //printf ("flash status of                           sfp %d, clock tdc %d: 0x%x \n", l_sfp_id, l_i, l_data & 0xff);
 
     // read manufacturer id, memory tpe and memory density
     f_pex_slave_wr (l_sfp_id, l_i, 0x300010, 0x2000000);  // max data word to spi data in  
@@ -510,7 +461,7 @@ char *argv[];
 
   if ( (l_ec == 0) && (l_nv == 0) && (l_vo == 0) ) //standard
   {
-    for (l_i=l_fir_pol_id; l_i<=l_las_pol_id; l_i++)
+    for (l_i=l_fir_nyx_id; l_i<=l_las_nyx_id; l_i++)
     {
       f_flash_unprotect       (l_i);
       f_flash_block_erase     (l_i);
@@ -518,7 +469,7 @@ char *argv[];
       f_flash_readback_verify (l_i);
     }
     printf ("\n\n Summmary: \n");
-    for (l_i=l_fir_pol_id; l_i<=l_las_pol_id; l_i++)
+    for (l_i=l_fir_nyx_id; l_i<=l_las_nyx_id; l_i++)
     {
       printf ("%s SFP %d, ID %2d: flash loading and verification successfully finished \n", devname, l_sfp_id, l_i);
     }
@@ -526,14 +477,14 @@ char *argv[];
 
   if ( (l_ec == 0) && (l_nv == 1) )
   {
-    for (l_i=l_fir_pol_id; l_i<=l_las_pol_id; l_i++)
+    for (l_i=l_fir_nyx_id; l_i<=l_las_nyx_id; l_i++)
     {
       f_flash_unprotect   (l_i);
       f_flash_block_erase (l_i);
       f_flash_load        (l_i);
     }
     printf ("\n\n Summmary: \n");
-    for (l_i=l_fir_pol_id; l_i<=l_las_pol_id; l_i++)
+    for (l_i=l_fir_nyx_id; l_i<=l_las_nyx_id; l_i++)
     {
       printf ("%s SFP %d, ID %2d: flash successfully programmed. no verification \n", devname, l_sfp_id, l_i);
     }
@@ -542,15 +493,15 @@ char *argv[];
   if ( (l_ec == 1) && (l_nv == 0))
   {
     printf ("\n");
-    for (l_i=l_fir_pol_id; l_i<=l_las_pol_id; l_i++)
+    for (l_i=l_fir_nyx_id; l_i<=l_las_nyx_id; l_i++)
     {
       f_flash_unprotect  (l_i);
       f_flash_chip_erase (l_i);
     }
     l_wait = 5;  // sec 
-    for (l_i=l_fir_pol_id; l_i<=l_las_pol_id; l_i++)
+    for (l_i=l_fir_nyx_id; l_i<=l_las_nyx_id; l_i++)
     {
-      if (l_i == l_fir_pol_id)
+      if (l_i == l_fir_nyx_id)
       {
         l_ec_running = 1;
       }
@@ -562,13 +513,13 @@ char *argv[];
       printf ("%s SFP %d, ID %2d: erase finished\n", devname, l_sfp_id, l_i);
     }
     l_ec_running = 0;
-    for (l_i=l_fir_pol_id; l_i<=l_las_pol_id; l_i++)
+    for (l_i=l_fir_nyx_id; l_i<=l_las_nyx_id; l_i++)
     {
       f_flash_load            (l_i);
       f_flash_readback_verify (l_i);
     }
     printf ("\n\n Summmary: \n");
-    for (l_i=l_fir_pol_id; l_i<=l_las_pol_id; l_i++)
+    for (l_i=l_fir_nyx_id; l_i<=l_las_nyx_id; l_i++)
     {
       printf ("%s SFP %d, ID %2d: flash loading and verification successfully finished \n", devname, l_sfp_id, l_i);
     }
@@ -577,15 +528,15 @@ char *argv[];
   if ( (l_ec == 1) && (l_nv == 1))
   {
     printf ("\n");
-    for (l_i=l_fir_pol_id; l_i<=l_las_pol_id; l_i++)
+    for (l_i=l_fir_nyx_id; l_i<=l_las_nyx_id; l_i++)
     {
       f_flash_unprotect  (l_i);
       f_flash_chip_erase (l_i);
     }
     l_wait = 5;  // sec
-    for (l_i=l_fir_pol_id; l_i<=l_las_pol_id; l_i++)
+    for (l_i=l_fir_nyx_id; l_i<=l_las_nyx_id; l_i++)
     {
-      if (l_i == l_fir_pol_id)
+      if (l_i == l_fir_nyx_id)
       {
         l_ec_running = 1;
       }
@@ -597,12 +548,12 @@ char *argv[];
       printf ("%s SFP %d, ID %2d: erase finished\n", devname, l_sfp_id, l_i);
     }
     l_ec_running = 0;
-    for (l_i=l_fir_pol_id; l_i<=l_las_pol_id; l_i++)
+    for (l_i=l_fir_nyx_id; l_i<=l_las_nyx_id; l_i++)
     {
       f_flash_load (l_i);
     }
     printf ("\n\n Summmary: \n");
-    for (l_i=l_fir_pol_id; l_i<=l_las_pol_id; l_i++)
+    for (l_i=l_fir_nyx_id; l_i<=l_las_nyx_id; l_i++)
     {
       printf ("%s SFP %d, ID %2d: flash loading successfully finished. no verifcation \n", devname, l_sfp_id, l_i);
     }
@@ -610,12 +561,12 @@ char *argv[];
 
   if (l_vo == 1)
   {
-    for (l_i=l_fir_pol_id; l_i<=l_las_pol_id; l_i++)
+    for (l_i=l_fir_nyx_id; l_i<=l_las_nyx_id; l_i++)
     {
       f_flash_readback_verify (l_i);
     }
     printf ("\n\n Summmary: \n");
-    for (l_i=l_fir_pol_id; l_i<=l_las_pol_id; l_i++)
+    for (l_i=l_fir_nyx_id; l_i<=l_las_nyx_id; l_i++)
     {
       printf ("%s SFP %d, ID %2d: flash verification successfully finished \n", devname, l_sfp_id, l_i);
     }
@@ -624,7 +575,7 @@ return 0;
 }
 /*****************************************************************************/
 
-void f_flash_check_write_in_progress (int l_pol_ident)
+void f_flash_check_write_in_progress (int l_nyx_ident)
 {
   int l_ct1 = 0;
   int l_ct2 = 0;
@@ -656,17 +607,17 @@ void f_flash_check_write_in_progress (int l_pol_ident)
     }
     //usleep (250000); 
     //read flash status register
-    f_pex_slave_wr (l_sfp_id, l_pol_ident, 0x300010, 0x0);    
-    f_pex_slave_wr (l_sfp_id, l_pol_ident, 0x300018, 0x1001); 
-    f_pex_slave_wr (l_sfp_id, l_pol_ident, 0x300018, 0x0);    
-    f_pex_slave_wr (l_sfp_id, l_pol_ident, 0x300010, 0x5000000); 
-    f_pex_slave_wr (l_sfp_id, l_pol_ident, 0x300018, 0x1000);    
-    f_pex_slave_wr (l_sfp_id, l_pol_ident, 0x300018, 0x0);
-    f_pex_slave_wr (l_sfp_id, l_pol_ident, 0x300008, 0x100);     
+    f_pex_slave_wr (l_sfp_id, l_nyx_ident, 0x300010, 0x0);    
+    f_pex_slave_wr (l_sfp_id, l_nyx_ident, 0x300018, 0x1001); 
+    f_pex_slave_wr (l_sfp_id, l_nyx_ident, 0x300018, 0x0);    
+    f_pex_slave_wr (l_sfp_id, l_nyx_ident, 0x300010, 0x5000000); 
+    f_pex_slave_wr (l_sfp_id, l_nyx_ident, 0x300018, 0x1000);    
+    f_pex_slave_wr (l_sfp_id, l_nyx_ident, 0x300018, 0x0);
+    f_pex_slave_wr (l_sfp_id, l_nyx_ident, 0x300008, 0x100);     
     l_data = 0;
-    f_pex_slave_rd (l_sfp_id, l_pol_ident, 0x300004, &l_data);
+    f_pex_slave_rd (l_sfp_id, l_nyx_ident, 0x300004, &l_data);
     if ((l_data & 0x1) == 0) {l_wip = 0;}   
-    //printf ("flash status after block %2d erased:       sfp %d, poland %d: 0x%x \n", l_j, l_sfp_id, l_pol_ident, l_data & 0xff);
+    //printf ("flash status after block %2d erased:       sfp %d, clock tdc %d: 0x%x \n", l_j, l_sfp_id, l_nyx_ident, l_data & 0xff);
 
     // inifinite loop protection to be done
   }
@@ -674,89 +625,89 @@ void f_flash_check_write_in_progress (int l_pol_ident)
 
 /*****************************************************************************/
 
-void f_flash_unprotect (int l_pol_id)
+void f_flash_unprotect (int l_nyx_id)
 {
   // flash write enable
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300010, 0x6000000); // spi commando RDID to data in 
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x1000);    // spi write en high for addr 0 - control register
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x0);       // spi write enable low
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300010, 0x6000000); // spi commando RDID to data in 
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x1000);    // spi write en high for addr 0 - control register
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x0);       // spi write enable low
 
   //read flash status register
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300010, 0x0);        // max data word to spi data in  
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x1001);     // spi write en high for addr 1 - status register  
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x0);        // spi write en low 
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300010, 0x5000000);  // spi commando: read flash status register 
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x1000);     // spi write en high for addr 0 - control register
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x0);
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300008, 0x100);      // memory read command + address
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300010, 0x0);        // max data word to spi data in  
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x1001);     // spi write en high for addr 1 - status register  
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x0);        // spi write en low 
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300010, 0x5000000);  // spi commando: read flash status register 
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x1000);     // spi write en high for addr 0 - control register
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x0);
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300008, 0x100);      // memory read command + address
   l_data = 0;
-  f_pex_slave_rd (l_sfp_id, l_pol_id, 0x300004, &l_data);    // read memory data out 
-  //printf ("flash status after flash write enable:    sfp %d, poland %d: 0x%x \n", l_sfp_id, l_pol_id, l_data & 0xff);
+  f_pex_slave_rd (l_sfp_id, l_nyx_id, 0x300004, &l_data);    // read memory data out 
+  //printf ("flash status after flash write enable:    sfp %d, clock tdc %d: 0x%x \n", l_sfp_id, l_nyx_id, l_data & 0xff);
 
   // write 0 to flash status register (unprotect all sectors in trb code)
 
   // flash write enable
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300010, 0x6000000);
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x1000);
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x0);
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300010, 0x6000000);
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x1000);
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x0);
   // write 0 to spi mem
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300000, 0x0);        
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300008, 0x1000);    
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300008, 0x0);       
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300000, 0x0);        
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300008, 0x1000);    
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300008, 0x0);       
   // write flash status
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300010, 0x1000000); 
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x1000); 
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x0);    
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300010, 0x1000000); 
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x1000); 
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x0);    
 
-  f_flash_check_write_in_progress (l_pol_id);
+  f_flash_check_write_in_progress (l_nyx_id);
 }
 
 /*****************************************************************************/
 
-void f_flash_block_erase (int l_pol_id)
+void f_flash_block_erase (int l_nyx_id)
 {
-  // erase first 8 MB of flash (32 blocks x 0x40000 bytes), flash total: 8 MB poland
-  printf ("\n%sFP %d, ID %2d: start erasing first 8 MB (out of 16 MB) in flash memory \n", devname,  l_pol_id);
+  // erase first 8 MB of flash (32 blocks x 0x40000 bytes), flash total: 8 MB febex4
+  printf ("\n%sSFP %d, ID %2d: start erasing first 8 MB (out of 16 MB) in flash memory \n", devname, l_sfp_id, l_nyx_id);
   for (l_j=0; l_j<N_SECTORS; l_j++)
   {
     // flash write enable
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300010, 0x6000000);
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x1000);
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x0);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300010, 0x6000000);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x1000);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x0);
     // erase block
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300010, 0xd8000000 + (l_j * FLASH_BLOCK_SIZE));
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x1000);
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x0);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300010, 0xd8000000 + (l_j * FLASH_BLOCK_SIZE));
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x1000);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x0);
 
-    f_flash_check_write_in_progress (l_pol_id);
+    f_flash_check_write_in_progress (l_nyx_id);
     if (((l_j%10) == 0) && (l_j !=0) )
     { 
-      printf ("%s SFP %d, ID %2d: %3d blocks of 256 Kbytes erased \n", devname,  l_pol_id, l_j);
+      printf ("%s SFP %d, ID %2d: %3d blocks of 256 Kbytes erased \n", devname, l_sfp_id, l_nyx_id, l_j);
     }
   }
-  printf ("%s SFP %d, ID %2d: %3d blocks of 256 Kbytes erased \n", devname,  l_pol_id, l_j);
-  printf ("%s SFP %d, ID %2d: erase finished\n", devname, l_sfp_id, l_pol_id);
+  printf ("%s SFP %d, ID %2d: %3d blocks of 256 Kbytes erased \n", devname, l_sfp_id, l_nyx_id, l_j);
+  printf ("%s SFP %d, ID %2d: erase finished\n", devname, l_sfp_id, l_nyx_id);
 }
 
 /*****************************************************************************/
-void f_flash_chip_erase (int l_pol_id)
+void f_flash_chip_erase (int l_nyx_id)
 {
-  printf ("%s SFP %d, ID %2d: start erasing full flash memory (needs about 2 minutes)\n", devname, l_sfp_id, l_pol_id);
+  printf ("%s SFP %d, ID %2d: start erasing full flash memory (needs about 4 minutes)\n", devname, l_sfp_id, l_nyx_id);
   // flash write enable
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300010, 0x6000000);
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x1000);
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x0);
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300010, 0x6000000);
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x1000);
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x0);
   // erase chip
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300010, 0xc7000000);
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x1000);
-  f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x0);
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300010, 0xc7000000);
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x1000);
+  f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x0);
 }
 
 /*****************************************************************************/
-void f_flash_load (int l_pol_id)
+void f_flash_load (int l_nyx_id)
 {
   // load flash
-  printf ("\n%s SFP %d, ID %2d: start loading fpga bit file into flash memory \n", devname, l_sfp_id, l_pol_id);
+  printf ("\n%s SFP %d, ID %2d: start loading fpga bit file into flash memory \n", devname, l_sfp_id, l_nyx_id);
   pl_im_tmp = (INTU4*) pc_im_buf; 
   l_im_remain_size = l_im_size;
   for (l_j=0; l_j<l_im_n_pages; l_j++)
@@ -764,9 +715,9 @@ void f_flash_load (int l_pol_id)
     // write 256 bytes into spi communication memory inside fpga
     for (l_k=0; l_k<64; l_k++)
     {
-      f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300000, *pl_im_tmp++);       
-      f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300008, 0x1000 + l_k);
-      f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300008, 0x0);           
+      f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300000, *pl_im_tmp++);       
+      f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300008, 0x1000 + l_k);
+      f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300008, 0x0);           
     }
 
     // check for last page size
@@ -782,36 +733,36 @@ void f_flash_load (int l_pol_id)
     //printf ("page nr: %d, spi transfer size long word: 0x%x \n", l_j, l_spi_trans_size_code);      
 
     // set memory size usage of spi
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300010, l_spi_trans_size_code);
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x1001);
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x0);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300010, l_spi_trans_size_code);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x1001);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x0);
 
     // flash write enable
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300010, 0x6000000);
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x1000);
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x0);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300010, 0x6000000);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x1000);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x0);
 
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300010, 0x2000000 + l_j * FLASH_PAGE_SIZE);
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x1000);
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x0);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300010, 0x2000000 + l_j * FLASH_PAGE_SIZE);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x1000);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x0);
   
-    f_flash_check_write_in_progress (l_pol_id);
+    f_flash_check_write_in_progress (l_nyx_id);
 
     if (((l_j%1000) == 0) && (l_j !=0) )
     { 
-      printf ("%s SFP %d, ID %2d: %5d pages of 256 bytes loaded \n", devname, l_sfp_id, l_pol_id, l_j);
+      printf ("%s SFP %d, ID %2d: %5d pages of 256 bytes loaded \n", devname, l_sfp_id, l_nyx_id, l_j);
     }
   } 
-  printf ("%s SFP %d, ID %2d: %5d pages of 256 bytes loaded \n",devname, l_sfp_id, l_pol_id, l_j);
-  printf ("%s SFP %d, ID %2d: loading finished \n",devname,  l_sfp_id, l_pol_id);
+  printf ("%s SFP %d, ID %2d: %5d pages of 256 bytes loaded \n", devname, l_sfp_id, l_nyx_id, l_j);
+  printf ("%s SFP %d, ID %2d: loading finished \n", devname, l_sfp_id, l_nyx_id);
 }
 
 /*****************************************************************************/
-void f_flash_readback_verify (int l_pol_id)
+void f_flash_readback_verify (int l_nyx_id)
 {
   int l_ct = 0;
   // read back flash and compare with image buffer from input file
-  printf ("\n%s SFP %d, ID %2d: start reading flash memory \n", devname, l_sfp_id, l_pol_id);
+  printf ("\n%s SFP %d, ID %2d: start reading flash memory \n", devname, l_sfp_id, l_nyx_id);
   pl_im_verify_tmp  = (INTU4*) pc_im_verify_buf; 
   pc_im_verify_tmp2 = pc_im_verify_buf;
   pc_im_tmp2        = pc_im_buf;
@@ -833,20 +784,20 @@ void f_flash_readback_verify (int l_pol_id)
     //printf ("page nr: %d, spi transfer size long word: 0x%x \n", l_j, l_spi_trans_size_code);      
 
     // set memory size usage of spi
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300010, l_spi_trans_size_code);
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x1001);
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x0);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300010, l_spi_trans_size_code);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x1001);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x0);
 
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300010, 0x3000000 + l_j * FLASH_PAGE_SIZE);
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x1000);
-    f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300018, 0x0);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300010, 0x3000000 + l_j * FLASH_PAGE_SIZE);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x1000);
+    f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300018, 0x0);
 
     // wait until SPI is not busy
     l_data = 1;
     l_ct   = 0;
     while (l_data == 1)
     {
-      f_pex_slave_rd (l_sfp_id, l_pol_id, 0x30001c, &l_data);
+      f_pex_slave_rd (l_sfp_id, l_nyx_id, 0x30001c, &l_data);
       l_data = l_data & 1;
       l_ct++;
       if (l_ct > 3)
@@ -858,8 +809,8 @@ void f_flash_readback_verify (int l_pol_id)
     //sleep (1);
     for (l_k=0; l_k<64; l_k++)
     {
-      f_pex_slave_wr (l_sfp_id, l_pol_id, 0x300008, 0x100 + l_k);     
-      f_pex_slave_rd (l_sfp_id, l_pol_id, 0x300004, &l_data);
+      f_pex_slave_wr (l_sfp_id, l_nyx_id, 0x300008, 0x100 + l_k);     
+      f_pex_slave_rd (l_sfp_id, l_nyx_id, 0x300004, &l_data);
       *pl_im_verify_tmp++ = l_data;
     }
 
@@ -867,7 +818,7 @@ void f_flash_readback_verify (int l_pol_id)
     pc_flash = pc_im_verify_tmp2;
     pc_file  = pc_im_tmp2;
     
-    printf ("file (bits mirrored in bytes with respect to input file): \n");
+    printf ("file: \n");
     for (l_k=0; l_k<256; l_k++)
     {
       printf ("%2x ", *pc_file++);
@@ -883,38 +834,12 @@ void f_flash_readback_verify (int l_pol_id)
     printf ("\n");
     #endif //DEBUG2
 
-    if (l_first == 0)
-    {
-      l_first = 1;
-      printf ("%s SFP %d, ID %2d: first 256 bytes page not checked on purpose\n", devname, l_sfp_id, l_pol_id);
-    }
-    else
-    { 
-      if ((memcmp (pc_im_verify_tmp2, pc_im_tmp2, l_spi_trans_size)) != 0)
-      {
-        printf ("ERROR>> input bit file and read back buffer are different \n");
-        printf ("page: %d \n", l_j);
 
-        pc_flash = pc_im_verify_tmp2;
-        pc_file  = pc_im_tmp2;
-    
-        printf ("file: (bits mirrored in bytes with respect to input file) \n");
-        for (l_k=0; l_k<256; l_k++)
-        {
-          printf ("%2x ", *pc_file++);
-          if (((l_k+1) % 16) == 0) {printf ("\n");}
-        }
-        printf ("\n");
-        printf ("readback flash: \n");   
-        for (l_k=0; l_k<256; l_k++)
-        {
-          printf ("%2x ", *pc_flash++);
-          if (((l_k+1) % 16) == 0) {printf ("\n");}
-        }
-        printf ("\n");
-        printf ("ERROR>> abort execution \n");
-        exit (0);
-      }
+    if ((memcmp (pc_im_verify_tmp2, pc_im_tmp2, l_spi_trans_size)) != 0)
+    {
+      printf ("ERROR>> input bit file and read back buffer are different, exiting.. \n");
+      printf ("page: %d \n", l_j);
+      exit (0);
     }
 
     pc_im_verify_tmp2 += l_spi_trans_size;
@@ -922,11 +847,11 @@ void f_flash_readback_verify (int l_pol_id)
 
     if (((l_j%1000) == 0) && (l_j !=0) )
     { 
-      printf ("%s SFP %d, ID %2d: %5d pages of 256 bytes read back and verified with input file, ok!\n",devname, l_sfp_id, l_pol_id, l_j);
+      printf ("%s SFP %d, ID %2d: %5d pages of 256 bytes read back and verified with input file, ok!\n", devname, l_sfp_id, l_nyx_id, l_j);
     }
   } 
-  printf ("%s SFP %d, ID %2d: %5d pages of 256 bytes read back and verified with input file, ok!\n",devname, l_sfp_id, l_pol_id, l_j);
-  printf ("%s SFP %d, ID %2d: verification finished \n", devname, l_sfp_id, l_pol_id);
+  printf ("%s SFP %d, ID %2d: %5d pages of 256 bytes read back and verified with input file, ok!\n", devname,  l_sfp_id, l_nyx_id, l_j);
+  printf ("%s SFP %d, ID %2d: verification finished \n", devname, l_sfp_id, l_nyx_id);
 }
 
 /*****************************************************************************/
@@ -1050,7 +975,6 @@ int f_pex_slave_wr (long l_sfp, long l_slave, long l_slave_off, long l_dat)
 #endif //MBSPEX LIB
   f_i2c_sleep ();
   return (l_ret);
-
 }
 
 /*****************************************************************************/
@@ -1114,8 +1038,6 @@ int f_pex_slave_rd (long l_sfp, long l_slave, long l_slave_off, long *l_dat)
  #endif //MBSPEX LIB
   f_i2c_sleep ();
   return (l_ret);
-  
-
 }
 
 /*****************************************************************************/
@@ -1132,7 +1054,6 @@ void f_i2c_sleep ()
   {
     l_depp++;
   }
- int  l_ret;
 }
 
 /*****************************************************************************/
