@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1393</width>
-    <height>530</height>
+    <height>542</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,7 +20,7 @@
       <string>Push this button to start measurement from keithly</string>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>6</number>
      </property>
      <widget class="QWidget" name="OutputTab">
       <attribute name="title">
@@ -9647,11 +9647,7 @@
           </item>
          </layout>
          <zorder>CurrentTestCheckBox</zorder>
-         <zorder>CurrentSocketCheckBox</zorder>
-         <zorder>CurrentSerialCheckBox</zorder>
          <zorder></zorder>
-         <zorder>SerialDeviceName</zorder>
-         <zorder>CurrentSerialCheckBox</zorder>
         </widget>
        </item>
       </layout>
