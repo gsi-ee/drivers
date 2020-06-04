@@ -83,10 +83,10 @@ typedef unsigned long long ADDR64; // JAM for 64 bit status structure receiving
 //#define DEBUG2
 //#define DEBUG3
 
+#define printm printf
 
 #define MAX_INP_LEN      256
-//#define FLASH_MAN_ID     0x1720c2
-#define FLASH_MAN_ID     0x182020
+#define FLASH_MAN_ID     0x1720c2
 #define IM_N_PAGES       0x4000   
 #define FLASH_PAGE_SIZE  0x100
 #define IM_BUF_SIZE      FLASH_PAGE_SIZE * IM_N_PAGES
@@ -101,7 +101,7 @@ typedef unsigned long long ADDR64; // JAM for 64 bit status structure receiving
 #define PCI_BAR0_SIZE     0x800000  // in bytes
 
 static int  l_i, l_j;
-
+//static s_pexor        sPEXOR;
 static long           l_stat;
 static int            fd_pex; 
 #ifndef Linux
@@ -112,9 +112,9 @@ static long           l_dat1, l_dat2, l_dat3;
 static long           l_data; 
 
 static  int            l_sfp_id;
-static  int            l_fir_pol_id;
-static  int            l_las_pol_id;
-static  int            l_n_pol;
+static  int            l_fir_feb_id;
+static  int            l_las_feb_id;
+static  int            l_n_feb;
 
 static char  progname [128];
 static char  devname [128];
@@ -162,18 +162,18 @@ char *argv[];
   else
   {
     sscanf (argv[1], "%d", &l_sfp_id);
-    sscanf (argv[2], "%d", &l_fir_pol_id);
-    sscanf (argv[3], "%d", &l_n_pol);
+    sscanf (argv[2], "%d", &l_fir_feb_id);
+    sscanf (argv[3], "%d", &l_n_feb);
 
-    l_las_pol_id = l_fir_pol_id + l_n_pol - 1;
-    if (l_n_pol > 1)
+    l_las_feb_id = l_fir_feb_id + l_n_feb - 1;
+    if (l_n_feb > 1)
     {
       printf ("reset fpgas on sfp %d on all %ss from id %d to %d \n",
-                               l_sfp_id, devname, l_fir_pol_id, l_las_pol_id);
+                               l_sfp_id, devname, l_fir_feb_id, l_las_feb_id);
     }
     else
     {
-      printf ("reset fpga on sfp %d on %s id %d \n", l_sfp_id, devname, l_fir_pol_id);
+      printf ("reset fpga on sfp %d on %s id %d \n", l_sfp_id, devname, l_fir_feb_id);
     }
   }
 
@@ -245,7 +245,7 @@ char *argv[];
     printf ("ERROR>> could not close PEXOR device \n");
   }
 
-  // initialize gosip on all connected POLANDs
+  // initialize gosip on all connected FEBEXs
   PEXOR_GetPointer(0, pl_virt_bar0, &sPEXOR); 
 
 #endif // mbspex lib  
@@ -253,7 +253,7 @@ char *argv[];
 
 
   
-  l_stat = f_pex_slave_init (l_sfp_id, l_las_pol_id+1);  
+  l_stat = f_pex_slave_init (l_sfp_id, l_las_feb_id+1);  
   if (l_stat == -1)
   {
     printf ("ERROR>> %s initialization failed on sfp %d \n", devname, l_sfp_id);
@@ -261,8 +261,8 @@ char *argv[];
     exit (0); 
   }  
 
-  printf ("\ncheck if all flash memories specified show the correct manufacturer id \n");   
-  for (l_i=l_fir_pol_id; l_i<=l_las_pol_id; l_i++)
+  printf ("\n\ncheck if all flash memories specified show the correct manufacturer id \n");   
+  for (l_i=l_fir_feb_id; l_i<=l_las_feb_id; l_i++)
   {
     //read flash status register
     f_pex_slave_wr (l_sfp_id, l_i, 0x300010, 0x0);        // max data word to spi data in  
@@ -274,7 +274,7 @@ char *argv[];
     f_pex_slave_wr (l_sfp_id, l_i, 0x300008, 0x100);      // memory read command + address
     l_data = 0;
     f_pex_slave_rd (l_sfp_id, l_i, 0x300004, &l_data);    // read memory data out 
-    //printf ("flash status of                           sfp %d, poland %d: 0x%x \n", l_sfp_id, l_i, l_data & 0xff);
+    //printf ("flash status of                           sfp %d, febex %d: 0x%x \n", l_sfp_id, l_i, l_data & 0xff);
 
     // read manufacturer id, memory tpe and memory density
     f_pex_slave_wr (l_sfp_id, l_i, 0x300010, 0x2000000);  // max data word to spi data in  
@@ -304,16 +304,33 @@ char *argv[];
       exit (0);  
     }
   }
-  for (l_i=l_las_pol_id; l_i>=l_fir_pol_id; l_i--)
+  for (l_i=l_las_feb_id; l_i>=l_fir_feb_id; l_i--)
   {
     printf ("%s SFP %d, ID %2d: reloading of fpga from flash and fpga restart started.. \n", devname, l_sfp_id, l_i);
     usleep (1); 
     f_pex_slave_wr (l_sfp_id, l_i, 0x300018, 0x80000000);
-    //f_pex_slave_wr (l_sfp_id, l_i, 0x8010, 0x7d000000);
   }
-  printf (".. will take ~10 seconds.. \n"); 
-  sleep (10);
+
+  printf (".. will take ~3 seconds.. \n"); 
+  sleep (3);
   printf ("please check with ini_chane or gosipcmd -i, if reset worked..\n");
+
+/*
+  for (l_i=l_fir_feb_id; l_i<=l_las_feb_id; l_i++)
+  {
+    usleep (1); 
+    f_pex_slave_rd (l_sfp_id, l_i, 0x300018, &l_data);
+    if (l_data == 0)
+    {
+      printf ("FEBEX3 SFP %d, ID %2d: fpga restarted and running \n", l_sfp_id, l_i);
+    }
+    else
+    {
+      printf ("ERROR>> fpga restart failed on sfp %d, febex %d, exiting.. \n", l_sfp_id, l_i); 
+      exit (0);  
+    }
+  }
+*/
 return 0;
 }
 /*****************************************************************************/
@@ -522,6 +539,7 @@ void f_i2c_sleep ()
 }
 
 /*****************************************************************************/
+
 void f_usage ()
 {
 	printf("\n*** %s v 1.05 03-June 2020 by NK, JAM (GSI EEL department) *** \n",
@@ -531,5 +549,6 @@ void f_usage ()
 			devname);
 	exit(0);
 }
+
 
 /*****************************************************************************/
