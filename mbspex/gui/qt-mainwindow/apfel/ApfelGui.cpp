@@ -40,7 +40,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.9992 of 30-July-2019 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.9994 of 04-June-2020 by JAM (j.adamczewski@gsi.de)\n";
 
   fSettings=new QSettings("GSI", fImplementationName);
 

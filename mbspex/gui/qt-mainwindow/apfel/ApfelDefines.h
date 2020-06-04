@@ -8,6 +8,10 @@
 #include <iostream>
 
 
+/** enable this for alternative programming of switches in panda test mode - later gui parameter*/
+#define APFEL_USE_SIMPLE_SWITCHES 1
+
+
 /** enable this for old toellner power mode*/
 //#define APFEL_USE_TOELLNER_POWER 1
 
