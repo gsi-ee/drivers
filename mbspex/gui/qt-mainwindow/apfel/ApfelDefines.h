@@ -276,25 +276,26 @@
 #define APFEL_ADDRESSTEST_SLEEP usleep(1);
 //usleep(50000);
 
-
+// need this for definition of sfp_links etc:
+#include "GosipGui.h"
 /** this define will switch between direct call of mbspex lib or external shell call of gosipcmd*
  * note: we need to call "make nombspex" if we disable this define here!
  * note2: this define is enabled from top Makefile when building regular "make all"*/
 //#define USE_MBSPEX_LIB 1
-#ifdef USE_MBSPEX_LIB
-extern "C"
-{
-#include "mbspex/libmbspex.h"
-}
-#else
-// provide dummy structure although never filled by driver:
-#define PEX_SFP_NUMBER 4
-struct pex_sfp_links
-{
-  int numslaves[PEX_SFP_NUMBER]; /**< contains configured number of slaves at each sfp chain. */
-};
-
-#endif
+//#ifdef USE_MBSPEX_LIB
+//extern "C"
+//{
+//#include "mbspex/libmbspex.h"
+//}
+//#else
+//// provide dummy structure although never filled by driver:
+//#define PEX_SFP_NUMBER 4
+//struct pex_sfp_links
+//{
+//  int numslaves[PEX_SFP_NUMBER]; /**< contains configured number of slaves at each sfp chain. */
+//};
+//
+//#endif
 
 
 
