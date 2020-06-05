@@ -168,7 +168,7 @@ QObject::connect(SlavespinBox, SIGNAL(valueChanged(int)), this, SLOT(Slave_chang
   fPexFD = mbspex_open (0);    // we restrict to board number 0 here
   if (fPexFD < 0)
   {
-    printm ("ERROR>> open /dev/pexor%d \n", 0);
+    printf ("ERROR>> open /dev/pexor%d \n", 0);
     exit (1);
   }
 #endif

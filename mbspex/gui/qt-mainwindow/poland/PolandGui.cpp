@@ -15,6 +15,12 @@
 #include <QTimer>
 #include <QMdiSubWindow>
 
+
+#include <kplotobject.h>
+#include <kplotwidget.h>
+#include <kplotaxis.h>
+
+
 #include <sstream>
 
 
@@ -33,19 +39,20 @@ PolandGui::PolandGui (QWidget* parent) :
     GosipGui (parent), fTriggerOn(true)
 {
   fImplementationName="POLAND";
-  fVersionString="Welcome to POLAND GUI!\n\t v0.97 of 30-July-2019 by JAM (j.adamczewski@gsi.de)";
+  fVersionString="Welcome to POLAND GUI!\n\t v0.98 of 05-June-2020 by JAM (j.adamczewski@gsi.de)";
   setWindowTitle(QString("%1 GUI").arg(fImplementationName));
 
 
   fSettings=new QSettings("GSI", fImplementationName);
 
 #ifdef POLAND_USE_SINGLE_SUBWINDOW
-fPolandWidget=new FebexWidget(this);
+fPolandWidget=new PolandWidget(this);
 mdiArea->addSubWindow(fPolandWidget); // complete febex widget in one window
 
 #else
 
   fPolandWidget=new PolandWidget(0);
+  fPolandViewpanelWidget = new PolandViewpanelWidget(this);
 
   QWidget* qfwtab=fPolandWidget->QFW_DAC_tabWidget->widget(0);
   QWidget* dactab=fPolandWidget->QFW_DAC_tabWidget->widget(1);
@@ -94,6 +101,14 @@ mdiArea->addSubWindow(fPolandWidget); // complete febex widget in one window
        QMdiSubWindow* subtrig=mdiArea->addSubWindow(triggerframe, wflags);
        subtrig->setAttribute(Qt::WA_DeleteOnClose, false);
      }
+
+  if(fPolandViewpanelWidget)
+       {
+	  	 fPolandViewpanelWidget->setWindowTitle("Sample View");
+         fPolandViewpanelWidget->show();
+         QMdiSubWindow* subtrig=mdiArea->addSubWindow(fPolandViewpanelWidget, wflags);
+         subtrig->setAttribute(Qt::WA_DeleteOnClose, false);
+       }
 
 #endif
 
@@ -163,6 +178,11 @@ QObject::connect (fPolandWidget->DAClineEdit_31, SIGNAL(returnPressed()),this,SL
 QObject::connect (fPolandWidget->DAClineEdit_32, SIGNAL(returnPressed()),this,SLOT (DAC_changed()));
 
 QObject::connect (fPolandWidget->FanDial, SIGNAL(valueChanged(int)),this,SLOT (Fan_changed()));
+
+
+QObject::connect (fPolandViewpanelWidget->SampleButton, SIGNAL (clicked ()), this, SLOT (ShowSample ()));
+
+
 
 ReadSettings();
 
@@ -1012,6 +1032,148 @@ void PolandGui::SaveRegisters ()
 }
 
 
+
+///////////////////////////////////////////////////////////////////77
+//////////////////// here additional code to display data for test:
+
+void PolandGui::ShowSample ()
+{
+  //std::cout <<"ShowSample for channel:"<<channel<< std::endl;
+  theSetup_GET_FOR_SLAVE(PolandSetup);
+  //theSetup->ShowADCSample(channel); // todo: dump sample on different knob
+
+  //KPlotWidget* canvas = fPlotWidget[channel];
+//  if (benchmarkdisplay)
+//    canvas = fApfelWidget->BenchmarkPlotwidget;
+//
+  KPlotWidget* canvas =fPolandViewpanelWidget->PlotwidgetChSlice;
+  // first fill plotobject with samplepoints
+  QColor col;
+  KPlotObject::PointStyle pstyle = KPlotObject::Circle;
+
+  col = Qt::red;
+       pstyle = KPlotObject::Circle;
+
+//  switch (channel)
+//  {
+//    case 0:
+//    case 8:
+//    default:
+//      col = Qt::red;
+//      pstyle = KPlotObject::Circle;
+//      break;
+//    case 1:
+//    case 9:
+//      col = Qt::green;
+//      pstyle = KPlotObject::Letter;
+//      break;
+//    case 2:
+//    case 10:
+//      col = Qt::blue;
+//      pstyle = KPlotObject::Triangle;
+//      break;
+//    case 3:
+//    case 11:
+//      col = Qt::cyan;
+//      pstyle = KPlotObject::Square;
+//      break;
+//
+//    case 4:
+//    case 12:
+//      col = Qt::magenta;
+//      pstyle = KPlotObject::Pentagon;
+//      break;
+//    case 5:
+//    case 13:
+//      col = Qt::yellow;
+//      pstyle = KPlotObject::Hexagon;
+//      break;
+//    case 6:
+//    case 14:
+//      col = Qt::gray;
+//      pstyle = KPlotObject::Asterisk;
+//      break;
+//    case 7:
+//    case 15:
+//      col = Qt::darkGreen;
+//      pstyle = KPlotObject::Star;
+//      break;
+//
+////        Letter = 2, Triangle = 3,
+////         Square = 4, Pentagon = 5, Hexagon = 6, Asterisk = 7,
+////         Star = 8
+//
+//  };
+
+  // TODO: put this in special functions
+  canvas->resetPlot ();
+  // labels for plot area:
+  canvas->setAntialiasing (true);
+  canvas->axis (KPlotWidget::BottomAxis)->setLabel ("Optic data index (#samples)");
+  canvas->axis (KPlotWidget::LeftAxis)->setLabel ("Register value ");
+
+  KPlotObject *sampleplot = new KPlotObject(col, KPlotObject::Points, 1, pstyle);
+  //KPlotObject *sampleplot = new KPlotObject (col, KPlotObject::Lines, 2);
+  //QString label = QString ("channel:%1").arg (channel);
+  //sampleplot->addPoint (0, theSetup->GetADCSample (channel, 0), label);
+
+
+
+//  int samplength=theSetup->GetADCSampleLength(channel);
+//  for (int i = 1; i < samplength; ++i)
+//  {
+//    sampleplot->addPoint (i, theSetup->GetADCSample (channel, i));
+//  }
+
+
+  // poor mans solution: just plot values in readout buffer asis
+  // later TODO: unpack data and plot only timeslices
+  int numwords = 32 + theSetup->fSteps[0] * 32 + theSetup->fSteps[1] * 32 + theSetup->fSteps[2] * 32 + 32;
+  //snprintf (buffer, 1024, "gosipcmd -d -r -x -- %d %d 0 0x%x", fSFP, fSlave, numwords);
+  int buf[numwords];
+  int addr=0;
+  int max=0;
+  for (int e = 0; e < numwords; ++e)
+  {
+    buf[e] = ReadGosip (fSFP, fSlave, addr);
+    if( buf[e] == -1)
+    	buf[e]=1;
+    //buf[e]=3*e;
+	if(buf[e] >max)
+		max=buf[e];
+    addr+=4;
+  }
+
+
+  for (int i = 0; i < numwords; ++i)
+    {
+      sampleplot->addPoint (i, buf[i]);
+    }
+
+
+  // add it to the plot area
+  canvas->addPlotObject (sampleplot);
+  canvas->setLimits (0, numwords, 0.0, max+1);
+
+  canvas->update ();
+  //TODO: Kplotwidget with 2d display of time sliceslike in go4
+  // unpacker
+  // take mouse click zoom/unzoom functions from galapgagos!
+
+
+//   if (benchmarkdisplay)
+//  {
+//    canvas->setLimits (0, samplength, 0.0, 17000);
+//    canvas->update ();
+//  }
+//  else
+//  {
+//    UnzoomSample (channel);
+//    RefreshSampleMaxima(channel);
+//  }
+
+ // return 0;
+}
 
 
 

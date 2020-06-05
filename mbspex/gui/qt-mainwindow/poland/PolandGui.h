@@ -4,6 +4,7 @@
 //#include "../framework/GosipGui.h"
 #include "GosipGui.h"
 #include "PolandWidget.h"
+#include "PolandViewpanelWidget.h"
 #include "PolandSetup.h"
 #include <stdio.h>
 #include <QProcess>
@@ -32,6 +33,8 @@ protected:
   /** reference to the embedded poland widget with all the special controls*/
   PolandWidget* fPolandWidget;
 
+  /** reference to the embedded poland viewpanel widget for plotting data samples NEW JAM2020*/
+  PolandViewpanelWidget* fPolandViewpanelWidget;
 
   /** toggle general trigger state*/
   bool fTriggerOn;
@@ -142,7 +145,7 @@ public slots:
   virtual void QFW_changed ();
   virtual void DAC_changed ();
   virtual void Fan_changed ();
-
+  virtual void ShowSample ();
 };
 
 #endif

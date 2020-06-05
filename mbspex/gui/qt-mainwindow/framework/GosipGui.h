@@ -116,6 +116,10 @@ struct pex_sfp_links{
     int numslaves[PEX_SFP_NUMBER]; /**< contains configured number of slaves at each sfp chain. */
 };
 
+/** also need to declare this here without library include!*/
+ void printm (char *, ...);
+
+
 #endif
 
 /** the (A)BC for all frontend setup structures */

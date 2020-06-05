@@ -9,21 +9,36 @@ GUI_NYXOR = nyxor
 GUI_APFEL = apfel
 GUI_TAMEX = tamexpadi
 
-.PHONY: all clean install  
+.PHONY: all nombspex clean install  
+
+
 
 all: 
 	cd $(GUI_FRAME); make
 	cd $(GUI_POLAND); make
 ifdef PEXORSYS	
-	cd $(GUI_NYXOR); make gui	
+	cd $(GUI_NYXOR); make gui
 else
-	cd $(GUI_NYXOR); make 	
+	cd $(GUI_NYXOR); make	
 endif	
 	cd $(GUI_FEBEX); make
 	cd $(GUI_APFEL); make
-	cd $(GUI_TAMEX); make	
-	
+	cd $(GUI_TAMEX); make
 
+nombspex: 
+	cd $(GUI_FRAME); make nombspex
+	cd $(GUI_POLAND); make nombspex
+ifdef PEXORSYS	
+	cd $(GUI_NYXOR); make gui	
+else
+	cd $(GUI_NYXOR); make nombspex	
+endif	
+	cd $(GUI_FEBEX); make nombspex
+	cd $(GUI_APFEL); make nombspex
+	cd $(GUI_TAMEX); make nombspex
+	
+	
+	 
 install: 
 	cd $(GUI_POLAND); make install	
 ifdef PEXORSYS
