@@ -5,6 +5,7 @@
 #include "GosipGui.h"
 
 #include <math.h>
+#include <vector>
 
 
 #define POLAND_REG_TRIGCOUNT 0x0
@@ -72,6 +73,125 @@
 /** microsecond per time register unit*/
 #define POLAND_TIME_UNIT                0.02
 
+#define POLAND_QFWLOOPS 3
+
+/** helper class to keep sample of QFW data readout*/
+class PolandSample
+{
+  private:
+
+  std::vector<int> fTrace[POLAND_QFWLOOPS][POLAND_DAC_NUM];
+  unsigned long eventcounter;
+  int loopsize[POLAND_QFWLOOPS];
+  int looptime[POLAND_QFWLOOPS];
+  unsigned int ErrorScaler[POLAND_ERRCOUNT_NUM];
+
+  public:
+
+  PolandSample(){
+    Clear();
+  }
+
+  void SetEventCounter(unsigned long val)
+  {
+    eventcounter=val;
+  }
+
+  unsigned long GetEventCounter()
+  {
+    return eventcounter;
+  }
+
+  bool SetLoopsize(int loop, int val){
+    if( loop >=POLAND_QFWLOOPS || loop<0) return false;
+    loopsize[loop]=val;
+    return true;
+  }
+
+  int GetLoopsize(int loop)
+    {
+    if( loop >=POLAND_QFWLOOPS || loop<0) return -1;
+      return loopsize[loop];
+    }
+
+
+
+  bool SetLooptime(int loop, int val){
+      if( loop >=POLAND_QFWLOOPS || loop<0) return false;
+      looptime[loop]=val;
+      return true;
+    }
+
+  int GetLooptime(int loop)
+    {
+    if( loop >=POLAND_QFWLOOPS || loop<0) return -1;
+      return looptime[loop];
+    }
+
+  bool SetErrorScaler(int ix, int val){
+     if( ix >=POLAND_ERRCOUNT_NUM || ix<0) return false;
+     ErrorScaler[ix]=val;
+     return true;
+   }
+
+  int GetErrorScaler(int ix)
+     {
+    if( ix >=POLAND_ERRCOUNT_NUM || ix<0) return -1;
+       return ErrorScaler[ix];
+     }
+
+
+
+  bool AddTraceValue(int loop, int ch, int val)
+    {
+        if( loop >=POLAND_QFWLOOPS || loop<0) return false;
+        if (ch>=POLAND_DAC_NUM || ch<0) return false;
+        fTrace[loop][ch].push_back(val);
+        return true;
+    }
+
+  int GetTraceValue(int loop, int ch, int i)
+  {
+      if( (loop >=POLAND_QFWLOOPS) || (loop<0)) return -1;
+      if ((ch>=POLAND_DAC_NUM) || (ch<0)) return -1;
+      if(i>=fTrace[loop][ch].size()) return -1;
+      return fTrace[loop][ch].at(i);
+  }
+
+  int GetLoopSize(int loop)
+    {
+      if( loop >=POLAND_QFWLOOPS || loop<0) return -1;
+      return fTrace[loop][0].size();
+    }
+
+
+  void Clear()
+  {
+    for(int l=0; l<POLAND_QFWLOOPS;++l){
+      for(int c=0; c<POLAND_DAC_NUM; ++c)
+      {
+        fTrace[l][c].clear();
+      }
+    }
+  }
+
+
+
+
+
+
+};
+
+
+
+
+
+
+
+
+
+
+
 class PolandSetup : public GosipSetup
 {
 public:
@@ -105,6 +225,11 @@ public:
 
   unsigned long long fSensorId[POLAND_TEMP_NUM]; //< unique id of the temperature sensors
   unsigned int fVersionId;      //< fpga software version tag
+
+
+  PolandSample fLastSample;
+
+
 
 
   PolandSetup () : GosipSetup(),
