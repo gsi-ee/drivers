@@ -1128,10 +1128,11 @@ void PolandGui::ShowSample ()
 
   // poor mans solution: just plot values in readout buffer asis
   // later TODO: unpack data and plot only timeslices
-  int numwords = 32 + theSetup->fSteps[0] * 32 + theSetup->fSteps[1] * 32 + theSetup->fSteps[2] * 32 + 32;
+  //int numwords = 32 + theSetup->fSteps[0] * 32 + theSetup->fSteps[1] * 32 + theSetup->fSteps[2] * 32;// + 32;
   //snprintf (buffer, 1024, "gosipcmd -d -r -x -- %d %d 0 0x%x", fSFP, fSlave, numwords);
-  int buf[numwords];
-  int addr=0;
+  int numwords = theSetup->fSteps[0] * 32 + theSetup->fSteps[1] * 32 + theSetup->fSteps[2] * 32;// + 32;
+ int buf[numwords];
+  int addr=128;//0;
   int max=0;
   for (int e = 0; e < numwords; ++e)
   {
@@ -1153,6 +1154,7 @@ void PolandGui::ShowSample ()
 
   // add it to the plot area
   canvas->addPlotObject (sampleplot);
+  if(max>0x800) max=0x800;
   canvas->setLimits (0, numwords, 0.0, max+1);
 
   canvas->update ();

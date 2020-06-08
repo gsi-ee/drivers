@@ -1,8 +1,8 @@
 
 QTVERSION = 3
 
-ifneq ($(shell which qmake 2>/dev/null),)
-else
+#ifneq ($(shell which qmake 2>/dev/null),)
+#else
 ifneq ($(shell qmake-qt5 --version 2>&1 | grep "Qt version 5."),)
 QTVERSION = 5
 QMAKE = qmake-qt5
@@ -22,7 +22,7 @@ endif
 endif
 endif
 endif
-endif
+#endif
 
 
 
