@@ -539,6 +539,76 @@ void ApfelGui::DoAutoCalibrateAll ()
 }
 
 
+
+void ApfelGui::WriteSwitchRegister(int lo, int hi, bool simplemode)
+{
+  int dat = APFEL_IO_CONTROL_WR;
+  if(simplemode)
+  {
+
+  ///////// shell script as sugggested by sven:
+  //    for i in {31..0}
+  //    do
+  //            if [ $((($value>>$i) % 2)) -eq 0 ]; then
+  //    #write "0"
+  //                    gosipcmd -w -x $sfpno $devno 0x208010 0x1b000000
+  //                    gosipcmd -w -x $sfpno $devno 0x208010 0x1b000004
+  //            else
+  //    #write "1"
+  //                    gosipcmd -w -x $sfpno $devno 0x208010 0x1b000002
+  //                    gosipcmd -w -x $sfpno $devno 0x208010 0x1b000006
+  //            fi
+  //    done
+  //
+  //    # latch now
+  //    gosipcmd -w -x $sfpno $devno 0x208010 0x1b000001
+  //    gosipcmd -w -x $sfpno $devno 0x208010 0x1b000000
+  ///////////
+
+
+
+  uint32_t val= ((hi & 0xFFFF) << 16) | (lo & 0xFFFF);
+  //printm("WriteSwitchRegister for simplemode, lo:0x%x hi:0x%x -> value 0x%x",lo,hi, val);
+  for (int i=31; i>=0; --i)
+      {
+          if(((val >> i) & 0x1) == 0x0)
+          {
+            // set bit to 0
+            WriteGosip (fSFP, fSlave, GOS_I2C_DWR, (dat | 0));
+            WriteGosip (fSFP, fSlave, GOS_I2C_DWR, (dat | 4));
+          }
+          else
+          {
+            // set bit to 1
+            WriteGosip (fSFP, fSlave, GOS_I2C_DWR, (dat | 2));
+            WriteGosip (fSFP, fSlave, GOS_I2C_DWR, (dat | 6));
+          }
+      }
+      //latch now
+      WriteGosip (fSFP, fSlave, GOS_I2C_DWR, (dat | 1));
+      WriteGosip (fSFP, fSlave, GOS_I2C_DWR, (dat | 0));
+
+  }
+  else
+  {
+    //    // new PANDATEST hardware
+    //    // instead of 3 bits, we use the 32 bit control register here:
+    printm("WriteSwitchRegister for full mode, lo:0x%x hi:0x%x",lo,hi);
+    int lofull=APFEL_IO_DATA_LO_WR;
+    int hifull=APFEL_IO_DATA_HI_WR;
+    hifull |= hi;
+    lofull |= lo;
+    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, hifull);
+    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, lofull);
+    dat |= (0x18); // default setup: all enabled
+    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat); // activate hi/lo data register with this
+
+  }
+
+
+}
+
+
 void ApfelGui::SetSwitches (bool useApfel, bool useHighGain, bool useStretcher, bool isPandatest)
 {
 
@@ -573,64 +643,15 @@ void ApfelGui::SetSwitches (bool useApfel, bool useHighGain, bool useStretcher, 
   else
   {
 
-
-#ifdef    APFEL_USE_SIMPLE_SWITCHES
-
-    printm("Setswitches with simple mode sets apfel:%d highgain:%d stretcher:%d isPandatest:%d", useApfel, useHighGain, useStretcher, isPandatest);
-///////// shell script as sugggested by sven:
-//    for i in {31..0}
-//    do
-//            if [ $((($value>>$i) % 2)) -eq 0 ]; then
-//    #write "0"
-//                    gosipcmd -w -x $sfpno $devno 0x208010 0x1b000000
-//                    gosipcmd -w -x $sfpno $devno 0x208010 0x1b000004
-//            else
-//    #write "1"
-//                    gosipcmd -w -x $sfpno $devno 0x208010 0x1b000002
-//                    gosipcmd -w -x $sfpno $devno 0x208010 0x1b000006
-//            fi
-//    done
-//
-//    # latch now
-//    gosipcmd -w -x $sfpno $devno 0x208010 0x1b000001
-//    gosipcmd -w -x $sfpno $devno 0x208010 0x1b000000
-///////////
-    dat = APFEL_IO_CONTROL_WR;
-    for (int i=0; i<32; ++i)
-    {
-        // default setup: all enabled, apfel ids defined to 1,...,8
-        // we set all bits here to 1:
-        WriteGosip (fSFP, fSlave, GOS_I2C_DWR, (dat | 2));
-        WriteGosip (fSFP, fSlave, GOS_I2C_DWR, (dat | 6));
-    }
-    //latch now
-    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, (dat | 1));
-    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, (dat | 0));
-
-#else
-    // new PANDATEST hardware
-    // instead of 3 bits, we use the 32 bit control register here:
-    int lo=APFEL_IO_DATA_LO_WR;
-    int hi=APFEL_IO_DATA_HI_WR;
-    hi |= (0xFFFF); // default setup: all enabled, apfel ids defined to 1,...,8
-    // TODO: check here which apfels should be enabled!
+//    // new PANDATEST hardware
+//    // instead of 3 bits, we use the 32 bit control register here:
+    int hi=0xFFFF;  // default setup: all enabled, apfel ids defined to 1,...,8
+    int lo=0;
     if(useHighGain)
-      lo |= (0x000c);
+        lo |= (0x000c);
     else
-      lo |= (0x000d);
-    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, hi);
-    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, lo);
-
-    dat |= (0x18); // default setup: all enabled
-    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat); // activate hi/lo data register with this
-
-    // TODO: may readback switche settings here?
-
-
-    // TODO: change configuration of apfel addressing here?
-#endif
-
-
+        lo |= (0x000d);
+    WriteSwitchRegister(lo, hi, APFEL_USE_SIMPLE_SWITCHES);
   }
 
 }
@@ -674,12 +695,12 @@ else
   lo |= (0x000d);
 
 
-
-WriteGosip (fSFP, fSlave, GOS_I2C_DWR, hi);
-WriteGosip (fSFP, fSlave, GOS_I2C_DWR, lo);
-
- dat |= (0x18); // default setup: all enabled
- WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
+WriteSwitchRegister(lo, hi, APFEL_USE_SIMPLE_SWITCHES);
+//WriteGosip (fSFP, fSlave, GOS_I2C_DWR, hi);
+//WriteGosip (fSFP, fSlave, GOS_I2C_DWR, lo);
+//
+// dat |= (0x18); // default setup: all enabled
+// WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 
 
 
@@ -1052,13 +1073,14 @@ void ApfelGui::SetSingleChipCommID(int apfel, int id)
   else
     lo |= (0x000f);
 
+  WriteSwitchRegister(lo, hi, APFEL_USE_SIMPLE_SWITCHES);
 
+//  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, hi);
+//  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, lo);
+//
+//   dat |= (0x18); // default setup: all enabled
+//   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 
-  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, hi);
-  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, lo);
-
-   dat |= (0x18); // default setup: all enabled
-   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
    APFEL_ADDRESSTEST_SLEEP
 
    //sleep(1);
@@ -1133,12 +1155,17 @@ void ApfelGui::SetSingleChipCurrentMode(int apfel, bool selectHV, bool selectDio
   lo |= ((selHV << 3) & 0xF);
   lo |= ((selDiode << 2) & 0xF);
 
+  WriteSwitchRegister(lo, hi, APFEL_USE_SIMPLE_SWITCHES);
 
-  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, hi);
-  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, lo);
 
-   dat |= (0x18); // default setup: all enabled
-   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
+//  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, hi);
+//  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, lo);
+//
+//   dat |= (0x18); // default setup: all enabled
+//   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
+
+
+
    APFEL_ADDRESSTEST_SLEEP
 
 }

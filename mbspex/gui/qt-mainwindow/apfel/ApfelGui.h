@@ -336,6 +336,9 @@ protected:
     void UpdateAfterAutoCalibrate(uint8_t apfelchip);
 
 
+    /** helper function to handle different febex fpga features to access power switches*/
+    void WriteSwitchRegister(int lo, int hi, bool simplemode=true);
+
     /** set switch register of currently selected slave (apfel input on/off), gain 1 or 16/32, stretcher on/off)
      * different behaviour depending on actual hardware (pandatest setup or pasem)*/
     void SetSwitches(bool useApfel, bool useHighGain, bool useStretcher, bool isPandatest=false);
