@@ -133,7 +133,7 @@ protected:
   /** copy gui contents of DAC tab to setup structure*/
   void EvaluateDAC();
 
-
+  void GetSample(PolandSample* theSample);
 
 public slots:
 

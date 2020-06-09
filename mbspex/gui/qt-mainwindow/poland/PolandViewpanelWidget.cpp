@@ -1,11 +1,15 @@
 #include "PolandViewpanelWidget.h"
 #include "PolandSetup.h"
 
+#include "GosipGui.h"
+
+
 #include <kplotobject.h>
 #include <kplotwidget.h>
 #include <kplotaxis.h>
 #include <kplotpoint.h>
 
+#include <iostream>
 // *********************************************************
 
 /*
@@ -13,9 +17,27 @@
  *  name 'name'.'
  */
 PolandViewpanelWidget::PolandViewpanelWidget (QWidget* parent) :
-    QWidget (parent), fPlot(0),fPickCounter(0)
+    QWidget (parent), fPlot(0),fPickCounter(0),
+	fLowLimit(0), fHighLimit(1), fNminLimit(0), fNmaxLimit(1), fDisplayChannel(-1), fDisplayLoop(-1)
+
 {
   setupUi (this);
+
+  Channel_comboBox->clear();
+  for(int c=0; c<POLAND_DAC_NUM; ++c)
+  {
+	  Channel_comboBox->addItem(QString("Ch %1").arg(c));
+  }
+  Channel_comboBox->addItem("All Channels");
+  Channel_comboBox->setCurrentIndex (POLAND_DAC_NUM);
+  Loops_comboBox->clear();
+   for(int l=0; l<POLAND_QFWLOOPS; ++l)
+   {
+	   Loops_comboBox->addItem(QString("Loop %1").arg(l));
+   }
+   Loops_comboBox->addItem("All Loops");
+   Loops_comboBox->setCurrentIndex (POLAND_QFWLOOPS);
+  ConnectSlots();
 }
 
 PolandViewpanelWidget::~PolandViewpanelWidget ()
@@ -27,18 +49,20 @@ PolandViewpanelWidget::~PolandViewpanelWidget ()
 void PolandViewpanelWidget::ConnectSlots()
 {
 
-//  QObject::connect (UnzoomButton, SIGNAL(clicked()), this, SLOT(UnzoomButton_clicked()));
-//  QObject::connect (SetZoomButton,SIGNAL(clicked(bool)), this, SLOT(SetZoomButton_toggled(bool)));
-//  QObject::connect (PatternLow_spinBox, SIGNAL(valueChanged(int)), this, SLOT(PatternLow_spinBox_changed(int)));
-//  QObject::connect (PatternHi_spinBox, SIGNAL(valueChanged(int)), this, SLOT(PatternHi_spinBox_changed(int)));
+  QObject::connect (UnzoomButton, SIGNAL(clicked()), this, SLOT(UnzoomButton_clicked()));
+  QObject::connect (SetZoomButton,SIGNAL(clicked(bool)), this, SLOT(SetZoomButton_toggled(bool)));
+  QObject::connect (PatternLow_spinBox, SIGNAL(valueChanged(int)), this, SLOT(PatternLow_spinBox_changed(int)));
+  QObject::connect (PatternHi_spinBox, SIGNAL(valueChanged(int)), this, SLOT(PatternHi_spinBox_changed(int)));
 
+  QObject::connect (Channel_comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(Channel_changed(int)));
+  QObject::connect (Loops_comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(Loop_changed(int)));
 
 }
 
 
 void PolandViewpanelWidget::mousePressEvent (QMouseEvent *event)
 {
-//std::cout <<" PolandViewpanelWidget::mousePressEvent"  <<std::endl;
+std::cout <<" PolandViewpanelWidget::mousePressEvent"  <<std::endl;
 if (event->button () == Qt::LeftButton)
 {
 
@@ -84,7 +108,7 @@ if (event->button () == Qt::LeftButton)
       else if (fPickCounter==1)
       {
         fHighLimit=cursor;
-        //SetZoomButton->setChecked(false);
+        SetZoomButton->setChecked(false);
         RefreshView();
       }
       else {
@@ -139,31 +163,40 @@ void PolandViewpanelWidget::PatternHi_spinBox_changed(int val)
   RefreshView();
 }
 
+void PolandViewpanelWidget::Channel_changed(int val)
+{
+	std::cout <<" PolandViewpanelWidget::Channel_changed "<< val  <<std::endl;
+	fDisplayChannel=val;
+	ShowSample(0);
+}
 
+
+void PolandViewpanelWidget::Loop_changed(int val)
+{
+	std::cout <<" PolandViewpanelWidget::Loop_changed "<< val  <<std::endl;
+	fDisplayLoop=val;
+	ShowSample(0);
+}
 
 
 void PolandViewpanelWidget::RefreshView ()
 {
-  //GAPG_LOCK_SLOT
-//  PatternLow_spinBox->setValue(fLowLimit);
-//  PatternHi_spinBox->setValue(fHighLimit);
+  GOSIP_LOCK_SLOT
+  PatternLow_spinBox->setValue(fLowLimit);
+  PatternHi_spinBox->setValue(fHighLimit);
 
-  PlotwidgetChSlice->setLimits (fLowLimit, fHighLimit, -0.2, 1.2);
+  PlotwidgetChSlice->setLimits (fLowLimit, fHighLimit, fNminLimit, fNmaxLimit);
   PlotwidgetChSlice->update ();
-  //GAPG_UNLOCK_SLOT
+  GOSIP_UNLOCK_SLOT
 }
 
 
-void PolandViewpanelWidget::ShowSample (PolandSample* theSample)
+void PolandViewpanelWidget::ShowSample (PolandSample* sample)
 {
-  //std::cout <<"ShowSample for channel:"<<channel<< std::endl;
-  //theSetup_GET_FOR_SLAVE(PolandSetup);
-  //theSetup->ShowADCSample(channel); // todo: dump sample on different knob
+  //std::cout <<"ShowSample "<< std::endl;
+  if(sample!=0) theSample=sample;
+  if(theSample==0) return;
 
-  //KPlotWidget* canvas = fPlotWidget[channel];
-//  if (benchmarkdisplay)
-//    canvas = fApfelWidget->BenchmarkPlotwidget;
-//
   KPlotWidget* canvas = PlotwidgetChSlice;
   // first fill plotobject with samplepoints
   QColor col;
@@ -223,6 +256,11 @@ void PolandViewpanelWidget::ShowSample (PolandSample* theSample)
 //
 //  };
 
+       int numberbase=GosipGui::fInstance->GetNumberBase();
+       EventCounter->setMode((numberbase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+       EventCounter->display ((int) theSample->GetEventCounter());
+
+
   // TODO: put this in special functions
   canvas->resetPlot ();
   // labels for plot area:
@@ -231,78 +269,43 @@ void PolandViewpanelWidget::ShowSample (PolandSample* theSample)
   canvas->axis (KPlotWidget::LeftAxis)->setLabel ("Register value ");
 
   fPlot = new KPlotObject(col, KPlotObject::Points, 1, pstyle);
-  //KPlotObject *sampleplot = new KPlotObject (col, KPlotObject::Lines, 2);
-  //QString label = QString ("channel:%1").arg (channel);
-  //sampleplot->addPoint (0, theSetup->GetADCSample (channel, 0), label);
 
-
-
-//  int samplength=theSetup->GetADCSampleLength(channel);
-//  for (int i = 1; i < samplength; ++i)
-//  {
-//    sampleplot->addPoint (i, theSetup->GetADCSample (channel, i));
-//  }
-
-
-  // poor mans solution: just plot values in readout buffer asis
-  // later TODO: unpack data and plot only timeslices
-  //int numwords = 32 + theSetup->fSteps[0] * 32 + theSetup->fSteps[1] * 32 + theSetup->fSteps[2] * 32;// + 32;
-  //snprintf (buffer, 1024, "gosipcmd -d -r -x -- %d %d 0 0x%x", fSFP, fSlave, numwords);
-//  int numwords = theSetup->fSteps[0] * 32 + theSetup->fSteps[1] * 32 + theSetup->fSteps[2] * 32;// + 32;
-// int buf[numwords];
-//  int addr=128;//0;
-//  int max=0;
-//  for (int e = 0; e < numwords; ++e)
-//  {
-//    buf[e] = ReadGosip (fSFP, fSlave, addr);
-//    if( buf[e] == -1)
-//        buf[e]=1;
-//    //buf[e]=3*e;
-//    if(buf[e] >max)
-//        max=buf[e];
-//    addr+=4;
-//  }
-//
-
-
-
-
-//  for (int i = 0; i < numwords; ++i)
-//    {
-//      fPlot->addPoint (i, buf[i]);
-//    }
-
-  int max=0;
   int t=0;
-
+  fNmaxLimit=0;
   for (int loop = 0; loop < POLAND_QFWLOOPS; loop++)
      {
+	   if((fDisplayLoop<POLAND_QFWLOOPS) && (loop != fDisplayLoop)) continue;
        for (int sl = 0; sl < theSample->GetLoopsize(loop); ++sl)
        {
          for (int ch = 0; ch < POLAND_DAC_NUM; ++ch)
          {
+        	 if((fDisplayChannel<POLAND_QFWLOOPS) && (ch != fDisplayChannel)) continue;
            int val = theSample->GetTraceValue(loop,ch,sl);
-           printf("ShowSample l:%d sl:%d c:%d val:0x%x\n",loop,sl,ch,val);
+           //printf("ShowSample l:%d sl:%d c:%d val:0x%x\n",loop,sl,ch,val);
            fPlot->addPoint (t++, val);
-           if(val >max)
-             max=val;
+           if(val >fNmaxLimit)
+        	   fNmaxLimit=val;
          }
        }
      }
   fLowLimit=0;
   fHighLimit=t;
-
+  fNmaxLimit+=1;
+  fNminLimit=0;
   // add it to the plot area
   canvas->addPlotObject (fPlot);
-  if(max>0x800) max=0x800;
-  canvas->setLimits (fLowLimit, fHighLimit, 0.0, max+1);
 
-  canvas->update ();
+
+
+  if(fNmaxLimit>0x800) fNmaxLimit=0x800;
+  RefreshView ();
+
+//  canvas->setLimits (fLowLimit, fHighLimit, 0.0, fNmaxLimit);
+//
+//  canvas->update ();
 
   //TODO: Kplotwidget with 2d display of time sliceslike in go4
   // unpacker
-  // take mouse click zoom/unzoom functions from galapgagos!
-
 
 }
 

@@ -19,6 +19,9 @@ protected:
 
   KPlotObject *fPlot;
 
+  /** remember current sample for redisplay of channels etc.*/
+  PolandSample* theSample;
+
    /** control pick of limits*/
    int fPickCounter;
 
@@ -27,6 +30,18 @@ protected:
 
    /** right pattern boundary*/
    int fHighLimit;
+
+   /** lower y display boundary*/
+   int fNminLimit;
+
+   /** upper y display boundary*/
+   int fNmaxLimit;
+
+   /** current channel to display*/
+   int fDisplayChannel;
+
+   /** current loop to display*/
+   int fDisplayLoop;
 
    virtual void    mousePressEvent(QMouseEvent *event);
 
@@ -46,7 +61,7 @@ public:
 
      int GetHighLimit(){return fHighLimit;}
 
-     void ShowSample (PolandSample* theSample);
+     void ShowSample (PolandSample* sample=0);
 
 
    public slots:
@@ -56,8 +71,8 @@ public:
    virtual void PatternLow_spinBox_changed(int);
    virtual void PatternHi_spinBox_changed(int);
 
-
-
+   virtual void Channel_changed(int);
+   virtual void Loop_changed(int);
 
 };
 

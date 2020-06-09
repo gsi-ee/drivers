@@ -62,12 +62,20 @@ fBroadcasting=false;\
 }
 
 
+//#define GOSIP_LOCK_SLOT \
+//if(fSlotGuard) return; \
+//fSlotGuard =true;
+//
+//#define GOSIP_UNLOCK_SLOT \
+//fSlotGuard =false;
+
+// JAM2020: redefine this macros for usage in non-subclasses
 #define GOSIP_LOCK_SLOT \
-if(fSlotGuard) return; \
-fSlotGuard =true;
+if(GosipGui::fInstance->IsSlotGuard()) return; \
+GosipGui::fInstance->SetSlotGuard(true);
 
 #define GOSIP_UNLOCK_SLOT \
-fSlotGuard =false;
+GosipGui::fInstance->SetSlotGuard(false);
 
 
 /** JAM2018: the following pattern is used in most of the gui slots for autoapply:*/
@@ -165,6 +173,13 @@ public:
 static GosipGui* fInstance;
 
 
+	bool IsSlotGuard(){
+		return fSlotGuard;
+	}
+
+	void SetSlotGuard(bool on){
+		fSlotGuard=on;
+	}
 
 protected:
 
