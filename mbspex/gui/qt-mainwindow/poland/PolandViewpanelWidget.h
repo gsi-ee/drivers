@@ -3,6 +3,7 @@
 
 #include "ui_PolandViewpanelWidget.h"
 
+#include <kplotobject.h>
 
 class PolandSample;
 
@@ -43,7 +44,28 @@ protected:
    /** current loop to display*/
    int fDisplayLoop;
 
+   /** if true, plot channel sum over traces vs channel number. otherwise different loop trace modes*/
+   bool fChannelSumMode;
+
+   /** color code of plot point*/
+   int fPlotColorcode;
+
+   /** size factor for plot*/
+   int fPlotSize;
+
+   /** style index for plot*/
+   int fPlotStyle;
+
+
    virtual void    mousePressEvent(QMouseEvent *event);
+
+
+   /** translate color index into Qt code*/
+   QColor mapColorIndex(int i);
+
+   /** translate style index into Kplot code*/
+   KPlotObject::PointStyle mapPointstyleIndex(int i);
+
 
 public:
   PolandViewpanelWidget (QWidget* parent = 0);
@@ -52,8 +74,11 @@ public:
 
    virtual void ConnectSlots ();
 
-     virtual void RefreshView ();
+   virtual void RefreshView ();
 
+   virtual void RefreshDrawStyle();
+
+   virtual void RefreshEventCounter();
 
      /** take values relevant for our widget from Qt settings file*/
 
@@ -73,6 +98,13 @@ public:
 
    virtual void Channel_changed(int);
    virtual void Loop_changed(int);
+
+   virtual void PointColor_changed(int);
+   virtual void PointStyle_changed(int);
+   virtual void PointSize_changed(int);
+
+   virtual void TracesEnabled_toggled(bool);
+
 
 };
 

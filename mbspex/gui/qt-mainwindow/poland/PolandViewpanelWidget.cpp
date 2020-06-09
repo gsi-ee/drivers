@@ -4,7 +4,7 @@
 #include "GosipGui.h"
 
 
-#include <kplotobject.h>
+//#include <kplotobject.h>
 #include <kplotwidget.h>
 #include <kplotaxis.h>
 #include <kplotpoint.h>
@@ -17,8 +17,10 @@
  *  name 'name'.'
  */
 PolandViewpanelWidget::PolandViewpanelWidget (QWidget* parent) :
-    QWidget (parent), fPlot(0),fPickCounter(0),
-	fLowLimit(0), fHighLimit(1), fNminLimit(0), fNmaxLimit(1), fDisplayChannel(POLAND_DAC_NUM), fDisplayLoop(POLAND_QFWLOOPS)
+    QWidget (parent), fPlot(0), theSample(0), fPickCounter(0),
+	fLowLimit(0), fHighLimit(1), fNminLimit(0), fNmaxLimit(1),
+	fDisplayChannel(POLAND_DAC_NUM), fDisplayLoop(POLAND_QFWLOOPS),
+	fChannelSumMode(false), fPlotColorcode(0), fPlotSize(1), fPlotStyle(0)
 
 {
   setupUi (this);
@@ -56,6 +58,12 @@ void PolandViewpanelWidget::ConnectSlots()
 
   QObject::connect (Channel_comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(Channel_changed(int)));
   QObject::connect (Loops_comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(Loop_changed(int)));
+
+  QObject::connect (PointColorComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(PointColor_changed(int)));
+  QObject::connect (PointStyleComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(PointStyle_changed(int)));
+  QObject::connect (PlotsizeSlider, SIGNAL(valueChanged(int)), this, SLOT(PointSize_changed(int)));
+
+  QObject::connect (Traces_radioButton, SIGNAL(toggled(bool)), this, SLOT(TracesEnabled_toggled(bool)));
 
 }
 
@@ -178,6 +186,40 @@ void PolandViewpanelWidget::Loop_changed(int val)
 	ShowSample(0);
 }
 
+void PolandViewpanelWidget::PointColor_changed(int val)
+{
+	std::cout <<" PolandViewpanelWidget::PointColor_changed "<< val  <<std::endl;
+	fPlotColorcode=val;
+	RefreshDrawStyle();
+
+}
+void PolandViewpanelWidget::PointStyle_changed(int val)
+ {
+	std::cout <<" PolandViewpanelWidget::PointStyle_changed "<< val  <<std::endl;
+	fPlotStyle=val;
+	RefreshDrawStyle();
+ }
+
+
+void PolandViewpanelWidget::PointSize_changed(int val)
+{
+	std::cout <<" PolandViewpanelWidget::PointSize_changed "<< val  <<std::endl;
+	fPlotSize=val;
+	RefreshDrawStyle();
+}
+
+void PolandViewpanelWidget::TracesEnabled_toggled(bool on)
+{
+	std::cout <<" PolandViewpanelWidget::TracesEnabled_toggled "<< on  <<std::endl;
+
+	fChannelSumMode=!on;
+	TraceModeFrame->setEnabled(on);
+	ShowSample(0);
+
+}
+
+
+
 
 void PolandViewpanelWidget::RefreshView ()
 {
@@ -191,84 +233,90 @@ void PolandViewpanelWidget::RefreshView ()
 }
 
 
+void PolandViewpanelWidget::RefreshDrawStyle()
+{
+	GOSIP_LOCK_SLOT
+
+	 QList<KPlotObject *> objects = PlotwidgetChSlice->plotObjects ();
+	if (!objects.isEmpty ())
+	{
+	      KPlotObject * thePlot = objects.first ();
+	      thePlot->setPointStyle (mapPointstyleIndex(fPlotStyle));
+	      thePlot->setSize(fPlotSize);
+	      thePlot->setBrush(mapColorIndex(fPlotColorcode));
+
+	}
+	PlotwidgetChSlice->update ();
+	GOSIP_UNLOCK_SLOT
+}
+
+void PolandViewpanelWidget::RefreshEventCounter()
+{
+	 if(theSample==0) return;
+	 int numberbase=GosipGui::fInstance->GetNumberBase();
+	 EventCounter->setMode((numberbase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+	 EventCounter->display ((int) theSample->GetEventCounter());
+
+}
+
+
 void PolandViewpanelWidget::ShowSample (PolandSample* sample)
 {
   //std::cout <<"ShowSample "<< std::endl;
   if(sample!=0) theSample=sample;
   if(theSample==0) return;
-
-  KPlotWidget* canvas = PlotwidgetChSlice;
-  // first fill plotobject with samplepoints
-  QColor col;
-  KPlotObject::PointStyle pstyle = KPlotObject::Circle;
-
-  col = Qt::red;
-       pstyle = KPlotObject::Circle;
-
-//  switch (channel)
-//  {
-//    case 0:
-//    case 8:
-//    default:
-//      col = Qt::red;
-//      pstyle = KPlotObject::Circle;
-//      break;
-//    case 1:
-//    case 9:
-//      col = Qt::green;
-//      pstyle = KPlotObject::Letter;
-//      break;
-//    case 2:
-//    case 10:
-//      col = Qt::blue;
-//      pstyle = KPlotObject::Triangle;
-//      break;
-//    case 3:
-//    case 11:
-//      col = Qt::cyan;
-//      pstyle = KPlotObject::Square;
-//      break;
-//
-//    case 4:
-//    case 12:
-//      col = Qt::magenta;
-//      pstyle = KPlotObject::Pentagon;
-//      break;
-//    case 5:
-//    case 13:
-//      col = Qt::yellow;
-//      pstyle = KPlotObject::Hexagon;
-//      break;
-//    case 6:
-//    case 14:
-//      col = Qt::gray;
-//      pstyle = KPlotObject::Asterisk;
-//      break;
-//    case 7:
-//    case 15:
-//      col = Qt::darkGreen;
-//      pstyle = KPlotObject::Star;
-//      break;
-//
-////        Letter = 2, Triangle = 3,
-////         Square = 4, Pentagon = 5, Hexagon = 6, Asterisk = 7,
-////         Star = 8
-//
-//  };
-
-       int numberbase=GosipGui::fInstance->GetNumberBase();
-       EventCounter->setMode((numberbase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
-       EventCounter->display ((int) theSample->GetEventCounter());
+  RefreshEventCounter();
+//       int numberbase=GosipGui::fInstance->GetNumberBase();
+//       EventCounter->setMode((numberbase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
+//       EventCounter->display ((int) theSample->GetEventCounter());
 
 
-  // TODO: put this in special functions
-  canvas->resetPlot ();
+  PlotwidgetChSlice->resetPlot ();
   // labels for plot area:
-  canvas->setAntialiasing (true);
-  canvas->axis (KPlotWidget::BottomAxis)->setLabel ("Trace index (#samples)");
-  canvas->axis (KPlotWidget::LeftAxis)->setLabel ("Register value ");
+  PlotwidgetChSlice->setAntialiasing (true);
 
-  fPlot = new KPlotObject(col, KPlotObject::Points, 2, pstyle);
+  if(fChannelSumMode)
+  {
+	  // display sum over each channel here:
+	  PlotwidgetChSlice->axis (KPlotWidget::BottomAxis)->setLabel ("Channel number");
+	  PlotwidgetChSlice->axis (KPlotWidget::LeftAxis)->setLabel ("Sum counts");
+	  fPlot = new KPlotObject(mapColorIndex(fPlotColorcode), KPlotObject::Points, fPlotSize, mapPointstyleIndex(fPlotStyle));
+	   int channelsums[POLAND_DAC_NUM]={0};
+		for (int loop = 0; loop < POLAND_QFWLOOPS; loop++)
+		{
+			for (int ch = 0; ch < POLAND_DAC_NUM; ++ch)
+			{
+				for (int sl = 0; sl < theSample->GetLoopsize(loop); ++sl)
+				{
+					channelsums[ch] += theSample->GetTraceValue(loop, ch, sl);
+				}
+			}
+		}
+
+		fNmaxLimit=0;
+		for (int ch = 0; ch < POLAND_DAC_NUM; ++ch)
+		{
+			 int val=channelsums[ch];
+			 fPlot->addPoint (ch, val);
+			 if(val >fNmaxLimit)
+				 fNmaxLimit=val;
+		}
+		 fLowLimit=0;
+		 fHighLimit=POLAND_DAC_NUM;
+		 fNmaxLimit+=1;
+		 fNminLimit=0;
+  }
+  else
+  {
+  // regular mode: display traces, optionally with filters for loops and channels
+
+
+  PlotwidgetChSlice->axis (KPlotWidget::BottomAxis)->setLabel ("Trace index (#samples)");
+  PlotwidgetChSlice->axis (KPlotWidget::LeftAxis)->setLabel ("Register value ");
+
+  //fPlot = new KPlotObject(col, KPlotObject::Points, 2, pstyle);
+
+  fPlot = new KPlotObject(mapColorIndex(fPlotColorcode), KPlotObject::Points, fPlotSize, mapPointstyleIndex(fPlotStyle));
 
   int t=0;
   fNmaxLimit=0;
@@ -293,16 +341,19 @@ void PolandViewpanelWidget::ShowSample (PolandSample* sample)
   fNmaxLimit+=1;
   fNminLimit=0;
   // add it to the plot area
-  canvas->addPlotObject (fPlot);
+  PlotwidgetChSlice->addPlotObject (fPlot);
 
 
 
   if(fNmaxLimit>0x800) fNmaxLimit=0x800;
+
+  }
+
   RefreshView ();
 
-//  canvas->setLimits (fLowLimit, fHighLimit, 0.0, fNmaxLimit);
+//  PlotwidgetChSlice->setLimits (fLowLimit, fHighLimit, 0.0, fNmaxLimit);
 //
-//  canvas->update ();
+//  PlotwidgetChSlice->update ();
 
   //TODO: Kplotwidget with 2d display of time sliceslike in go4
   // unpacker
@@ -310,7 +361,69 @@ void PolandViewpanelWidget::ShowSample (PolandSample* sample)
 }
 
 
+  QColor PolandViewpanelWidget::mapColorIndex(int i)
+  {
+	  QColor col;
+	  switch (i)
+	 {
+	     case 0:
+	     default:
+	    	 col=Qt::red;
+	    	 break;
+	     case 1:
+	    	 col=Qt::green;
+	    	 break;
+	     case 2:
+	    	 col=Qt::blue;
+	    	 break;
+	     case 3:
+	    	 col=Qt::cyan;
+	    	 break;
+	     case 4:
+	    	 col=Qt::yellow;
+	    	 break;
+	     case 5:
+	    	 col=Qt::magenta;
+	    	 break;
+	 };
+	  	  return col;
+  }
 
+  KPlotObject::PointStyle PolandViewpanelWidget::mapPointstyleIndex(int i)
+  {
+	  KPlotObject::PointStyle stil;
+
+	  switch (i)
+	 	 {
+	 	     case 0:
+	 	     default:
+	 	    	 stil=KPlotObject::Circle;
+	 	    	 break;
+	 	     case 1:
+	 	    	 stil=KPlotObject::Letter;
+	 	    	 break;
+	 	     case 2:
+	 	    	 stil=KPlotObject::Asterisk;
+	 	    	 break;
+	 	     case 3:
+	 	    	 stil=KPlotObject::Square;
+	 	    	 break;
+	 	     case 4:
+	 	    	 stil=KPlotObject::Triangle;
+	 	    	 break;
+	 	     case 5:
+	 	    	 stil=KPlotObject::Pentagon;
+	 	    	 break;
+	 	    case 6:
+	 	    	stil=KPlotObject::Hexagon;
+	 	    	break;
+
+	 	 };
+
+
+
+	  return stil;
+  }
 
 
 

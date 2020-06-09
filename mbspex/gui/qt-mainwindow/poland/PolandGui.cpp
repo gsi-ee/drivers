@@ -39,7 +39,7 @@ PolandGui::PolandGui (QWidget* parent) :
     GosipGui (parent), fTriggerOn(true)
 {
   fImplementationName="POLAND";
-  fVersionString="Welcome to POLAND GUI!\n\t v0.981 of 09-June-2020 by JAM (j.adamczewski@gsi.de)";
+  fVersionString="Welcome to POLAND GUI!\n\t v0.982 of 09-June-2020 by JAM (j.adamczewski@gsi.de)";
   setWindowTitle(QString("%1 GUI").arg(fImplementationName));
 
 
@@ -451,6 +451,8 @@ RefreshDAC(); // probably this is already triggered by signal
 RefreshTrigger(); // show real trigger register as read back from actual device
 
 RefreshSensors();
+fPolandViewpanelWidget->RefreshEventCounter(); // hex/dec toggle here
+
 RefreshChains();
 RefreshStatus();
 }
