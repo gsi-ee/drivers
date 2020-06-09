@@ -188,14 +188,14 @@ void PolandViewpanelWidget::Loop_changed(int val)
 
 void PolandViewpanelWidget::PointColor_changed(int val)
 {
-	std::cout <<" PolandViewpanelWidget::PointColor_changed "<< val  <<std::endl;
+	//std::cout <<" PolandViewpanelWidget::PointColor_changed "<< val  <<std::endl;
 	fPlotColorcode=val;
 	RefreshDrawStyle();
 
 }
 void PolandViewpanelWidget::PointStyle_changed(int val)
  {
-	std::cout <<" PolandViewpanelWidget::PointStyle_changed "<< val  <<std::endl;
+	//std::cout <<" PolandViewpanelWidget::PointStyle_changed "<< val  <<std::endl;
 	fPlotStyle=val;
 	RefreshDrawStyle();
  }
@@ -203,20 +203,18 @@ void PolandViewpanelWidget::PointStyle_changed(int val)
 
 void PolandViewpanelWidget::PointSize_changed(int val)
 {
-	std::cout <<" PolandViewpanelWidget::PointSize_changed "<< val  <<std::endl;
+	//std::cout <<" PolandViewpanelWidget::PointSize_changed "<< val  <<std::endl;
 	fPlotSize=val;
 	RefreshDrawStyle();
 }
 
 void PolandViewpanelWidget::TracesEnabled_toggled(bool on)
 {
-	std::cout <<" PolandViewpanelWidget::TracesEnabled_toggled "<< on  <<std::endl;
-
-	fChannelSumMode=!on;
+	//std::cout <<" PolandViewpanelWidget::TracesEnabled_toggled "<< on  <<std::endl;
+  fChannelSumMode=!on;
 	TraceModeFrame->setEnabled(on);
 	ShowSample(0);
-
-}
+ }
 
 
 
@@ -243,7 +241,15 @@ void PolandViewpanelWidget::RefreshDrawStyle()
 	      KPlotObject * thePlot = objects.first ();
 	      thePlot->setPointStyle (mapPointstyleIndex(fPlotStyle));
 	      thePlot->setSize(fPlotSize);
-	      thePlot->setBrush(mapColorIndex(fPlotColorcode));
+	      QColor col=mapColorIndex(fPlotColorcode);
+	      // set here all possible line and point colors to the chosen:
+	      thePlot->setBrush(col);
+          thePlot->setBarBrush(col);          
+	       thePlot->setPen( QPen( thePlot->brush(), 1 ) );
+	       thePlot->setLinePen( thePlot->pen() );
+	       thePlot->setBarPen( thePlot->pen() );
+	       thePlot->setLabelPen( thePlot->pen() );
+	      // end stolen from KPlotObject ctor JAM2020
 
 	}
 	PlotwidgetChSlice->update ();
@@ -266,10 +272,6 @@ void PolandViewpanelWidget::ShowSample (PolandSample* sample)
   if(sample!=0) theSample=sample;
   if(theSample==0) return;
   RefreshEventCounter();
-//       int numberbase=GosipGui::fInstance->GetNumberBase();
-//       EventCounter->setMode((numberbase==16) ? QLCDNumber::Hex :  QLCDNumber::Dec);
-//       EventCounter->display ((int) theSample->GetEventCounter());
-
 
   PlotwidgetChSlice->resetPlot ();
   // labels for plot area:
@@ -314,7 +316,6 @@ void PolandViewpanelWidget::ShowSample (PolandSample* sample)
   PlotwidgetChSlice->axis (KPlotWidget::BottomAxis)->setLabel ("Trace index (#samples)");
   PlotwidgetChSlice->axis (KPlotWidget::LeftAxis)->setLabel ("Register value ");
 
-  //fPlot = new KPlotObject(col, KPlotObject::Points, 2, pstyle);
 
   fPlot = new KPlotObject(mapColorIndex(fPlotColorcode), KPlotObject::Points, fPlotSize, mapPointstyleIndex(fPlotStyle));
 
@@ -340,23 +341,16 @@ void PolandViewpanelWidget::ShowSample (PolandSample* sample)
   fHighLimit=t;
   fNmaxLimit+=1;
   fNminLimit=0;
+}
   // add it to the plot area
   PlotwidgetChSlice->addPlotObject (fPlot);
 
 
 
-  if(fNmaxLimit>0x800) fNmaxLimit=0x800;
-
-  }
-
+  //if(fNmaxLimit>0x800) fNmaxLimit=0x800;
+  
   RefreshView ();
 
-//  PlotwidgetChSlice->setLimits (fLowLimit, fHighLimit, 0.0, fNmaxLimit);
-//
-//  PlotwidgetChSlice->update ();
-
-  //TODO: Kplotwidget with 2d display of time sliceslike in go4
-  // unpacker
 
 }
 
