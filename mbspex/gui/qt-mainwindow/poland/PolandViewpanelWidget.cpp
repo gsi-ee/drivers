@@ -18,7 +18,7 @@
  */
 PolandViewpanelWidget::PolandViewpanelWidget (QWidget* parent) :
     QWidget (parent), fPlot(0),fPickCounter(0),
-	fLowLimit(0), fHighLimit(1), fNminLimit(0), fNmaxLimit(1), fDisplayChannel(-1), fDisplayLoop(-1)
+	fLowLimit(0), fHighLimit(1), fNminLimit(0), fNmaxLimit(1), fDisplayChannel(POLAND_DAC_NUM), fDisplayLoop(POLAND_QFWLOOPS)
 
 {
   setupUi (this);
@@ -62,7 +62,7 @@ void PolandViewpanelWidget::ConnectSlots()
 
 void PolandViewpanelWidget::mousePressEvent (QMouseEvent *event)
 {
-std::cout <<" PolandViewpanelWidget::mousePressEvent"  <<std::endl;
+//std::cout <<" PolandViewpanelWidget::mousePressEvent"  <<std::endl;
 if (event->button () == Qt::LeftButton)
 {
 
@@ -165,7 +165,7 @@ void PolandViewpanelWidget::PatternHi_spinBox_changed(int val)
 
 void PolandViewpanelWidget::Channel_changed(int val)
 {
-	std::cout <<" PolandViewpanelWidget::Channel_changed "<< val  <<std::endl;
+	//std::cout <<" PolandViewpanelWidget::Channel_changed "<< val  <<std::endl;
 	fDisplayChannel=val;
 	ShowSample(0);
 }
@@ -173,7 +173,7 @@ void PolandViewpanelWidget::Channel_changed(int val)
 
 void PolandViewpanelWidget::Loop_changed(int val)
 {
-	std::cout <<" PolandViewpanelWidget::Loop_changed "<< val  <<std::endl;
+	//std::cout <<" PolandViewpanelWidget::Loop_changed "<< val  <<std::endl;
 	fDisplayLoop=val;
 	ShowSample(0);
 }
@@ -265,10 +265,10 @@ void PolandViewpanelWidget::ShowSample (PolandSample* sample)
   canvas->resetPlot ();
   // labels for plot area:
   canvas->setAntialiasing (true);
-  canvas->axis (KPlotWidget::BottomAxis)->setLabel ("Optic data index (#samples)");
+  canvas->axis (KPlotWidget::BottomAxis)->setLabel ("Trace index (#samples)");
   canvas->axis (KPlotWidget::LeftAxis)->setLabel ("Register value ");
 
-  fPlot = new KPlotObject(col, KPlotObject::Points, 1, pstyle);
+  fPlot = new KPlotObject(col, KPlotObject::Points, 2, pstyle);
 
   int t=0;
   fNmaxLimit=0;
@@ -279,7 +279,7 @@ void PolandViewpanelWidget::ShowSample (PolandSample* sample)
        {
          for (int ch = 0; ch < POLAND_DAC_NUM; ++ch)
          {
-        	 if((fDisplayChannel<POLAND_QFWLOOPS) && (ch != fDisplayChannel)) continue;
+        	 if((fDisplayChannel<POLAND_DAC_NUM) && (ch != fDisplayChannel)) continue;
            int val = theSample->GetTraceValue(loop,ch,sl);
            //printf("ShowSample l:%d sl:%d c:%d val:0x%x\n",loop,sl,ch,val);
            fPlot->addPoint (t++, val);
