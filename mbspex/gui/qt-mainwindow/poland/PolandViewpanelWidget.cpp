@@ -31,6 +31,7 @@ PolandViewpanelWidget::PolandViewpanelWidget (QWidget* parent) :
 	  Channel_comboBox->addItem(QString("Ch %1").arg(c));
   }
   Channel_comboBox->addItem("All Channels");
+  Channel_comboBox->addItem("Sum Channels");
   Channel_comboBox->setCurrentIndex (POLAND_DAC_NUM);
   Loops_comboBox->clear();
    for(int l=0; l<POLAND_QFWLOOPS; ++l)
@@ -73,10 +74,8 @@ void PolandViewpanelWidget::mousePressEvent (QMouseEvent *event)
 //std::cout <<" PolandViewpanelWidget::mousePressEvent"  <<std::endl;
 if (event->button () == Qt::LeftButton)
 {
-
   if (fPickCounter > 0)
   {
-
     //std::cout <<" Left button at position x:"<< event->x()<<", y:"<<event->y()  <<std::endl;
     // following correction for the plot border was stolen from a protected method in KPlotWidget:
     QPoint pickpoint = event->pos () - QPoint (PlotwidgetChSlice->leftPadding (), PlotwidgetChSlice->topPadding ())
@@ -85,7 +84,6 @@ if (event->button () == Qt::LeftButton)
     QList<KPlotObject *> objects = PlotwidgetChSlice->plotObjects ();
     if (!objects.isEmpty ())
     {
-
       KPlotObject * thePlot = objects.first ();
       QList<KPlotPoint *> pointlist = thePlot->points ();
       double olddelta = 500;
@@ -122,18 +120,11 @@ if (event->button () == Qt::LeftButton)
       else {
         printm(" PolandViewpanelWidget::mousePressEvent NEVER COME HERE: piccounter mismatch : %d",fPickCounter);
       }
-
       fPickCounter--;
-
     }
-
   }    // fPickCounter
-
 }
-
-
     QWidget::mousePressEvent(event);
-
 }
 
 
@@ -276,13 +267,13 @@ void PolandViewpanelWidget::ShowSample (PolandSample* sample)
   PlotwidgetChSlice->resetPlot ();
   // labels for plot area:
   PlotwidgetChSlice->setAntialiasing (true);
+  fPlot = new KPlotObject(mapColorIndex(fPlotColorcode), KPlotObject::Points, fPlotSize, mapPointstyleIndex(fPlotStyle));
 
   if(fChannelSumMode)
   {
 	  // display sum over each channel here:
 	  PlotwidgetChSlice->axis (KPlotWidget::BottomAxis)->setLabel ("Channel number");
 	  PlotwidgetChSlice->axis (KPlotWidget::LeftAxis)->setLabel ("Sum counts");
-	  fPlot = new KPlotObject(mapColorIndex(fPlotColorcode), KPlotObject::Points, fPlotSize, mapPointstyleIndex(fPlotStyle));
 	   int channelsums[POLAND_DAC_NUM]={0};
 		for (int loop = 0; loop < POLAND_QFWLOOPS; loop++)
 		{
@@ -312,29 +303,54 @@ void PolandViewpanelWidget::ShowSample (PolandSample* sample)
   {
   // regular mode: display traces, optionally with filters for loops and channels
 
+  // sumup of all channels pe tracepoint switched by top displaychannel index
+  bool displaytracesums=   (fDisplayChannel>POLAND_DAC_NUM) ? true : false;
+  if(displaytracesums)
+  {
+	  PlotwidgetChSlice->axis (KPlotWidget::BottomAxis)->setLabel ("Trace index (sample #)");
+	  PlotwidgetChSlice->axis (KPlotWidget::LeftAxis)->setLabel ("Sum of all channels counts");
+  }
+  else
+  {
+	  PlotwidgetChSlice->axis (KPlotWidget::BottomAxis)->setLabel ("Sample index (samples #)");
+	  PlotwidgetChSlice->axis (KPlotWidget::LeftAxis)->setLabel ("QFW value ");
+  }
 
-  PlotwidgetChSlice->axis (KPlotWidget::BottomAxis)->setLabel ("Trace index (#samples)");
-  PlotwidgetChSlice->axis (KPlotWidget::LeftAxis)->setLabel ("Register value ");
-
-
-  fPlot = new KPlotObject(mapColorIndex(fPlotColorcode), KPlotObject::Points, fPlotSize, mapPointstyleIndex(fPlotStyle));
 
   int t=0;
   fNmaxLimit=0;
+  for (int loop = 0; loop < POLAND_QFWLOOPS; loop++)
+
+
   for (int loop = 0; loop < POLAND_QFWLOOPS; loop++)
      {
 	   if((fDisplayLoop<POLAND_QFWLOOPS) && (loop != fDisplayLoop)) continue;
        for (int sl = 0; sl < theSample->GetLoopsize(loop); ++sl)
        {
+    	 int tracesum=0;
          for (int ch = 0; ch < POLAND_DAC_NUM; ++ch)
          {
-        	 if((fDisplayChannel<POLAND_DAC_NUM) && (ch != fDisplayChannel)) continue;
+          if((fDisplayChannel<POLAND_DAC_NUM) && (ch != fDisplayChannel)) continue;
            int val = theSample->GetTraceValue(loop,ch,sl);
            //printf("ShowSample l:%d sl:%d c:%d val:0x%x\n",loop,sl,ch,val);
-           fPlot->addPoint (t++, val);
-           if(val >fNmaxLimit)
-        	   fNmaxLimit=val;
-         }
+			   if(displaytracesums)
+			   {
+				   tracesum+=val;
+			   }
+			   else
+			   {
+				   fPlot->addPoint (t++, val);
+				   if(val >fNmaxLimit)
+					   fNmaxLimit=val;
+			   }
+
+           } // for ch
+         if(displaytracesums)
+              {
+        	 	 fPlot->addPoint (t++, tracesum);
+        	 	 if(tracesum >fNmaxLimit)
+        	 		 fNmaxLimit=tracesum;
+              }
        }
      }
   fLowLimit=0;
@@ -344,14 +360,8 @@ void PolandViewpanelWidget::ShowSample (PolandSample* sample)
 }
   // add it to the plot area
   PlotwidgetChSlice->addPlotObject (fPlot);
-
-
-
   //if(fNmaxLimit>0x800) fNmaxLimit=0x800;
-  
   RefreshView ();
-
-
 }
 
 

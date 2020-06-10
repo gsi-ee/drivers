@@ -39,7 +39,7 @@ PolandGui::PolandGui (QWidget* parent) :
     GosipGui (parent), fTriggerOn(true)
 {
   fImplementationName="POLAND";
-  fVersionString="Welcome to POLAND GUI!\n\t v0.982 of 09-June-2020 by JAM (j.adamczewski@gsi.de)";
+  fVersionString="Welcome to POLAND GUI!\n\t v0.983 of 10-June-2020 by JAM (j.adamczewski@gsi.de)";
   setWindowTitle(QString("%1 GUI").arg(fImplementationName));
 
 
@@ -1042,208 +1042,14 @@ void PolandGui::ShowSample ()
 {
   //std::cout <<"ShowSample for channel:"<<channel<< std::endl;
   theSetup_GET_FOR_SLAVE(PolandSetup);
-
   GetSample(&(theSetup->fLastSample));
-
   fPolandViewpanelWidget->ShowSample(&(theSetup->fLastSample));
-
-
-  //theSetup->ShowADCSample(channel); // todo: dump sample on different knob
-
-  //KPlotWidget* canvas = fPlotWidget[channel];
-//  if (benchmarkdisplay)
-//    canvas = fApfelWidget->BenchmarkPlotwidget;
-//
-//  KPlotWidget* canvas =fPolandViewpanelWidget->PlotwidgetChSlice;
-//  // first fill plotobject with samplepoints
-//  QColor col;
-//  KPlotObject::PointStyle pstyle = KPlotObject::Circle;
-//
-//  col = Qt::red;
-//       pstyle = KPlotObject::Circle;
-//
-////  switch (channel)
-////  {
-////    case 0:
-////    case 8:
-////    default:
-////      col = Qt::red;
-////      pstyle = KPlotObject::Circle;
-////      break;
-////    case 1:
-////    case 9:
-////      col = Qt::green;
-////      pstyle = KPlotObject::Letter;
-////      break;
-////    case 2:
-////    case 10:
-////      col = Qt::blue;
-////      pstyle = KPlotObject::Triangle;
-////      break;
-////    case 3:
-////    case 11:
-////      col = Qt::cyan;
-////      pstyle = KPlotObject::Square;
-////      break;eventcounter
-////
-////    case 4:
-////    case 12:
-////      col = Qt::magenta;
-////      pstyle = KPlotObject::Pentagon;
-////      break;
-////    case 5:
-////    case 13:
-////      col = Qt::yellow;
-////      pstyle = KPlotObject::Hexagon;
-////      break;
-////    case 6:
-////    case 14:
-////      col = Qt::gray;
-////      pstyle = KPlotObject::Asterisk;
-////      break;
-////    case 7:
-////    case 15:
-////      col = Qt::darkGreen;
-////      pstyle = KPlotObject::Star;
-////      break;
-////
-//////        Letter = 2, Triangle = 3,
-//////         Square = 4, Pentagon = 5, Hexagon = 6, Asterisk = 7,
-//////         Star = 8
-////
-////  };
-//
-//  // TODO: put this in special functions
-//  canvas->resetPlot ();
-//  // labels for plot area:
-//  canvas->setAntialiasing (true);
-//  canvas->axis (KPlotWidget::BottomAxis)->setLabel ("Optic data index (#samples)");
-//  canvas->axis (KPlotWidget::LeftAxis)->setLabel ("Register value ");
-//
-//  KPlotObject *sampleplot = new KPlotObject(col, KPlotObject::Points, 1, pstyle);
-//  //KPlotObject *sampleplot = new KPlotObject (col, KPlotObject::Lines, 2);
-//  //QString label = QString ("channel:%1").arg (channel);
-//  //sampleplot->addPoint (0, theSetup->GetADCSample (channel, 0), label);
-//
-//
-//
-////  int samplength=theSetup->GetADCSampleLength(channel);
-////  for (int i = 1; i < samplength; ++i)
-////  {
-////    sampleplot->addPoint (i, theSetup->GetADCSample (channel, i));
-////  }
-//
-//
-//  // poor mans solution: just plot values in readout buffer asis
-//  // later TODO: unpack data and plot only timeslices
-//  //int numwords = 32 + theSetup->fSteps[0] * 32 + theSetup->fSteps[1] * 32 + theSetup->fSteps[2] * 32;// + 32;
-//  //snprintf (buffer, 1024, "gosipcmd -d -r -x -- %d %d 0 0x%x", fSFP, fSlave, numwords);
-//  int numwords = theSetup->fSteps[0] * 32 + theSetup->fSteps[1] * 32 + theSetup->fSteps[2] * 32;// + 32;
-// int buf[numwords];
-//  int addr=128;//0;
-//  int max=0;
-//  for (int e = 0; e < numwords; ++e)
-//  {
-//    buf[e] = ReadGosip (fSFP, fSlave, addr);
-//    if( buf[e] == -1)
-//    	buf[e]=1;
-//    //buf[e]=3*e;
-//	if(buf[e] >max)
-//		max=buf[e];
-//    addr+=4;
-//  }
-//
-//
-//  for (int i = 0; i < numwords; ++i)
-//    {
-//      sampleplot->addPoint (i, buf[i]);
-//    }
-//
-//
-//  // add it to the plot area
-//  canvas->addPlotObject (sampleplot);
-//  if(max>0x800) max=0x800;
-//  canvas->setLimits (0, numwords, 0.0, max+1);
-//
-//  canvas->update ();
-//  //TODO: Kplotwidget with 2d display of time sliceslike in go4
-//  // unpacker
-//  // take mouse click zoom/unzoom functions from galapgagos!
-//
-//
-////   if (benchmarkdisplay)
-////  {
-////    canvas->setLimits (0, samplength, 0.0, 17000);
-////    canvas->update ();
-////  }
-////  else
-////  {
-////    UnzoomSample (channel);
-////    RefreshSampleMaxima(channel);
-////  }
-
- // return 0;
 }
-
-
 
 
 void PolandGui::GetSample(PolandSample* theSample)
 {
-
-///////////////// this code is mostly taken from Go4 unpacker at https://subversion.gsi.de/go4/app/qfw/pexor
-
-//  int loopsize[POLAND_QFWLOOPS];
-//  int looptime[POLAND_QFWLOOPS];
-//  unsigned int ErrorScaler[POLAND_ERRCOUNT_NUM] = { 0 };
-
-
-//  int *pdata = tokbuf->Data ();
-//  int *pdatastart = pdata;
-//  int lwords = tokbuf->UsedSize ()/sizeof(int); // this is true filled size from DMA, not total buffer lenght
-//  // loop over single subevent data:
-//  while (pdata - pdatastart < lwords)
-//  {
-//
-//    if ((*pdata & 0xff) != 0x34)    // regular channel data
-//    {
-//      printf ("**** unpack_qfw: Skipping Non-header format 0x%x - (0x34 are expected) ...\n",
-//          (*pdata & 0xff));
-//      pdata++;
-//      continue; // we have to skip it, since the dedicated padding pattern is added by mbs and not available here!
-//    }
-//
-//    unsigned trig_type = (*pdata & 0xf00) >> 8;
-//    unsigned sfp_id = (*pdata & 0xf000) >> 12;
-//    unsigned device_id = (*pdata & 0xff0000) >> 16;
-//    unsigned channel_id = (*pdata & 0xff000000) >> 24;
-//
-//    pdata++;
-//
-//    int opticlen = *pdata++;
-//    printf ("Token header: trigid:0x%x sfp:0x%x modid:0x%x memid:0x%x opticlen:0x%x\n", trig_type, sfp_id, device_id,
-//        channel_id, opticlen);
-//    //
-//    if (opticlen > lwords * 4)
-//    {
-//      printf ("**** unpack_qfw: Mismatch with subevent len %d and optic len %d", lwords * 4, opticlen);
-//      // avoid that we run second step on invalid raw event!
-//      return -1;
-//    }
-//
-//
-
-
-   // QFWRAW_CHECK_PDATA;
-
-
-    /////////////////////////////// begin here
     int addr=0;
-    //  int max=0;
-    //  for (int e = 0; e < numwords; ++e)fPolandViewpanelWidget->
-    //  {
-    //    buf[e] = ReadGosip (fSFP, fSlave, addr);
-
     int eventcounter = ReadGosip (fSFP, fSlave, addr);
     printf (" - Internal Event number 0x%x\n", eventcounter);
     theSample->SetEventCounter(eventcounter);
@@ -1265,16 +1071,13 @@ void PolandGui::GetSample(PolandSample* theSample)
 //    QFWRAW_CHECK_PDATA;
     for (int l = 0; l < POLAND_QFWLOOPS; l++)
     {
-//      QFWRAW_CHECK_PDATA_BREAK;
       theSample->SetLoopsize(l, ReadGosip (fSFP, fSlave, addr));
       printf (" - Loopsize[%d] = 0x%x\n", l, theSample->GetLoopsize(l));
       addr +=4;
     }    // first loop loop
 
-//    QFWRAW_CHECK_PDATA;
     for (int loop = 0; loop < POLAND_QFWLOOPS; loop++)
     {
-//      QFWRAW_CHECK_PDATA_BREAK;
       theSample->SetLooptime(loop, ReadGosip (fSFP, fSlave, addr));
       printf (" - Looptime[%d] = 0x%x\n", loop, theSample->GetLooptime(loop));
       addr +=4;
@@ -1282,65 +1085,30 @@ void PolandGui::GetSample(PolandSample* theSample)
 
     for (int j = 0; j < 21; ++j)
     {
-//      QFWRAW_CHECK_PDATA_BREAK;
-//      pdata++;
       addr +=4;
 
     }
-//    QFWRAW_CHECK_PDATA;
     /** All loops X slices/loop X channels */
     for (int loop = 0; loop < POLAND_QFWLOOPS; loop++)
     {
       for (int sl = 0; sl < theSample->GetLoopsize(loop); ++sl)
         for (int ch = 0; ch < POLAND_DAC_NUM; ++ch)
         {
-          //QFWRAW_CHECK_PDATA_BREAK;
           int value = ReadGosip (fSFP, fSlave, addr);
           theSample->AddTraceValue(loop, ch,value);
           addr +=4;
-
-          //loopData->fQfwTrace[ch].push_back(value);
-          // TODO: pseudo trace graphics on terminal
-//          if(Debugmode)
 //            printf (" -- loop %d slice %d ch %d = 0x%x\n", loop, sl, ch, value);
         }
     }    //loop
 
-    //QFWRAW_CHECK_PDATA;
     /* errorcount values: - per QFW CHIPS*/
     for (int qfw = 0; qfw < POLAND_ERRCOUNT_NUM; ++qfw)
     {
-      //QFWRAW_CHECK_PDATA_BREAK;
       theSample->SetErrorScaler(qfw, (unsigned int)  ReadGosip (fSFP, fSlave, addr));
       addr +=4;
       printf (" - ErrorScaler[%d] = 0x%x\n", qfw, theSample->GetErrorScaler(qfw));
     }
 
-   // QFWRAW_CHECK_PDATA;
-
-//    // skip filler words at the end of gosip payload:
-//    while (pdata - pdatastart <= (opticlen / 4))    // note that trailer is outside opticlen!
-//    {
-//      if(Debugmode) printf("######### skipping word 0x%x\n ",*pdata);
-//      pdata++;
-//    }
-//
-//    // crosscheck if trailer word matches eventcounter header
-//    if (*pdata != eventcounter)
-//    {
-//      printf ("!!!!! Eventcounter 0x%x does not match trailing word 0x%x at position 0x%x!\n", eventcounter, *pdata,
-//          (opticlen / 4));
-//    }
-//    else
-//    {
-//        printf ("Found trailing Eventcounter 0x%x \n",*pdata);
-//    }
-//    pdata++;
-//  }    // while pdata - pdatastart < lwords
-
-////////////////////////////// end go4 unpacker
-
-//  return 0;
 }
 
 
