@@ -1072,14 +1072,14 @@ void PolandGui::GetSample(PolandSample* theSample)
     for (int l = 0; l < POLAND_QFWLOOPS; l++)
     {
       theSample->SetLoopsize(l, ReadGosip (fSFP, fSlave, addr));
-      printf (" - Loopsize[%d] = 0x%x\n", l, theSample->GetLoopsize(l));
+      //printf (" - Loopsize[%d] = 0x%x\n", l, theSample->GetLoopsize(l));
       addr +=4;
     }    // first loop loop
 
     for (int loop = 0; loop < POLAND_QFWLOOPS; loop++)
     {
       theSample->SetLooptime(loop, ReadGosip (fSFP, fSlave, addr));
-      printf (" - Looptime[%d] = 0x%x\n", loop, theSample->GetLooptime(loop));
+      //printf (" - Looptime[%d] = 0x%x\n", loop, theSample->GetLooptime(loop));
       addr +=4;
     }    // second loop loop
 
@@ -1106,7 +1106,7 @@ void PolandGui::GetSample(PolandSample* theSample)
     {
       theSample->SetErrorScaler(qfw, (unsigned int)  ReadGosip (fSFP, fSlave, addr));
       addr +=4;
-      printf (" - ErrorScaler[%d] = 0x%x\n", qfw, theSample->GetErrorScaler(qfw));
+      //printf (" - ErrorScaler[%d] = 0x%x\n", qfw, theSample->GetErrorScaler(qfw));
     }
 
 }
