@@ -1051,7 +1051,7 @@ void PolandGui::GetSample(PolandSample* theSample)
 {
     int addr=0;
     int eventcounter = ReadGosip (fSFP, fSlave, addr);
-    printf (" - Internal Event number 0x%x\n", eventcounter);
+    //printf (" - Internal Event number 0x%x\n", eventcounter);
     theSample->SetEventCounter(eventcounter);
     // board id calculated from SFP and device id:
 

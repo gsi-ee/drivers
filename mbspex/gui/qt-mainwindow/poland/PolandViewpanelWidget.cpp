@@ -320,9 +320,6 @@ void PolandViewpanelWidget::ShowSample (PolandSample* sample)
   int t=0;
   fNmaxLimit=0;
   for (int loop = 0; loop < POLAND_QFWLOOPS; loop++)
-
-
-  for (int loop = 0; loop < POLAND_QFWLOOPS; loop++)
      {
 	   if((fDisplayLoop<POLAND_QFWLOOPS) && (loop != fDisplayLoop)) continue;
        for (int sl = 0; sl < theSample->GetLoopsize(loop); ++sl)
