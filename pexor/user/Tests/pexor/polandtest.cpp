@@ -291,10 +291,10 @@ int unpack_qfw (pexor::DMA_Buffer* tokbuf)
   int looptime[QFWLOOPS];
 
   int *pdata = tokbuf->Data ();
-  int *pdatastart = pdata;
+  int *pdatabegin = pdata;
   int lwords = tokbuf->UsedSize ()/sizeof(int); // this is true filled size from DMA, not total buffer lenght
   // loop over single subevent data:
-  while (pdata - pdatastart < lwords)
+  while (pdata - pdatabegin < lwords)
   {
 
     if ((*pdata & 0xff) != 0x34)    // regular channel data
@@ -309,7 +309,7 @@ int unpack_qfw (pexor::DMA_Buffer* tokbuf)
     unsigned sfp_id = (*pdata & 0xf000) >> 12;
     unsigned device_id = (*pdata & 0xff0000) >> 16;
     unsigned channel_id = (*pdata & 0xff000000) >> 24;
-    pdatastart = pdata;
+    int* pdatastart = pdata;
     pdata++;
 
     int opticlen = *pdata++;
