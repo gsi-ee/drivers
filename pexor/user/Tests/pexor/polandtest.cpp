@@ -309,7 +309,7 @@ int unpack_qfw (pexor::DMA_Buffer* tokbuf)
     unsigned sfp_id = (*pdata & 0xf000) >> 12;
     unsigned device_id = (*pdata & 0xff0000) >> 16;
     unsigned channel_id = (*pdata & 0xff000000) >> 24;
-
+    pdatastart = pdata;
     pdata++;
 
     int opticlen = *pdata++;
