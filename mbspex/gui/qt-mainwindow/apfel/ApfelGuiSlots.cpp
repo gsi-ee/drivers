@@ -120,6 +120,13 @@ void ApfelGui::SwitchChanged ()
 
 }
 
+
+void ApfelGui::SetSimpleSwitches(bool on)
+{
+	//std::cout << "ApfelGui::SetSimpleSwitches( "<<on<<" )" << std::endl;
+	fUseSimpleSwitchAddressing=on;
+}
+
 void ApfelGui::PulserTimeout ()
 {
   //std::cout << "ApfelGui::PulserTimeout" << std::endl;
@@ -973,7 +980,7 @@ void ApfelGui::StartBenchmarkPressed ()
     QString temperatur= fApfelWidget->EnvironmentTemperature->text ();
     if (temperatur.isEmpty ())
     {
-      printm ("Missing environment temperature information! Please type in a value (in °C)!");
+      printm ("Missing environment temperature information! Please type in a value (in ï¿½C)!");
       return;
     }
     theSetup->SetTemperature(temperatur);

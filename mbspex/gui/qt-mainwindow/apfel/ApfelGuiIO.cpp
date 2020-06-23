@@ -651,7 +651,7 @@ void ApfelGui::SetSwitches (bool useApfel, bool useHighGain, bool useStretcher, 
         lo |= (0x000c);
     else
         lo |= (0x000d);
-    WriteSwitchRegister(lo, hi, APFEL_USE_SIMPLE_SWITCHES);
+    WriteSwitchRegister(lo, hi, fUseSimpleSwitchAddressing ); //APFEL_USE_SIMPLE_SWITCHES
   }
 
 }
@@ -695,15 +695,7 @@ else
   lo |= (0x000d);
 
 
-WriteSwitchRegister(lo, hi, APFEL_USE_SIMPLE_SWITCHES);
-//WriteGosip (fSFP, fSlave, GOS_I2C_DWR, hi);
-//WriteGosip (fSFP, fSlave, GOS_I2C_DWR, lo);
-//
-// dat |= (0x18); // default setup: all enabled
-// WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
-
-
-
+WriteSwitchRegister(lo, hi, fUseSimpleSwitchAddressing ); //APFEL_USE_SIMPLE_SWITCHES
 }
 
 
@@ -1073,13 +1065,8 @@ void ApfelGui::SetSingleChipCommID(int apfel, int id)
   else
     lo |= (0x000f);
 
-  WriteSwitchRegister(lo, hi, APFEL_USE_SIMPLE_SWITCHES);
+  WriteSwitchRegister(lo, hi, fUseSimpleSwitchAddressing ); //APFEL_USE_SIMPLE_SWITCHES
 
-//  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, hi);
-//  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, lo);
-//
-//   dat |= (0x18); // default setup: all enabled
-//   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 
    APFEL_ADDRESSTEST_SLEEP
 
@@ -1155,16 +1142,7 @@ void ApfelGui::SetSingleChipCurrentMode(int apfel, bool selectHV, bool selectDio
   lo |= ((selHV << 3) & 0xF);
   lo |= ((selDiode << 2) & 0xF);
 
-  WriteSwitchRegister(lo, hi, APFEL_USE_SIMPLE_SWITCHES);
-
-
-//  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, hi);
-//  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, lo);
-//
-//   dat |= (0x18); // default setup: all enabled
-//   WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
-
-
+  WriteSwitchRegister(lo, hi, fUseSimpleSwitchAddressing ); //APFEL_USE_SIMPLE_SWITCHES
 
    APFEL_ADDRESSTEST_SLEEP
 

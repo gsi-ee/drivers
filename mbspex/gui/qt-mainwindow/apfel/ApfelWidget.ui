@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1393</width>
-    <height>542</height>
+    <height>656</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,684 +20,717 @@
       <string>Push this button to start measurement from keithly</string>
      </property>
      <property name="currentIndex">
-      <number>6</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="OutputTab">
       <attribute name="title">
        <string>IO Config</string>
       </attribute>
-      <layout class="QGridLayout" name="gridLayout_41">
+      <layout class="QGridLayout" name="gridLayout_26">
        <item row="0" column="0">
-        <layout class="QGridLayout" name="gridLayout_26">
-         <item row="0" column="0">
-          <widget class="QGroupBox" name="SetupSelectBox">
-           <property name="title">
-            <string>Hardware</string>
-           </property>
-           <layout class="QGridLayout" name="gridLayout_28">
-            <item row="0" column="0">
-             <widget class="QRadioButton" name="PasemRadioButton">
-              <property name="text">
-               <string>APFELSEM</string>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QRadioButton" name="PandaRadioButton">
-              <property name="text">
-               <string>PANDA Test</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QGroupBox" name="InputSelectBox">
-           <property name="title">
-            <string>Input</string>
-           </property>
-           <layout class="QGridLayout" name="gridLayout_16">
-            <item row="0" column="0">
-             <widget class="QRadioButton" name="ApfelRadioButton">
-              <property name="text">
-               <string>Use APFEL</string>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QRadioButton" name="PolandRadioButton">
-              <property name="text">
-               <string>Use POLAND</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QGroupBox" name="StretcherSelectBox">
-           <property name="title">
-            <string>Output stretcher</string>
-           </property>
-           <layout class="QGridLayout" name="gridLayout_27">
-            <item row="0" column="0">
-             <widget class="QRadioButton" name="StretcherOnRadioButton">
-              <property name="text">
-               <string>Use Stretcher</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QRadioButton" name="StretcherOffRadioButton">
-              <property name="text">
-               <string>NO  Stretcher</string>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="0" column="1">
-        <layout class="QGridLayout" name="gridLayout_30">
-         <item row="1" column="4">
-          <widget class="QLineEdit" name="EnvironmentTemperature">
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type environment temperature&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="readOnly">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QCheckBox" name="PowerCheckBox_all">
-           <property name="font">
-            <font>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="toolTip">
-            <string>Switch power of APFEL in ALL mounting positions</string>
-           </property>
-           <property name="text">
-            <string>Power ALL</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="2">
-          <spacer name="horizontalSpacer">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="1" column="5">
-          <layout class="QHBoxLayout" name="horizontalLayout_149">
+        <layout class="QHBoxLayout" name="horizontalLayout_151">
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_24">
            <item>
-            <widget class="QLabel" name="CarrierBoardLabel">
-             <property name="toolTip">
-              <string>Addres ID of Test carrier board</string>
+            <widget class="QGroupBox" name="SetupSelectBox">
+             <property name="title">
+              <string>Hardware</string>
              </property>
-             <property name="frameShape">
-              <enum>QFrame::StyledPanel</enum>
-             </property>
-             <property name="text">
-              <string>Carrier Board:</string>
-             </property>
+             <layout class="QGridLayout" name="gridLayout_28">
+              <item row="0" column="0">
+               <widget class="QRadioButton" name="PasemRadioButton">
+                <property name="text">
+                 <string>APFELSEM</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QRadioButton" name="PandaRadioButton">
+                <property name="text">
+                 <string>PANDA Test</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="CarrierSerialNum">
+            <widget class="QGroupBox" name="InputSelectBox">
+             <property name="title">
+              <string>Input</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_16">
+              <item row="0" column="0">
+               <widget class="QRadioButton" name="ApfelRadioButton">
+                <property name="text">
+                 <string>Use APFEL</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QRadioButton" name="PolandRadioButton">
+                <property name="text">
+                 <string>Use POLAND</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="StretcherSelectBox">
+             <property name="title">
+              <string>Output stretcher</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_27">
+              <item row="0" column="0">
+               <widget class="QRadioButton" name="StretcherOnRadioButton">
+                <property name="text">
+                 <string>Use Stretcher</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QRadioButton" name="StretcherOffRadioButton">
+                <property name="text">
+                 <string>NO  Stretcher</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="SwitchAddressBox">
+             <property name="title">
+              <string>Switch Addressing</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_41">
+              <item row="0" column="0">
+               <widget class="QRadioButton" name="SimpleModeOnRadioButton">
+                <property name="text">
+                 <string>Workaround</string>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QRadioButton" name="SimpleModeOffRadioButton">
+                <property name="text">
+                 <string>Register</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QGridLayout" name="gridLayout_30">
+           <item row="1" column="4">
+            <widget class="QLineEdit" name="EnvironmentTemperature">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type Carrier Board serial id number, or use qrcode scanner&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type environment temperature&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="readOnly">
               <bool>false</bool>
              </property>
             </widget>
            </item>
-          </layout>
-         </item>
-         <item row="3" column="0" colspan="6">
-          <layout class="QGridLayout" name="gridLayout_5">
-           <item row="0" column="0">
-            <widget class="QGroupBox" name="PowerGroupBox_1">
-             <property name="title">
-              <string>Position 1</string>
-             </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_4">
-              <item>
-               <widget class="QCheckBox" name="PowerCheckBox_1">
-                <property name="toolTip">
-                 <string>Switch power of APFEL in this mounting position</string>
-                </property>
-                <property name="text">
-                 <string>Power</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="OnLabel_1">
-                <property name="frameShape">
-                 <enum>QFrame::Box</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Raised</enum>
-                </property>
-                <property name="lineWidth">
-                 <number>2</number>
-                </property>
-                <property name="text">
-                 <string> ON </string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="ApfelAdressLabel_1">
-                <property name="toolTip">
-                 <string>Addres ID of APFEL in this mounting position</string>
-                </property>
-                <property name="frameShape">
-                 <enum>QFrame::StyledPanel</enum>
-                </property>
-                <property name="text">
-                 <string>APFEL  1</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="ApfelSerialNum_1">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="readOnly">
-                 <bool>false</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QGroupBox" name="PowerGroupBox_5">
-             <property name="title">
-              <string>Position 5</string>
-             </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_99">
-              <item>
-               <widget class="QCheckBox" name="PowerCheckBox_5">
-                <property name="toolTip">
-                 <string>Switch power of APFEL in this mounting position</string>
-                </property>
-                <property name="text">
-                 <string>Power</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="OnLabel_5">
-                <property name="frameShape">
-                 <enum>QFrame::Box</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Raised</enum>
-                </property>
-                <property name="lineWidth">
-                 <number>2</number>
-                </property>
-                <property name="text">
-                 <string> ON </string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="ApfelAdressLabel_5">
-                <property name="toolTip">
-                 <string>Addres ID of APFEL in this mounting position</string>
-                </property>
-                <property name="frameShape">
-                 <enum>QFrame::StyledPanel</enum>
-                </property>
-                <property name="text">
-                 <string>APFEL  9</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="ApfelSerialNum_5">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="readOnly">
-                 <bool>false</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
            <item row="1" column="0">
-            <widget class="QGroupBox" name="PowerGroupBox_2">
-             <property name="title">
-              <string>Position 2</string>
+            <widget class="QCheckBox" name="PowerCheckBox_all">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
              </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_96">
-              <item>
-               <widget class="QCheckBox" name="PowerCheckBox_2">
-                <property name="toolTip">
-                 <string>Switch power of APFEL in this mounting position</string>
-                </property>
-                <property name="text">
-                 <string>Power</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="OnLabel_2">
-                <property name="frameShape">
-                 <enum>QFrame::Box</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Raised</enum>
-                </property>
-                <property name="lineWidth">
-                 <number>2</number>
-                </property>
-                <property name="text">
-                 <string> ON </string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="ApfelAdressLabel_2">
-                <property name="toolTip">
-                 <string>Addres ID of APFEL in this mounting position</string>
-                </property>
-                <property name="frameShape">
-                 <enum>QFrame::StyledPanel</enum>
-                </property>
-                <property name="text">
-                 <string>APFEL  2</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="ApfelSerialNum_2">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="readOnly">
-                 <bool>false</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
+             <property name="toolTip">
+              <string>Switch power of APFEL in ALL mounting positions</string>
+             </property>
+             <property name="text">
+              <string>Power ALL</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
             </widget>
+           </item>
+           <item row="1" column="2">
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="1" column="5">
+            <layout class="QHBoxLayout" name="horizontalLayout_149">
+             <item>
+              <widget class="QLabel" name="CarrierBoardLabel">
+               <property name="toolTip">
+                <string>Addres ID of Test carrier board</string>
+               </property>
+               <property name="frameShape">
+                <enum>QFrame::StyledPanel</enum>
+               </property>
+               <property name="text">
+                <string>Carrier Board:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="CarrierSerialNum">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type Carrier Board serial id number, or use qrcode scanner&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="readOnly">
+                <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item row="3" column="0" colspan="6">
+            <layout class="QGridLayout" name="gridLayout_5">
+             <item row="0" column="0">
+              <widget class="QGroupBox" name="PowerGroupBox_1">
+               <property name="title">
+                <string>Position 1</string>
+               </property>
+               <layout class="QHBoxLayout" name="horizontalLayout_4">
+                <item>
+                 <widget class="QCheckBox" name="PowerCheckBox_1">
+                  <property name="toolTip">
+                   <string>Switch power of APFEL in this mounting position</string>
+                  </property>
+                  <property name="text">
+                   <string>Power</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="OnLabel_1">
+                  <property name="frameShape">
+                   <enum>QFrame::Box</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <property name="lineWidth">
+                   <number>2</number>
+                  </property>
+                  <property name="text">
+                   <string> ON </string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="ApfelAdressLabel_1">
+                  <property name="toolTip">
+                   <string>Addres ID of APFEL in this mounting position</string>
+                  </property>
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
+                  </property>
+                  <property name="text">
+                   <string>APFEL  1</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLineEdit" name="ApfelSerialNum_1">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="readOnly">
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QGroupBox" name="PowerGroupBox_5">
+               <property name="title">
+                <string>Position 5</string>
+               </property>
+               <layout class="QHBoxLayout" name="horizontalLayout_99">
+                <item>
+                 <widget class="QCheckBox" name="PowerCheckBox_5">
+                  <property name="toolTip">
+                   <string>Switch power of APFEL in this mounting position</string>
+                  </property>
+                  <property name="text">
+                   <string>Power</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="OnLabel_5">
+                  <property name="frameShape">
+                   <enum>QFrame::Box</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <property name="lineWidth">
+                   <number>2</number>
+                  </property>
+                  <property name="text">
+                   <string> ON </string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="ApfelAdressLabel_5">
+                  <property name="toolTip">
+                   <string>Addres ID of APFEL in this mounting position</string>
+                  </property>
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
+                  </property>
+                  <property name="text">
+                   <string>APFEL  9</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLineEdit" name="ApfelSerialNum_5">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="readOnly">
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QGroupBox" name="PowerGroupBox_2">
+               <property name="title">
+                <string>Position 2</string>
+               </property>
+               <layout class="QHBoxLayout" name="horizontalLayout_96">
+                <item>
+                 <widget class="QCheckBox" name="PowerCheckBox_2">
+                  <property name="toolTip">
+                   <string>Switch power of APFEL in this mounting position</string>
+                  </property>
+                  <property name="text">
+                   <string>Power</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="OnLabel_2">
+                  <property name="frameShape">
+                   <enum>QFrame::Box</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <property name="lineWidth">
+                   <number>2</number>
+                  </property>
+                  <property name="text">
+                   <string> ON </string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="ApfelAdressLabel_2">
+                  <property name="toolTip">
+                   <string>Addres ID of APFEL in this mounting position</string>
+                  </property>
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
+                  </property>
+                  <property name="text">
+                   <string>APFEL  2</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLineEdit" name="ApfelSerialNum_2">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="readOnly">
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QGroupBox" name="PowerGroupBox_6">
+               <property name="title">
+                <string>Position 6</string>
+               </property>
+               <layout class="QHBoxLayout" name="horizontalLayout_100">
+                <item>
+                 <widget class="QCheckBox" name="PowerCheckBox_6">
+                  <property name="toolTip">
+                   <string>Switch power of APFEL in this mounting position</string>
+                  </property>
+                  <property name="text">
+                   <string>Power</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="OnLabel_6">
+                  <property name="frameShape">
+                   <enum>QFrame::Box</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <property name="lineWidth">
+                   <number>2</number>
+                  </property>
+                  <property name="text">
+                   <string> ON </string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="ApfelAdressLabel_6">
+                  <property name="toolTip">
+                   <string>Addres ID of APFEL in this mounting position</string>
+                  </property>
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
+                  </property>
+                  <property name="text">
+                   <string>APFEL 10</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLineEdit" name="ApfelSerialNum_6">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="readOnly">
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QGroupBox" name="PowerGroupBox_3">
+               <property name="title">
+                <string>Position 3</string>
+               </property>
+               <layout class="QHBoxLayout" name="horizontalLayout_97">
+                <item>
+                 <widget class="QCheckBox" name="PowerCheckBox_3">
+                  <property name="toolTip">
+                   <string>Switch power of APFEL in this mounting position</string>
+                  </property>
+                  <property name="text">
+                   <string>Power</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="OnLabel_3">
+                  <property name="frameShape">
+                   <enum>QFrame::Box</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <property name="lineWidth">
+                   <number>2</number>
+                  </property>
+                  <property name="text">
+                   <string> ON </string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="ApfelAdressLabel_3">
+                  <property name="toolTip">
+                   <string>Addres ID of APFEL in this mounting position</string>
+                  </property>
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
+                  </property>
+                  <property name="text">
+                   <string>APFEL  3</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLineEdit" name="ApfelSerialNum_3">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="readOnly">
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QGroupBox" name="PowerGroupBox_7">
+               <property name="title">
+                <string>Position 7</string>
+               </property>
+               <layout class="QHBoxLayout" name="horizontalLayout_101">
+                <item>
+                 <widget class="QCheckBox" name="PowerCheckBox_7">
+                  <property name="toolTip">
+                   <string>Switch power of APFEL in this mounting position</string>
+                  </property>
+                  <property name="text">
+                   <string>Power</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="OnLabel_7">
+                  <property name="frameShape">
+                   <enum>QFrame::Box</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <property name="lineWidth">
+                   <number>2</number>
+                  </property>
+                  <property name="text">
+                   <string> ON </string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="ApfelAdressLabel_7">
+                  <property name="toolTip">
+                   <string>Addres ID of APFEL in this mounting position</string>
+                  </property>
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
+                  </property>
+                  <property name="text">
+                   <string>APFEL 11</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLineEdit" name="ApfelSerialNum_7">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="readOnly">
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QGroupBox" name="PowerGroupBox_4">
+               <property name="title">
+                <string>Position 4</string>
+               </property>
+               <layout class="QHBoxLayout" name="horizontalLayout_98">
+                <item>
+                 <widget class="QCheckBox" name="PowerCheckBox_4">
+                  <property name="toolTip">
+                   <string>Switch power of APFEL in this mounting position</string>
+                  </property>
+                  <property name="text">
+                   <string>Power</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="OnLabel_4">
+                  <property name="frameShape">
+                   <enum>QFrame::Box</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <property name="lineWidth">
+                   <number>2</number>
+                  </property>
+                  <property name="text">
+                   <string> ON </string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="ApfelAdressLabel_4">
+                  <property name="toolTip">
+                   <string>Addres ID of APFEL in this mounting position</string>
+                  </property>
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
+                  </property>
+                  <property name="text">
+                   <string>APFEL  4</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLineEdit" name="ApfelSerialNum_4">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="readOnly">
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QGroupBox" name="PowerGroupBox_8">
+               <property name="title">
+                <string>Position 8</string>
+               </property>
+               <layout class="QHBoxLayout" name="horizontalLayout_102">
+                <item>
+                 <widget class="QCheckBox" name="PowerCheckBox_8">
+                  <property name="toolTip">
+                   <string>Switch power of APFEL in this mounting position</string>
+                  </property>
+                  <property name="text">
+                   <string>Power</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="OnLabel_8">
+                  <property name="frameShape">
+                   <enum>QFrame::Box</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <property name="lineWidth">
+                   <number>2</number>
+                  </property>
+                  <property name="text">
+                   <string> ON </string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="ApfelAdressLabel_8">
+                  <property name="toolTip">
+                   <string>Addres ID of APFEL in this mounting position</string>
+                  </property>
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
+                  </property>
+                  <property name="text">
+                   <string>APFEL 12</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLineEdit" name="ApfelSerialNum_8">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="readOnly">
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
            </item>
            <item row="1" column="1">
-            <widget class="QGroupBox" name="PowerGroupBox_6">
-             <property name="title">
-              <string>Position 6</string>
+            <widget class="QPushButton" name="ClearIDspushButton">
+             <property name="toolTip">
+              <string>Press this button to erase all chip id fields before a new setup</string>
              </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_100">
-              <item>
-               <widget class="QCheckBox" name="PowerCheckBox_6">
-                <property name="toolTip">
-                 <string>Switch power of APFEL in this mounting position</string>
-                </property>
-                <property name="text">
-                 <string>Power</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="OnLabel_6">
-                <property name="frameShape">
-                 <enum>QFrame::Box</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Raised</enum>
-                </property>
-                <property name="lineWidth">
-                 <number>2</number>
-                </property>
-                <property name="text">
-                 <string> ON </string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="ApfelAdressLabel_6">
-                <property name="toolTip">
-                 <string>Addres ID of APFEL in this mounting position</string>
-                </property>
-                <property name="frameShape">
-                 <enum>QFrame::StyledPanel</enum>
-                </property>
-                <property name="text">
-                 <string>APFEL 10</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="ApfelSerialNum_6">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="readOnly">
-                 <bool>false</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
+             <property name="text">
+              <string>Clear IDs</string>
+             </property>
             </widget>
            </item>
-           <item row="2" column="0">
-            <widget class="QGroupBox" name="PowerGroupBox_3">
-             <property name="title">
-              <string>Position 3</string>
+           <item row="1" column="3">
+            <widget class="QLabel" name="TemperatureLabel">
+             <property name="toolTip">
+              <string>Environment temperature (°C)</string>
              </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_97">
-              <item>
-               <widget class="QCheckBox" name="PowerCheckBox_3">
-                <property name="toolTip">
-                 <string>Switch power of APFEL in this mounting position</string>
-                </property>
-                <property name="text">
-                 <string>Power</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="OnLabel_3">
-                <property name="frameShape">
-                 <enum>QFrame::Box</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Raised</enum>
-                </property>
-                <property name="lineWidth">
-                 <number>2</number>
-                </property>
-                <property name="text">
-                 <string> ON </string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="ApfelAdressLabel_3">
-                <property name="toolTip">
-                 <string>Addres ID of APFEL in this mounting position</string>
-                </property>
-                <property name="frameShape">
-                 <enum>QFrame::StyledPanel</enum>
-                </property>
-                <property name="text">
-                 <string>APFEL  3</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="ApfelSerialNum_3">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="readOnly">
-                 <bool>false</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QGroupBox" name="PowerGroupBox_7">
-             <property name="title">
-              <string>Position 7</string>
+             <property name="frameShape">
+              <enum>QFrame::StyledPanel</enum>
              </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_101">
-              <item>
-               <widget class="QCheckBox" name="PowerCheckBox_7">
-                <property name="toolTip">
-                 <string>Switch power of APFEL in this mounting position</string>
-                </property>
-                <property name="text">
-                 <string>Power</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="OnLabel_7">
-                <property name="frameShape">
-                 <enum>QFrame::Box</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Raised</enum>
-                </property>
-                <property name="lineWidth">
-                 <number>2</number>
-                </property>
-                <property name="text">
-                 <string> ON </string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="ApfelAdressLabel_7">
-                <property name="toolTip">
-                 <string>Addres ID of APFEL in this mounting position</string>
-                </property>
-                <property name="frameShape">
-                 <enum>QFrame::StyledPanel</enum>
-                </property>
-                <property name="text">
-                 <string>APFEL 11</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="ApfelSerialNum_7">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="readOnly">
-                 <bool>false</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QGroupBox" name="PowerGroupBox_4">
-             <property name="title">
-              <string>Position 4</string>
+             <property name="text">
+              <string>Temperature:</string>
              </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_98">
-              <item>
-               <widget class="QCheckBox" name="PowerCheckBox_4">
-                <property name="toolTip">
-                 <string>Switch power of APFEL in this mounting position</string>
-                </property>
-                <property name="text">
-                 <string>Power</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="OnLabel_4">
-                <property name="frameShape">
-                 <enum>QFrame::Box</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Raised</enum>
-                </property>
-                <property name="lineWidth">
-                 <number>2</number>
-                </property>
-                <property name="text">
-                 <string> ON </string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="ApfelAdressLabel_4">
-                <property name="toolTip">
-                 <string>Addres ID of APFEL in this mounting position</string>
-                </property>
-                <property name="frameShape">
-                 <enum>QFrame::StyledPanel</enum>
-                </property>
-                <property name="text">
-                 <string>APFEL  4</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="ApfelSerialNum_4">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="readOnly">
-                 <bool>false</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QGroupBox" name="PowerGroupBox_8">
-             <property name="title">
-              <string>Position 8</string>
-             </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_102">
-              <item>
-               <widget class="QCheckBox" name="PowerCheckBox_8">
-                <property name="toolTip">
-                 <string>Switch power of APFEL in this mounting position</string>
-                </property>
-                <property name="text">
-                 <string>Power</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="OnLabel_8">
-                <property name="frameShape">
-                 <enum>QFrame::Box</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Raised</enum>
-                </property>
-                <property name="lineWidth">
-                 <number>2</number>
-                </property>
-                <property name="text">
-                 <string> ON </string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="ApfelAdressLabel_8">
-                <property name="toolTip">
-                 <string>Addres ID of APFEL in this mounting position</string>
-                </property>
-                <property name="frameShape">
-                 <enum>QFrame::StyledPanel</enum>
-                </property>
-                <property name="text">
-                 <string>APFEL 12</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="ApfelSerialNum_8">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please type APFEL serial id number for device at this position, or use qrcode scanner by pressing the button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="readOnly">
-                 <bool>false</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
             </widget>
            </item>
           </layout>
-         </item>
-         <item row="1" column="1">
-          <widget class="QPushButton" name="ClearIDspushButton">
-           <property name="toolTip">
-            <string>Press this button to erase all chip id fields before a new setup</string>
-           </property>
-           <property name="text">
-            <string>Clear IDs</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="3">
-          <widget class="QLabel" name="TemperatureLabel">
-           <property name="toolTip">
-            <string>Environment temperature (°C)</string>
-           </property>
-           <property name="frameShape">
-            <enum>QFrame::StyledPanel</enum>
-           </property>
-           <property name="text">
-            <string>Temperature:</string>
-           </property>
-          </widget>
          </item>
         </layout>
        </item>
-       <item row="0" column="2">
+       <item row="0" column="1">
         <spacer name="horizontalSpacer_2">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -710,7 +743,7 @@
          </property>
         </spacer>
        </item>
-       <item row="1" column="1">
+       <item row="1" column="0">
         <spacer name="verticalSpacer_3">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -10727,8 +10760,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>231</x>
-     <y>146</y>
+     <x>265</x>
+     <y>169</y>
     </hint>
     <hint type="destinationlabel">
      <x>339</x>
@@ -10747,8 +10780,8 @@
      <y>148</y>
     </hint>
     <hint type="destinationlabel">
-     <x>231</x>
-     <y>146</y>
+     <x>265</x>
+     <y>169</y>
     </hint>
    </hints>
   </connection>
@@ -10759,12 +10792,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>231</x>
-     <y>174</y>
+     <x>265</x>
+     <y>209</y>
     </hint>
     <hint type="destinationlabel">
-     <x>339</x>
-     <y>176</y>
+     <x>372</x>
+     <y>215</y>
     </hint>
    </hints>
   </connection>
@@ -10775,12 +10808,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>339</x>
-     <y>176</y>
+     <x>372</x>
+     <y>215</y>
     </hint>
     <hint type="destinationlabel">
-     <x>231</x>
-     <y>174</y>
+     <x>265</x>
+     <y>209</y>
     </hint>
    </hints>
   </connection>
@@ -10791,12 +10824,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>339</x>
-     <y>204</y>
+     <x>372</x>
+     <y>255</y>
     </hint>
     <hint type="destinationlabel">
-     <x>231</x>
-     <y>202</y>
+     <x>265</x>
+     <y>249</y>
     </hint>
    </hints>
   </connection>
@@ -10807,12 +10840,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>231</x>
-     <y>202</y>
+     <x>265</x>
+     <y>249</y>
     </hint>
     <hint type="destinationlabel">
-     <x>339</x>
-     <y>204</y>
+     <x>372</x>
+     <y>255</y>
     </hint>
    </hints>
   </connection>
@@ -10823,12 +10856,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>231</x>
-     <y>230</y>
+     <x>266</x>
+     <y>289</y>
     </hint>
     <hint type="destinationlabel">
-     <x>339</x>
-     <y>232</y>
+     <x>372</x>
+     <y>295</y>
     </hint>
    </hints>
   </connection>
@@ -10839,12 +10872,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>339</x>
-     <y>232</y>
+     <x>372</x>
+     <y>295</y>
     </hint>
     <hint type="destinationlabel">
-     <x>231</x>
-     <y>230</y>
+     <x>266</x>
+     <y>289</y>
     </hint>
    </hints>
   </connection>
@@ -10855,12 +10888,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>231</x>
-     <y>258</y>
+     <x>265</x>
+     <y>329</y>
     </hint>
     <hint type="destinationlabel">
-     <x>339</x>
-     <y>260</y>
+     <x>372</x>
+     <y>335</y>
     </hint>
    </hints>
   </connection>
@@ -10871,12 +10904,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>339</x>
-     <y>260</y>
+     <x>372</x>
+     <y>335</y>
     </hint>
     <hint type="destinationlabel">
-     <x>231</x>
-     <y>258</y>
+     <x>265</x>
+     <y>329</y>
     </hint>
    </hints>
   </connection>
@@ -10887,12 +10920,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>231</x>
-     <y>314</y>
+     <x>265</x>
+     <y>409</y>
     </hint>
     <hint type="destinationlabel">
-     <x>339</x>
-     <y>316</y>
+     <x>372</x>
+     <y>415</y>
     </hint>
    </hints>
   </connection>
@@ -10903,12 +10936,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>231</x>
-     <y>286</y>
+     <x>265</x>
+     <y>369</y>
     </hint>
     <hint type="destinationlabel">
-     <x>339</x>
-     <y>288</y>
+     <x>372</x>
+     <y>375</y>
     </hint>
    </hints>
   </connection>
@@ -10919,12 +10952,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>339</x>
-     <y>288</y>
+     <x>372</x>
+     <y>375</y>
     </hint>
     <hint type="destinationlabel">
-     <x>231</x>
-     <y>286</y>
+     <x>265</x>
+     <y>369</y>
     </hint>
    </hints>
   </connection>
@@ -10967,12 +11000,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>339</x>
-     <y>316</y>
+     <x>372</x>
+     <y>415</y>
     </hint>
     <hint type="destinationlabel">
-     <x>231</x>
-     <y>314</y>
+     <x>265</x>
+     <y>409</y>
     </hint>
    </hints>
   </connection>
@@ -10983,8 +11016,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>320</x>
-     <y>75</y>
+     <x>283</x>
+     <y>84</y>
     </hint>
     <hint type="destinationlabel">
      <x>148</x>
@@ -10999,12 +11032,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1050</x>
-     <y>176</y>
+     <x>1054</x>
+     <y>215</y>
     </hint>
     <hint type="destinationlabel">
-     <x>889</x>
-     <y>174</y>
+     <x>981</x>
+     <y>209</y>
     </hint>
    </hints>
   </connection>
@@ -11015,12 +11048,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>889</x>
-     <y>174</y>
+     <x>981</x>
+     <y>209</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1050</x>
-     <y>176</y>
+     <x>1054</x>
+     <y>215</y>
     </hint>
    </hints>
   </connection>
@@ -11031,12 +11064,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>889</x>
-     <y>202</y>
+     <x>981</x>
+     <y>249</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1050</x>
-     <y>204</y>
+     <x>1054</x>
+     <y>255</y>
     </hint>
    </hints>
   </connection>
@@ -11047,12 +11080,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1050</x>
-     <y>204</y>
+     <x>1054</x>
+     <y>255</y>
     </hint>
     <hint type="destinationlabel">
-     <x>889</x>
-     <y>202</y>
+     <x>981</x>
+     <y>249</y>
     </hint>
    </hints>
   </connection>
@@ -11063,12 +11096,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>889</x>
-     <y>230</y>
+     <x>981</x>
+     <y>289</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1050</x>
-     <y>232</y>
+     <x>1054</x>
+     <y>295</y>
     </hint>
    </hints>
   </connection>
@@ -11079,12 +11112,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1050</x>
-     <y>232</y>
+     <x>1054</x>
+     <y>295</y>
     </hint>
     <hint type="destinationlabel">
-     <x>889</x>
-     <y>230</y>
+     <x>981</x>
+     <y>289</y>
     </hint>
    </hints>
   </connection>
@@ -11095,12 +11128,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>889</x>
-     <y>258</y>
+     <x>981</x>
+     <y>329</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1050</x>
-     <y>260</y>
+     <x>1054</x>
+     <y>335</y>
     </hint>
    </hints>
   </connection>
@@ -11111,12 +11144,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1050</x>
-     <y>260</y>
+     <x>1054</x>
+     <y>335</y>
     </hint>
     <hint type="destinationlabel">
-     <x>889</x>
-     <y>258</y>
+     <x>981</x>
+     <y>329</y>
     </hint>
    </hints>
   </connection>
@@ -11127,12 +11160,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>889</x>
-     <y>286</y>
+     <x>982</x>
+     <y>369</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1050</x>
-     <y>288</y>
+     <x>1055</x>
+     <y>375</y>
     </hint>
    </hints>
   </connection>
@@ -11143,12 +11176,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1050</x>
-     <y>288</y>
+     <x>1055</x>
+     <y>375</y>
     </hint>
     <hint type="destinationlabel">
-     <x>889</x>
-     <y>286</y>
+     <x>982</x>
+     <y>369</y>
     </hint>
    </hints>
   </connection>
@@ -11159,12 +11192,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>889</x>
-     <y>314</y>
+     <x>981</x>
+     <y>409</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1050</x>
-     <y>316</y>
+     <x>1054</x>
+     <y>415</y>
     </hint>
    </hints>
   </connection>
@@ -11175,12 +11208,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1050</x>
-     <y>316</y>
+     <x>1054</x>
+     <y>415</y>
     </hint>
     <hint type="destinationlabel">
-     <x>889</x>
-     <y>314</y>
+     <x>981</x>
+     <y>409</y>
     </hint>
    </hints>
   </connection>
@@ -11195,8 +11228,8 @@
      <y>73</y>
     </hint>
     <hint type="destinationlabel">
-     <x>320</x>
-     <y>75</y>
+     <x>283</x>
+     <y>84</y>
     </hint>
    </hints>
   </connection>
@@ -11207,8 +11240,8 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>69</x>
-     <y>74</y>
+     <x>67</x>
+     <y>79</y>
     </hint>
     <hint type="destinationlabel">
      <x>148</x>
@@ -11223,12 +11256,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>69</x>
-     <y>74</y>
+     <x>67</x>
+     <y>79</y>
     </hint>
     <hint type="destinationlabel">
-     <x>320</x>
-     <y>75</y>
+     <x>283</x>
+     <y>84</y>
     </hint>
    </hints>
   </connection>
@@ -11243,8 +11276,8 @@
      <y>148</y>
     </hint>
     <hint type="destinationlabel">
-     <x>889</x>
-     <y>146</y>
+     <x>981</x>
+     <y>169</y>
     </hint>
    </hints>
   </connection>
@@ -11255,8 +11288,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>889</x>
-     <y>146</y>
+     <x>981</x>
+     <y>169</y>
     </hint>
     <hint type="destinationlabel">
      <x>1050</x>
@@ -11292,7 +11325,7 @@
     </hint>
     <hint type="destinationlabel">
      <x>691</x>
-     <y>147</y>
+     <y>170</y>
     </hint>
    </hints>
   </connection>
@@ -11308,7 +11341,7 @@
     </hint>
     <hint type="destinationlabel">
      <x>691</x>
-     <y>175</y>
+     <y>210</y>
     </hint>
    </hints>
   </connection>
@@ -11324,7 +11357,7 @@
     </hint>
     <hint type="destinationlabel">
      <x>691</x>
-     <y>203</y>
+     <y>250</y>
     </hint>
    </hints>
   </connection>
@@ -11340,7 +11373,7 @@
     </hint>
     <hint type="destinationlabel">
      <x>691</x>
-     <y>231</y>
+     <y>290</y>
     </hint>
    </hints>
   </connection>
@@ -11356,7 +11389,7 @@
     </hint>
     <hint type="destinationlabel">
      <x>691</x>
-     <y>259</y>
+     <y>330</y>
     </hint>
    </hints>
   </connection>
@@ -11372,7 +11405,7 @@
     </hint>
     <hint type="destinationlabel">
      <x>691</x>
-     <y>287</y>
+     <y>370</y>
     </hint>
    </hints>
   </connection>
@@ -11388,7 +11421,7 @@
     </hint>
     <hint type="destinationlabel">
      <x>691</x>
-     <y>315</y>
+     <y>410</y>
     </hint>
    </hints>
   </connection>
@@ -11419,8 +11452,8 @@
      <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1369</x>
-     <y>147</y>
+     <x>1373</x>
+     <y>170</y>
     </hint>
    </hints>
   </connection>
@@ -11435,8 +11468,8 @@
      <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1369</x>
-     <y>175</y>
+     <x>1373</x>
+     <y>210</y>
     </hint>
    </hints>
   </connection>
@@ -11451,8 +11484,8 @@
      <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1369</x>
-     <y>203</y>
+     <x>1373</x>
+     <y>250</y>
     </hint>
    </hints>
   </connection>
@@ -11467,8 +11500,8 @@
      <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1369</x>
-     <y>231</y>
+     <x>1373</x>
+     <y>290</y>
     </hint>
    </hints>
   </connection>
@@ -11483,8 +11516,8 @@
      <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1369</x>
-     <y>259</y>
+     <x>1373</x>
+     <y>330</y>
     </hint>
    </hints>
   </connection>
@@ -11499,8 +11532,8 @@
      <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1369</x>
-     <y>287</y>
+     <x>1373</x>
+     <y>370</y>
     </hint>
    </hints>
   </connection>
@@ -11515,8 +11548,8 @@
      <y>75</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1157</x>
-     <y>77</y>
+     <x>1138</x>
+     <y>85</y>
     </hint>
    </hints>
   </connection>
@@ -11531,8 +11564,8 @@
      <y>74</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1369</x>
-     <y>315</y>
+     <x>1373</x>
+     <y>410</y>
     </hint>
    </hints>
   </connection>
@@ -11563,8 +11596,8 @@
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
-     <x>588</x>
-     <y>86</y>
+     <x>584</x>
+     <y>110</y>
     </hint>
    </hints>
   </connection>
@@ -11579,8 +11612,8 @@
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
-     <x>788</x>
-     <y>86</y>
+     <x>780</x>
+     <y>110</y>
     </hint>
    </hints>
   </connection>
@@ -11595,8 +11628,8 @@
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
-     <x>988</x>
-     <y>86</y>
+     <x>976</x>
+     <y>110</y>
     </hint>
    </hints>
   </connection>
@@ -11611,8 +11644,8 @@
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
-     <x>388</x>
-     <y>316</y>
+     <x>389</x>
+     <y>410</y>
     </hint>
    </hints>
   </connection>
@@ -11627,8 +11660,8 @@
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
-     <x>588</x>
-     <y>316</y>
+     <x>584</x>
+     <y>410</y>
     </hint>
    </hints>
   </connection>
@@ -11643,8 +11676,8 @@
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
-     <x>788</x>
-     <y>316</y>
+     <x>780</x>
+     <y>410</y>
     </hint>
    </hints>
   </connection>
@@ -11659,8 +11692,8 @@
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
-     <x>988</x>
-     <y>316</y>
+     <x>976</x>
+     <y>410</y>
     </hint>
    </hints>
   </connection>
@@ -11671,12 +11704,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>110</x>
-     <y>112</y>
+     <x>118</x>
+     <y>144</y>
     </hint>
     <hint type="destinationlabel">
-     <x>327</x>
-     <y>150</y>
+     <x>330</x>
+     <y>191</y>
     </hint>
    </hints>
   </connection>
@@ -11687,12 +11720,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>107</x>
-     <y>112</y>
+     <x>118</x>
+     <y>144</y>
     </hint>
     <hint type="destinationlabel">
-     <x>327</x>
-     <y>214</y>
+     <x>330</x>
+     <y>276</y>
     </hint>
    </hints>
   </connection>
@@ -11703,12 +11736,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>107</x>
-     <y>112</y>
+     <x>118</x>
+     <y>144</y>
     </hint>
     <hint type="destinationlabel">
-     <x>527</x>
-     <y>150</y>
+     <x>525</x>
+     <y>191</y>
     </hint>
    </hints>
   </connection>
@@ -11719,12 +11752,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>107</x>
-     <y>112</y>
+     <x>118</x>
+     <y>144</y>
     </hint>
     <hint type="destinationlabel">
-     <x>527</x>
-     <y>214</y>
+     <x>525</x>
+     <y>276</y>
     </hint>
    </hints>
   </connection>
@@ -11735,12 +11768,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>107</x>
-     <y>112</y>
+     <x>118</x>
+     <y>144</y>
     </hint>
     <hint type="destinationlabel">
-     <x>727</x>
-     <y>150</y>
+     <x>721</x>
+     <y>191</y>
     </hint>
    </hints>
   </connection>
@@ -11751,12 +11784,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>107</x>
-     <y>112</y>
+     <x>118</x>
+     <y>144</y>
     </hint>
     <hint type="destinationlabel">
-     <x>727</x>
-     <y>214</y>
+     <x>721</x>
+     <y>276</y>
     </hint>
    </hints>
   </connection>
@@ -11767,12 +11800,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>107</x>
-     <y>112</y>
+     <x>118</x>
+     <y>144</y>
     </hint>
     <hint type="destinationlabel">
-     <x>927</x>
-     <y>150</y>
+     <x>917</x>
+     <y>191</y>
     </hint>
    </hints>
   </connection>
@@ -11783,12 +11816,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>107</x>
-     <y>112</y>
+     <x>118</x>
+     <y>144</y>
     </hint>
     <hint type="destinationlabel">
-     <x>927</x>
-     <y>214</y>
+     <x>917</x>
+     <y>276</y>
     </hint>
    </hints>
   </connection>
@@ -11799,12 +11832,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>107</x>
-     <y>112</y>
+     <x>118</x>
+     <y>144</y>
     </hint>
     <hint type="destinationlabel">
-     <x>327</x>
-     <y>387</y>
+     <x>330</x>
+     <y>491</y>
     </hint>
    </hints>
   </connection>
@@ -11815,12 +11848,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>107</x>
-     <y>112</y>
+     <x>118</x>
+     <y>144</y>
     </hint>
     <hint type="destinationlabel">
-     <x>327</x>
-     <y>453</y>
+     <x>330</x>
+     <y>576</y>
     </hint>
    </hints>
   </connection>
@@ -11831,12 +11864,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>107</x>
-     <y>112</y>
+     <x>118</x>
+     <y>144</y>
     </hint>
     <hint type="destinationlabel">
-     <x>527</x>
-     <y>387</y>
+     <x>525</x>
+     <y>491</y>
     </hint>
    </hints>
   </connection>
@@ -11847,12 +11880,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>107</x>
-     <y>112</y>
+     <x>118</x>
+     <y>144</y>
     </hint>
     <hint type="destinationlabel">
-     <x>727</x>
-     <y>387</y>
+     <x>721</x>
+     <y>491</y>
     </hint>
    </hints>
   </connection>
@@ -11863,12 +11896,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>107</x>
-     <y>112</y>
+     <x>118</x>
+     <y>144</y>
     </hint>
     <hint type="destinationlabel">
-     <x>727</x>
-     <y>453</y>
+     <x>721</x>
+     <y>576</y>
     </hint>
    </hints>
   </connection>
@@ -11879,12 +11912,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>107</x>
-     <y>112</y>
+     <x>118</x>
+     <y>144</y>
     </hint>
     <hint type="destinationlabel">
-     <x>527</x>
-     <y>453</y>
+     <x>525</x>
+     <y>576</y>
     </hint>
    </hints>
   </connection>
@@ -11895,12 +11928,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>107</x>
-     <y>112</y>
+     <x>118</x>
+     <y>144</y>
     </hint>
     <hint type="destinationlabel">
-     <x>927</x>
-     <y>387</y>
+     <x>917</x>
+     <y>491</y>
     </hint>
    </hints>
   </connection>
@@ -11911,12 +11944,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>107</x>
-     <y>112</y>
+     <x>118</x>
+     <y>144</y>
     </hint>
     <hint type="destinationlabel">
-     <x>927</x>
-     <y>453</y>
+     <x>917</x>
+     <y>576</y>
     </hint>
    </hints>
   </connection>
@@ -11947,8 +11980,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>421</x>
-     <y>133</y>
+     <x>463</x>
+     <y>163</y>
     </hint>
    </hints>
   </connection>
@@ -11963,8 +11996,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>421</x>
-     <y>190</y>
+     <x>463</x>
+     <y>238</y>
     </hint>
    </hints>
   </connection>
@@ -11979,8 +12012,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>421</x>
-     <y>248</y>
+     <x>463</x>
+     <y>314</y>
     </hint>
    </hints>
   </connection>
@@ -11995,8 +12028,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>464</x>
-     <y>312</y>
+     <x>463</x>
+     <y>389</y>
     </hint>
    </hints>
   </connection>
@@ -12011,8 +12044,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>464</x>
-     <y>371</y>
+     <x>463</x>
+     <y>464</y>
     </hint>
    </hints>
   </connection>
@@ -12027,8 +12060,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>464</x>
-     <y>430</y>
+     <x>463</x>
+     <y>539</y>
     </hint>
    </hints>
   </connection>
@@ -12043,8 +12076,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>464</x>
-     <y>490</y>
+     <x>463</x>
+     <y>614</y>
     </hint>
    </hints>
   </connection>
@@ -12075,8 +12108,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>917</x>
-     <y>135</y>
+     <x>918</x>
+     <y>163</y>
     </hint>
    </hints>
   </connection>
@@ -12091,8 +12124,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>917</x>
-     <y>194</y>
+     <x>918</x>
+     <y>238</y>
     </hint>
    </hints>
   </connection>
@@ -12107,8 +12140,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>917</x>
-     <y>254</y>
+     <x>918</x>
+     <y>314</y>
     </hint>
    </hints>
   </connection>
@@ -12123,8 +12156,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>917</x>
-     <y>312</y>
+     <x>918</x>
+     <y>389</y>
     </hint>
    </hints>
   </connection>
@@ -12139,8 +12172,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>917</x>
-     <y>371</y>
+     <x>918</x>
+     <y>464</y>
     </hint>
    </hints>
   </connection>
@@ -12155,8 +12188,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>917</x>
-     <y>430</y>
+     <x>918</x>
+     <y>539</y>
     </hint>
    </hints>
   </connection>
@@ -12171,8 +12204,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>917</x>
-     <y>490</y>
+     <x>918</x>
+     <y>614</y>
     </hint>
    </hints>
   </connection>
@@ -12183,12 +12216,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>113</y>
+     <x>191</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
-     <x>387</x>
-     <y>151</y>
+     <x>388</x>
+     <y>196</y>
     </hint>
    </hints>
   </connection>
@@ -12199,12 +12232,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>113</y>
+     <x>191</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
-     <x>387</x>
-     <y>215</y>
+     <x>388</x>
+     <y>281</y>
     </hint>
    </hints>
   </connection>
@@ -12215,12 +12248,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>113</y>
+     <x>191</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
-     <x>587</x>
-     <y>151</y>
+     <x>583</x>
+     <y>196</y>
     </hint>
    </hints>
   </connection>
@@ -12231,12 +12264,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>113</y>
+     <x>191</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
-     <x>587</x>
-     <y>215</y>
+     <x>583</x>
+     <y>281</y>
     </hint>
    </hints>
   </connection>
@@ -12247,12 +12280,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>113</y>
+     <x>191</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
-     <x>787</x>
-     <y>151</y>
+     <x>779</x>
+     <y>196</y>
     </hint>
    </hints>
   </connection>
@@ -12263,12 +12296,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>113</y>
+     <x>191</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
-     <x>787</x>
-     <y>215</y>
+     <x>779</x>
+     <y>281</y>
     </hint>
    </hints>
   </connection>
@@ -12279,12 +12312,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>113</y>
+     <x>191</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
-     <x>987</x>
-     <y>151</y>
+     <x>975</x>
+     <y>196</y>
     </hint>
    </hints>
   </connection>
@@ -12295,12 +12328,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>113</y>
+     <x>191</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
-     <x>987</x>
-     <y>215</y>
+     <x>975</x>
+     <y>281</y>
     </hint>
    </hints>
   </connection>
@@ -12311,12 +12344,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>113</y>
+     <x>191</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
-     <x>387</x>
-     <y>388</y>
+     <x>388</x>
+     <y>496</y>
     </hint>
    </hints>
   </connection>
@@ -12327,12 +12360,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>113</y>
+     <x>191</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
-     <x>387</x>
-     <y>454</y>
+     <x>388</x>
+     <y>581</y>
     </hint>
    </hints>
   </connection>
@@ -12343,12 +12376,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>113</y>
+     <x>191</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
-     <x>587</x>
-     <y>388</y>
+     <x>583</x>
+     <y>496</y>
     </hint>
    </hints>
   </connection>
@@ -12359,12 +12392,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>113</y>
+     <x>191</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
-     <x>787</x>
-     <y>388</y>
+     <x>779</x>
+     <y>496</y>
     </hint>
    </hints>
   </connection>
@@ -12375,12 +12408,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>113</y>
+     <x>191</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
-     <x>587</x>
-     <y>454</y>
+     <x>583</x>
+     <y>581</y>
     </hint>
    </hints>
   </connection>
@@ -12391,12 +12424,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>113</y>
+     <x>191</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
-     <x>787</x>
-     <y>454</y>
+     <x>779</x>
+     <y>581</y>
     </hint>
    </hints>
   </connection>
@@ -12407,12 +12440,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>113</y>
+     <x>191</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
-     <x>987</x>
-     <y>388</y>
+     <x>975</x>
+     <y>496</y>
     </hint>
    </hints>
   </connection>
@@ -12423,12 +12456,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>113</y>
+     <x>191</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
-     <x>987</x>
-     <y>454</y>
+     <x>975</x>
+     <y>581</y>
     </hint>
    </hints>
   </connection>
@@ -12439,8 +12472,8 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>355</y>
+     <x>179</x>
+     <y>469</y>
     </hint>
     <hint type="destinationlabel">
      <x>375</x>
@@ -12455,8 +12488,8 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>355</y>
+     <x>179</x>
+     <y>469</y>
     </hint>
     <hint type="destinationlabel">
      <x>550</x>
@@ -12471,8 +12504,8 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>355</y>
+     <x>179</x>
+     <y>469</y>
     </hint>
     <hint type="destinationlabel">
      <x>725</x>
@@ -12487,12 +12520,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>181</x>
-     <y>378</y>
+     <x>179</x>
+     <y>497</y>
     </hint>
     <hint type="destinationlabel">
-     <x>407</x>
-     <y>360</y>
+     <x>404</x>
+     <y>476</y>
     </hint>
    </hints>
   </connection>
@@ -12503,12 +12536,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>380</y>
+     <x>179</x>
+     <y>497</y>
     </hint>
     <hint type="destinationlabel">
-     <x>607</x>
-     <y>358</y>
+     <x>629</x>
+     <y>476</y>
     </hint>
    </hints>
   </connection>
@@ -12519,12 +12552,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>380</y>
+     <x>179</x>
+     <y>497</y>
     </hint>
     <hint type="destinationlabel">
-     <x>782</x>
-     <y>358</y>
+     <x>853</x>
+     <y>476</y>
     </hint>
    </hints>
   </connection>
@@ -12535,12 +12568,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>430</y>
+     <x>179</x>
+     <y>553</y>
     </hint>
     <hint type="destinationlabel">
-     <x>607</x>
-     <y>416</y>
+     <x>629</x>
+     <y>540</y>
     </hint>
    </hints>
   </connection>
@@ -12551,12 +12584,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>430</y>
+     <x>179</x>
+     <y>553</y>
     </hint>
     <hint type="destinationlabel">
-     <x>782</x>
-     <y>416</y>
+     <x>853</x>
+     <y>540</y>
     </hint>
    </hints>
   </connection>
@@ -12567,12 +12600,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>430</y>
+     <x>179</x>
+     <y>553</y>
     </hint>
     <hint type="destinationlabel">
-     <x>407</x>
-     <y>418</y>
+     <x>404</x>
+     <y>540</y>
     </hint>
    </hints>
   </connection>
@@ -12583,12 +12616,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>405</y>
+     <x>179</x>
+     <y>525</y>
     </hint>
     <hint type="destinationlabel">
-     <x>407</x>
-     <y>389</y>
+     <x>404</x>
+     <y>508</y>
     </hint>
    </hints>
   </connection>
@@ -12599,12 +12632,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>178</x>
-     <y>403</y>
+     <x>179</x>
+     <y>525</y>
     </hint>
     <hint type="destinationlabel">
-     <x>607</x>
-     <y>387</y>
+     <x>629</x>
+     <y>508</y>
     </hint>
    </hints>
   </connection>
@@ -12615,12 +12648,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>455</y>
+     <x>179</x>
+     <y>581</y>
     </hint>
     <hint type="destinationlabel">
-     <x>407</x>
-     <y>447</y>
+     <x>404</x>
+     <y>572</y>
     </hint>
    </hints>
   </connection>
@@ -12631,12 +12664,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>167</x>
-     <y>403</y>
+     <x>179</x>
+     <y>525</y>
     </hint>
     <hint type="destinationlabel">
-     <x>782</x>
-     <y>387</y>
+     <x>853</x>
+     <y>508</y>
     </hint>
    </hints>
   </connection>
@@ -12647,12 +12680,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>607</x>
-     <y>445</y>
+     <x>629</x>
+     <y>572</y>
     </hint>
     <hint type="destinationlabel">
-     <x>607</x>
-     <y>445</y>
+     <x>629</x>
+     <y>572</y>
     </hint>
    </hints>
   </connection>
@@ -12663,12 +12696,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>455</y>
+     <x>179</x>
+     <y>581</y>
     </hint>
     <hint type="destinationlabel">
-     <x>782</x>
-     <y>445</y>
+     <x>853</x>
+     <y>572</y>
     </hint>
    </hints>
   </connection>
@@ -12679,12 +12712,12 @@
    <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>188</x>
-     <y>455</y>
+     <x>179</x>
+     <y>581</y>
     </hint>
     <hint type="destinationlabel">
-     <x>607</x>
-     <y>445</y>
+     <x>629</x>
+     <y>572</y>
     </hint>
    </hints>
   </connection>
@@ -12695,8 +12728,8 @@
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>84</x>
-     <y>106</y>
+     <x>97</x>
+     <y>128</y>
     </hint>
     <hint type="destinationlabel">
      <x>96</x>
@@ -12711,8 +12744,8 @@
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>84</x>
-     <y>106</y>
+     <x>97</x>
+     <y>128</y>
     </hint>
     <hint type="destinationlabel">
      <x>68</x>
@@ -12731,8 +12764,8 @@
      <y>58</y>
     </hint>
     <hint type="destinationlabel">
-     <x>202</x>
-     <y>102</y>
+     <x>229</x>
+     <y>145</y>
     </hint>
    </hints>
   </connection>
@@ -12747,8 +12780,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>174</x>
-     <y>172</y>
+     <x>229</x>
+     <y>225</y>
     </hint>
    </hints>
   </connection>
@@ -12763,8 +12796,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>234</x>
-     <y>237</y>
+     <x>229</x>
+     <y>305</y>
     </hint>
    </hints>
   </connection>
@@ -12779,8 +12812,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>234</x>
-     <y>299</y>
+     <x>229</x>
+     <y>385</y>
     </hint>
    </hints>
   </connection>
@@ -12795,8 +12828,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>551</x>
-     <y>113</y>
+     <x>570</x>
+     <y>145</y>
     </hint>
    </hints>
   </connection>
@@ -12811,8 +12844,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>551</x>
-     <y>175</y>
+     <x>570</x>
+     <y>225</y>
     </hint>
    </hints>
   </connection>
@@ -12827,8 +12860,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>551</x>
-     <y>237</y>
+     <x>570</x>
+     <y>305</y>
     </hint>
    </hints>
   </connection>
@@ -12843,8 +12876,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>551</x>
-     <y>299</y>
+     <x>570</x>
+     <y>385</y>
     </hint>
    </hints>
   </connection>
@@ -12855,8 +12888,8 @@
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>68</x>
-     <y>93</y>
+     <x>86</x>
+     <y>121</y>
     </hint>
     <hint type="destinationlabel">
      <x>214</x>
@@ -12871,12 +12904,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>270</x>
-     <y>77</y>
+     <x>321</x>
+     <y>109</y>
     </hint>
     <hint type="destinationlabel">
-     <x>394</x>
-     <y>136</y>
+     <x>445</x>
+     <y>183</y>
     </hint>
    </hints>
   </connection>
@@ -12887,12 +12920,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>258</x>
-     <y>77</y>
+     <x>321</x>
+     <y>109</y>
     </hint>
     <hint type="destinationlabel">
-     <x>322</x>
-     <y>158</y>
+     <x>445</x>
+     <y>223</y>
     </hint>
    </hints>
   </connection>
@@ -12903,12 +12936,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>258</x>
-     <y>77</y>
+     <x>321</x>
+     <y>109</y>
     </hint>
     <hint type="destinationlabel">
-     <x>623</x>
-     <y>130</y>
+     <x>750</x>
+     <y>183</y>
     </hint>
    </hints>
   </connection>
@@ -12919,12 +12952,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>258</x>
-     <y>77</y>
+     <x>321</x>
+     <y>109</y>
     </hint>
     <hint type="destinationlabel">
-     <x>623</x>
-     <y>158</y>
+     <x>750</x>
+     <y>223</y>
     </hint>
    </hints>
   </connection>
@@ -12935,12 +12968,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>258</x>
-     <y>77</y>
+     <x>321</x>
+     <y>109</y>
     </hint>
     <hint type="destinationlabel">
-     <x>923</x>
-     <y>130</y>
+     <x>1054</x>
+     <y>183</y>
     </hint>
    </hints>
   </connection>
@@ -12951,12 +12984,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>258</x>
-     <y>77</y>
+     <x>321</x>
+     <y>109</y>
     </hint>
     <hint type="destinationlabel">
-     <x>923</x>
-     <y>158</y>
+     <x>1054</x>
+     <y>223</y>
     </hint>
    </hints>
   </connection>
@@ -12967,12 +13000,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>258</x>
-     <y>77</y>
+     <x>321</x>
+     <y>109</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1223</x>
-     <y>130</y>
+     <x>1359</x>
+     <y>183</y>
     </hint>
    </hints>
   </connection>
@@ -12983,12 +13016,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>258</x>
-     <y>77</y>
+     <x>321</x>
+     <y>109</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1223</x>
-     <y>158</y>
+     <x>1359</x>
+     <y>223</y>
     </hint>
    </hints>
   </connection>
@@ -12999,12 +13032,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>258</x>
-     <y>77</y>
+     <x>321</x>
+     <y>109</y>
     </hint>
     <hint type="destinationlabel">
-     <x>322</x>
-     <y>222</y>
+     <x>445</x>
+     <y>305</y>
     </hint>
    </hints>
   </connection>
@@ -13015,12 +13048,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>258</x>
-     <y>77</y>
+     <x>321</x>
+     <y>109</y>
     </hint>
     <hint type="destinationlabel">
-     <x>322</x>
-     <y>250</y>
+     <x>445</x>
+     <y>345</y>
     </hint>
    </hints>
   </connection>
@@ -13031,12 +13064,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>258</x>
-     <y>77</y>
+     <x>321</x>
+     <y>109</y>
     </hint>
     <hint type="destinationlabel">
-     <x>623</x>
-     <y>222</y>
+     <x>750</x>
+     <y>305</y>
     </hint>
    </hints>
   </connection>
@@ -13047,12 +13080,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>258</x>
-     <y>77</y>
+     <x>321</x>
+     <y>109</y>
     </hint>
     <hint type="destinationlabel">
-     <x>623</x>
-     <y>250</y>
+     <x>750</x>
+     <y>345</y>
     </hint>
    </hints>
   </connection>
@@ -13063,12 +13096,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>258</x>
-     <y>77</y>
+     <x>321</x>
+     <y>109</y>
     </hint>
     <hint type="destinationlabel">
-     <x>923</x>
-     <y>222</y>
+     <x>1054</x>
+     <y>305</y>
     </hint>
    </hints>
   </connection>
@@ -13079,12 +13112,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>258</x>
-     <y>77</y>
+     <x>321</x>
+     <y>109</y>
     </hint>
     <hint type="destinationlabel">
-     <x>923</x>
-     <y>250</y>
+     <x>1054</x>
+     <y>345</y>
     </hint>
    </hints>
   </connection>
@@ -13095,12 +13128,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>258</x>
-     <y>77</y>
+     <x>321</x>
+     <y>109</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1223</x>
-     <y>222</y>
+     <x>1359</x>
+     <y>305</y>
     </hint>
    </hints>
   </connection>
@@ -13111,12 +13144,12 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>258</x>
-     <y>77</y>
+     <x>321</x>
+     <y>109</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1223</x>
-     <y>250</y>
+     <x>1359</x>
+     <y>345</y>
     </hint>
    </hints>
   </connection>
@@ -13127,12 +13160,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>211</x>
-     <y>453</y>
+     <x>253</x>
+     <y>596</y>
     </hint>
     <hint type="destinationlabel">
-     <x>429</x>
-     <y>452</y>
+     <x>677</x>
+     <y>601</y>
     </hint>
    </hints>
   </connection>
@@ -13143,12 +13176,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>237</x>
-     <y>447</y>
+     <x>253</x>
+     <y>596</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1319</x>
-     <y>449</y>
+     <x>1367</x>
+     <y>601</y>
     </hint>
    </hints>
   </connection>
@@ -13159,12 +13192,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>228</x>
-     <y>421</y>
+     <x>272</x>
+     <y>556</y>
     </hint>
     <hint type="destinationlabel">
-     <x>358</x>
-     <y>416</y>
+     <x>625</x>
+     <y>561</y>
     </hint>
    </hints>
   </connection>
@@ -13176,7 +13209,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>334</x>
-     <y>41</y>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
      <x>723</x>
@@ -13195,8 +13228,8 @@
      <y>58</y>
     </hint>
     <hint type="destinationlabel">
-     <x>395</x>
-     <y>97</y>
+     <x>480</x>
+     <y>150</y>
     </hint>
    </hints>
   </connection>
@@ -13207,12 +13240,12 @@
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>335</x>
-     <y>53</y>
+     <x>334</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>391</x>
-     <y>169</y>
+     <x>480</x>
+     <y>230</y>
     </hint>
    </hints>
   </connection>
@@ -13223,12 +13256,12 @@
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>335</x>
-     <y>52</y>
+     <x>334</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>423</x>
-     <y>223</y>
+     <x>480</x>
+     <y>310</y>
     </hint>
    </hints>
   </connection>
@@ -13243,8 +13276,8 @@
      <y>58</y>
     </hint>
     <hint type="destinationlabel">
-     <x>399</x>
-     <y>285</y>
+     <x>480</x>
+     <y>390</y>
     </hint>
    </hints>
   </connection>
@@ -13259,8 +13292,8 @@
      <y>56</y>
     </hint>
     <hint type="destinationlabel">
-     <x>750</x>
-     <y>108</y>
+     <x>825</x>
+     <y>150</y>
     </hint>
    </hints>
   </connection>
@@ -13275,8 +13308,8 @@
      <y>58</y>
     </hint>
     <hint type="destinationlabel">
-     <x>703</x>
-     <y>159</y>
+     <x>825</x>
+     <y>230</y>
     </hint>
    </hints>
   </connection>
@@ -13287,12 +13320,12 @@
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>329</x>
-     <y>42</y>
+     <x>334</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>730</x>
-     <y>229</y>
+     <x>825</x>
+     <y>310</y>
     </hint>
    </hints>
   </connection>
@@ -13307,8 +13340,8 @@
      <y>54</y>
     </hint>
     <hint type="destinationlabel">
-     <x>711</x>
-     <y>285</y>
+     <x>825</x>
+     <y>390</y>
     </hint>
    </hints>
   </connection>

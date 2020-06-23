@@ -179,6 +179,8 @@ protected:
   int fPlotMaxAdc;
 
 
+  /** general mode flag for different addressing modes of pandatest switches*/
+  bool fUseSimpleSwitchAddressing;
 
   /** update register display*/
   void RefreshView ();
@@ -727,6 +729,8 @@ public slots:
 
 
   virtual void SwitchChanged();
+
+  virtual void SetSimpleSwitches(bool on);
 
   virtual void InverseMapping_changed (int on);
 

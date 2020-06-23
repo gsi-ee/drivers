@@ -37,10 +37,10 @@
  */
 ApfelGui::ApfelGui (QWidget* parent) :
     GosipGui (parent), fPulserProgressCounter (0), fTestFile (0), fPlotMinDac (0),
-        fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE)
+        fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE), fUseSimpleSwitchAddressing(false)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.9995 of 08-June-2020 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.9996 of 23-June-2020 by JAM (j.adamczewski@gsi.de)\n";
 
   fSettings=new QSettings("GSI", fImplementationName);
 
@@ -337,6 +337,8 @@ mdiArea->addSubWindow(fApfelWidget); // complete febex widget in one window
   QObject::connect (fApfelWidget->LoGainRadioButton, SIGNAL(toggled(bool)), this, SLOT (SwitchChanged()));
   QObject::connect (fApfelWidget->StretcherOnRadioButton, SIGNAL(toggled(bool)), this, SLOT (SwitchChanged()));
   QObject::connect (fApfelWidget->PasemRadioButton, SIGNAL(toggled(bool)), this, SLOT (SwitchChanged()));
+
+  QObject::connect (fApfelWidget->SimpleModeOnRadioButton, SIGNAL(toggled(bool)), this, SLOT (SetSimpleSwitches(bool)));
 
 
   QObject::connect (fApfelWidget->InverseMappingCheckBox, SIGNAL(stateChanged(int)), this, SLOT (InverseMapping_changed(int)));
