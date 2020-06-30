@@ -58,20 +58,23 @@ int pexor_ioctl_set_trixor (struct pexor_privdata* priv, unsigned long arg)
 //         ps_daqst->bh_trig_master = 1; /* master trigger module */
 //      //////////////////////////////////////////////////////////////////////
 
+
+      // JAM2020 - enable this for testing again --
+
       // for the moment, initialize trigger module as single branch master here, too
       // later we may add special set trixor commands for this-
-//      iowrite32(TRIX_BUS_DISABLE , priv->pexor.irq_control);// disable trigger bus?
-//      mb();
-//      ndelay(20);
-//      iowrite32(TRIX_HALT , priv->pexor.irq_control);
-//      mb();
-//      ndelay(20);
-//      iowrite32(TRIX_MASTER , priv->pexor.irq_control);
-//      mb();
-//      ndelay(20);
-//      iowrite32(TRIX_CLEAR , priv->pexor.irq_control);
-//      mb();
-//      ndelay(20);
+      iowrite32(TRIX_BUS_DISABLE , priv->pexor.irq_control);// disable trigger bus?
+      mb();
+      ndelay(20);
+      iowrite32(TRIX_HALT , priv->pexor.irq_control);
+      mb();
+      ndelay(20);
+      iowrite32(TRIX_MASTER , priv->pexor.irq_control);
+      mb();
+      ndelay(20);
+      iowrite32(TRIX_CLEAR , priv->pexor.irq_control);
+      mb();
+      ndelay(20);
 
       iowrite32 (0x10000 - descriptor.fct, priv->pexor.trix_fcti);
       mb();
@@ -80,9 +83,9 @@ int pexor_ioctl_set_trixor (struct pexor_privdata* priv, unsigned long arg)
       mb();
       ndelay(20);
 
-//      iowrite32(TRIX_BUS_ENABLE , priv->pexor.irq_control);// enable trigger bus only for multi mode?
-//      mb();
-//      ndelay(20);
+      iowrite32(TRIX_BUS_ENABLE , priv->pexor.irq_control);// enable trigger bus only for multi mode?
+      mb();
+      ndelay(20);
 
       pexor_msg(KERN_ERR "pexor_ioctl_set_trixor configured trixor as master with fct=0x%x cvt=0x%x!",descriptor.fct, descriptor.cvt);
       break;
@@ -101,14 +104,15 @@ int pexor_ioctl_set_trixor (struct pexor_privdata* priv, unsigned long arg)
 int pexor_trigger_reset(struct pexor_privdata* priv)
 {
   // taken from corresonding section of mbs m_read_meb:
-  //      iowrite32(TRIX_EV_IRQ_CLEAR | TRIX_IRQ_CLEAR , priv->pexor.irq_status);
-  //      mb();
-  //      ndelay(20);
+        iowrite32(TRIX_EV_IRQ_CLEAR | TRIX_IRQ_CLEAR , priv->pexor.irq_status);
+        mb();
+        ndelay(20);
   // ? ? do not clear interrupts here, already done in irq handler
 
-  //      iowrite32(TRIX_BUS_DISABLE, priv->pexor.irq_control);
-  //      mb();
-  //      ndelay(20);
+        iowrite32(TRIX_BUS_DISABLE, priv->pexor.irq_control);
+        mb();
+        ndelay(20);
+// JAM2020 - the above was commented out, maybe the reason that triggered read does not work?
 
   iowrite32 (TRIX_FC_PULSE, priv->pexor.irq_status);
   mb();
@@ -950,6 +954,7 @@ if (dmabuf.virt_addr != dmabufid)
   pexor_dbg(KERN_NOTICE "pexor_ioctl_request_receive_token_parallel returns\n");
   return retval;
 
+
 }
 
 
@@ -1282,7 +1287,11 @@ int pexor_ioctl_request_token_async_polling (struct pexor_privdata *priv, unsign
 #ifdef PEXOR_TRIGGERLESS_SEMAPHORE
   int sfp;
 #endif
+
+#ifdef   PEXOR_TRIGGERLESS_WORKER
   atomic_set(&(priv->triggerless_acquisition), 1); // this is to be consistent with worker readout variant
+#endif
+
   rev= pexor_request_token_async_polling(priv,arg);
 
 #ifdef PEXOR_TRIGGERLESS_SPINLOCK
@@ -1304,7 +1313,9 @@ int pexor_ioctl_request_token_async_polling (struct pexor_privdata *priv, unsign
      }
 #endif
   if(rev==-ENOBUFS) return 0; // catch special case of backpressure for tasklet. this will be treated by user land in this explicit call.
+#ifdef   PEXOR_TRIGGERLESS_WORKER
   atomic_set(&(priv->triggerless_acquisition), 0);
+#endif
   return rev;
 }
 
@@ -1339,11 +1350,21 @@ int pexor_request_token_async_polling (struct pexor_privdata *priv, unsigned lon
   unsigned long dmabufid;
   struct pexor_dmabuf dmabuf;
   struct pexor_dmabuf* pdmabuf;
-  struct pexor_dmabuf* nextbuf;
 
+#ifdef   PEXOR_TRIGGERLESS_WORKER
+  struct pexor_dmabuf* nextbuf;
+#endif
 
 // request from all registered sfps until we have something from everyone, or until no more receive buffers in pool:
+#ifdef   PEXOR_TRIGGERLESS_WORKER
+
 while(!hasalldata && (atomic_read(&(priv->triggerless_acquisition)) > 0))
+
+#else
+
+while(!hasalldata)
+
+#endif
 {
 
   sfpregisters = &(priv->pexor.sfp);
@@ -1421,8 +1442,17 @@ while(!hasalldata && (atomic_read(&(priv->triggerless_acquisition)) > 0))
 
 
 
+#ifdef   PEXOR_TRIGGERLESS_WORKER
 
-while(hasanydata==0 && (atomic_read(&(priv->triggerless_acquisition)) > 0)) // polling until any of the chains has something!
+    while(hasanydata==0 && (atomic_read(&(priv->triggerless_acquisition)) > 0)) // polling until any of the chains has something!
+
+#else
+
+  while(hasanydata==0 ) // polling until any of the chains has something!
+
+#endif
+
+
 {
 
 
@@ -1776,6 +1806,7 @@ for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
 //   pexor_msg(KERN_NOTICE "   hasalldata=%d, datalensum=%d bytes\n", hasalldata, datalensum);
 ////////// END DEBUG
 
+#ifdef   PEXOR_TRIGGERLESS_WORKER
    // for async tasklet, return special value in backpressure case, or begin to overwrite ringbuffer
    if( atomic_read(&(priv->triggerless_ringmode)) ==1)
    {
@@ -1799,7 +1830,7 @@ for (sfp = 0; sfp < PEXOR_SFP_NUMBER; ++sfp)
      return -ENOBUFS;
    }
 
-
+#endif
 
    break;
  }

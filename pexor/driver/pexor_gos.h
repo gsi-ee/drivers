@@ -16,7 +16,7 @@
 #define PEXOR_WITH_SFP 1
 
 /** enable usage of TRIXOR */
-#define PEXOR_WITH_TRIXOR 1
+//#define PEXOR_WITH_TRIXOR 1
 
 
 #define PEXOR_DRAM		0x100000 /**< use the first SFP port for DMA testing here*/
@@ -200,7 +200,7 @@
  * This causes a timeout value =(PEXOR_SFP_MAXPOLLS * PEXOR_SFP_DELAY ns)
  * note that this default can be tuned by setting privdata->sfp_maxpolls
  * via sysfs handle*/
-#define PEXOR_SFP_MAXPOLLS 1000
+#define PEXOR_SFP_MAXPOLLS 10000
 
 /**  maximum number of polls for sfp request response for asynchronous (triggerless) readout
  * timeout value is (PEXOR_SFP_MAXPOLLS_ASYNC * PEXOR_SFP_DELAY ns)

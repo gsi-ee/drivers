@@ -20,7 +20,7 @@
 
 
 /** use disable_irq_nosync and enable_irq in isr.*/
-#define PEXOR_DISABLE_IRQ_ISR 1
+//#define PEXOR_DISABLE_IRQ_ISR 1
 
 
 
@@ -208,6 +208,7 @@ struct pexor_privdata
   atomic_t sfpreceived[PEXOR_SFP_NUMBER]; /**< flags for asynchronous triggerless readout. if 1 token request has received data*/
 
   /** CONSTRUCTION AREA for triggerless readout JAM2016: */
+
 #ifdef   PEXOR_TRIGGERLESS_WORKER
 
   atomic_t triggerless_acquisition;        /**< state of triggerless acquisition. To end triggerless_task*/

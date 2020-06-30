@@ -409,11 +409,17 @@ long pexor_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
     case PEXOR_IOC_REQUEST_RECEIVE_ASYNC:
       pexor_dbg(KERN_NOTICE "** pexor_ioctl request receive token asynchronous\n");
+#ifdef PEXOR_TRIGGERLESS_SEMAPHORE
+      up(&privdata->ioctl_sem); /* do not lock ioctl here, otherwise deadlock with sfp semaphores possible!*/
+#endif
       retval = pexor_ioctl_request_receive_token_async(privdata, arg);
       break;
 
     case PEXOR_IOC_REQUEST_ASYNC_POLLING:
        pexor_dbg(KERN_NOTICE "** pexor_ioctl request asynchronous tokens with internal polling\n");
+#ifdef PEXOR_TRIGGERLESS_SEMAPHORE
+      up(&privdata->ioctl_sem); /* do not lock ioctl here, otherwise deadlock with sfp semaphores possible!*/
+#endif
        retval = pexor_ioctl_request_token_async_polling(privdata, arg);
        break;
 
@@ -3060,6 +3066,7 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
     atomic_set (&(privdata->sfprequested[ix]), 0);
     atomic_set (&(privdata->sfpreceived[ix]), 0);
    }
+
 
 
 #ifdef   PEXOR_TRIGGERLESS_WORKER
