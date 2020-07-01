@@ -907,6 +907,7 @@ if(useSerial)
           
        rev=answer.toDouble();
        printm("Got answer string:%s", answer.toLatin1 ().constData ());
+       usleep(300000); // JAM 2020 avoid measuring too fast?
        return rev;
 }
 
