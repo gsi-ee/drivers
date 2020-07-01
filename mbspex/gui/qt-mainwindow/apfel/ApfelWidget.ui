@@ -8223,7 +8223,7 @@
                <string>Maximum allowed current measured for Diode (Alarm HI)</string>
               </property>
               <property name="suffix">
-               <string> nA</string>
+               <string> uA</string>
               </property>
               <property name="minimum">
                <double>-5000.000000000000000</double>
@@ -8349,7 +8349,7 @@
                <string>Minimum allowed current measured for Diode (Alarm LO)</string>
               </property>
               <property name="suffix">
-               <string> nA</string>
+               <string> uA</string>
               </property>
               <property name="minimum">
                <double>-5000.000000000000000</double>
@@ -8654,7 +8654,7 @@
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
                 <property name="suffix">
-                 <string> nA</string>
+                 <string> uA</string>
                 </property>
                 <property name="minimum">
                  <double>-5000.000000000000000</double>
@@ -8948,7 +8948,7 @@
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
                 <property name="suffix">
-                 <string> nA</string>
+                 <string> uA</string>
                 </property>
                 <property name="minimum">
                  <double>-5000.000000000000000</double>
@@ -9242,7 +9242,7 @@
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
                 <property name="suffix">
-                 <string> nA</string>
+                 <string> uA</string>
                 </property>
                 <property name="minimum">
                  <double>-5000.000000000000000</double>
@@ -9539,7 +9539,7 @@
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
                 <property name="suffix">
-                 <string> nA</string>
+                 <string> uA</string>
                 </property>
                 <property name="decimals">
                  <number>2</number>
