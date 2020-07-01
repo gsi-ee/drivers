@@ -20,7 +20,7 @@
       <string>Push this button to start measurement from keithly</string>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>8</number>
      </property>
      <widget class="QWidget" name="OutputTab">
       <attribute name="title">
@@ -8223,7 +8223,7 @@
                <string>Maximum allowed current measured for Diode (Alarm HI)</string>
               </property>
               <property name="suffix">
-               <string> uA</string>
+               <string> mA</string>
               </property>
               <property name="minimum">
                <double>-5000.000000000000000</double>
@@ -8349,7 +8349,7 @@
                <string>Minimum allowed current measured for Diode (Alarm LO)</string>
               </property>
               <property name="suffix">
-               <string> uA</string>
+               <string> mA</string>
               </property>
               <property name="minimum">
                <double>-5000.000000000000000</double>
@@ -8504,7 +8504,7 @@
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
                 <property name="suffix">
-                 <string> uA</string>
+                 <string> mA</string>
                 </property>
                 <property name="decimals">
                  <number>2</number>
@@ -8654,7 +8654,7 @@
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
                 <property name="suffix">
-                 <string> uA</string>
+                 <string> mA</string>
                 </property>
                 <property name="minimum">
                  <double>-5000.000000000000000</double>
@@ -8801,7 +8801,7 @@
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
                 <property name="suffix">
-                 <string> uA</string>
+                 <string> mA</string>
                 </property>
                 <property name="minimum">
                  <double>-5000.000000000000000</double>
@@ -8948,7 +8948,7 @@
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
                 <property name="suffix">
-                 <string> uA</string>
+                 <string> mA</string>
                 </property>
                 <property name="minimum">
                  <double>-5000.000000000000000</double>
@@ -9095,7 +9095,7 @@
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
                 <property name="suffix">
-                 <string> uA</string>
+                 <string> mA</string>
                 </property>
                 <property name="minimum">
                  <double>-5000.000000000000000</double>
@@ -9242,7 +9242,7 @@
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
                 <property name="suffix">
-                 <string> uA</string>
+                 <string> mA</string>
                 </property>
                 <property name="minimum">
                  <double>-5000.000000000000000</double>
@@ -9389,7 +9389,7 @@
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
                 <property name="suffix">
-                 <string> uA</string>
+                 <string> mA</string>
                 </property>
                 <property name="minimum">
                  <double>-5000.000000000000000</double>
@@ -9539,7 +9539,7 @@
                  <enum>QAbstractSpinBox::NoButtons</enum>
                 </property>
                 <property name="suffix">
-                 <string> uA</string>
+                 <string> mA</string>
                 </property>
                 <property name="decimals">
                  <number>2</number>

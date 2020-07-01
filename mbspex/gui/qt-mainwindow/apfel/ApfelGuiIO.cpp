@@ -1326,7 +1326,7 @@ void ApfelGui::ExecuteCurrentScan (int apfel)
   SetSingleChipCurrentMode (apfel, false, false);    // hv bit off, diode bit off     -> enable Diode switch
   usleep(200000);
   //val = (fake ? (position * 1.0E-6) : ReadKeithleyCurrent ());
-  val = (fake ? (position * 1.0E-9) : ReadKeithleyCurrent ());
+  val = (fake ? (position * 1.0E-3) : ReadKeithleyCurrent ());
   printm ("          - got %E A", val);
   theSetup->SetCurrentDiode(apfel, val);
   SetDefaultIOConfig ();    // back to normal operation
