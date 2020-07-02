@@ -17,6 +17,12 @@
 #include "pexor/DMA_Buffer.h"
 #include "pexor/User_Buffer.h"
 
+
+/** enable this define to do synchronous token request+readout that is safe agains poland gui
+ * also for the triggerless test case*/
+#define POLANDTEST_SYNCREADOUT 1
+
+
 // address map for slave (exploder): this is user specific data concerning the pexor board, so it is not available from PexorTwo.h
 #define REG_BUF0     0xFFFFD0 // base address for buffer 0 : 0x0000
 #define REG_BUF1     0xFFFFD4  // base address for buffer 1 : 0x20000
@@ -571,10 +577,15 @@ int main (int argc, char **argv)
     else
     {
 
+#ifdef  POLANDTEST_SYNCREADOUT
+      tokbuf= board.RequestToken (Channel, BufID | 2 , true, false);
+      if (tokbuf <=  0)
+               {
+                 printf ("\n\nError in synchronous Token Request!!\n",pollcounter);
+                 return 1;
+               }
+#else
       board.RequestToken (Channel, BufID | 2 , false, false); // asynchronous mode here, wait for data ready |2
-
-      BufID = (BufID == 0 ? 1 : 0);
-
       do
       {
       tokbuf= board.WaitForToken (Channel, false, 0, 0, false);
@@ -584,15 +595,18 @@ int main (int argc, char **argv)
 
       if(Debugmode)
         printf ("Polled for %d cycles of %d us, tokbuf=0x%x\n", pollcounter, WAITCYCLE, tokbuf);
+      if (tokbuf <=  0 || pollcounter>=MAXPOLLS)
+         {
+           printf ("\n\nError in Token Request, pollcounter=%d \n",pollcounter);
+           return 1;
+         }
 
+#endif
+      BufID = (BufID == 0 ? 1 : 0);
 
     }
 
-    if (tokbuf <=  0 || pollcounter>=MAXPOLLS)
-    {
-      printf ("\n\nError in Token Request, pollcounter=%d \n",pollcounter);
-      return 1;
-    }
+
 
 
 
