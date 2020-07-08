@@ -8145,7 +8145,7 @@
                <double>500.000000000000000</double>
               </property>
               <property name="value">
-               <double>50.000000000000000</double>
+               <double>34.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -8190,7 +8190,7 @@
                <double>1000.000000000000000</double>
               </property>
               <property name="value">
-               <double>10.000000000000000</double>
+               <double>150.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -8232,7 +8232,7 @@
                <double>5000.000000000000000</double>
               </property>
               <property name="value">
-               <double>10.000000000000000</double>
+               <double>20.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -8272,6 +8272,9 @@
               </property>
               <property name="maximum">
                <double>500.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>22.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -8316,7 +8319,7 @@
                <double>1000.000000000000000</double>
               </property>
               <property name="value">
-               <double>-100.000000000000000</double>
+               <double>-150.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -8358,7 +8361,7 @@
                <double>5000.000000000000000</double>
               </property>
               <property name="value">
-               <double>-100.000000000000000</double>
+               <double>5.000000000000000</double>
               </property>
              </widget>
             </item>

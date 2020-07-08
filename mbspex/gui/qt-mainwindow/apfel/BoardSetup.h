@@ -63,6 +63,8 @@ public:
 
   BoardSetup ();
 
+  virtual ~BoardSetup(){;}
+
   void SetBoardID (const QString& val)
   {
     fBoardID = val;

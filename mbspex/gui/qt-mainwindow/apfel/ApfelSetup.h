@@ -67,6 +67,8 @@ public:
   /* all initialization here:*/
   ApfelSetup ();
 
+  virtual ~ApfelSetup(){;}
+
   /** getter and setter methods to avoid possible segfaults at wrong indices: */
   int GetDACValue (int dac);
 

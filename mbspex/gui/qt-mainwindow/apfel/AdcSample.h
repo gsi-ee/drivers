@@ -88,6 +88,8 @@ public:
 
   AdcSample ();
 
+  virtual ~AdcSample(){;}
+
   void Reset ();
 
   /** sample is ready to read out the figures of merit*/

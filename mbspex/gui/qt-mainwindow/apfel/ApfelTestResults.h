@@ -111,6 +111,8 @@ public:
 
   ApfelTestResults();
 
+  virtual  ~ApfelTestResults(){;}
+
   /** clear the previous results*/
   void Reset(bool invertedslope=false);
 

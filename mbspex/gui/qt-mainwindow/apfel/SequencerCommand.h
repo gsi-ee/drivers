@@ -40,6 +40,11 @@ public:
     ;
   }
 
+  virtual ~SequencerCommand()
+  {
+
+  }
+
   SequencerAction GetAction ()
   {
     return fAction;

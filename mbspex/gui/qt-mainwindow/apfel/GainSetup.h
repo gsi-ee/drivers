@@ -31,6 +31,8 @@ public:
 
   GainSetup ();
 
+  virtual ~GainSetup(){;}
+
   void ResetCalibration (bool positive = true);
   void DumpCalibration();
 

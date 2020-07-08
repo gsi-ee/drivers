@@ -46,6 +46,8 @@ public:
 
   ApfelTest();
 
+  virtual ~ApfelTest(){;}
+
   void SetOwner(ApfelGui* parent){fOwner=parent;}
 
   void SetSetup(BoardSetup* set){fCurrentSetup=set;}

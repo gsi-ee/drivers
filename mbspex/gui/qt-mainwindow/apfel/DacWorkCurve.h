@@ -52,6 +52,8 @@ public:
 
   DacWorkCurve ();
 
+  virtual ~DacWorkCurve(){;}
+
   /** clear all points on the curve*/
   void Reset ();
 
