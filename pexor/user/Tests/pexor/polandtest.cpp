@@ -20,7 +20,7 @@
 
 /** enable this define to do synchronous token request+readout that is safe agains poland gui
  * also for the triggerless test case*/
-#define POLANDTEST_SYNCREADOUT 1
+//#define POLANDTEST_SYNCREADOUT 1
 
 
 // address map for slave (exploder): this is user specific data concerning the pexor board, so it is not available from PexorTwo.h
@@ -578,10 +578,10 @@ int main (int argc, char **argv)
     {
 
 #ifdef  POLANDTEST_SYNCREADOUT
-      tokbuf= board.RequestToken (Channel, BufID | 2 , true, false);
+      tokbuf= board.RequestToken (Channel, BufID | 2 , true, true);
       if (tokbuf <=  0)
                {
-                 printf ("\n\nError in synchronous Token Request!!\n",pollcounter);
+                 printf ("\n\nError in synchronous Token Request!!\n");
                  return 1;
                }
 #else
