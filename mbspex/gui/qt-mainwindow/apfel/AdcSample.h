@@ -18,6 +18,7 @@ public:
 
   AdcPeak(int pos, uint16_t height):fPosition(pos),fHeight(height){}
 
+  virtual ~AdcPeak(){;}
 
   /** define less than operator for vector sort*/
   bool operator < (const AdcPeak& other) const

@@ -22,6 +22,8 @@ public:
   {
   }
 
+  virtual ~DacSample(){;}
+
   void SetSample (uint16_t dac, uint16_t adc)
   {
     fDacSetting = dac;
