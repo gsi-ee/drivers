@@ -25,10 +25,18 @@ all: gui
 
 nombspex: gui-nombspex
 
+ifndef PEXORSYS
 gui:
 	@echo "Generating Makefile.qt"
 	$(QMAKE) PolandGui.pro -o Makefile.qt "DEFINES+=USE_MBSPEX_LIB" "QMAKE_LFLAGS += -Wl,-rpath,$(PEX_LIBPATH)" "INCLUDEPATH += $(PEX_INCPATH) $(GOSIPFRAME_INCPATH)" "LIBS+= -L $(PEX_LIBPATH) -lmbspex"
 	+$(MAKE) -f Makefile.qt
+else
+gui:
+	@echo "Generating Makefile.qt"
+	$(QMAKE) PolandGui.pro -o Makefile.qt "DEFINES+=USE_MBSPEX_LIB USE_PEXOR_LIB" "QMAKE_LFLAGS += -Wl,-rpath,$(PEX_LIBPATH)" "INCLUDEPATH += $(PEX_INCPATH) $(GOSIPFRAME_INCPATH)" "LIBS+= -L $(PEX_LIBPATH) -lmbspex -lpexor"
+	+$(MAKE) -f Makefile.qt
+endif
+
 
 gui-nombspex: 
 	@echo "Generating Makefile.qt without mbspex"

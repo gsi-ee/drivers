@@ -10,7 +10,46 @@
 #include <QProcess>
 #include <QString>
 
+#ifdef USE_PEXOR_LIB
 
+
+// enable definition below to make synchronous redout within kernel module.
+// !!! Danger of system crash when poland does not react!!! But concurrency safe
+//#define POLANDGUI_SAMPLE_SYNCREADOUT 1
+
+// number of usecs for each cycle that waits for token received
+#define POLAND_SAMPLE_WAITCYCLE 1
+
+// number of polls for triggerless readout with wait for data ready:
+#define POLAND_SAMPLE_MAXPOLLS 1000000
+
+
+
+#include "pexor/PexorTwo.h"
+#include "pexor/Benchmark.h"
+#include "pexor/DMA_Buffer.h"
+#include "pexor/User_Buffer.h"
+
+/* helper macro for BuildEvent to check if payload pointer is still inside delivered region:*/
+/* this one to be called at top data processing loop*/
+#define  QFWRAW_CHECK_PDATA                                    \
+if((pdata - pdatastart) > (opticlen/4)) \
+{ \
+  printf("############ unexpected end of payload for sfp:%d slave:%d with opticlen:0x%x, skip event\n",sfp_id, device_id, opticlen);\
+  return -1; \
+}
+
+/* this one just to leave internal loops*/
+#define  QFWRAW_CHECK_PDATA_BREAK                                    \
+if((pdata - pdatastart) > (opticlen/4)) \
+{ \
+ break; \
+}
+
+
+
+#endif
+/* USE_PEXOR_LIB*/
 
 class PolandGui: public GosipGui
 {
@@ -134,6 +173,12 @@ protected:
   void EvaluateDAC();
 
   void GetSample(PolandSample* theSample);
+
+#ifdef USE_PEXOR_LIB
+// this function stolen and adopted from polandtest:
+int UnpackQfw (pexor::DMA_Buffer* tokbuf, PolandSample* theSample);
+#endif
+
 
 public slots:
 

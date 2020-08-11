@@ -39,7 +39,7 @@ PolandGui::PolandGui (QWidget* parent) :
     GosipGui (parent), fTriggerOn(true)
 {
   fImplementationName="POLAND";
-  fVersionString="Welcome to POLAND GUI!\n\t v0.983 of 10-June-2020 by JAM (j.adamczewski@gsi.de)";
+  fVersionString="Welcome to POLAND GUI!\n\t v0.990 of 11-August-2020 by JAM (j.adamczewski@gsi.de)";
   setWindowTitle(QString("%1 GUI").arg(fImplementationName));
 
 
@@ -1049,6 +1049,12 @@ void PolandGui::ShowSample ()
 
 void PolandGui::GetSample(PolandSample* theSample)
 {
+
+  bool externaldaqmode=fPolandViewpanelWidget->ExternDAQRadioButton->isChecked();
+
+  if(externaldaqmode)
+  {
+
     int addr=0;
     int eventcounter = ReadGosip (fSFP, fSlave, addr);
     //printf (" - Internal Event number 0x%x\n", eventcounter);
@@ -1109,9 +1115,249 @@ void PolandGui::GetSample(PolandSample* theSample)
       //printf (" - ErrorScaler[%d] = 0x%x\n", qfw, theSample->GetErrorScaler(qfw));
     }
 
+  }
+  else
+  {
+    // internal token request from GUI: only possible if we link against pexor C++ library
+#ifdef USE_PEXOR_LIB
+    theSetup_GET_FOR_SLAVE(PolandSetup);
+
+      // estimate required payload from trace settings
+    // open board instance
+    pexor::PexorTwo board;
+      if (!board.IsOpen ())
+      {
+        printm ("**** PolandGui::GetSample - Could not open pexor board!\n");
+        return;
+      }
+// init dma buffers
+     int numchains=SlavespinBox->maximum()+1;
+     int numwords = 32 + theSetup->fSteps[0] * 32 + theSetup->fSteps[1] * 32 + theSetup->fSteps[2] * 32 + 32;
+     int bytesPerBuffer=2* numchains * numwords*sizeof(int);
+     //printm("PPPPP  numchains:%d numwords:%d  bytes:%d", numchains, numwords, bytesPerBuffer);
+     int Bufnum=5;
+      int rev = board.Add_DMA_Buffers (bytesPerBuffer, Bufnum);
+       if (rev)
+       {
+         printm ("**** PolandGui::GetSample - Error %d on mapping dma buffers\n", rev);
+         return;
+       }
+
+
+// token request
+       pexor::DMA_Buffer* tokbuf=0;
+
+       int BufID=0; // TODO: later member variable that is reset on pexor rest from framework?
+       for(int t=0;t<2;++t)
+       {
+         // always get sample of both frontend buffers to be consistent after poland reset
+
+
+#ifdef  POLANDGUI_SAMPLE_SYNCREADOUT
+         // first variant: synchrous with polling in kernel module
+                // would require very large gosipretries settings without trigger interrupt!
+                // this can be dangerous if poland does not send anything (trigger off)
+
+
+           tokbuf= board.RequestToken (fSFP, BufID | 2 , true, true);
+           if (tokbuf <=  0)
+           {
+             printm ("**** PolandGui::GetSample Error in synchronous Token Request!!\n");
+                   return ;
+           }
+
+
+#else
+           int pollcounter =0;
+           board.RequestToken (fSFP, BufID | 2 , false, true); // asynchronous mode here, wait for data ready |2, directdma on
+           do
+           {
+             tokbuf= board.WaitForToken (fSFP, true, 0, 0, false); // directdma, 0, 0, syncmode
+             pollcounter++;
+             usleep(POLAND_SAMPLE_WAITCYCLE);
+           } while (tokbuf == (pexor::DMA_Buffer*)(-1) && pollcounter<POLAND_SAMPLE_MAXPOLLS);
+
+                if (tokbuf <=  0 || pollcounter>=POLAND_SAMPLE_MAXPOLLS)
+                   {
+                     printm ("**** PolandGui::GetSample Errorin async Token Request, pollcounter=%d \n",pollcounter);
+                     return;
+                   }
+
+//                printm ("**** PolandGui::GetSample after %d polls with waittime %f us, token buffer:0x%x  \n",
+//                    pollcounter, POLAND_SAMPLE_WAITCYCLE, (unsigned long) tokbuf);
+
+#endif
+                if(t==0){
+                    // we only use first frontend buffer
+                    UnpackQfw (tokbuf, theSample);
+                    board.Free_DMA_Buffer (tokbuf);
+                }
+                BufID = (BufID == 0 ? 1 : 0);
+                // still read second double buffer to be consistent for next request!
+       } // for 2
+
+
+// release board , cleanup
+    board.Free_DMA_Buffer (tokbuf);
+// ? error handling?
+
+
+#else
+    printm("Fetching gosip token with GUI is not supported without pexor/FESA library. Please use external DAQ.")
+#endif
+
+  }
+
+}
+
+#ifdef USE_PEXOR_LIB
+// this function stolen and adopted from polandtest:
+int PolandGui::UnpackQfw (pexor::DMA_Buffer* tokbuf, PolandSample* theSample)
+{
+
+///////////////// this code is mostly taken from Go4 unpacker at https://subversion.gsi.de/go4/app/qfw/pexor
+
+  int loopsize[POLAND_QFWLOOPS];
+  int looptime[POLAND_QFWLOOPS];
+
+  int *pdata = tokbuf->Data ();
+  int *pdatabegin = pdata;
+  int lwords = tokbuf->UsedSize ()/sizeof(int); // this is true filled size from DMA, not total buffer lenght
+  // loop over single subevent data:
+  while (pdata - pdatabegin < lwords)
+  {
+
+    if ((*pdata & 0xff) != 0x34)    // regular channel data
+    {
+//     printf ("**** unpack_qfw: Skipping Non-header format 0x%x - (0x34 are expected) ...\n",
+//         (*pdata & 0xff));
+      pdata++;
+      continue; // we have to skip it, since the dedicated padding pattern is added by mbs and not available here!
+    }
+
+    unsigned trig_type = (*pdata & 0xf00) >> 8;
+    unsigned sfp_id = (*pdata & 0xf000) >> 12;
+    unsigned device_id = (*pdata & 0xff0000) >> 16;
+    unsigned channel_id = (*pdata & 0xff000000) >> 24;
+    int* pdatastart = pdata;
+    pdata++;
+
+    int opticlen = *pdata++;
+//    if(Debugmode)
+      //printf ("Token header: trigid:0x%x sfp:0x%x modid:0x%x memid:0x%x opticlen:0x%x\n", trig_type, sfp_id, device_id,
+      //channel_id, opticlen);
+//    //
+    if (opticlen > lwords * 4)
+    {
+      printm ("**** unpack_qfw: Mismatch with subevent len %d and optic len %d", lwords * 4, opticlen);
+      // avoid that we run second step on invalid raw event!
+      return -1;
+    }
+    QFWRAW_CHECK_PDATA;
+    int eventcounter = *pdata;
+
+    if(fSlave==device_id)
+        theSample->SetEventCounter(eventcounter);
+
+//    if(Debugmode)
+    // printm (" - Internal Event number 0x%x\n", eventcounter);
+    // board id calculated from SFP and device id:
+
+    pdata += 1;
+    QFWRAW_CHECK_PDATA;
+    int QfwSetup = *pdata;
+//    if(Debugmode)
+//    printf (" - QFW SEtup %d\n", QfwSetup);
+    for (int j = 0; j < 4; ++j)
+    {
+      QFWRAW_CHECK_PDATA_BREAK;
+      pdata++;
+
+    }
+    QFWRAW_CHECK_PDATA;
+    for (int l = 0; l < POLAND_QFWLOOPS; l++)
+    {
+      QFWRAW_CHECK_PDATA_BREAK;
+      loopsize[l] = *pdata++;
+      if(fSlave==device_id)
+        theSample->SetLoopsize(l,loopsize[l]);
+//      if(Debugmode)
+ //       printm (" - Loopsize[%d] = 0x%x\n", l, loopsize[l]);
+    }    // first loop loop
+
+    QFWRAW_CHECK_PDATA;
+    for (int loop = 0; loop < POLAND_QFWLOOPS; loop++)
+    {
+      QFWRAW_CHECK_PDATA_BREAK;
+      looptime[loop] = *pdata++;
+      if(fSlave==device_id)
+        theSample->SetLooptime(loop, looptime[loop]);
+//      if(Debugmode)
+ //       printm (" - Looptime[%d] = 0x%x\n", loop, looptime[loop]);
+    }    // second loop loop
+
+    for (int j = 0; j < 21; ++j)
+    {
+      QFWRAW_CHECK_PDATA_BREAK;
+      pdata++;
+
+    }
+    QFWRAW_CHECK_PDATA;
+    /** All loops X slices/loop X channels */
+    for (int loop = 0; loop < POLAND_QFWLOOPS; loop++)
+    {
+      for (int sl = 0; sl < loopsize[loop]; ++sl)
+        for (int ch = 0; ch < POLAND_DAC_NUM; ++ch)
+        {
+          QFWRAW_CHECK_PDATA_BREAK;
+          int value = *pdata++;
+          if(fSlave==device_id)
+            theSample->AddTraceValue(loop, ch,value);
+//          if(Debugmode)
+//           printm (" -- loop %d slice %d ch %d = 0x%x\n", loop, sl, ch, value);
+        }
+    }    //loop
+
+    QFWRAW_CHECK_PDATA;
+    /* errorcount values: - per QFW CHIPS*/
+    for (int qfw = 0; qfw < POLAND_ERRCOUNT_NUM; ++qfw)
+    {
+      QFWRAW_CHECK_PDATA_BREAK;
+      if(fSlave==device_id)
+        theSample->SetErrorScaler(qfw,*pdata++);
+      //      ErrorScaler[qfw] = (unsigned int) (*pdata++);
+
+//      if(Debugmode)
+//        printf (" - ErrorScaler[%d] = 0x%x\n", qfw, ErrorScaler[qfw]);
+    }
+    QFWRAW_CHECK_PDATA;
+
+    // skip filler words at the end of gosip payload:
+    while (pdata - pdatastart <= (opticlen / 4))    // note that trailer is outside opticlen!
+    {
+      //if(Debugmode)
+      //printf("######### skipping word 0x%x\n ",*pdata);
+      pdata++;
+    }
+
+    // crosscheck if trailer word matches eventcounter header
+    if (*pdata != eventcounter)
+    {
+      printm ("!!!!! Eventcounter 0x%x does not match trailing word 0x%x at position 0x%x!\n", eventcounter, *pdata,
+          (opticlen / 4));
+    }
+    else
+    {
+//      if(Debugmode)
+        //printm ("Found trailing Eventcounter 0x%x \n",*pdata);
+    }
+    pdata++;
+  }    // while pdata - pdatastart < lwords
+
+////////////////////////////// end go4 unpacker
+
+  return 0;
 }
 
 
-
-
-
+#endif
