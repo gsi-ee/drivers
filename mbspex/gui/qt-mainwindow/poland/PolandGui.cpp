@@ -1203,7 +1203,7 @@ void PolandGui::GetSample(PolandSample* theSample)
 
 
 #else
-    printm("Fetching gosip token with GUI is not supported without pexor/FESA library. Please use external DAQ.")
+    printm("Fetching gosip token with GUI is not supported without pexor/FESA library. Please use external DAQ.");
 #endif
 
   }
