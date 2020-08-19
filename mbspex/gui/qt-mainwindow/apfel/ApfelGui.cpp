@@ -1443,7 +1443,8 @@ int ApfelGui::ShowSample (int channel, bool benchmarkdisplay)
   };
 
   // TODO: put this in special functions
-  canvas->setAutoDeletePlotObjects(true);
+  // only most recent kplot
+  //canvas->setAutoDeletePlotObjects(true);
   canvas->resetPlot ();
   // labels for plot area:
   canvas->setAntialiasing (true);
@@ -1512,7 +1513,8 @@ void ApfelGui::ResetBenchmarkCurve ()
   fPlotMaxAdc = APFEL_ADC_MAXVALUE;
 
   KPlotWidget* canvas = fApfelWidget->BenchmarkPlotwidget;
-  canvas->setAutoDeletePlotObjects(true);
+  // only for most recent versions of kplotwidget:
+  //canvas->setAutoDeletePlotObjects(true);
   canvas->resetPlot ();
   // labels for plot area:
   canvas->setAntialiasing (true);
