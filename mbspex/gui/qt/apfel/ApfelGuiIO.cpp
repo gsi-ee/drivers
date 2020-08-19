@@ -572,6 +572,42 @@ void ApfelGui::SetSwitches (bool useApfel, bool useHighGain, bool useStretcher, 
   }
   else
   {
+
+
+#ifdef    APFEL_USE_SIMPLE_SWITCHES
+
+    printm("Setswitches with simple mode sets apfel:%d highgain:%d stretcher:%d isPandatest:%d");
+///////// shell script as sugggested by sven:
+//    for i in {31..0}
+//    do
+//            if [ $((($value>>$i) % 2)) -eq 0 ]; then
+//    #write "0"
+//                    gosipcmd -w -x $sfpno $devno 0x208010 0x1b000000
+//                    gosipcmd -w -x $sfpno $devno 0x208010 0x1b000004
+//            else
+//    #write "1"
+//                    gosipcmd -w -x $sfpno $devno 0x208010 0x1b000002
+//                    gosipcmd -w -x $sfpno $devno 0x208010 0x1b000006
+//            fi
+//    done
+//
+//    # latch now
+//    gosipcmd -w -x $sfpno $devno 0x208010 0x1b000001
+//    gosipcmd -w -x $sfpno $devno 0x208010 0x1b000000
+///////////
+    dat = APFEL_IO_CONTROL_WR;
+    for (int i=0; i<32; ++i)
+    {
+        // default setup: all enabled, apfel ids defined to 1,...,8
+        // we set all bits here to 1:
+        WriteGosip (fSFP, fSlave, GOS_I2C_DWR, (dat | 2));
+        WriteGosip (fSFP, fSlave, GOS_I2C_DWR, (dat | 6));
+    }
+    //latch now
+    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, (dat | 1));
+    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, (dat | 0));
+
+#else
     // new PANDATEST hardware
     // instead of 3 bits, we use the 32 bit control register here:
     int lo=APFEL_IO_DATA_LO_WR;
@@ -592,7 +628,7 @@ void ApfelGui::SetSwitches (bool useApfel, bool useHighGain, bool useStretcher, 
 
 
     // TODO: change configuration of apfel addressing here?
-
+#endif
 
   }
 
@@ -1283,8 +1319,8 @@ void ApfelGui::ExecuteCurrentScan (int apfel)
   printm ("Starting %s Diode current measurement for position %d ...", (fake ? "FAKE" : "Multimeter"), position);
   SetSingleChipCurrentMode (apfel, false, false);    // hv bit off, diode bit off     -> enable Diode switch
   usleep(200000);
-  //val = (fake ? (position * 1.0E-6) : ReadKeithleyCurrent ());
-  val = (fake ? (position * 1.0E-9) : ReadKeithleyCurrent ());
+  val = (fake ? (position * 1.0E-3) : ReadKeithleyCurrent ());
+  //val = (fake ? (position * 1.0E-9) : ReadKeithleyCurrent ());
   printm ("          - got %E A", val);
   theSetup->SetCurrentDiode(apfel, val);
   SetDefaultIOConfig ();    // back to normal operation
