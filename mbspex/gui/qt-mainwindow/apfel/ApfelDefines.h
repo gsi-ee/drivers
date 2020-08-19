@@ -8,6 +8,8 @@
 #include <iostream>
 
 
+/** JAM20202: test memory leaks with alternative implementation avoiding std::map*/
+//#define APFEL_NOSTDMAP 1
 
 
 /** enable this for old toellner power mode*/

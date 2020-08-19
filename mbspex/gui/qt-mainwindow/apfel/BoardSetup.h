@@ -17,6 +17,9 @@
 
 #include <QString>
 
+
+
+
 /** the setup of the apfel/febex slave board*/
 class BoardSetup : public GosipSetup
 {
@@ -45,14 +48,27 @@ private:
   /** setups of each apfel chip on board*/
   ApfelSetup fApfel[APFEL_NUMCHIPS];
 
+
+#ifdef APFEL_NOSTDMAP
+  GainSetup fGainSetups_1[APFEL_ADC_CHANNELS];
+  GainSetup fGainSetups_16[APFEL_ADC_CHANNELS];
+  GainSetup fGainSetups_32[APFEL_ADC_CHANNELS];
+
+#else
   /** calibration parameters (adc/dac) mapped to gain1,16, 32*/
   std::map<int, GainSetup> fGainSetups[APFEL_ADC_CHANNELS];
-
+#endif
   AdcSample fLastSample[APFEL_ADC_CHANNELS];
 
+#ifdef APFEL_NOSTDMAP
+  ApfelTestResults fTestResults_1[APFEL_NUMCHIPS];
+  ApfelTestResults fTestResults_16[APFEL_NUMCHIPS];
+  ApfelTestResults fTestResults_32[APFEL_NUMCHIPS];
+
+#else
   /** This structure contains the test results for comparison. mapped to gain 1,16,32*/
   std::map<int, ApfelTestResults> fTestResults[APFEL_NUMCHIPS];
-
+#endif
   /** carrier board id tag*/
   QString fBoardID;
 
@@ -63,7 +79,7 @@ public:
 
   BoardSetup ();
 
-  virtual ~BoardSetup(){;}
+  virtual ~BoardSetup(){std::cout<<"DDDD DTOR  BoardSetup..." << std::endl;;}
 
   void SetBoardID (const QString& val)
   {

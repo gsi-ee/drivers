@@ -8,22 +8,39 @@
 BoardSetup::BoardSetup () : GosipSetup(),
  fPandaTestBoard(false),fUseApfel (true), fHighGainOutput (true), fStretcher (false), fRegularMapping (true), fBaselineInverted(true)
 {
+  //std::cout<<"CTOR  BoardSetup..." << std:endl;
+
 
   for (int i = 0; i < APFEL_NUMCHIPS; ++i)
   {
+#ifdef APFEL_NOSTDMAP
+    // member array is already initialized
+
+#else
+
+
+
     fTestResults[i][1] = ApfelTestResults ();
     fTestResults[i][16] = ApfelTestResults ();
     fTestResults[i][32] = ApfelTestResults ();
+#endif
   }
 
   for (int c = 0; c < APFEL_ADC_CHANNELS; ++c)
   {
+#ifdef APFEL_NOSTDMAP
+    fGainSetups_1[c].ResetCalibration(!fBaselineInverted);
+    fGainSetups_16[c].ResetCalibration(!fBaselineInverted);
+    fGainSetups_32[c].ResetCalibration(!fBaselineInverted);
+
+#else
     fGainSetups[c][1] = GainSetup ();
     fGainSetups[c][1].ResetCalibration(!fBaselineInverted); // consistent with default state of board setup
     fGainSetups[c][16] = GainSetup ();
     fGainSetups[c][16].ResetCalibration(!fBaselineInverted);
     fGainSetups[c][32] = GainSetup ();
     fGainSetups[c][32].ResetCalibration(!fBaselineInverted);
+#endif
   }
 
   SetApfelMapping (true);
@@ -67,12 +84,47 @@ void BoardSetup::SetApfelMapping (bool regular, bool pandatest)
 
 ApfelTestResults& BoardSetup::AccessTestResults (int gain, int apfel)
 {
+
+#ifdef APFEL_NOSTDMAP
+  switch(gain)
+  {
+    default:
+    std::cout<<"NEVER COME HERE - AccessTestResults with unefined gain "<<gain << std::endl;
+    case 1:
+    return fTestResults_1[apfel];
+    break;
+    case 16:
+    return fTestResults_16[apfel];
+    break;
+    case 32:
+    return fTestResults_32[apfel];
+    break;
+  }
+#else
   return fTestResults[apfel].at (gain);
+#endif
 }
 
 GainSetup& BoardSetup::AccessGainSetup (int gain, int febexchannel)
 {
+#ifdef APFEL_NOSTDMAP
+  switch(gain)
+  {
+    default:
+    std::cout<<"NEVER COME HERE - AccessGainSetup with undefined gain "<<gain << std::endl;
+    case 1:
+    return fGainSetups_1[febexchannel];
+    break;
+    case 16:
+    return fGainSetups_16[febexchannel];
+    break;
+    case 32:
+    return fGainSetups_32[febexchannel];
+    break;
+  }
+#else
   return fGainSetups[febexchannel].at (gain);
+#endif
 }
 
 void BoardSetup::ResetGain1Calibration ()
@@ -81,7 +133,8 @@ void BoardSetup::ResetGain1Calibration ()
   for (int ch = 0; ch < APFEL_ADC_CHANNELS; ++ch)
   {
     //fGainSetups[ch].at (1).ResetCalibration (false);
-    fGainSetups[ch].at (1).ResetCalibration (fBaselineInverted); // 2017: take into account inverted state?
+    //fGainSetups[ch].at (1).ResetCalibration (fBaselineInverted); // 2017: take into account inverted state?
+    AccessGainSetup (1, ch).ResetCalibration (fBaselineInverted);
   }
 }
 
@@ -89,7 +142,7 @@ int BoardSetup::SetDACmin (int gain, int febexchannel, double val)
 {
   ASSERT_FEBCHAN_VALID(febexchannel);
 
-  fGainSetups[febexchannel].at (gain).SetDACmin (val);
+  AccessGainSetup(gain, febexchannel).SetDACmin (val);
   return 0;
 
 }
@@ -97,7 +150,7 @@ int BoardSetup::SetDACmin (int gain, int febexchannel, double val)
 int BoardSetup::SetDACmax (int gain, int febexchannel, double val)
 {
   ASSERT_FEBCHAN_VALID(febexchannel);
-  fGainSetups[febexchannel].at (gain).SetDACmax (val);
+  AccessGainSetup(gain, febexchannel).SetDACmax (val);
   return 0;
 }
 
@@ -105,7 +158,7 @@ int BoardSetup::SetADCmin (int gain, int febexchannel, double val)
 {
   ASSERT_FEBCHAN_VALID(febexchannel);
   //std::cout << "EvaluateCalibration for channel "<<febexchannel<<", gain:"<< gain << std::endl;
-  fGainSetups[febexchannel].at (gain).SetADCmin (val);
+  AccessGainSetup(gain, febexchannel).SetADCmin (val);
   return 0;
 }
 
@@ -114,7 +167,7 @@ int BoardSetup::EvaluateCalibration (int gain, int febexchannel, double deltaDAC
 {
   ASSERT_FEBCHAN_VALID(febexchannel);
   //std::cout << "EvaluateCalibration for channel "<<febexchannel<<", gain:"<< gain << std::endl;
-  fGainSetups[febexchannel].at (gain).EvaluateCalibration (deltaDAC, deltaADC, valDAC, valADC);
+  AccessGainSetup(gain, febexchannel).EvaluateCalibration (deltaDAC, deltaADC, valDAC, valADC);
   return 0;
 }
 
@@ -125,11 +178,11 @@ int BoardSetup::ResetCalibration (int gain, int febexchannel)
 
 #ifdef APFEL_GAIN1_INVERTED
   if (gain == 1)
-    fGainSetups[febexchannel].at (gain).ResetCalibration (fBaselineInverted);
+    AccessGainSetup(gain, febexchannel).ResetCalibration (fBaselineInverted);
   else
-    fGainSetups[febexchannel].at (gain).ResetCalibration (!fBaselineInverted);
+    AccessGainSetup(gain, febexchannel).ResetCalibration (!fBaselineInverted);
 #else
-  fGainSetups[febexchannel].at(gain).ResetCalibration(!fBaselineInverted);
+  AccessGainSetup(gain, febexchannel).ResetCalibration (!fBaselineInverted);
 #endif
   return 0;
 }
@@ -138,7 +191,7 @@ int BoardSetup::DumpCalibration (int gain, int febexchannel)
 {
   ASSERT_FEBCHAN_VALID(febexchannel);
   printm ("DumpCalibration for channel %d gain %d:\t", febexchannel, gain);
-  fGainSetups[febexchannel].at (gain).DumpCalibration ();
+  AccessGainSetup(gain, febexchannel).DumpCalibration ();
   return 0;
 }
 
@@ -147,7 +200,7 @@ int BoardSetup::CalculateDACValue (int gain, int febexchannel, double ADC_permil
   ASSERT_FEBCHAN_VALID(febexchannel);
   //std::cout << "BoardSetup::GetDACValue for gain:"<<gain<<", channel:"<<febexchannel<<std::endl;
   int rev = 0;
-  rev = fGainSetups[febexchannel].at (gain).CalculateDACValue (ADC_permille);
+  rev = AccessGainSetup(gain, febexchannel).CalculateDACValue (ADC_permille);
   return rev;
 }
 
@@ -155,7 +208,7 @@ int BoardSetup::CalculateADCPermille (int gain, int febexchannel, double DAC_val
 {
   ASSERT_FEBCHAN_VALID(febexchannel);
   int rev = 0;
-  rev = fGainSetups[febexchannel].at (gain).CalculateADCPermille (DAC_value);
+  rev = AccessGainSetup(gain, febexchannel).CalculateADCPermille (DAC_value);
   return rev;
 
 }

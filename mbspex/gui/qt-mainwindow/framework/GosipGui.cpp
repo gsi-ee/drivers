@@ -75,7 +75,7 @@ GosipGui::GosipGui (QWidget* parent) :
   fEnv = QProcessEnvironment::systemEnvironment ();    // get PATH to gosipcmd from parent process
 #endif
 
-
+  TextOutput->setUndoRedoEnabled(false); // JAM2020 - avoid increasing memory cosumption by text output (verbose mode!)
   fImplementationName="GOSIP";
   fVersionString="Welcome to GOSIP GUI!\n\t v0.90 of 30-July-2019 by JAM (j.adamczewski@gsi.de)";
 

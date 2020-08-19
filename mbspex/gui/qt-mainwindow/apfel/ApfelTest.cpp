@@ -13,10 +13,15 @@ ApfelTest::ApfelTest () :
     fOwner (0), fCurrentSetup (0), fTestLength (0), fCurrentGain(0), fMultiPulserMode(false)
 {
 
+#ifdef APFEL_NOSTDMAP
+  // nothing to init, objects are on memberstack
+
+#else
+
   fReferenceValues[1]=ApfelTestResults();
   fReferenceValues[16]=ApfelTestResults();
   fReferenceValues[32]=ApfelTestResults();
-
+#endif
   InitReferenceValues();
   ResetSequencerList();
 }
@@ -25,7 +30,7 @@ ApfelTest::ApfelTest () :
 void ApfelTest::InitReferenceValues(bool invertedslope)
 {
 
-  fReferenceValues[1].Reset(invertedslope); // gain 1 is always opposite slope of high gains
+  GetReferenceValues(1).Reset(invertedslope); // gain 1 is always opposite slope of high gains
   // gain 1, dac2
   //559   2790    575     2833    591     2823    607     2835    623     2873    639     2826    655     2804    671     3381    687     4459    703     5547    719     9407    735     7824    751     8950    767     10102   783     10493   799     12311   815     13345   831     14311   847     14970   863     15215   879     15231   895     15243   911     15247   927     15258
 
@@ -39,11 +44,11 @@ void ApfelTest::InitReferenceValues(bool invertedslope)
     // fake the default reference curve in case of inverted slope:
     if(invertedslope)
     {
-      fReferenceValues[1].AddDacSample(2, valDAC_1[i], -1*valADC_1[i]);
+      GetReferenceValues(1).AddDacSample(2, valDAC_1[i], -1*valADC_1[i]);
     }
     else
     {
-      fReferenceValues[1].AddDacSample(2, valDAC_1[i], valADC_1[i]);
+      GetReferenceValues(1).AddDacSample(2, valDAC_1[i], valADC_1[i]);
     }
 
 
@@ -51,7 +56,7 @@ void ApfelTest::InitReferenceValues(bool invertedslope)
   }
 
 
-  fReferenceValues[16].Reset(!invertedslope);
+  GetReferenceValues(16).Reset(!invertedslope);
 
   // gain 16, dac0 and dac1
   //780   12222   782     13743   784     11987   786     11142   788     9712    790     9606    792     8817    794     7959    796     7179    798     7119    800     4409    802     3606    804     2909    806     2464    808     1615    810     1379    812     974 814     781 816     680 818     669 820     678 822     673 824     665 826     701
@@ -66,13 +71,13 @@ void ApfelTest::InitReferenceValues(bool invertedslope)
     {
     if(invertedslope)
       {
-        fReferenceValues[16].AddDacSample(0, valDAC_16[i], -1*valADC_16[i]);
-        fReferenceValues[16].AddDacSample(1, valDAC_16[i], -1*valADC_16[i]);
+        GetReferenceValues(16).AddDacSample(0, valDAC_16[i], -1*valADC_16[i]);
+        GetReferenceValues(16).AddDacSample(1, valDAC_16[i], -1*valADC_16[i]);
       }
     else
     {
-      fReferenceValues[16].AddDacSample(0, valDAC_16[i], valADC_16[i]);
-      fReferenceValues[16].AddDacSample(1, valDAC_16[i], valADC_16[i]);
+      GetReferenceValues(16).AddDacSample(0, valDAC_16[i], valADC_16[i]);
+      GetReferenceValues(16).AddDacSample(1, valDAC_16[i], valADC_16[i]);
     }
 
       //std::cout<< "InitReferenceValues for gain16: i:"<<i<<" ("<<valDAC_16[i]<<","<<valADC_16[i]<<"="<< std::endl;
@@ -82,7 +87,7 @@ void ApfelTest::InitReferenceValues(bool invertedslope)
   //821   7626    822     6724    823     6152    824     5507    825     4819    826     3966    827     7243    828     2811    829     4279    830     3663    831     1400    832     766 833     735 834     718 835     749 836     784 837     656 838     741 839     611 840     710 841     766 842     709 843     707 844     722
 
 
-  fReferenceValues[32].Reset(!invertedslope);
+  GetReferenceValues(32).Reset(!invertedslope);
 
   int valDAC_32[APFEL_DAC_CURVEPOINTS]=
   { 821,822,823,824,825,826,827,828,829,830,831,832,833,834,835,836,837,838,839,840,841,842,843,844};
@@ -96,13 +101,13 @@ void ApfelTest::InitReferenceValues(bool invertedslope)
       {
     if(invertedslope)
           {
-            fReferenceValues[32].AddDacSample(0, valDAC_32[i], -1*valADC_32[i]);
-            fReferenceValues[32].AddDacSample(1, valDAC_32[i], -1*valADC_32[i]);
+            GetReferenceValues(32).AddDacSample(0, valDAC_32[i], -1*valADC_32[i]);
+            GetReferenceValues(32).AddDacSample(1, valDAC_32[i], -1*valADC_32[i]);
           }
     else
     {
-           fReferenceValues[32].AddDacSample(0, valDAC_32[i], valADC_32[i]);
-           fReferenceValues[32].AddDacSample(1, valDAC_32[i], valADC_32[i]);
+           GetReferenceValues(32).AddDacSample(0, valDAC_32[i], valADC_32[i]);
+           GetReferenceValues(32).AddDacSample(1, valDAC_32[i], valADC_32[i]);
     }
 
 
@@ -179,7 +184,7 @@ void ApfelTest::LoadReferenceValues(const QString& fname)
 
           for(int i=0; i<APFEL_DAC_CURVEPOINTS; ++i)
            {
-             fReferenceValues[1].AddDacSample(2, (uint16_t) dac[i], (uint16_t) adc[i]);
+             GetReferenceValues(1).AddDacSample(2, (uint16_t) dac[i], (uint16_t) adc[i]);
              //std::cout<< "LoadReferenceValues for gain1: i:"<<i<<" ("<<dac[i]<<","<<adc[i]<<"="<< std::endl;
            }
           done_1=true;
@@ -203,8 +208,8 @@ void ApfelTest::LoadReferenceValues(const QString& fname)
              );
              for(int i=0; i<APFEL_DAC_CURVEPOINTS; ++i)
               {
-                fReferenceValues[16].AddDacSample(0, (uint16_t) dac[i], (uint16_t) adc[i]);
-                fReferenceValues[16].AddDacSample(1, (uint16_t) dac[i], (uint16_t) adc[i]);
+                GetReferenceValues(16).AddDacSample(0, (uint16_t) dac[i], (uint16_t) adc[i]);
+                GetReferenceValues(16).AddDacSample(1, (uint16_t) dac[i], (uint16_t) adc[i]);
                 //std::cout<< "LoadReferenceValues for gain16: i:"<<i<<" ("<<dac[i]<<","<<adc[i]<<"="<< std::endl;
               }
              done_16=true;
@@ -228,8 +233,8 @@ void ApfelTest::LoadReferenceValues(const QString& fname)
                 );
                 for(int i=0; i<APFEL_DAC_CURVEPOINTS; ++i)
                  {
-                   fReferenceValues[32].AddDacSample(0, (uint16_t) dac[i], (uint16_t) adc[i]);
-                   fReferenceValues[32].AddDacSample(1, (uint16_t) dac[i], (uint16_t) adc[i]);
+                   GetReferenceValues(32).AddDacSample(0, (uint16_t) dac[i], (uint16_t) adc[i]);
+                   GetReferenceValues(32).AddDacSample(1, (uint16_t) dac[i], (uint16_t) adc[i]);
                    //std::cout<< "LoadReferenceValues for gain32: i:"<<i<<" ("<<dac[i]<<","<<adc[i]<<")"<< std::endl;
                  }
                 done_32=true;
@@ -245,7 +250,27 @@ void ApfelTest::LoadReferenceValues(const QString& fname)
 
 ApfelTestResults& ApfelTest::GetReferenceValues(int gain)
 {
+#ifdef APFEL_NOSTDMAP
+  switch(gain)
+  {
+    default:
+    std::cout<<"NEVER COME HERE - GetReferenceValues with undefined gain "<<gain << std::endl;
+    case 1:
+    return fReferenceValues_1;
+    break;
+    case 16:
+    return fReferenceValues_16;
+    break;
+    case 32:
+    return fReferenceValues_32;
+    break;
+  }
+#else
+
+
    return  fReferenceValues[gain];
+
+#endif
 }
 
 

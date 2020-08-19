@@ -36,10 +36,19 @@ private:
    int fCurrentGain;
 
 
+
+#ifdef APFEL_NOSTDMAP
+  ApfelTestResults fReferenceValues_1;
+  ApfelTestResults fReferenceValues_16;
+  ApfelTestResults fReferenceValues_32;
+
+#else
+  /**
+
    /** This structure just contains sollwerte for comparison. mapped to gain*/
    std::map<int, ApfelTestResults> fReferenceValues;
 
-
+#endif
    bool fMultiPulserMode;
 
 public:

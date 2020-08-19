@@ -111,7 +111,10 @@ public:
 
   ApfelTestResults();
 
-  virtual  ~ApfelTestResults(){;}
+  virtual  ~ApfelTestResults(){
+    //std::cout<< "TTTT DDD Dtor ApfrelTestResults object"<< std::endl
+    ;}
+
 
   /** clear the previous results*/
   void Reset(bool invertedslope=false);

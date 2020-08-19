@@ -40,7 +40,7 @@ ApfelGui::ApfelGui (QWidget* parent) :
         fPlotMaxDac (APFEL_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (APFEL_ADC_MAXVALUE), fUseSimpleSwitchAddressing(false)
 {
   fImplementationName="APFEL";
-  fVersionString="Welcome to APFEL GUI!\n\t v0.99974 of 09-July-2020 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to APFEL GUI!\n\t v0.99980 of 19-Aug-2020 by JAM (j.adamczewski@gsi.de)\n";
 
   fSettings=new QSettings("GSI", fImplementationName);
 
@@ -1379,7 +1379,9 @@ void ApfelGui::RefreshSampleMaxima (int febexchannel)
 
 int ApfelGui::ShowSample (int channel, bool benchmarkdisplay)
 {
-  //std::cout <<"ShowSample for channel:"<<channel<< std::endl;
+//  std::cout <<"ShowSample for channel:"<<channel<< ". benchmarkdisplay="<<benchmarkdisplay<< std::endl;
+//  std::cout<< " --- ShowSample with NOP"<<std::endl;
+//  return 0; // JAM2020 DEBUG
   theSetup_GET_FOR_SLAVE_RETURN(BoardSetup);
   //theSetup->ShowADCSample(channel); // todo: dump sample on different knob
 
@@ -1441,6 +1443,7 @@ int ApfelGui::ShowSample (int channel, bool benchmarkdisplay)
   };
 
   // TODO: put this in special functions
+  canvas->setAutoDeletePlotObjects(true);
   canvas->resetPlot ();
   // labels for plot area:
   canvas->setAntialiasing (true);
@@ -1501,12 +1504,15 @@ void ApfelGui::ShowSelectedSamples ()
 /** Clear display of benchmark DAC curve*/
 void ApfelGui::ResetBenchmarkCurve ()
 {
+//  std::cout<< "ResetBenchmarkCurve. with NOP"<<std::endl;
+//  return; // JAM2020 DEBUG
   fPlotMinDac = 0;
   fPlotMaxDac = APFEL_DAC_MAXVALUE;
   fPlotMinAdc = 0;
   fPlotMaxAdc = APFEL_ADC_MAXVALUE;
 
   KPlotWidget* canvas = fApfelWidget->BenchmarkPlotwidget;
+  canvas->setAutoDeletePlotObjects(true);
   canvas->resetPlot ();
   // labels for plot area:
   canvas->setAntialiasing (true);
@@ -1522,10 +1528,12 @@ void ApfelGui::ResetBenchmarkCurve ()
 
 void ApfelGui::ShowLimitsCurve (int gain, int apfel, int dac)
 {
+//  std::cout<< "ShowLimitsCurve with NOP"<<std::endl;
+//  return; // JAM2020 DEBUG
   QColor col = Qt::red;
   KPlotObject *upper = new KPlotObject (col, KPlotObject::Lines, 3);
   KPlotObject *lower = new KPlotObject (col, KPlotObject::Lines, 3);
-  //std::cout<<"ShowLimitsCurve: gain:"<<gain<<", apfel:"<<apfel<<", dac:"<<dac << std::endl;
+ // std::cout<<"ShowLimitsCurve: gain:"<<gain<<", apfel:"<<apfel<<", dac:"<<dac << std::endl;
 
   theSetup_GET_FOR_SLAVE(BoardSetup);
   ApfelTestResults& theResults = theSetup->AccessTestResults (gain, apfel);
@@ -1580,6 +1588,9 @@ void ApfelGui::ShowLimitsCurve (int gain, int apfel, int dac)
 
 void ApfelGui::ShowBenchmarkCurve (int gain, int apfel, int dac)
 {
+//  std::cout<< "ShowBenchmarkCurve with NOP for gain:"<<gain<<", apfel:"<<apfel<<", dac:"<<dac<<std::endl;
+//    return; // JAM2020 DEBUG
+
    theSetup_GET_FOR_SLAVE(BoardSetup);
 
   QColor col;
@@ -1662,7 +1673,7 @@ void ApfelGui::ShowBenchmarkCurve (int gain, int apfel, int dac)
   fApfelWidget->BenchmarkPlotwidget->setLimits (fPlotMinDac, fPlotMaxDac, fPlotMinAdc, fPlotMaxAdc);
   //else
   //  BenchmarkPlotwidget->setLimits (0, APFEL_DAC_MAXVALUE, 0, APFEL_ADC_MAXVALUE);
-  //std::cout<<"ShowBenchmarkCurve limits: dmin:"<<fPlotMinDac<<", dmax:"<<fPlotMaxDac<<", amin:"<< fPlotMinAdc<<", amax:"<<fPlotMaxAdc<< std::endl;
+ //std::cout<<"ShowBenchmarkCurve limits: dmin:"<<fPlotMinDac<<", dmax:"<<fPlotMaxDac<<", amin:"<< fPlotMinAdc<<", amax:"<<fPlotMaxAdc<< std::endl;
 
   fApfelWidget->BenchmarkPlotwidget->update ();
 

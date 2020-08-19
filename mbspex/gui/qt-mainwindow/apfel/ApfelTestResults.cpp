@@ -3,6 +3,7 @@
 
  ApfelTestResults::ApfelTestResults()
   {
+    //std::cout<< "TTTT Ctor ApfrelTestResults object"<< std::endl;
     Reset();
   }
 

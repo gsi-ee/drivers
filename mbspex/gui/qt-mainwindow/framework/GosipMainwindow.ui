@@ -37,7 +37,7 @@
      <x>0</x>
      <y>0</y>
      <width>973</width>
-     <height>24</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -361,6 +361,9 @@
         <font>
          <family>Andale Mono</family>
         </font>
+       </property>
+       <property name="undoRedoEnabled">
+        <bool>false</bool>
        </property>
        <property name="readOnly">
         <bool>true</bool>
