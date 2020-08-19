@@ -341,10 +341,15 @@ bool ApfelTest::ProcessBenchmark ()
 
 
           // copy here the most recent addressing scan tests if done before sequencer
-          theResults.SetIDScan(fCurrentSetup->IsIDScanOK(apfel));
-          theResults.SetGeneralCallScan(fCurrentSetup->IsGeneralScanOK(apfel));
-          theResults.SetReverseIDScan(fCurrentSetup->IsReverseIDScanOK(apfel));
-          theResults.SetRegisterScan(fCurrentSetup->IsRegisterScanOK(apfel));
+//          theResults.SetIDScan(fCurrentSetup->IsIDScanOK(apfel));
+//          theResults.SetGeneralCallScan(fCurrentSetup->IsGeneralScanOK(apfel));
+//          theResults.SetReverseIDScan(fCurrentSetup->IsReverseIDScanOK(apfel));
+//          theResults.SetRegisterScan(fCurrentSetup->IsRegisterScanOK(apfel));
+          // JAM2020 - always reset to false if not done in the sequencer
+          theResults.SetIDScan(false);
+          theResults.SetGeneralCallScan(false);
+          theResults.SetReverseIDScan(false);
+          theResults.SetRegisterScan(false);
 
 
           // qr tag for single chip:
