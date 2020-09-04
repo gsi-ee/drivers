@@ -1,0 +1,38 @@
+#!/bin/sh
+# N.Kurz, EE, GSI, 4-Sep2-13: modified for diefferent kernel versions
+# JAM, EE, GSI, 29-Oct-2013: provided different devicenames for kinpex, pexaria
+#            usage "load kinpex"
+# JAM EE, GSI, 6-Nov-2013: automatic check which device is present. always set /dev/pexor link
+
+KV=`uname -r`
+module="mbspipe_$KV"
+class="mbspipe"
+device="mbspipe0"
+if [ $# -gt 0 ];then
+  device=$1
+  shift
+fi
+pipename="mbspipe"    
+#mode="664"
+echo "Installing module: $module.ko"
+/sbin/insmod ./$module.ko
+echo "sleep before we check device nodes..."
+sleep 3 
+# now look what we got
+if  [ -e "/dev/${device}" ]
+	then
+	echo "MBSPIPE LOAD: use device name from command line /dev/${device}" 	
+elif [ -e "/dev/${pipename}0" ]
+	then
+	device=${pipename}0
+else
+ 	echo "MBSPIPE LOAD: could not find mbspipe at /dev Exiting!"
+ 	exit
+fi
+echo "found device /dev/${device}"
+chmod a+rw /dev/${device}
+ln -sf /dev/${device} /dev/${class}
+
+
+ls -l /dev/mbspipe*
+
