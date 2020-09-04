@@ -60,7 +60,7 @@
 
 // this define will enable read/write fops
 // if disabled, only mmmap is supported
-#define MBSPIPE_WITH_READ_WRITE 1
+//#define MBSPIPE_WITH_READ_WRITE 1
 
 
 #define MBSPIPEVERSION     "0.1.0"
