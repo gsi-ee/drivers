@@ -63,7 +63,7 @@
 //#define MBSPIPE_WITH_READ_WRITE 1
 
 
-#define MBSPIPEVERSION     "0.1.0"
+#define MBSPIPEVERSION     "0.1.1"
 #define MBSPIPEAUTHORS     "Joern Adamczewski-Musch (JAM), GSI Darmstadt (www.gsi.de)"
 #define MBSPIPEDESC        "MBS pipe host memory mapping module for IFC Linux"
 
@@ -119,7 +119,7 @@ ssize_t mbspipe_sysfs_codeversion_show (struct device *dev, struct device_attrib
 #else
   curs += snprintf (buf + curs, PAGE_SIZE, "\t\tonly mmap is allowed! other fops are disabled.\n");
 #endif
-
+  curs += snprintf (buf + curs, PAGE_SIZE, "\t\tmmap without phys_mem_access_prot -> _PAGE_COHERENT mode.\n");
     return curs;
 }
 
@@ -478,11 +478,27 @@ static int mmap_mem(struct file *file, struct vm_area_struct *vma)
 						&vma->vm_page_prot))
 		return -EINVAL;
 
-	vma->vm_page_prot = phys_mem_access_prot(file, vma->vm_pgoff,
-						 size,
-						 vma->vm_page_prot);
+////////////////////////////////////////////////////////////
+// JAM 9-9-2020: this one will slow down speed by factor 10:
+//
+//	vma->vm_page_prot = phys_mem_access_prot(file, vma->vm_pgoff,
+//						 size,
+//						 vma->vm_page_prot);
+//
+// delivers 0x54023d (flags for bok3e-MMU) : _PAGE_NO_CACHE, _PAGE_GUARDED, _PAGE_ACCESSED, _PAGE_PSIZE_4K,  _PAGE_RW,  _PAGE_USER
+// without calling this function, vm_page_prot has:
+//          0x24023d: _PAGE_COHERENT, PAGE_ACCESSED, _PAGE_PSIZE_4K,  _PAGE_RW,  _PAGE_USER
+////////////////////////////////////////////////////////////////////////////////////////////
+// vm_flags was 0xFB -> may read, may write , may execute, may share, read, write, shared
 
 	vma->vm_ops = &mmap_mem_ops;
+
+
+	mbspipe_dbg(KERN_NOTICE "mbspipe - mmap_mem has set vm_page_prot=0x%lx, vm_flags=0x%lx",
+	    (long) vma->vm_page_prot, (long) vma->vm_flags);
+//#ifdef CONFIG_HAVE_IOREMAP_PROT
+//	mbspipe_dbg(KERN_NOTICE "mbspipe with CONFIG_HAVE_IOREMAP_PROT uses generic_access_phys");
+//#endif
 
 	/* Remap-pfn-range will mark the range VM_IO */
 	if (remap_pfn_range(vma,
