@@ -3,6 +3,7 @@
 include ../common.mk
 
 INCDIR += ..
+INCDIR +=  /mbs/driv/ifc/VmeDirect_1.00/include
 LDINC += $(addprefix -L ,$(LIBDIR))
 LDFLAGS += -Wl,-rpath,/usr/lib -lrt
 # avoid shared lib for the moment due to more easy testing
@@ -28,13 +29,13 @@ $(BINARIES) : % : $(BINDIR)/% ;
 ##	$(Q)$(CXX) $(LDINC) $(LDFLAGS) $(PEXLIB) $(CFLAGS) -o $@ $<
 #	$(Q)$(CXX) $(LDFLAGS) $(CFLAGS) -o  $@  $< $(PEXLIB)
 
-$(BINDIR)/producer: $(OBJDIR)/m_producer.o $(OBJDIR)/timing.o $(OBJDIR)/f_map_pipe.o $(OBJDIR)/pipe_sync.o
+$(BINDIR)/producer: $(OBJDIR)/m_producer.o $(OBJDIR)/timing.o $(OBJDIR)/f_map_pipe.o $(OBJDIR)/pipe_sync.o $(OBJDIR)/f_map_vme.o
 	@echo -e "LD \t$@"
-	$(Q)$(CC) $(LDINC) $(LDFLAGS) $(CFLAGS) -o $@ $(OBJDIR)/m_producer.o  $(OBJDIR)/timing.o $(OBJDIR)/f_map_pipe.o $(OBJDIR)/pipe_sync.o
+	$(Q)$(CC) $(LDINC) $(LDFLAGS) $(CFLAGS) -o $@ $(OBJDIR)/m_producer.o  $(OBJDIR)/timing.o $(OBJDIR)/f_map_pipe.o $(OBJDIR)/pipe_sync.o $(OBJDIR)/f_map_vme.o
 
-$(BINDIR)/consumer: $(OBJDIR)/m_consumer.o $(OBJDIR)/timing.o $(OBJDIR)/f_map_pipe.o $(OBJDIR)/pipe_sync.o
+$(BINDIR)/consumer: $(OBJDIR)/m_consumer.o $(OBJDIR)/timing.o $(OBJDIR)/f_map_pipe.o $(OBJDIR)/pipe_sync.o $(OBJDIR)/f_map_vme.o 
 	@echo -e "LD \t$@"
-	$(Q)$(CC) $(LDINC) $(LDFLAGS) $(CFLAGS) -o $@ $(OBJDIR)/m_consumer.o $(OBJDIR)/timing.o $(OBJDIR)/f_map_pipe.o $(OBJDIR)/pipe_sync.o
+	$(Q)$(CC) $(LDINC) $(LDFLAGS) $(CFLAGS) -o $@ $(OBJDIR)/m_consumer.o $(OBJDIR)/timing.o $(OBJDIR)/f_map_pipe.o $(OBJDIR)/pipe_sync.o $(OBJDIR)/f_map_vme.o 
 
 
 

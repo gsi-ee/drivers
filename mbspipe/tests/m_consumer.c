@@ -13,6 +13,9 @@
 #define MBSPIPE_TEST_MAXLOOP 6247
 #define MBSPIPE_TEST_DATALEN 0x10000000
 
+// may enable  benchmark by cpu cycles with this (not working on ifc)
+//#define BENCHMARK_USE_CYCLES 1
+
 int Mode = -1;    // test mode
 int NumRepeats = 1;    // number of external write loops
 
@@ -30,7 +33,7 @@ void usage (const char *progname)
   printf ("***************************************************************************\n");
 
   printf (" %s for mbspipe test  \n", progname);
-  printf (" v0.1 30-Oct-2020 by JAM (j.adamczewski@gsi.de)\n");
+  printf (" v0.2 02-Nov-2020 by JAM (j.adamczewski@gsi.de)\n");
   printf ("***************************************************************************\n");
   printf ("  usage: %s [-h][-m <testmode>] [-n <repeat>] [-b <pipebase>] [-p <pipelen>] [-d <debugprint>] \n",
       progname);
@@ -41,7 +44,7 @@ void usage (const char *progname)
   printf ("\t\t -p        : set length of pipe in bytes (0x%x)\n", MBSPIPE_LEN);
   printf ("\t\t -m        : define test mode:\n");
   printf ("\t\t\t  0 - read incrementing counter words\n");
-  printf ("\t\t\t  1 - mbs formatted with header (?)\n");
+  printf ("\t\t\t  same as 0, but with accessing VME  memory (not implemented!)\n");
   printf ("\t\t -d        : set debug verbosity \n");
   exit (0);
 }
@@ -73,14 +76,12 @@ int f_read_test_data (int* pipe_base)
   switch (Mode)
   {
     case 0:
+    case 1:
       {
-
-        // todo: sync producer and consumer by first word in pipe
-
         // get buffer header:
         l_dat_len = *pl_dat;
         //if (Verbosity > 0)
-          printf ("** Buffer Len:%d bytes\n", l_dat_len);
+          printf ("** Buffer Len: %d (%E) bytes\n", l_dat_len, (double) l_dat_len);
         int* pl_end = pl_dat + (l_dat_len / sizeof(int));
         pl_dat++;
         while (pl_dat < pl_end)
@@ -179,10 +180,12 @@ int main (int argc, char *argv[])
     basename (argv[0]), PipeBase, PipeLen);
     exit (EXIT_FAILURE);
   }
-  printf ("%s: start reading %d bytes from pipe in mode %d, loopsize=%d\n",
+  printf ("%s: wait before reading %d bytes from pipe in mode %d, loopsize=%d\n",
   basename (argv[0]), Datalength, Mode, Loopsize);
   s_pipe_sync* com = (s_pipe_sync*) pipebase;
+#ifdef BENCHMARK_USE_CYCLES
   Pexortest_TimerInit ();
+#endif
   for (i = 0; i < NumRepeats; ++i)
   {
     f_set_write (com, 1);    // tell producer to begin
@@ -194,15 +197,20 @@ int main (int argc, char *argv[])
     }
     printf ("after wait read, let's go for round %d\n",i);
     Pexortest_ClockStart ();
+#ifdef BENCHMARK_USE_CYCLES
     Pexortest_TimerStart ();
-
+#endif
     int len = f_read_test_data (pipebase);
+#ifdef BENCHMARK_USE_CYCLES
     cycledelta = Pexortest_TimerDelta ();
+#endif
     clockdelta = Pexortest_ClockDelta ();
     totalsize = len;
     transfersum += len;
     Pexortest_ShowRate ("Clock:  pipe read ", totalsize, clockdelta);    // bytes
+#ifdef BENCHMARK_USE_CYCLES
     Pexortest_ShowRate ("Cycles: pipe read ", totalsize, cycledelta);
+#endif
     f_set_read (com, 0);
     printf ("After repeat %d we see %d errors for %ld bytes read from pipe \n",i, Errcount,transfersum);
   }    // for
