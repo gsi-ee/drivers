@@ -15,7 +15,7 @@ MBSPIPEMODULE = mbspipe.ko
 
 MBSPIPEDRIVER = $(MBSPIPESYS)/driver
 #MBSPIPELIB  = $(MBSPIPESYS)/library
-#MBSPIPETEST  = $(MBSPIPESYS)/tests
+MBSPIPETEST  = $(MBSPIPESYS)/tests
 #MBSPIPEFLASH  = $(MBSPIPESYS)/flash
 
 #MBSPIPEPACKAGE = MBSPipeDriver
@@ -31,9 +31,9 @@ LIBINSTALLDIR ?= /usr/lib64
 
 
 #.PHONY: all clean driver lib examples install uninstall driver-install driver-uninstall lib-install lib-uninstall pack
-.PHONY: all clean driver install uninstall driver-install driver-uninstall pack
+.PHONY: all clean driver examples install uninstall driver-install driver-uninstall pack
 
-all: driver 
+all: driver examples
 #lib examples 
 
 install: driver-install 
@@ -44,7 +44,7 @@ uninstall: driver-uninstall
 
 
 clean:
-
+	cd $(MBSPIPETEST); make clean
 	cd $(MBSPIPEDRIVER); make clean
 
 driver:
@@ -53,8 +53,9 @@ driver:
 #lib: driver
 #	cd $(MBSPIPELIB); make all
 	
-#examples: lib
-#	cd $(MBSPIPETEST); make all
+examples: 
+#lib
+	cd $(MBSPIPETEST); make all
 #	cd $(MBSPIPEFLASH); make all	
 
 driver-install:

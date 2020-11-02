@@ -56,14 +56,14 @@
 
 /////////////////////////////// JAM take here some useful things from another known driver...
 
-//#define MBSPIPE_DEBUGPRINT 1
+#define MBSPIPE_DEBUGPRINT 1
 
 // this define will enable read/write fops
 // if disabled, only mmmap is supported
 //#define MBSPIPE_WITH_READ_WRITE 1
 
 
-#define MBSPIPEVERSION     "0.1.1"
+#define MBSPIPEVERSION     "0.1.2"
 #define MBSPIPEAUTHORS     "Joern Adamczewski-Musch (JAM), GSI Darmstadt (www.gsi.de)"
 #define MBSPIPEDESC        "MBS pipe host memory mapping module for IFC Linux"
 
@@ -488,7 +488,46 @@ static int mmap_mem(struct file *file, struct vm_area_struct *vma)
 // delivers 0x54023d (flags for bok3e-MMU) : _PAGE_NO_CACHE, _PAGE_GUARDED, _PAGE_ACCESSED, _PAGE_PSIZE_4K,  _PAGE_RW,  _PAGE_USER
 // without calling this function, vm_page_prot has:
 //          0x24023d: _PAGE_COHERENT, PAGE_ACCESSED, _PAGE_PSIZE_4K,  _PAGE_RW,  _PAGE_USER
-////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	// JAM 8-Oct-2020: fiddle for performance with dedicated flags:
+	vma->vm_page_prot |= _PAGE_NO_CACHE; //0x400000 from  /usr/include/arch/powerpc/include/asm/pte-book3e.h
+	// => only slightly (9%) faster than phys_mem_access_prot, but safe -> 64023d
+
+	//vma->vm_page_prot |= _PAGE_GUARDED; //0x100000 -> 0x34023d
+	// almost as fast as without guarded (82%), but still faster as with phys_mem_access_prot (11 x)
+	// however, many errors when reading out mem module
+
+	// same as phys_mem_access_prot without the _PAGE_GUARDED - 0x44023d
+	//vma->vm_page_prot &= ~_PAGE_COHERENT;
+	//vma->vm_page_prot |= _PAGE_NO_CACHE;
+	// NO ERRORS, same as without clearing the _PAGE_COHERENT
+
+
+	// another try... 0xa4023d
+	//vma->vm_page_prot |= _PAGE_WRITETHRU;
+	// as fast as with page_coherent only, but also with errors
+
+	// still standing: 0x8423d
+//	 Via->vm_page_prot &= ~_PAGE_COHERENT;
+//	 vma->vm_page_prot |= _PAGE_WRITETHRU;
+	 // ERRORS, same as a4023d - 40 errs/day
+
+	// maybe guarded access helps?
+//	vma->vm_page_prot &= ~_PAGE_COHERENT;
+//	vma->vm_page_prot |= _PAGE_WRITETHRU;
+//	vma->vm_page_prot |= _PAGE_GUARDED;
+	// MANY ERRORS even without mem readout
+
+	// 0x44023d -fastest setup without erors (?): - 60 errors/day with read mem module
+//	vma->vm_page_prot &= ~_PAGE_COHERENT;
+//	vma->vm_page_prot |= _PAGE_NO_CACHE;
+
+	// another one 0xe423d : also 60 err/day
+//	vma->vm_page_prot |= _PAGE_WRITETHRU;
+//	vma->vm_page_prot |= _PAGE_NO_CACHE;
+
+	////////////////////////////////////////////////////////////////////////////////////////////
 // vm_flags was 0xFB -> may read, may write , may execute, may share, read, write, shared
 
 	vma->vm_ops = &mmap_mem_ops;
