@@ -33,28 +33,53 @@ void usage (const char *progname)
   printf ("***************************************************************************\n");
 
   printf (" %s for mbspipe test  \n", progname);
-  printf (" v0.2 02-Nov-2020 by JAM (j.adamczewski@gsi.de)\n");
+  printf (" v0.3 06-Nov-2020 by JAM (j.adamczewski@gsi.de)\n");
   printf ("***************************************************************************\n");
   printf ("  usage: %s [-h][-m <testmode>] [-n <repeat>] [-b <pipebase>] [-p <pipelen>] [-d <debugprint>] \n",
       progname);
   printf ("\t Options:\n");
   printf ("\t\t -h        : display this help\n");
   printf ("\t\t -n        : set number of read tests to repeat (%d)\n", NumRepeats);
+  printf ("\t\t -l        : set expected max loop value for sawtooth data (%d)\n", MBSPIPE_TEST_MAXLOOP);
   printf ("\t\t -b        : set physical base address of pipe (0x%x)\n", MBSPIPE_BASE);
   printf ("\t\t -p        : set length of pipe in bytes (0x%x)\n", MBSPIPE_LEN);
   printf ("\t\t -m        : define test mode:\n");
   printf ("\t\t\t  0 - read incrementing counter words\n");
-  printf ("\t\t\t  same as 0, but with accessing VME  memory (not implemented!)\n");
+  printf ("\t\t\t  1 - same as 0, but producer is accessing VME  memory\n");
+  printf ("\t\t\t  2 - same as 0, but switch back to producer after each data event\n");
+  printf ("\t\t\t  3 - same as 2, but producer is accessing VME memory\n");
   printf ("\t\t -d        : set debug verbosity \n");
   exit (0);
 }
+
+void assert_wait_for_read(s_pipe_sync* com)
+{
+  if(Verbosity>1) printf("dddd assert_wait_for_read..\n");
+  if (f_wait_read (com) < 0)    // wait until we have data
+      {
+        printf ("ERROR: timeout of %d s exceeded on waiting for read start. \n",
+        PIPESYNC_TIMEOUT);
+        exit (EXIT_FAILURE);
+      }
+
+}
+
+void switch2write(s_pipe_sync* com)
+    {
+    f_set_read (com, 0);
+    f_set_write (com, 1);
+    if(Verbosity>1) printf("dddd switch2write done.\n");
+    }
+
+
+
 
 int f_read_test_data (int* pipe_base)
 {
   // Data format:
   // buffer header - total bytes to follow
   // event header -  next event bytes
-  // leading data - loop lenght in event
+  // leading data - loop length in event
   // event data   - incrementing numbers up to loop length
   // ...
   // event data   - incrementing numbers up to loop length
@@ -65,8 +90,10 @@ int f_read_test_data (int* pipe_base)
 
 
   unsigned long l_n_loop = 0, l_i = 0;
+  unsigned long l_n_loopcheck=0;
   int* pl_dat;
-  int l_dat_len = 0, l_ev_len = 0;
+  unsigned long l_dat_len = 0, l_ev_len, l_ev_lencheck = 0;
+  char* pc_end=0;
   // skip status structure at begin of pipe:
   char* add = (char*) pipe_base;
   s_pipe_sync* com= (s_pipe_sync*) add; // take comm structure to indicate number of round
@@ -77,36 +104,72 @@ int f_read_test_data (int* pipe_base)
   {
     case 0:
     case 1:
+    case 2:
+    case 3:
       {
+        int altread = (Mode==2 || Mode==3) ? 1 : 0 ; // alternating read/write flagnt altread = (Mode==2 || Mode==3) ? 1 : 0 ; // alternating read/write flag
         // get buffer header:
         l_dat_len = *pl_dat;
-        //if (Verbosity > 0)
+        if (Verbosity > 0)
           printf ("** Buffer Len: %d (%E) bytes\n", l_dat_len, (double) l_dat_len);
+        // check pointer arithmetics. seems ok
+        //pc_end=add+l_dat_len;
+        //int* pl_end= (int*) pc_end;
         int* pl_end = pl_dat + (l_dat_len / sizeof(int));
+
         pl_dat++;
         while (pl_dat < pl_end)
         {
+          // here check loop and eventsize to be expected from consumer
+          l_n_loopcheck++;
+          if (l_n_loopcheck == Loopsize) // note: Loopsize is fixed here
+          {
+            l_n_loopcheck = 1;
+          }
+          l_ev_lencheck= (l_n_loopcheck + 1) * sizeof(int);
+          // end check section
+          if(altread) assert_wait_for_read(com);
           l_ev_len = *pl_dat++;
-          if (Verbosity > 0) printf ("*** Event Len:%d bytes\t", l_ev_len);
+          if (Verbosity > 1)
+            printf ("*** Event Len:%d bytes, expected:%d\t", l_ev_len, l_ev_lencheck);
+          if(Verbosity>0 && l_ev_len!=l_ev_lencheck) // happens at end of buffer regularily!
+            printf ("WARNING:  Event Len:%d does not match expected %d\n", l_ev_len, l_ev_lencheck);
           l_n_loop = *pl_dat++;    // leading data word
-          if (Verbosity > 0) printf ("Loop:%d \n", l_n_loop);
+          if (Verbosity > 1)
+            printf ("Loop:%d , expected:%d\n", l_n_loop, l_n_loopcheck);
+          if(l_n_loop!=l_n_loopcheck)
+            {
+              Errcount++; // accouont as read error
+              if (Verbosity > 0) printf ("ERROR:  Loop Len:%d does not match expected %d\n", l_n_loop, l_n_loopcheck);
+            }
           for (l_i = 0; l_i < l_n_loop; l_i++)
           {
             if (pl_dat >= pl_end)
               break;
+
             int val = *pl_dat++;
-            if (Verbosity > 1) printf ("Val(%d)=0x%x bytes\t", l_i,val);
+            if (Verbosity > 2) printf ("Val(%d)=0x%x bytes\t", l_i,val);
             if (val != l_i + com->counter)    // data payload, simple incrementing with offset
+            //if (val != l_i ) // test if it is working anyhow? yes.
             {
               Errcount++;
               if (Verbosity > 0)
                 printf ("ERROR f_read_test_data: read value %d does not match pattern value %d\n", val, l_i);
               //exit(EXIT_FAILURE);
             }
-            if((Verbosity > 1) && (l_i % 10 ==0)) printf("\n");
+            if((Verbosity > 2) && (l_i % 10 ==0)) printf("\n");
           }    // for
-
+          if(altread) switch2write(com);
         }    // while
+        //pl_dat++;
+        if(l_dat_len != *pl_dat)
+        {
+          // check trailer word, should contain buffer length
+          printf ("WARNING f_read_test_data: buffer trailer length %d does not match header length %d, loop is %d\n",
+              *pl_dat, l_dat_len,l_n_loop);
+        }
+
+
         return l_dat_len;
       }
       break;
@@ -133,7 +196,7 @@ int main (int argc, char *argv[])
 
   /* get arguments*/
   //optind = 1;
-  while ((opt = getopt (argc, argv, "hl:m:n:p:b:d:")) != -1)
+  while ((opt = getopt (argc, argv, "hl:m:n:l:p:b:d:")) != -1)
   {
     switch (opt)
     {
@@ -154,6 +217,9 @@ int main (int argc, char *argv[])
         break;
       case 'n':
         NumRepeats = strtol (optarg, NULL, 0);
+        break;
+      case 'l':
+        Loopsize = strtol (optarg, NULL, 0);
         break;
       case 'd':
         Verbosity = strtol (optarg, NULL, 0);
@@ -180,21 +246,16 @@ int main (int argc, char *argv[])
     basename (argv[0]), PipeBase, PipeLen);
     exit (EXIT_FAILURE);
   }
-  printf ("%s: wait before reading %d bytes from pipe in mode %d, loopsize=%d\n",
-  basename (argv[0]), Datalength, Mode, Loopsize);
+  printf ("%s: wait before reading from pipe in mode %d, loopsize=%d\n",
+  basename (argv[0]), Mode, Loopsize);
   s_pipe_sync* com = (s_pipe_sync*) pipebase;
 #ifdef BENCHMARK_USE_CYCLES
   Pexortest_TimerInit ();
 #endif
   for (i = 0; i < NumRepeats; ++i)
   {
-    f_set_write (com, 1);    // tell producer to begin
-    if (f_wait_read (com) < 0)    // wait until we have data
-    {
-      printf ("ERROR in %s: timeout of %d s exceeded on waiting for read start. \n",
-      basename (argv[0]), PIPESYNC_TIMEOUT);
-      exit (EXIT_FAILURE);
-    }
+    switch2write(com);
+    assert_wait_for_read(com);
     printf ("after wait read, let's go for round %d\n",i);
     Pexortest_ClockStart ();
 #ifdef BENCHMARK_USE_CYCLES
@@ -211,10 +272,10 @@ int main (int argc, char *argv[])
 #ifdef BENCHMARK_USE_CYCLES
     Pexortest_ShowRate ("Cycles: pipe read ", totalsize, cycledelta);
 #endif
-    f_set_read (com, 0);
+    //f_set_read (com, 0);
     printf ("After repeat %d we see %d errors for %ld bytes read from pipe \n",i, Errcount,transfersum);
   }    // for
-  printf ("%s: finished writing l%d bytes to pipe \n",
+  printf ("%s: finished reading %ld bytes from pipe \n",
   basename (argv[0]), transfersum);
 
   return 0;

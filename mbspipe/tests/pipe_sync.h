@@ -4,10 +4,12 @@
 #include <unistd.h>
 
 // usecs for wait poll loop
-#define PIPESYNC_SLEEP 10000
+//#define PIPESYNC_SLEEP 10000
+
+#define PIPESYNC_SLEEP 10
 
 // seconds timeout for wait
-#define PIPESYNC_TIMEOUT 60
+#define PIPESYNC_TIMEOUT 300
 
 // number of loop cycles for timeout
 #define PIPESYNC_MAXLOOP PIPESYNC_TIMEOUT * 1000000 / PIPESYNC_SLEEP

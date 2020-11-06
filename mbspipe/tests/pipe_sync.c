@@ -3,7 +3,7 @@
 
 int f_wait_read(s_pipe_sync* com)
 {
-  int timeout=0;
+  long timeout=0;
   while(com->canread == 0)
   {
     usleep(PIPESYNC_SLEEP);
@@ -15,7 +15,7 @@ int f_wait_read(s_pipe_sync* com)
 
 int f_wait_write(s_pipe_sync* com)
 {
-  int timeout=0;
+  long timeout=0;
   while(com->canwrite == 0)
   {
     usleep(PIPESYNC_SLEEP);

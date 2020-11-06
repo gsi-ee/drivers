@@ -44,7 +44,7 @@ void usage (const char *progname)
   printf ("***************************************************************************\n");
 
   printf (" %s for mbspipe test  \n", progname);
-  printf (" v0.2 02-Nov-2020 by JAM (j.adamczewski@gsi.de)\n");
+  printf (" v0.3 06-Nov-2020 by JAM (j.adamczewski@gsi.de)\n");
   printf ("***************************************************************************\n");
   printf (
       "  usage: %s [-h][-m <testmode>] [-n <repeat>][-l <maxloop>] [-s <sendbytes>] [-b <pipebase>] [-p <pipelen>] [-d <debugprint>] \n",
@@ -60,10 +60,29 @@ void usage (const char *progname)
   printf ("\t\t -w        : set length of VME window (0x%x) - mode 1 only\n", VME_LEN);
   printf ("\t\t -m        : define test mode:\n");
   printf ("\t\t\t  0 - write incrementing counter words up to max loop value\n");
-  printf ("\t\t\t  1 - same as 0, but with accessing VME  memory\n");
+  printf ("\t\t\t  1 - same as 0, but with accessing VME memory\n");
+  printf ("\t\t\t  2 - same as 0, but switch to consumer after each data event\n");
+  printf ("\t\t\t  3 - same as 2, but with accessing VME memory\n");
   printf ("\t\t -d        : set debug verbosity \n");
   exit (0);
 }
+
+void assert_wait_for_write(s_pipe_sync* com)
+{
+if(Verbosity>1) printf("dddd assert_wait_for_write.. \n");
+if (f_wait_write (com) < 0)
+   {
+     printf ("ERROR: timeout of %d s exceeded on waiting for write start. \n", PIPESYNC_TIMEOUT);
+     exit (EXIT_FAILURE);
+   }
+}
+
+void switch2read(s_pipe_sync* com)
+    {
+      f_set_write (com, 0);
+      f_set_read (com, 1);
+      if(Verbosity>1) printf("dddd switch2read done.\n");
+    }
 
 int f_write_test_data (int* pipe_base)
 {
@@ -83,6 +102,7 @@ int f_write_test_data (int* pipe_base)
   int* pl_dat;
   int* vme_dat;
   int l_dat_len = 0, l_ev_len = 0;
+  char* pc_end=0;
   // skip status structure at begin of pipe:
   char* add = (char*) pipe_base;
   s_pipe_sync* com = (s_pipe_sync*) add;    // take comm structure to indicate number of round
@@ -92,20 +112,34 @@ int f_write_test_data (int* pipe_base)
   {
     case 0:
     case 1:
+    case 2:
+    case 3:
 
       {
-        int* pl_end = pl_dat + Datalength / sizeof(int);
+        int altread = (Mode==2 || Mode==3) ? 1 : 0 ; // alternating read/write flag
+        // check pointer arithmetics here. OK
+        //pc_end=add+Datalength;
+        //int* pl_end=(int*)(pc_end);
+        int* pl_end = pl_dat + (Datalength / sizeof(int));
         int* pl_buf_header = pl_dat++;
+        l_dat_len += sizeof(int); // header is part of total data length
+        if(altread)
+        {
+          *pl_buf_header =  Datalength; // inteneded buffer header before we finish the bufffer
+        }
+
         while (pl_dat < pl_end)
         {
           vme_dat=VMEaddr; // use VME memory per loop from beginning
           l_ev_len = 0;
           int* pl_header = pl_dat++;
+          l_dat_len += sizeof(int); // account event header payload for total buffer length here!
           l_n_loop++;
           if (l_n_loop == Loopsize)
           {
             l_n_loop = 1;
           }
+          if(altread) assert_wait_for_write(com);
           *pl_dat++ = l_n_loop;    // leading data word
           l_ev_len += sizeof(int);
           for (l_i = 0; l_i < l_n_loop; l_i++)
@@ -116,10 +150,12 @@ int f_write_test_data (int* pipe_base)
             {
               default:
               case 0:
+              case 2:
                 // plain data generated here
                 *pl_dat++ = l_i + com->counter;    // data payload, simple incrementing with offset of round number
                 break;
               case 1:
+              case 3:
                 // with intermediate VME access
                 *vme_dat = l_i + com->counter;
                 *pl_dat++ = *vme_dat++;
@@ -129,10 +165,15 @@ int f_write_test_data (int* pipe_base)
           }    // for
           *pl_header = l_ev_len;    // event header
           l_dat_len += l_ev_len;
-
+          if(altread) switch2read(com);
         }    // while
-        *pl_buf_header = l_dat_len;    // buffer header
+
+        if(!altread)
+          *pl_buf_header = l_dat_len;    // buffer header from true written payload
+
         *pl_dat = l_dat_len;    // buffer trailer
+        if (Verbosity > 2) printf ("Wrote Buffer trailer length (%d) 0x%x, check:0x%x, last loop is %d \n",
+            l_dat_len, l_dat_len, *pl_dat, l_n_loop);
         return l_dat_len;
       }
       break;
@@ -242,15 +283,9 @@ int main (int argc, char *argv[])
 
   for (i = 0; i < NumRepeats; ++i)
   {
-    // here sync mechansim with consumer - simple approach- read and write not simultaneous:
-    if (f_wait_write (com) < 0)
-    {
-      printf ("ERROR in %s: timeout of %d s exceeded on waiting for write start. \n",
-      basename (argv[0]), PIPESYNC_TIMEOUT);
-      exit (EXIT_FAILURE);
-    }
-    printf ("after wait write, let's go for round %d\n", i);
-    f_set_read (com, 0);
+    assert_wait_for_write(com);
+    printf ("after initial wait write, let's go for round %d\n", i);
+    //f_set_read (com, 0);
     com->counter = i;
     Pexortest_ClockStart ();
 #ifdef BENCHMARK_USE_CYCLES
@@ -267,8 +302,7 @@ int main (int argc, char *argv[])
 #ifdef BENCHMARK_USE_CYCLES
         Pexortest_ShowRate("Cycles: pipe write ", totalsize , cycledelta);
 #endif
-    f_set_write (com, 0);
-    f_set_read (com, 1);
+    switch2read(com);
   }    // for
   printf ("%s: finished writing %ld (%e) bytes to pipe \n",
   basename (argv[0]), transfersum, (double) (transfersum));
