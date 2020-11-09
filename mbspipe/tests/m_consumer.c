@@ -54,7 +54,7 @@ void usage (const char *progname)
 
 void assert_wait_for_read(s_pipe_sync* com)
 {
-  if(Verbosity>1) printf("dddd assert_wait_for_read..\n");
+  if(Verbosity>3) printf("dddd assert_wait_for_read..\n");
   if (f_wait_read (com) < 0)    // wait until we have data
       {
         printf ("ERROR: timeout of %d s exceeded on waiting for read start. \n",
@@ -68,7 +68,7 @@ void switch2write(s_pipe_sync* com)
     {
     f_set_read (com, 0);
     f_set_write (com, 1);
-    if(Verbosity>1) printf("dddd switch2write done.\n");
+    if(Verbosity>3) printf("dddd switch2write done.\n");
     }
 
 
@@ -130,23 +130,24 @@ int f_read_test_data (int* pipe_base)
           // end check section
           if(altread) assert_wait_for_read(com);
           l_ev_len = *pl_dat++;
-          if (Verbosity > 1)
+          if (Verbosity > 2)
             printf ("*** Event Len:%d bytes, expected:%d\t", l_ev_len, l_ev_lencheck);
           if(Verbosity>0 && l_ev_len!=l_ev_lencheck) // happens at end of buffer regularily!
             printf ("WARNING:  Event Len:%d does not match expected %d\n", l_ev_len, l_ev_lencheck);
           l_n_loop = *pl_dat++;    // leading data word
-          if (Verbosity > 1)
+          if (Verbosity > 2)
             printf ("Loop:%d , expected:%d\n", l_n_loop, l_n_loopcheck);
           if(l_n_loop!=l_n_loopcheck)
             {
               Errcount++; // accouont as read error
               if (Verbosity > 0) printf ("ERROR:  Loop Len:%d does not match expected %d\n", l_n_loop, l_n_loopcheck);
+              if (Verbosity > 1) exit(EXIT_FAILURE);
             }
           for (l_i = 0; l_i < l_n_loop; l_i++)
           {
             if (pl_dat >= pl_end)
               break;
-
+            SERIALIZE_IO;
             int val = *pl_dat++;
             if (Verbosity > 2) printf ("Val(%d)=0x%x bytes\t", l_i,val);
             if (val != l_i + com->counter)    // data payload, simple incrementing with offset
@@ -154,9 +155,11 @@ int f_read_test_data (int* pipe_base)
             {
               Errcount++;
               if (Verbosity > 0)
-                printf ("ERROR f_read_test_data: read value %d does not match pattern value %d\n", val, l_i);
-              //exit(EXIT_FAILURE);
-            }
+              {
+                printf ("ERROR f_read_test_data: read value %d does not match pattern value %d\n", val,  l_i+ com->counter);
+                if (Verbosity > 1) exit(EXIT_FAILURE);
+              }
+              }
             if((Verbosity > 2) && (l_i % 10 ==0)) printf("\n");
           }    // for
           if(altread) switch2write(com);

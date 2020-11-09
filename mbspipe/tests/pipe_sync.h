@@ -6,7 +6,7 @@
 // usecs for wait poll loop
 //#define PIPESYNC_SLEEP 10000
 
-#define PIPESYNC_SLEEP 10
+#define PIPESYNC_SLEEP 100
 
 // seconds timeout for wait
 #define PIPESYNC_TIMEOUT 300
@@ -14,15 +14,20 @@
 // number of loop cycles for timeout
 #define PIPESYNC_MAXLOOP PIPESYNC_TIMEOUT * 1000000 / PIPESYNC_SLEEP
 
+
+// taken from vetar driver/ipv - does this change anything?
+#define SERIALIZE_IO __asm__ volatile ("eieio")
+
+
 /**
  * communication structure to be put at begin of pipe memory.
  * JAM 30-oct-2020
  */
-typedef struct
+typedef volatile struct
 {
-  int canread;  // if 1, producer has provided data to read, otherwise consumer waits
-  int canwrite; // if 1, consumer has processed most recent block and producer can send another
-  int counter;  // number of pipe cycles processed. can be used to modifiy data content
+  volatile int canread;  // if 1, producer has provided data to read, otherwise consumer waits
+  volatile int canwrite; // if 1, consumer has processed most recent block and producer can send another
+  volatile int counter;  // number of pipe cycles processed. can be used to modify data content
 
 } s_pipe_sync;
 

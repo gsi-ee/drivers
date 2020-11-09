@@ -69,7 +69,7 @@ void usage (const char *progname)
 
 void assert_wait_for_write(s_pipe_sync* com)
 {
-if(Verbosity>1) printf("dddd assert_wait_for_write.. \n");
+if(Verbosity>3) printf("dddd assert_wait_for_write.. \n");
 if (f_wait_write (com) < 0)
    {
      printf ("ERROR: timeout of %d s exceeded on waiting for write start. \n", PIPESYNC_TIMEOUT);
@@ -81,7 +81,7 @@ void switch2read(s_pipe_sync* com)
     {
       f_set_write (com, 0);
       f_set_read (com, 1);
-      if(Verbosity>1) printf("dddd switch2read done.\n");
+      if(Verbosity>3) printf("dddd switch2read done.\n");
     }
 
 int f_write_test_data (int* pipe_base)
@@ -146,6 +146,7 @@ int f_write_test_data (int* pipe_base)
           {
             if (pl_dat >= pl_end)
               break;
+            SERIALIZE_IO;
             switch (Mode)
             {
               default:
@@ -158,6 +159,7 @@ int f_write_test_data (int* pipe_base)
               case 3:
                 // with intermediate VME access
                 *vme_dat = l_i + com->counter;
+                SERIALIZE_IO;
                 *pl_dat++ = *vme_dat++;
                 break;
             }    //switch
@@ -260,7 +262,7 @@ int main (int argc, char *argv[])
     exit (EXIT_FAILURE);
   }
 
-  if (Mode == 1)
+  if (Mode == 1 || Mode==3)
   {
     // map additional vme memory:
     VMEaddr = f_map_vme ("/dev/ioxos/vme0", VmeBase, VmeLen, VME_AM);
