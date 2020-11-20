@@ -3,10 +3,13 @@
 
 #include <unistd.h>
 
+// enable this define for additional seralization for each io
+//#define USE_SERIALIZE_IO 1
+
 // usecs for wait poll loop
 //#define PIPESYNC_SLEEP 10000
 
-#define PIPESYNC_SLEEP 100
+#define PIPESYNC_SLEEP 10
 
 // seconds timeout for wait
 #define PIPESYNC_TIMEOUT 300
@@ -15,9 +18,15 @@
 #define PIPESYNC_MAXLOOP PIPESYNC_TIMEOUT * 1000000 / PIPESYNC_SLEEP
 
 
+#ifdef USE_SERIALIZE_IO
 // taken from vetar driver/ipv - does this change anything?
 #define SERIALIZE_IO __asm__ volatile ("eieio")
+#else
+#define SERIALIZE_IO ;
+#endif
 
+// test: only serialize access to com structures
+#define SERIALIZE_COM __asm__ volatile ("eieio")
 
 /**
  * communication structure to be put at begin of pipe memory.

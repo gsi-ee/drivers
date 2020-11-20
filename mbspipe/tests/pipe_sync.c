@@ -9,7 +9,7 @@ int f_wait_read(s_pipe_sync* com)
   {
     usleep(PIPESYNC_SLEEP);
     if(++timeout > PIPESYNC_MAXLOOP) return -1;
-    SERIALIZE_IO;
+    SERIALIZE_COM;
   }
   return 0;
 }
@@ -22,7 +22,7 @@ int f_wait_write(s_pipe_sync* com)
   {
     usleep(PIPESYNC_SLEEP);
     if(++timeout > PIPESYNC_MAXLOOP) return -1;
-    SERIALIZE_IO;
+    SERIALIZE_COM;
   }
   return 0;
 }
@@ -30,11 +30,11 @@ int f_wait_write(s_pipe_sync* com)
 void f_set_read(s_pipe_sync* com, int on)
 {
   com->canread=on;
-  SERIALIZE_IO;
+  SERIALIZE_COM;
 }
 
 void f_set_write(s_pipe_sync* com, int on)
 {
   com->canwrite=on;
-  SERIALIZE_IO;
+  SERIALIZE_COM;
 }

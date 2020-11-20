@@ -26,14 +26,14 @@ unsigned long Loopsize = MBSPIPE_TEST_MAXLOOP;    // optional loopsize parameter
 unsigned long Datalength = MBSPIPE_TEST_DATALEN;    // total transferred data length in bytes
 int Verbosity = 0;
 
-int Errcount = 0;
+unsigned long Errcount = 0;
 
 void usage (const char *progname)
 {
   printf ("***************************************************************************\n");
 
   printf (" %s for mbspipe test  \n", progname);
-  printf (" v0.3 06-Nov-2020 by JAM (j.adamczewski@gsi.de)\n");
+  printf (" v0.4 20-Nov-2020 by JAM (j.adamczewski@gsi.de)\n");
   printf ("***************************************************************************\n");
   printf ("  usage: %s [-h][-m <testmode>] [-n <repeat>] [-b <pipebase>] [-p <pipelen>] [-d <debugprint>] \n",
       progname);
@@ -276,7 +276,7 @@ int main (int argc, char *argv[])
     Pexortest_ShowRate ("Cycles: pipe read ", totalsize, cycledelta);
 #endif
     //f_set_read (com, 0);
-    printf ("After repeat %d we see %d errors for %ld bytes read from pipe \n",i, Errcount,transfersum);
+    printf ("After repeat %d we see %ld (%E) errors for %ld (%E) bytes read from pipe \n",i, Errcount, (double) Errcount, transfersum, (double) transfersum);
   }    // for
   printf ("%s: finished reading %ld bytes from pipe \n",
   basename (argv[0]), transfersum);
