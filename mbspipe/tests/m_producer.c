@@ -79,7 +79,9 @@ if (f_wait_write (com) < 0)
 
 void switch2read(s_pipe_sync* com)
     {
+#ifndef IOXOSSYNC
       f_set_write (com, 0);
+#endif
       f_set_read (com, 1);
       if(Verbosity>3) printf("dddd switch2read done.\n");
     }
@@ -97,7 +99,7 @@ int f_write_test_data (int* pipe_base)
   // ...
   // last event data
   // buffer  trailer - total bytes since buffer header
-
+  int firstwrite=1;
   unsigned long l_n_loop = 0, l_i = 0;
   int* pl_dat;
   int* vme_dat;
@@ -139,7 +141,8 @@ int f_write_test_data (int* pipe_base)
           {
             l_n_loop = 1;
           }
-          if(altread) assert_wait_for_write(com);
+          if(altread && firstwrite==0) assert_wait_for_write(com);
+          firstwrite=0; // for ioxos mode, prevent that we wait twice for the same counter
           *pl_dat++ = l_n_loop;    // leading data word
           l_ev_len += sizeof(int);
           for (l_i = 0; l_i < l_n_loop; l_i++)
@@ -167,7 +170,7 @@ int f_write_test_data (int* pipe_base)
           }    // for
           *pl_header = l_ev_len;    // event header
           l_dat_len += l_ev_len;
-          if(altread) switch2read(com);
+          if(altread && pl_dat < pl_end) switch2read(com); // for ioxos sync mode with counters
         }    // while
 
         if(!altread)
@@ -199,6 +202,8 @@ int main (int argc, char *argv[])
   double clockdelta = 0;
   double totalsize = 0;
   long transfersum = 0;
+  readcounter=0;
+  writecounter=0;
 
   /* get arguments*/
   //optind = 1;
@@ -280,9 +285,13 @@ int main (int argc, char *argv[])
   Pexortest_TimerInit();
 #endif
   s_pipe_sync* com = (s_pipe_sync*) pipebase;
+#ifdef IOXOSSYNC
+  com->canread=0; // need to init explicitely, since setter functions have changed
+  com->canwrite=0;
+#else
   f_set_read (com, 0);    // init
   f_set_write (com, 0);    // do not write until the consumer is ready
-
+#endif
   for (i = 0; i < NumRepeats; ++i)
   {
     assert_wait_for_write(com);

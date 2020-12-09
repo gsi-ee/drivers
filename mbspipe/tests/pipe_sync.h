@@ -3,13 +3,18 @@
 
 #include <unistd.h>
 
+
+// change producer-consumer sync mechanism to that of ioxos example
+#define IOXOSSYNC 1
+
+
 // enable this define for additional seralization for each io
 //#define USE_SERIALIZE_IO 1
 
 // usecs for wait poll loop
 //#define PIPESYNC_SLEEP 10000
 
-#define PIPESYNC_SLEEP 10
+#define PIPESYNC_SLEEP 1
 
 // seconds timeout for wait
 #define PIPESYNC_TIMEOUT 300
@@ -27,6 +32,17 @@
 
 // test: only serialize access to com structures
 #define SERIALIZE_COM __asm__ volatile ("eieio")
+
+
+#ifdef IOXOSSYNC
+
+long readcounter;
+long writecounter;
+
+#endif
+
+
+
 
 /**
  * communication structure to be put at begin of pipe memory.

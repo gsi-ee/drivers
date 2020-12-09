@@ -484,14 +484,14 @@ static int mmap_mem(struct file *file, struct vm_area_struct *vma)
 //	vma->vm_page_prot = phys_mem_access_prot(file, vma->vm_pgoff,
 //						 size,
 //						 vma->vm_page_prot);
-//
+////
 // delivers 0x54023d (flags for bok3e-MMU) : _PAGE_NO_CACHE, _PAGE_GUARDED, _PAGE_ACCESSED, _PAGE_PSIZE_4K,  _PAGE_RW,  _PAGE_USER
 // without calling this function, vm_page_prot has:
 //          0x24023d: _PAGE_COHERENT, PAGE_ACCESSED, _PAGE_PSIZE_4K,  _PAGE_RW,  _PAGE_USER
 
 
 	// JAM 8-Oct-2020: fiddle for performance with dedicated flags:
-	vma->vm_page_prot |= _PAGE_NO_CACHE; //0x400000 from  /usr/include/arch/powerpc/include/asm/pte-book3e.h
+	//vma->vm_page_prot |= _PAGE_NO_CACHE; //0x400000 from  /usr/include/arch/powerpc/include/asm/pte-book3e.h
 	// => only slightly (9%) faster than phys_mem_access_prot, but safe -> 64023d
 
 	//vma->vm_page_prot |= _PAGE_GUARDED; //0x100000 -> 0x34023d
@@ -499,8 +499,8 @@ static int mmap_mem(struct file *file, struct vm_area_struct *vma)
 	// however, many errors when reading out mem module
 
 	// same as phys_mem_access_prot without the _PAGE_GUARDED - 0x44023d
-	//vma->vm_page_prot &= ~_PAGE_COHERENT;
-	//vma->vm_page_prot |= _PAGE_NO_CACHE;
+//	vma->vm_page_prot &= ~_PAGE_COHERENT;
+//	vma->vm_page_prot |= _PAGE_NO_CACHE;
 	// NO ERRORS, same as without clearing the _PAGE_COHERENT
 
 
@@ -508,15 +508,15 @@ static int mmap_mem(struct file *file, struct vm_area_struct *vma)
 	//vma->vm_page_prot |= _PAGE_WRITETHRU;
 	// as fast as with page_coherent only, but also with errors
 
-	// still standing: 0x8423d
-//	 Via->vm_page_prot &= ~_PAGE_COHERENT;
+	// still standing: 0x8423
+//	 vma->vm_page_prot &= ~_PAGE_COHERENT;
 //	 vma->vm_page_prot |= _PAGE_WRITETHRU;
 	 // ERRORS, same as a4023d - 40 errs/day
 
 	// maybe guarded access helps?
 //	vma->vm_page_prot &= ~_PAGE_COHERENT;
 //	vma->vm_page_prot |= _PAGE_WRITETHRU;
-//	vma->vm_page_prot |= _PAGE_GUARDED;
+	//vma->vm_page_prot |= _PAGE_GUARDED;
 	// MANY ERRORS even without mem readout
 
 	// 0x44023d -fastest setup without erors (?): - 60 errors/day with read mem module

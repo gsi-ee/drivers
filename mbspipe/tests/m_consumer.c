@@ -66,7 +66,9 @@ void assert_wait_for_read(s_pipe_sync* com)
 
 void switch2write(s_pipe_sync* com)
     {
+#ifndef IOXOSSYNC
     f_set_read (com, 0);
+#endif
     f_set_write (com, 1);
     if(Verbosity>3) printf("dddd switch2write done.\n");
     }
@@ -88,7 +90,7 @@ int f_read_test_data (int* pipe_base)
   // last event data
   // buffer  trailer - total bytes since buffer header
 
-
+  int firstread=1;
   unsigned long l_n_loop = 0, l_i = 0;
   unsigned long l_n_loopcheck=0;
   int* pl_dat;
@@ -128,7 +130,8 @@ int f_read_test_data (int* pipe_base)
           }
           l_ev_lencheck= (l_n_loopcheck + 1) * sizeof(int);
           // end check section
-          if(altread) assert_wait_for_read(com);
+          if(altread && firstread==0) assert_wait_for_read(com);
+          firstread=0; // ioxos mode must not wait for read twice
           l_ev_len = *pl_dat++;
           if (Verbosity > 2)
             printf ("*** Event Len:%d bytes, expected:%d\t", l_ev_len, l_ev_lencheck);
@@ -162,7 +165,7 @@ int f_read_test_data (int* pipe_base)
               }
             if((Verbosity > 2) && (l_i % 10 ==0)) printf("\n");
           }    // for
-          if(altread) switch2write(com);
+          if(altread && pl_dat < pl_end) switch2write(com); // avoid double set counter in ioxos mode
         }    // while
         //pl_dat++;
         if(l_dat_len != *pl_dat)
@@ -197,6 +200,8 @@ int main (int argc, char *argv[])
   double totalsize = 0;
   long transfersum = 0;
 
+  readcounter=0;
+  writecounter=0;
   /* get arguments*/
   //optind = 1;
   while ((opt = getopt (argc, argv, "hl:m:n:l:p:b:d:")) != -1)

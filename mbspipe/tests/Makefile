@@ -10,7 +10,7 @@ LDFLAGS += -Wl,-rpath,/usr/lib -lrt
 #PEXLIB = -Wl,-rpath,/usr/lib -Wl,-rpath,$(LIBDIR) -lmbspex
 #PEXLIB = $(LIBDIR)/libpexornet.a
 
-BINARIES = producer consumer
+BINARIES = producer consumer producer_ioxos consumer_ioxos
 
 ###############################################################
 # Target definitions
@@ -37,6 +37,14 @@ $(BINDIR)/consumer: $(OBJDIR)/m_consumer.o $(OBJDIR)/timing.o $(OBJDIR)/f_map_pi
 	@echo -e "LD \t$@"
 	$(Q)$(CC) $(LDINC) $(LDFLAGS) $(CFLAGS) -o $@ $(OBJDIR)/m_consumer.o $(OBJDIR)/timing.o $(OBJDIR)/f_map_pipe.o $(OBJDIR)/pipe_sync.o $(OBJDIR)/f_map_vme.o 
 
+## below are alternative tests provided by Jean-Francois Gilot of ioxos:
+$(BINDIR)/producer_ioxos: $(OBJDIR)/m_producer_ioxos.o $(OBJDIR)/f_map_pipe.o
+	@echo -e "LD \t$@"
+	$(Q)$(CC) $(LDINC) $(LDFLAGS) $(CFLAGS) -o $@ $(OBJDIR)/m_producer_ioxos.o $(OBJDIR)/f_map_pipe.o
+
+$(BINDIR)/consumer_ioxos: $(OBJDIR)/m_consumer_ioxos.o $(OBJDIR)/f_map_pipe.o 
+	@echo -e "LD \t$@"
+	$(Q)$(CC) $(LDINC) $(LDFLAGS) $(CFLAGS) -o $@ $(OBJDIR)/m_consumer_ioxos.o $(OBJDIR)/f_map_pipe.o
 
 
 
