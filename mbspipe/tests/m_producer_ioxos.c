@@ -8,6 +8,9 @@
 #include <libgen.h>
 #include "f_map_pipe.h"
 
+#include "tests_ioxos.h"
+
+
 #define MBSPIPE_BASE 0x40000000
 #define MBSPIPE_LEN  0x30000000
 
@@ -29,9 +32,9 @@ int
 main (int argc, char *argv[])
 {
   volatile int *cnt_A, *cnt_B;
-  int i, cnt;
+  int i, j, cnt;
 
-  printf("entering producer_ioxos...\n");
+  printf("entering producer_ioxos, chunksize=0x%x, numchunks=%d, total size=%E bytes, pipe repeats:%d\n", IOXOS_CHUNK_SIZE_INTS, IOXOS_NUM_CHUNKS, (double) (IOXOS_CHUNK_SIZE_INTS * IOXOS_NUM_CHUNKS * sizeof(int)), IOXOS_PIPE_REPEATS);
   int* pipebase = f_map_pipe (PipeBase, PipeLen);
   if (pipebase == 0)
   {
@@ -44,22 +47,30 @@ main (int argc, char *argv[])
 
   cnt_A = pipebase;
   cnt_B = pipebase+1;
-  cnt = 0;
-  *cnt_A = cnt;
-  *cnt_B = cnt;
-  for( i = 0; i < 0x1000; i++)
+  for (j=0;j<IOXOS_PIPE_REPEATS; ++j)
   {
-    fill_data_buf( pipebase+(0x400*(i+1)), 0x1000, i<<16);
-    *cnt_A = ++cnt;
-    cnt++;
-    while(1)
+    cnt = 0;
+    *cnt_A = cnt;
+    *cnt_B = cnt;
+    //for( i = 0; i < 0x1000; i++)
+    for (i = 0; i < IOXOS_NUM_CHUNKS; i++)
     {
-      int tmp;
-      tmp = *cnt_B;
-      if( tmp == cnt) break;
+      //fill_data_buf( pipebase+(0x400*(i+1)), 0x1000, i<<16);
+      fill_data_buf (pipebase + (IOXOS_CHUNK_SIZE_INTS * (i + 1)), IOXOS_CHUNK_SIZE_INTS * sizeof(int), i+j);
+      *cnt_A = ++cnt;
+      //cnt++;
+      while (1)
+      {
+        int tmp;
+        tmp = *cnt_B;
+        if (tmp == cnt)
+          break;
+      }
     }
-  }
-  *cnt_A = -1;
-  printf("exiting producer_ioxos [cnt=%d]...\n", cnt);
+    *cnt_A = -1;
+    printf ("producer_ioxos entering next pipe repeat [cnt=%d, j=%d/%d]...\n", cnt,j,IOXOS_PIPE_REPEATS);
+
+  }    //j
+
   return(0);
 }
