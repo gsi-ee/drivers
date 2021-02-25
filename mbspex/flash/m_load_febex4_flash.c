@@ -3,7 +3,10 @@
 
 // JAM, EE, GSI, 02-Jun-2020: adjusted to mbspex/pexor driver library to avoid mapping bar 0
 
+
+#ifndef PEX_FAILSAVE
 #define USE_MBSPEX_LIB 1
+#endif
 
 #include "stdio.h"
 //#include "s_veshe.h"
@@ -11,16 +14,36 @@
 #include <sys/file.h>
 
 #ifndef USE_MBSPEX_LIB
-#ifndef Linux
- #include <mem.h>
- #include <smem.h>
-#else
+//#ifndef Linux
+// #include <mem.h>
+// #include <smem.h>
+//#else
  #include "smem_mbs.h"
  #include <unistd.h>
  #include <stdlib.h>
  #include <string.h>
  #include <sys/mman.h>
-#endif
+
+
+#include <stdio.h>
+#include <errno.h>
+#include <sys/file.h>
+#include <sys/ioctl.h>
+#include <sys/fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <libgen.h>
+#include <ctype.h>
+
+#include <stdarg.h>
+
+
+
+//#endif
 #endif
 
 #ifdef USE_MBSPEX_LIB
@@ -1063,7 +1086,7 @@ void f_i2c_sleep ()
 
 void f_usage ()
 {
-  printf ("\n*** %s v 1.05 03-June 2020 by NK, JAM (GSI EEL department) *** \n", progname);
+  printf ("\n*** %s v 1.06 25-Feb 2021 by NK, JAM (GSI EEL department) *** \n", progname);
   printf ("\nusage of %s,  < > are mandatory parameters   \n\n", progname);
   printf ("%s <sfp id> <first %s id> <# of %ss> <bitfile input fn> \n", progname, devname, devname);
   printf ("%s <sfp id> <first %s id> <# of %ss> <bitfile input fn> -nv \n", progname, devname, devname);
