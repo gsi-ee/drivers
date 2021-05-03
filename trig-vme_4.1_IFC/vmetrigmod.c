@@ -1,9 +1,9 @@
 // N.Kurz, EE, GSI, 28-Nov-2012: based on template from J.-F.Gilot IOxOS  
 // J.Adamczewski-Musch (JAM) - transformed ipv implementation for ifc 4-Sep-2020
+// J.Adamczewski-Musch (JAM) - added mmap for triva registers 30-Apr-2021
 
 
-
-#define VMETRIGMODVERSION     "0.1.1"
+#define VMETRIGMODVERSION     "0.2.0"
 #define VMETRIGMODAUTHORS     "Joern Adamczewski-Musch (JAM), Nikolaus Kurz, GSI Darmstadt (www.gsi.de)"
 #define VMETRIGMODDESC        "TRIVA VMEbus trigger module of MBS for IFC Linux"
 
@@ -40,6 +40,11 @@
 
 #include <linux/device.h>
 #include <linux/delay.h>
+
+
+#include <linux/pagemap.h>
+#include <linux/page-flags.h>
+#include <linux/version.h>
 
 //#include "/usr/src/PEV1100/include/pevioctl.h"
 //#include "/usr/src/PEV1100/include/vmeioctl.h"
@@ -121,7 +126,6 @@ static unsigned int *pl_cvti;
 
 
 
-
 //  TODO the following must be exchanged by altea structures
 //struct pev_drv *pev_drv_p;
 //struct pev_dev *pev;
@@ -142,6 +146,13 @@ static struct device* class_dev[1]; /**< Class device */
 static int altmas_irq_ena[8] = {0,0,0,0,0,0,0,0};
 static int altmas_irq_cnt = 0;
 static struct altmas_ivec_tbl *altmas_ivec_tbl;
+
+// JAM 4-2021: probably we should put all of  this into private data; as long as we have only one triva, it should also work such...
+static struct altmas_device *mas;
+static struct alt_ioctl_mas_map *masmap;
+static struct alt_ioctl_map_win map_win;
+
+static int triva_open_count=0; /* only mask interrupts when last filehandle is closed */
 
 char *triva_base_addr = NULL;
 
@@ -291,19 +302,20 @@ int
 trigmod_open( struct inode *inode, 
 	  struct file *filp)
 {
-  int minor;
-
   debugk(( KERN_ALERT "vme: entering trigmod_open\n"));
-  minor = iminor(inode);
-  printk ( KERN_ALERT "unmask vme interupt level 4, vector 0x50 \n");
-  // TODO
-  //outl (1<<TRIGMOD_IRQ_LEVEL, vme_itc_reg+0x8);
-  if( (altmas_irq_ena[0] > 0) && (altmas_irq_ena[0] < 8))
+  triva_open_count++;
+  // JAM2021: if we open file handles also for mmap, this functionality is more likely to be put into ioctl
+  // for the moment, try workaroung with used files counter
+  if(triva_open_count==1)
+  {
+    printk ( KERN_ALERT "unmask vme interupt level 4, vector 0x50, open count is %d\n",triva_open_count);
+    if( (altmas_irq_ena[0] > 0) && (altmas_irq_ena[0] < 8))
       {
         int src;
         src = ITC_SRC_VME_IRQ1 + altmas_irq_ena[0] - 1;            /* get irq source identifier */
         alt_irq_mask( altmas.alt, ALT_IOCTL_ITC_MSK_CLEAR, src);  /* unmask irq source          */
       }
+  }
   return(0);
 }
 
@@ -314,17 +326,65 @@ Release callback
 int trigmod_release(struct inode *inode, struct file *filp)
 {
   debugk(( KERN_ALERT "vme: entering trigmod_release\n"));
-  printk ( KERN_ALERT "mask all vme interupts \n");
-  //outl( 0xfe, vme_itc_reg+0xc);
-  if( (altmas_irq_ena[0] > 0) && (altmas_irq_ena[0] < 8))
+  triva_open_count--;
+  // JAM2021: if we open file handles also for mmap, this functionality is more likely to be put into ioctl
+  // for the moment, try workaroung with used files counter
+  if(triva_open_count<=0)
+  {
+    printk ( KERN_ALERT "mask all vme interupts, open count is %d\n",triva_open_count);
+    if( (altmas_irq_ena[0] > 0) && (altmas_irq_ena[0] < 8))
      {
        int src;
        src = ITC_SRC_VME_IRQ1 + altmas_irq_ena[0] - 1;
        alt_irq_mask( altmas.alt, ALT_IOCTL_ITC_MSK_SET, src);
      }
-
+  }
   return 0;
 }
+
+
+
+int trigmod_mmap (struct file *filp, struct vm_area_struct *vma)
+{
+  int ret = 0;
+  unsigned long bufsize;
+  printk(KERN_NOTICE "** starting trigmod_mmap for vm_start=0x%lx\n", vma->vm_start);
+//  if (!privdata)
+//    return -EFAULT;
+  bufsize = (vma->vm_end - vma->vm_start);
+  printk(KERN_NOTICE "** starting trigmod_mmap for size=%ld \n", bufsize);
+
+    /* user needs not specify external physical address, we always deliver existing mapping of triva base*/
+    debugk((
+        KERN_NOTICE "trigmod is Mapping triva base address %x / PFN %x\n", masmap->loc_addr, masmap->loc_addr >> PAGE_SHIFT));
+    if (bufsize > TRIGMOD_REGS_SIZE)
+    {
+      printk(
+          KERN_WARNING "Requested length %ld exceeds provided triva map window size, shrinking to %d bytes\n", bufsize, TRIGMOD_REGS_SIZE);
+      bufsize = TRIGMOD_REGS_SIZE;
+    }
+
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(3,7,0)
+    vma->vm_flags |= (VM_RESERVED); /* TODO: do we need this?*/
+#endif
+
+    vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot); // taken from altmas driver mmap
+    ret = remap_pfn_range (vma, vma->vm_start,  masmap->loc_addr >> PAGE_SHIFT, bufsize, vma->vm_page_prot);
+    if (ret)
+     {
+       printk(
+           KERN_ERR "trigmod mmap: remap_pfn_range failed with %d\n", ret);
+       return -EFAULT;
+     }
+     return ret;
+
+
+  }
+
+
+
+
+
 
 
 // File operations for althea master map device
@@ -332,6 +392,7 @@ struct file_operations altmas_fops =
 {
   .owner =    THIS_MODULE,
   .unlocked_ioctl =    trigmod_ioctl,
+  .mmap = trigmod_mmap,
   .open =     trigmod_open,
   .release =  trigmod_release,
 };
@@ -345,9 +406,9 @@ static int trigmod_init( void)
   int retval;
   dev_t altmas_dev_id;
   int i, vme_major;
-  struct altmas_device *mas;
-  struct alt_ioctl_mas_map *masmap;
-  struct alt_ioctl_map_win map_win;
+//  struct altmas_device *mas;
+//  struct alt_ioctl_mas_map *masmap;
+//  struct alt_ioctl_map_win map_win;
   debugk(( KERN_ALERT "trigmod: entering altmas_init( void)\n"));
    /*--------------------------------------------------------------------------
    * device number dynamic allocation
