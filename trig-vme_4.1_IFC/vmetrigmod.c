@@ -3,7 +3,7 @@
 // J.Adamczewski-Musch (JAM) - added mmap for triva registers 30-Apr-2021
 
 
-#define VMETRIGMODVERSION     "0.2.0"
+#define VMETRIGMODVERSION     "0.3.1"
 #define VMETRIGMODAUTHORS     "Joern Adamczewski-Musch (JAM), Nikolaus Kurz, GSI Darmstadt (www.gsi.de)"
 #define VMETRIGMODDESC        "TRIVA VMEbus trigger module of MBS for IFC Linux"
 
@@ -347,6 +347,7 @@ int trigmod_release(struct inode *inode, struct file *filp)
 int trigmod_mmap (struct file *filp, struct vm_area_struct *vma)
 {
   int ret = 0;
+  off_t off;
   unsigned long bufsize;
   printk(KERN_NOTICE "** starting trigmod_mmap for vm_start=0x%lx\n", vma->vm_start);
 //  if (!privdata)
@@ -354,22 +355,33 @@ int trigmod_mmap (struct file *filp, struct vm_area_struct *vma)
   bufsize = (vma->vm_end - vma->vm_start);
   printk(KERN_NOTICE "** starting trigmod_mmap for size=%ld \n", bufsize);
 
-    /* user needs not specify external physical address, we always deliver existing mapping of triva base*/
-    debugk((
-        KERN_NOTICE "trigmod is Mapping triva base address %x / PFN %x\n", masmap->loc_addr, masmap->loc_addr >> PAGE_SHIFT));
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(3,7,0)
+    vma->vm_flags |= (VM_RESERVED); /* TODO: do we need this?*/
+#endif
+   vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot); // taken from altmas driver mmap
+  if (vma->vm_pgoff == 0)
+   {
+     /* user does not specify external physical address, we deliver deliver existing mapping of triva base*/
+    printk(
+        KERN_NOTICE "trigmod is Mapping triva base address %lx / PFN %lx\n", (long) masmap->loc_addr, (long) (masmap->loc_addr >> PAGE_SHIFT));
     if (bufsize > TRIGMOD_REGS_SIZE)
     {
       printk(
           KERN_WARNING "Requested length %ld exceeds provided triva map window size, shrinking to %d bytes\n", bufsize, TRIGMOD_REGS_SIZE);
       bufsize = TRIGMOD_REGS_SIZE;
     }
-
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(3,7,0)
-    vma->vm_flags |= (VM_RESERVED); /* TODO: do we need this?*/
-#endif
-
-    vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot); // taken from altmas driver mmap
     ret = remap_pfn_range (vma, vma->vm_start,  masmap->loc_addr >> PAGE_SHIFT, bufsize, vma->vm_page_prot);
+
+   }
+   else
+   {
+    // user wants to io_remap something with noncached flags (this is not provided by althea alt.ko driver!)
+     off=vma->vm_pgoff << PAGE_SHIFT;
+     printk(
+               KERN_NOTICE "trigmod is doing io_remap for address %lx\n", (long) off);
+
+     ret = io_remap_pfn_range (vma, vma->vm_start, off >> PAGE_SHIFT, bufsize, vma->vm_page_prot);
+   }
     if (ret)
      {
        printk(
