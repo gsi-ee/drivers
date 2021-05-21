@@ -5,6 +5,7 @@
 #include "GosipGui.h"
 #include "PolandWidget.h"
 #include "PolandViewpanelWidget.h"
+#include "PolandCSAWidget.h"
 #include "PolandSetup.h"
 #include <stdio.h>
 #include <QProcess>
@@ -72,11 +73,17 @@ protected:
   /** reference to the embedded poland widget with all the special controls*/
   PolandWidget* fPolandWidget;
 
-  /** reference to the embedded poland viewpanel widget for plotting data samples NEW JAM2020*/
+  /** reference to the embedded poland viewpanel widget for plotting data samples JAM2020*/
   PolandViewpanelWidget* fPolandViewpanelWidget;
+
+  /** reference to the embedded poland CSA control widget NEW JAM2021*/
+   PolandCSAWidget* fPolandCSAWidget;
 
   /** toggle general trigger state*/
   bool fTriggerOn;
+
+  /** this flag controls if we want to have the QFW reset action on next refresh*/
+  bool fDoResetQFW;
 
 
   /** update register display*/
@@ -97,6 +104,8 @@ protected:
    /** helper function for broadcast: get shown set up and put it immediately to hardware.*/
    void ApplyFanSettings();
 
+   /** helper function for broadcast: get shown set up and put it immediately to hardware.*/
+   void ApplyCSASettings();
 
   /** helper function for broadcast: rest current poland slave*/
   virtual void ResetSlave ();
@@ -112,6 +121,9 @@ protected:
 
   /** copy gui contents of sensors tab to setup structure*/
    void EvaluateFans();
+
+   /** copy gui contents of CSA tab to setup structure*/
+   void EvaluateCSA();
 
 
   /** copy sfp and slave from gui to variables*/
@@ -147,8 +159,11 @@ protected:
    /** set fan speed value*/
    void SetFans ();
 
+   /** set CSA properties value*/
+   void ApplyCSA();
 
-
+   /** Refresh view of CSA contents*/
+    void RefreshCSA();
 
   /** get registers and write them to config file*/
   void SaveRegisters();
@@ -187,9 +202,11 @@ public slots:
   virtual void OffsetBtn_clicked ();
   virtual void DACMode_changed(int ix);
   virtual void TriggerBtn_clicked ();
+  virtual void QFWResetBtn_clicked();
   virtual void QFW_changed ();
   virtual void DAC_changed ();
   virtual void Fan_changed ();
+  virtual void CSA_changed ();
   virtual void ShowSample ();
 };
 

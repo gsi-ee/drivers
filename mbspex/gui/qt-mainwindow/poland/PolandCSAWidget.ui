@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PolandCSAWidget</class>
+ <widget class="QWidget" name="PolandCSAWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>160</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>PolandCSAWidget</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_5">
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="CSA_inswitch_groupbox">
+     <property name="toolTip">
+      <string>Set CSA Input switch mode</string>
+     </property>
+     <property name="title">
+      <string>CSA In-Switch</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <widget class="QRadioButton" name="CSA_inswitch_tocsa_radioButton">
+        <property name="text">
+         <string>to CSA</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QRadioButton" name="CSA_inswitch_bypass_radioButton">
+        <property name="text">
+         <string>bypass</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QGroupBox" name="CSA_autorange_groupbox">
+     <property name="toolTip">
+      <string>Set CSA auto range mode</string>
+     </property>
+     <property name="title">
+      <string>CSA Autorange</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QRadioButton" name="CSA_autorange_auto_radioButton">
+        <property name="text">
+         <string>auto</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QRadioButton" name="CSA_autorange_manual_radioButton">
+        <property name="text">
+         <string>manually</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="2">
+    <widget class="QGroupBox" name="CSA_outswitch_groupbox">
+     <property name="toolTip">
+      <string>Set CSA output switch mode</string>
+     </property>
+     <property name="title">
+      <string>CSA Out-Switch</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="0">
+       <widget class="QRadioButton" name="CSA_outswitch_fromcsa_radioButton">
+        <property name="text">
+         <string>from CSA</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QRadioButton" name="CSA_outswitch_bypass_radioButton">
+        <property name="text">
+         <string>bypass</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="0" colspan="3">
+    <widget class="QGroupBox" name="CSA_feedbackgroupBox">
+     <property name="title">
+      <string>CSA Feedback</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="0">
+       <widget class="QSpinBox" name="CSA_feedback_spinBox">
+        <property name="toolTip">
+         <string>Feedback value for Charge Sensitive Amplifier</string>
+        </property>
+        <property name="maximum">
+         <number>15</number>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

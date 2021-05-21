@@ -26,8 +26,8 @@ CONFIG += debug qt warn_off thread
 
 
 
-SOURCES += main.cpp PolandGui.cpp PolandWidget.cpp PolandViewpanelWidget.cpp
+SOURCES += main.cpp PolandGui.cpp PolandWidget.cpp PolandViewpanelWidget.cpp PolandCSAWidget.cpp
 
-HEADERS += PolandGui.h PolandWidget.h PolandViewpanelWidget.h PolandSetup.h 
+HEADERS += PolandGui.h PolandWidget.h PolandViewpanelWidget.h PolandCSAWidget.h PolandSetup.h 
 
-FORMS = PolandWidget.ui PolandViewpanelWidget.ui
+FORMS = PolandWidget.ui PolandViewpanelWidget.ui PolandCSAWidget.ui

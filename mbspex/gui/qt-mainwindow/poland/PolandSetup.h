@@ -17,6 +17,9 @@
 #define POLAND_REG_STEPS_TS2    0x200018
 #define POLAND_REG_STEPS_TS3    0x20001C
 
+
+#define POLAND_REG_QFW_RESET 0x200010
+
 #define POLAND_REG_TIME_BASE    0x200020
 #define POLAND_REG_TIME_TS1     0x200020
 #define POLAND_REG_TIME_TS2     0x200024
@@ -49,6 +52,9 @@
 #define POLAND_REG_TEMP_BASE             0x200210
 
 #define POLAND_REG_FAN_SET             0x2000dc
+
+#define POLAND_REG_CSA_CTRL            0x2000e0
+
 
 #define POLAND_REG_ID_BASE 0x200220
 
@@ -223,6 +229,7 @@ public:
   unsigned short fFanSpeed[POLAND_FAN_NUM]; //< Fan speed value
   unsigned int fFanSettings; //< setter pwm value for fan motion
 
+  unsigned int fCSASettings; //< register value for CSA control
 
   unsigned long long fSensorId[POLAND_TEMP_NUM]; //< unique id of the temperature sensors
   unsigned int fVersionId;      //< fpga software version tag
@@ -235,7 +242,7 @@ public:
 
   PolandSetup () : GosipSetup(),
       fInternalTrigger (0), fTriggerMode (0), fQFWMode(0),fTriggerOn(0),fEventCounter (0), fDACMode(1),fDACAllValue(0), fDACStartValue(0),
-      fDACOffset(0),fDACDelta(0),fDACCalibTime(0),fFanSettings(0),fVersionId(0)
+      fDACOffset(0),fDACDelta(0),fDACCalibTime(0),fFanSettings(0),fCSASettings(0), fVersionId(0)
   {
     for (int i = 0; i < POLAND_TS_NUM; ++i)
     {
@@ -546,6 +553,33 @@ public:
    unsigned int GetVersionId(){return fVersionId;}
 
 
+void SetCSAControl(unsigned int value)
+{
+  fCSASettings=value;
+}
+
+unsigned int GetCSAControl()
+{
+  return fCSASettings;
+}
+
+void SetCSASettings(bool autorangemanual, bool inswitchbypass, bool outswitchbypass, uint8_t feedback)
+{
+  unsigned int value=0;
+  value = feedback & 0x7;
+  if(autorangemanual) value |= 0x8;
+  if(inswitchbypass) value |= 0x10;
+  if(outswitchbypass) value |= 0x20;
+  SetCSAControl(value);
+}
+
+void GetCSASettings(bool &autorangemanual, bool &inswitchbypass, bool &outswitchbypass, uint8_t &feedback)
+{
+  feedback=( GetCSAControl() & 0x7);
+  autorangemanual = ( (GetCSAControl() >> 4) & 0x1) == 0x1;
+  inswitchbypass  = ((GetCSAControl() >> 5) & 0x1) == 0x1;
+  outswitchbypass = ((GetCSAControl() >> 6) & 0x1) == 0x1;
+}
 
 
 

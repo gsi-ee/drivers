@@ -36,10 +36,10 @@
  *  name 'name'.'
  */
 PolandGui::PolandGui (QWidget* parent) :
-    GosipGui (parent), fTriggerOn(true)
+    GosipGui (parent), fTriggerOn(true), fDoResetQFW(false)
 {
   fImplementationName="POLAND";
-  fVersionString="Welcome to POLAND GUI!\n\t v0.990 of 11-August-2020 by JAM (j.adamczewski@gsi.de)";
+  fVersionString="Welcome to POLAND GUI!\n\t v0.992 of 21-May-2021 by JAM (j.adamczewski@gsi.de)";
   setWindowTitle(QString("%1 GUI").arg(fImplementationName));
 
 
@@ -53,6 +53,7 @@ mdiArea->addSubWindow(fPolandWidget); // complete febex widget in one window
 
   fPolandWidget=new PolandWidget(0);
   fPolandViewpanelWidget = new PolandViewpanelWidget(this);
+  fPolandCSAWidget = new PolandCSAWidget(this);
 
   QWidget* qfwtab=fPolandWidget->QFW_DAC_tabWidget->widget(0);
   QWidget* dactab=fPolandWidget->QFW_DAC_tabWidget->widget(1);
@@ -110,6 +111,14 @@ mdiArea->addSubWindow(fPolandWidget); // complete febex widget in one window
          subtrig->setAttribute(Qt::WA_DeleteOnClose, false);
        }
 
+  if(fPolandCSAWidget)
+        {
+          fPolandCSAWidget->setWindowTitle("CSA control");
+          fPolandCSAWidget->show();
+          QMdiSubWindow* subtrig=mdiArea->addSubWindow(fPolandCSAWidget, wflags);
+          subtrig->setAttribute(Qt::WA_DeleteOnClose, false);
+        }
+
 #endif
 
 
@@ -122,6 +131,12 @@ mdiArea->addSubWindow(fPolandWidget); // complete febex widget in one window
 
 
   QObject::connect (fPolandWidget->TriggerButton, SIGNAL (clicked ()), this, SLOT (TriggerBtn_clicked ()));
+
+  QObject::connect (fPolandWidget->QFWResetButton, SIGNAL (clicked ()), this, SLOT (QFWResetBtn_clicked ()));
+
+
+
+
 
   QObject::connect(fPolandWidget->DACModeComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(DACMode_changed(int)));
 
@@ -182,7 +197,19 @@ QObject::connect (fPolandWidget->FanDial, SIGNAL(valueChanged(int)),this,SLOT (F
 
 QObject::connect (fPolandViewpanelWidget->SampleButton, SIGNAL (clicked ()), this, SLOT (ShowSample ()));
 
+QObject::connect (fPolandCSAWidget->CSA_inswitch_tocsa_radioButton, SIGNAL (toggled (bool)), this, SLOT (CSA_changed()));
+// TODO CSA
+QObject::connect (fPolandCSAWidget->CSA_inswitch_bypass_radioButton, SIGNAL (toggled (bool)), this, SLOT (CSA_changed()));
 
+QObject::connect (fPolandCSAWidget->CSA_autorange_auto_radioButton, SIGNAL (toggled (bool)), this, SLOT (CSA_changed()));
+
+QObject::connect (fPolandCSAWidget->CSA_autorange_manual_radioButton, SIGNAL (toggled (bool)), this, SLOT (CSA_changed()));
+
+QObject::connect (fPolandCSAWidget->CSA_outswitch_fromcsa_radioButton, SIGNAL (toggled (bool)), this, SLOT (CSA_changed()));
+
+QObject::connect (fPolandCSAWidget->CSA_outswitch_bypass_radioButton, SIGNAL (toggled (bool)), this, SLOT (CSA_changed()));
+
+QObject::connect (fPolandCSAWidget->CSA_feedback_spinBox, SIGNAL (valueChanged(int)), this, SLOT (CSA_changed()));
 
 ReadSettings();
 
@@ -216,6 +243,12 @@ void PolandGui::ApplyGUISettings()
 {
   ApplyFanSettings();
 }
+
+{
+  ApplyCSASettings();
+}
+
+
 }
 
 
@@ -267,9 +300,40 @@ void PolandGui::Fan_changed ()
 }
 
 
+void PolandGui::CSA_changed ()
+{
+  //std::cout << "PolandGui::CSA_changed()"<< std::endl;
+  GOSIP_LOCK_SLOT
+  GOSIP_AUTOAPPLY(ApplyCSASettings());
+  GOSIP_UNLOCK_SLOT
+}
 
 
+void PolandGui::ApplyCSASettings()
+{
+  EvaluateCSA();
+  ApplyCSA();
+}
 
+
+void PolandGui::EvaluateCSA()
+{
+  theSetup_GET_FOR_SLAVE(PolandSetup);
+  uint8_t feedback = (fPolandCSAWidget->CSA_feedback_spinBox->value() & 0x7);
+  bool autorangemanual= fPolandCSAWidget->CSA_autorange_manual_radioButton->isChecked();
+  bool inswitchbypass= fPolandCSAWidget->CSA_inswitch_bypass_radioButton->isChecked();
+  bool outswitchbypass= fPolandCSAWidget->CSA_outswitch_bypass_radioButton->isChecked();
+  //std::cout << "PolandGui::EvaluateCSA sees autorangemanual:"<<autorangemanual<<", inbypass:"<<inswitchbypass << ", outbypass:"<< outswitchbypass<<", feedback:"<< (int)feedback << std::endl;
+  theSetup->SetCSASettings(autorangemanual, inswitchbypass, outswitchbypass, feedback);
+  //std::cout << "PolandGui::EvaluateCSA() sets register value 0x"<< std::hex << theSetup->GetCSAControl()<< std::dec<< std::endl;
+}
+
+
+void PolandGui::ApplyCSA()
+{
+  theSetup_GET_FOR_SLAVE(PolandSetup);
+  WriteGosip (fSFP, fSlave, POLAND_REG_CSA_CTRL, theSetup->GetCSAControl());
+}
 
 
 
@@ -299,6 +363,10 @@ GOSIP_BROADCAST_ACTION(ScanOffsets());
 }
 
 
+
+
+
+
 void PolandGui::ScanOffsets ()
 {
   char buffer[1024];
@@ -310,7 +378,7 @@ void PolandGui::ScanOffsets ()
   sleep(2);
   AppendTextWindow ("    ... done. Dumping offset values:");
 
-  snprintf (buffer, 1024, "gosipcmd -d -r -x -- %d %d 0x%x 0x%x", fSFP, fSlave, POLAND_REG_OFFSET_BASE, 32);
+  snprintf (buffer, 1024, "gosipcmd -d -r -x -- 0x%x 0x%x 0x%x 0x%x", fSFP, fSlave, POLAND_REG_OFFSET_BASE, 32);
   QString com (buffer);
   QString result = ExecuteGosipCmd (com);
   AppendTextWindow (result);
@@ -357,6 +425,22 @@ void PolandGui::RefreshTrigger()
 }
 
 
+void PolandGui::QFWResetBtn_clicked ()
+{
+char buffer[1024];
+EvaluateSlave ();
+snprintf (buffer, 1024, "Really Reset QFWs for SFP chain %d, Slave %d ?", fSFP, fSlave);
+if (QMessageBox::question (this, fImplementationName, QString (buffer), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes)
+    != QMessageBox::Yes)
+{
+  //std::cout <<"QMessageBox does not return yes! "<< std::endl;
+  return;
+}
+fDoResetQFW=true;
+QFW_changed ();
+fDoResetQFW=false;
+
+}
 
 
 void PolandGui::DumpSlave ()
@@ -370,7 +454,7 @@ void PolandGui::DumpSlave ()
   // todo: note this will not work for broadcast mode or if show was not clicked before
   // we can live with it for the moment.
 
-  snprintf (buffer, 1024, "gosipcmd -d -r -x -- %d %d 0 0x%x", fSFP, fSlave, numwords);
+  snprintf (buffer, 1024, "gosipcmd -d -r -x -- 0x%x 0x%x  0 0x%x", fSFP, fSlave, numwords);
   QString com (buffer);
   QString result = ExecuteGosipCmd (com);
   AppendTextWindow (result);
@@ -452,6 +536,8 @@ RefreshTrigger(); // show real trigger register as read back from actual device
 
 RefreshSensors();
 fPolandViewpanelWidget->RefreshEventCounter(); // hex/dec toggle here
+
+RefreshCSA();
 
 RefreshChains();
 RefreshStatus();
@@ -804,6 +890,15 @@ if(!fBroadcasting) // use macro flag instead!
   WriteGosip (fSFP, fSlave, POLAND_REG_MASTERMODE, theSetup->fTriggerMode);
 }
 
+if(fDoResetQFW)
+{
+  WriteGosip (fSFP, fSlave, POLAND_REG_QFW_RESET, 0);
+  WriteGosip (fSFP, fSlave, POLAND_REG_QFW_RESET, 1);
+  //std::cout << "PolandGui::SetRegisters did reset QFW for ("<<fSFP<<", "<<fSlave<<")"<< std::endl;
+}
+
+
+
 WriteGosip (fSFP, fSlave, POLAND_REG_QFW_MODE, theSetup->fQFWMode);
 
 // following is required to really activate qfw mode (thanks Sven Loechner for fixing):
@@ -874,6 +969,7 @@ fTriggerOn=theSetup->fTriggerOn;
 
 GetSensors();
 
+theSetup->fCSASettings=ReadGosip (fSFP, fSlave, POLAND_REG_CSA_CTRL);
 
 //printf("GetRegisters for sfp:%d slave:%d DUMP \n",fSFP, fSlave);
 //theSetup->Dump();
@@ -1018,7 +1114,25 @@ void PolandGui::SetFans ()
 
 
 
+void PolandGui::RefreshCSA()
+ {
+   theSetup_GET_FOR_SLAVE(PolandSetup);
+   uint8_t feedback = 0;
+   bool autorangemanual= false;
+   bool inswitchbypass= false;
+   bool outswitchbypass= false;
+   theSetup->GetCSASettings(autorangemanual, inswitchbypass, outswitchbypass, feedback);
+   //std::cout << "PolandGui::RefreshCSA() sees autorangemanual:"<<autorangemanual<<", inbypass:"<<inswitchbypass << ", outbypass:"<< outswitchbypass<<", feedback:"<< (int) feedback << std::endl;
+   fPolandCSAWidget->CSA_feedback_spinBox->setValue(feedback);
+   fPolandCSAWidget->CSA_autorange_manual_radioButton->setChecked(autorangemanual);
+   fPolandCSAWidget->CSA_autorange_auto_radioButton->setChecked(!autorangemanual);
+   fPolandCSAWidget->CSA_inswitch_bypass_radioButton->setChecked(inswitchbypass);
+   fPolandCSAWidget->CSA_inswitch_tocsa_radioButton->setChecked(!inswitchbypass);
+   fPolandCSAWidget->CSA_outswitch_bypass_radioButton->setChecked(outswitchbypass);
+   fPolandCSAWidget->CSA_outswitch_fromcsa_radioButton->setChecked(!outswitchbypass);
+   //std::cout << "PolandGui::RefreshCSA() sets registers from value 0x"<< std::hex << theSetup->GetCSAControl()<< std::dec<< std::endl;
 
+ }
 
 
 void PolandGui::SaveRegisters ()
