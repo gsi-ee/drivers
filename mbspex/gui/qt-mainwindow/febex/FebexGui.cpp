@@ -37,7 +37,7 @@ FebexGui::FebexGui (QWidget* parent) : GosipGui (parent)
  
 
  fImplementationName="FEBEX";
- fVersionString="Welcome to FEBEX GUI!\n\t v0.980 of 30-July-2019 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to FEBEX GUI!\n\t v0.981 of 27-May-2021 by JAM (j.adamczewski@gsi.de)";
 
  fSettings=new QSettings("GSI", fImplementationName);
 
@@ -1363,7 +1363,12 @@ void FebexGui::SetRegisters ()
 
   WriteGosip (fSFP, fSlave, REG_DATA_LEN, 0x10000000); // disable test data length
 
-  WriteGosip (fSFP, fSlave, REG_FEB_TRACE_LEN, theSetup->GetTraceLength());
+// JAM5-2021: workaround for bug in FEBEX3b firmware
+  if(fFebexWidget->Febx3CheckBox->isChecked())
+   {
+      WriteGosip (fSFP, fSlave, REG_FEB_TRACE_LEN, theSetup->GetTraceLength());
+   }
+
   WriteGosip (fSFP, fSlave, REG_FEB_TRIG_DELAY, theSetup->GetTriggerDelay());
 
 
@@ -1474,9 +1479,12 @@ void FebexGui::GetRegisters ()
 
   // start with basic settings:
   int dat=0;
-
-  dat = ReadGosip (fSFP, fSlave, REG_FEB_TRACE_LEN);
+  // JAM5-2021: workaround for bug in FEBEX3b firmware
+  if(fFebexWidget->Febx3CheckBox->isChecked())
+  {
+    dat = ReadGosip (fSFP, fSlave, REG_FEB_TRACE_LEN);
     theSetup->SetTraceLength(dat & 0xFFFF);
+  }
 
   dat = ReadGosip (fSFP, fSlave, REG_FEB_TRIG_DELAY);
   theSetup->SetTriggerDelay(dat & 0xFFFF);
