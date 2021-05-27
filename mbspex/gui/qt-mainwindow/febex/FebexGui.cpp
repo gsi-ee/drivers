@@ -1364,7 +1364,7 @@ void FebexGui::SetRegisters ()
   WriteGosip (fSFP, fSlave, REG_DATA_LEN, 0x10000000); // disable test data length
 
 // JAM5-2021: workaround for bug in FEBEX3b firmware
-  if(fFebexWidget->Febx3CheckBox->isChecked())
+  if(!fFebexWidget->Febx3CheckBox->isChecked())
    {
       WriteGosip (fSFP, fSlave, REG_FEB_TRACE_LEN, theSetup->GetTraceLength());
    }
@@ -1480,7 +1480,7 @@ void FebexGui::GetRegisters ()
   // start with basic settings:
   int dat=0;
   // JAM5-2021: workaround for bug in FEBEX3b firmware
-  if(fFebexWidget->Febx3CheckBox->isChecked())
+  if(!fFebexWidget->Febx3CheckBox->isChecked())
   {
     dat = ReadGosip (fSFP, fSlave, REG_FEB_TRACE_LEN);
     theSetup->SetTraceLength(dat & 0xFFFF);
