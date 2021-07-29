@@ -39,7 +39,7 @@ PolandGui::PolandGui (QWidget* parent) :
     GosipGui (parent), fTriggerOn(true), fDoResetQFW(false)
 {
   fImplementationName="POLAND";
-  fVersionString="Welcome to POLAND GUI!\n\t v0.992 of 21-May-2021 by JAM (j.adamczewski@gsi.de)";
+  fVersionString="Welcome to POLAND GUI!\n\t v0.993 of 29-July-2021 by JAM (j.adamczewski@gsi.de)";
   setWindowTitle(QString("%1 GUI").arg(fImplementationName));
 
 
@@ -198,18 +198,22 @@ QObject::connect (fPolandWidget->FanDial, SIGNAL(valueChanged(int)),this,SLOT (F
 QObject::connect (fPolandViewpanelWidget->SampleButton, SIGNAL (clicked ()), this, SLOT (ShowSample ()));
 
 QObject::connect (fPolandCSAWidget->CSA_inswitch_tocsa_radioButton, SIGNAL (toggled (bool)), this, SLOT (CSA_changed()));
-// TODO CSA
-QObject::connect (fPolandCSAWidget->CSA_inswitch_bypass_radioButton, SIGNAL (toggled (bool)), this, SLOT (CSA_changed()));
+
+// JAM 29-7-21: we do not need to connect second radio button, since they are grouped exclusively. avoid second call of slots
+//QObject::connect (fPolandCSAWidget->CSA_inswitch_bypass_radioButton, SIGNAL (toggled (bool)), this, SLOT (CSA_changed()));
 
 QObject::connect (fPolandCSAWidget->CSA_autorange_auto_radioButton, SIGNAL (toggled (bool)), this, SLOT (CSA_changed()));
 
-QObject::connect (fPolandCSAWidget->CSA_autorange_manual_radioButton, SIGNAL (toggled (bool)), this, SLOT (CSA_changed()));
+//QObject::connect (fPolandCSAWidget->CSA_autorange_manual_radioButton, SIGNAL (toggled (bool)), this, SLOT (CSA_changed()));
 
 QObject::connect (fPolandCSAWidget->CSA_outswitch_fromcsa_radioButton, SIGNAL (toggled (bool)), this, SLOT (CSA_changed()));
 
-QObject::connect (fPolandCSAWidget->CSA_outswitch_bypass_radioButton, SIGNAL (toggled (bool)), this, SLOT (CSA_changed()));
+//QObject::connect (fPolandCSAWidget->CSA_outswitch_bypass_radioButton, SIGNAL (toggled (bool)), this, SLOT (CSA_changed()));
 
-QObject::connect (fPolandCSAWidget->CSA_feedback_spinBox, SIGNAL (valueChanged(int)), this, SLOT (CSA_changed()));
+QObject::connect (fPolandCSAWidget->CSA_feedback_spinBox, SIGNAL (valueChanged(int)), this, SLOT (CSA_spinbox_changed(int)));
+
+
+QObject::connect (fPolandCSAWidget->CSA_feedbackLineEdit, SIGNAL (returnPressed()), this, SLOT (CSA_lineEdit_changed()));
 
 ReadSettings();
 
@@ -308,6 +312,26 @@ void PolandGui::CSA_changed ()
   GOSIP_UNLOCK_SLOT
 }
 
+void PolandGui::CSA_spinbox_changed (int value)
+{
+  //std::cout << "PolandGui::CSA_spinbox_changed() to "<< value<< std::endl;
+  QString pre;
+  QString text;
+  fNumberBase==16? pre="0x" : pre="";
+  uint8_t feedback =(value & 0xF);
+  fPolandCSAWidget->CSA_feedbackLineEdit->setText (pre+text.setNum (feedback, fNumberBase));
+  CSA_changed();
+}
+
+
+void PolandGui::CSA_lineEdit_changed()
+{
+  //std::cout << "PolandGui::CSA_lineEdit_changed()"<< std::endl;
+  uint8_t feedback = fPolandCSAWidget->CSA_feedbackLineEdit->text().toInt(0, fNumberBase) & 0xF;
+  fPolandCSAWidget->CSA_feedback_spinBox->setValue(feedback);
+  CSA_changed();
+}
+
 
 void PolandGui::ApplyCSASettings()
 {
@@ -319,7 +343,12 @@ void PolandGui::ApplyCSASettings()
 void PolandGui::EvaluateCSA()
 {
   theSetup_GET_FOR_SLAVE(PolandSetup);
-  uint8_t feedback = (fPolandCSAWidget->CSA_feedback_spinBox->value() & 0x7);
+
+  // first synchronize spinBox with hex text field:
+//  int value=fPolandCSAWidget->CSA_feedbackLineEdit->text().toInt(0, fNumberBase);
+//  fPolandCSAWidget->CSA_feedback_spinBox->setValue(value);
+  uint8_t feedback = fPolandCSAWidget->CSA_feedbackLineEdit->text().toInt(0, fNumberBase) & 0xF;
+//(fPolandCSAWidget->CSA_feedback_spinBox->value() & 0xF);
   bool autorangemanual= fPolandCSAWidget->CSA_autorange_manual_radioButton->isChecked();
   bool inswitchbypass= fPolandCSAWidget->CSA_inswitch_bypass_radioButton->isChecked();
   bool outswitchbypass= fPolandCSAWidget->CSA_outswitch_bypass_radioButton->isChecked();
@@ -332,7 +361,9 @@ void PolandGui::EvaluateCSA()
 void PolandGui::ApplyCSA()
 {
   theSetup_GET_FOR_SLAVE(PolandSetup);
-  WriteGosip (fSFP, fSlave, POLAND_REG_CSA_CTRL, theSetup->GetCSAControl());
+  int onvalue=theSetup->GetCSAControl() | 0x100; // JAM 29-7-21: need bit 8 to enable
+  WriteGosip (fSFP, fSlave, POLAND_REG_CSA_CTRL, onvalue);
+  WriteGosip (fSFP, fSlave, POLAND_REG_CSA_CTRL, theSetup->GetCSAControl()); // bit 8 is zero here anyway
 }
 
 
@@ -1116,6 +1147,9 @@ void PolandGui::SetFans ()
 
 void PolandGui::RefreshCSA()
  {
+   QString pre;
+   QString text;
+   fNumberBase==16? pre="0x" : pre="";
    theSetup_GET_FOR_SLAVE(PolandSetup);
    uint8_t feedback = 0;
    bool autorangemanual= false;
@@ -1124,6 +1158,8 @@ void PolandGui::RefreshCSA()
    theSetup->GetCSASettings(autorangemanual, inswitchbypass, outswitchbypass, feedback);
    //std::cout << "PolandGui::RefreshCSA() sees autorangemanual:"<<autorangemanual<<", inbypass:"<<inswitchbypass << ", outbypass:"<< outswitchbypass<<", feedback:"<< (int) feedback << std::endl;
    fPolandCSAWidget->CSA_feedback_spinBox->setValue(feedback);
+   fPolandCSAWidget->CSA_feedbackLineEdit->setText (pre+text.setNum (feedback, fNumberBase));
+
    fPolandCSAWidget->CSA_autorange_manual_radioButton->setChecked(autorangemanual);
    fPolandCSAWidget->CSA_autorange_auto_radioButton->setChecked(!autorangemanual);
    fPolandCSAWidget->CSA_inswitch_bypass_radioButton->setChecked(inswitchbypass);

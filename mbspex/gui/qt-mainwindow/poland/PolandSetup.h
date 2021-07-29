@@ -566,16 +566,16 @@ unsigned int GetCSAControl()
 void SetCSASettings(bool autorangemanual, bool inswitchbypass, bool outswitchbypass, uint8_t feedback)
 {
   unsigned int value=0;
-  value = feedback & 0x7;
-  if(autorangemanual) value |= 0x8;
-  if(inswitchbypass) value |= 0x10;
-  if(outswitchbypass) value |= 0x20;
+  value = feedback & 0xF;
+  if(autorangemanual) value |= 0x10;
+  if(inswitchbypass) value |= 0x20;
+  if(outswitchbypass) value |= 0x40;
   SetCSAControl(value);
 }
 
 void GetCSASettings(bool &autorangemanual, bool &inswitchbypass, bool &outswitchbypass, uint8_t &feedback)
 {
-  feedback=( GetCSAControl() & 0x7);
+  feedback=( GetCSAControl() & 0xF);
   autorangemanual = ( (GetCSAControl() >> 4) & 0x1) == 0x1;
   inswitchbypass  = ((GetCSAControl() >> 5) & 0x1) == 0x1;
   outswitchbypass = ((GetCSAControl() >> 6) & 0x1) == 0x1;

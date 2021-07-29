@@ -207,6 +207,9 @@ public slots:
   virtual void DAC_changed ();
   virtual void Fan_changed ();
   virtual void CSA_changed ();
+  virtual void CSA_spinbox_changed (int value);
+  virtual void CSA_lineEdit_changed();
+
   virtual void ShowSample ();
 };
 
