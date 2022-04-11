@@ -1,0 +1,37 @@
+#!/bin/sh
+KV=`uname -r`
+module="vetar_$KV"
+modulex="vetar"
+device="vetar"
+wishmodule="wishbone_$KV"
+wishbone="wbm"
+#wishboneslave="wbs"
+
+/sbin/insmod $wishmodule.ko
+#/sbin/insmod $module.ko slot=0x5 vmebase=0x1000000 vector=0x60 lun=0
+/sbin/insmod $module.ko slot=0x5 vmebase=0x000000 vector=0x60 lun=0
+ 
+# vetar device: retrieve major number
+major=$(awk "\$2==\"$modulex\" {print \$1}" /proc/devices)
+echo "${device} Major: $major"
+
+rm -f /dev/${device}0
+mknod /dev/${device}0 c $major 0
+chmod a+rw /dev/${device}0
+ln -sf ${device}0 /dev/${device}
+ls -l /dev/${device}*
+
+# wishbone device
+wbmajor=$(awk "\$2==\"$wishbone\" {print \$1}" /proc/devices)
+echo "${wishbone} Major: $wbmajor"
+rm -f /dev/${wishbone}0
+mknod /dev/${wishbone}0 c $wbmajor 0
+chmod a+rw /dev/${wishbone}0
+#wbslavemajor=$(awk "\$2==\"$wishboneslave\" {print \$1}" /proc/devices)
+#echo "${wishboneslave} Major: $wbslavemajor"
+#rm -f /dev/${wishboneslave}0
+#mknod /dev/${wishboneslave}0 c $wbslavemajor 0
+#chmod a+rw /dev/${wishboneslave}0
+
+# JAM22: let handle for direct mode user accessible
+chmod a+rw /sys/class/${modulex}/${modulex}0/dactl
