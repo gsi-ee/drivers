@@ -24,9 +24,6 @@
 ////// JAM - 14-jun-2022 /////////////////////////////////
 //------------- ---------------------------------------------------------------
 
-//#define USER_TRIG_CLEAR    1
-//#define USER_TRIG_CLEAR_2  1
-
 #define WR_RELEASE_ENIGMA 1  // JAM 8-2019: changed TLU addresses for ENIGMA
 
 #define RON  "\x1B[7m"
@@ -38,18 +35,14 @@
 #define VETAR_REGS_ADDR   0x50000000ULL
 // for slot number 5, high ADER mapping (in driver)
 #define VETAR_REGS_SIZE   0x1000000
-
 #define VETAR_CRCSR_ADDR 0x280000
 // configbase CRCSR for slot 5
 #define VETAR_CRCSR_SIZE 0x80000
 /* size of cr/csr space*/
-
 #define VETAR_CTRL_ADDR 0x1400   
 // 5 * 0x400
 #define VETAR_CTRL_SIZE 0xA0
-
 #define PAGE_SHIFT 0x1000
-
 #define VETAR_VENDOR_ID		0x80031
 
 /* VETAR CR/CSR offsets: */
@@ -116,31 +109,31 @@ typedef uint64_t eb_data_t;
 //////////////////////////////////////////////
 // from gsi_tm_latch.h
 //register offsets
-#define GSI_TM_LATCH_FIFO_READY      0x000   //n..0 channel(n) timestamp(s) ready       (ro)
-#define GSI_TM_LATCH_FIFO_CLEAR      0x004   //n..0 channel(n) FIFO clear               (wo)
-#define GSI_TM_LATCH_TEST_CHANNELS       0x008   //Generate a test Event                                        (wo)
-#define GSI_TM_LATCH_TRIG_ARMSTAT    0x00C   //n..0 channel(n) trigger armed status     (ro)
-#define GSI_TM_LATCH_TRIG_ARMSET     0x010   //n..0 channel(n) trigger set armed        (wo)
-#define GSI_TM_LATCH_TRIG_ARMCLR     0x014   //n..0 channel(n) trigger clr armed        (wo)
-#define GSI_TM_LATCH_TRIG_EDGESTAT   0x018       //n..0 channel(n) trigger edge status          (ro)
-#define GSI_TM_LATCH_TRIG_EDGEPOS    0x01C       //n..0 channel(n) trigger edge set pos         (wo)
-#define GSI_TM_LATCH_TRIG_EDGENEG    0x020       //n..0 channel(n) trigger edge set neg         (wo)
+#define GSI_TM_LATCH_FIFO_READY      0x000   //n..0 channel(n) timestamp(s) ready           (ro)
+#define GSI_TM_LATCH_FIFO_CLEAR      0x004   //n..0 channel(n) FIFO clear                   (wo)
+#define GSI_TM_LATCH_TEST_CHANNELS   0x008   //Generate a test Event                        (wo)
+#define GSI_TM_LATCH_TRIG_ARMSTAT    0x00C   //n..0 channel(n) trigger armed status         (ro)
+#define GSI_TM_LATCH_TRIG_ARMSET     0x010   //n..0 channel(n) trigger set armed            (wo)
+#define GSI_TM_LATCH_TRIG_ARMCLR     0x014   //n..0 channel(n) trigger clr armed            (wo)
+#define GSI_TM_LATCH_TRIG_EDGESTAT   0x018       //n..0 channel(n) trigger edge status      (ro)
+#define GSI_TM_LATCH_TRIG_EDGEPOS    0x01C       //n..0 channel(n) trigger edge set pos     (wo)
+#define GSI_TM_LATCH_TRIG_EDGENEG    0x020       //n..0 channel(n) trigger edge set neg     (wo)
 
 // Channels Related Parameters
-#define GSI_TM_LATCH_CHNS_TOTAL          0x034   // Total Number of Channels in Device          (ro)
-#define GSI_TM_LATCH_CHNS_FIFOSIZE       0x038   // Total size of FIFOs                                         (ro)
+#define GSI_TM_LATCH_CHNS_TOTAL      0x034   // Total Number of Channels in Device          (ro)
+#define GSI_TM_LATCH_CHNS_FIFOSIZE   0x038   // Total size of FIFOs                         (ro)
 
 // Channel to be selected n....0 and the other operations depend on selected channel
-#define GSI_TM_LATCH_CH_SELECT           0x058   //Channel Select                                                       (rw)
+#define GSI_TM_LATCH_CH_SELECT       0x058   //Channel Select                               (rw)
 
 // *IMP* All operations below depend on the Channel Selection
 #define GSI_TM_LATCH_FIFO_POP        0x05C       //pop the topmost FIFO Q Element           (wo)
-#define GSI_TM_LATCH_FIFO_TEST           0x060   // Generate a test Event Pulse                         (wo)
+#define GSI_TM_LATCH_FIFO_TEST       0x060   // Generate a test Event Pulse                 (wo)
 //pop just adjusts the pointer to the FIFO, it does not re-write a default value
 #define GSI_TM_LATCH_FIFO_CNT        0x064       //FIFO Queue   fill count                  (ro)
-#define GSI_TM_LATCH_FIFO_FTSHI      0x068       //timestamp HIGH words in cycles               (ro)
+#define GSI_TM_LATCH_FIFO_FTSHI      0x068       //timestamp HIGH words in cycles           (ro)
 #define GSI_TM_LATCH_FIFO_FTSLO      0x06c       //timestamp LOW words in cycles            (ro)
-#define GSI_TM_LATCH_FIFO_FTSSUB     0x070       //timestamp sub-cycle                          (ro)
+#define GSI_TM_LATCH_FIFO_FTSSUB     0x070       //timestamp sub-cycle                      (ro)
 //////////////////////////////////////////////
 
 #define SUB_SYSTEM_ID      0x600
@@ -335,16 +328,6 @@ int f_user_readout (CHARU bh_trig_typ, CHARU bh_crate_nr, INTS4 *pl_loc_hwacc, I
     goto bad_event;
   }
 
-  // think about if and where you shall do this ....
-  *l_read_stat = 0;
-#ifdef USER_TRIG_CLEAR
-  if (bh_trig_typ < 14)
-  {
-    *l_read_stat = TRIG__CLEARED;
-    f_user_trig_clear (bh_trig_typ);
-  }
-#endif // USER_TRIG_CLEAR
-
   if (bh_trig_typ < 14)
   {
     *pl_dat++ = SUB_SYSTEM_ID;
@@ -353,23 +336,16 @@ int f_user_readout (CHARU bh_trig_typ, CHARU bh_crate_nr, INTS4 *pl_loc_hwacc, I
     eb_stat_before = *fifo_ready;
     eb_fifo_ct_brd = *fifo_cnt;
     *fifo_pop = 0xF;
-    nanosleep (0);    // 31 kHz -> implizit sched_yield() ?
+    nanosleep (0);    // -> needed on ifc for implicit sched_yield() ?
     eb_tlu_high_ts = *ft_shi;
-    eb_tlu_low_ts = *ft_slo;
-    eb_tlu_fine_ts = *ft_ssub;
-    //eb_tlu_fine_ts =0; //  not implemented on vme?
+    eb_tlu_low_ts = *ft_slo;       // eb_tlu_low_ts   represents 8 ns in the least significant bit (125 mhz)
+    //eb_tlu_fine_ts = *ft_ssub;   // eb_tlu_fine_ts  represents 1 ns in the least significant bit (NOTE: not implemented on VETAR)
+    eb_tlu_fine_ts =0; //  NOTE: this is not implemented on VETAR, only for PEXARIA systems
     //printm ("timestamps -  hi:0x%x lo:0x%x fine:0x%x\n", eb_tlu_high_ts,  eb_tlu_low_ts, eb_tlu_fine_ts);
     eb_stat_after = *fifo_ready;
 
     // think about if and where you shall do this ....
     *l_read_stat = 0;
-#ifdef USER_TRIG_CLEAR_2
-    if (bh_trig_typ < 14)
-    {
-      *l_read_stat = TRIG__CLEARED;
-      f_user_trig_clear (bh_trig_typ);
-    }
-#endif // USER_TRIG_CLEAR
 
     if ((eb_stat_before & l_used_tlu_fifo) != l_used_tlu_fifo)
     {
@@ -385,14 +361,7 @@ int f_user_readout (CHARU bh_trig_typ, CHARU bh_crate_nr, INTS4 *pl_loc_hwacc, I
       //printm (RON"ERROR>>"RES" TLU fifo %d is not empty after time stamp read, stat: 0x%x\n", WR_TLU_FIFO_NR, eb_stat_after);
     }
 
-#ifdef USER_TRIG_CLEAR
-    if (eb_fifo_ct_brd > 2)
-    {
-      printm (RON"ERROR>>"RES" TLU fill count: %d is bigger than 2\n", eb_fifo_ct_brd);
-      l_err_wr_ct++;
-      l_check_wr_err = 2; goto bad_event;
-    }
-#else
+
     if (eb_fifo_ct_brd > 1)
     {
       printm (RON"ERROR>>"RES" TLU fill count: %d is bigger than 1\n", eb_fifo_ct_brd);
@@ -400,14 +369,11 @@ int f_user_readout (CHARU bh_trig_typ, CHARU bh_crate_nr, INTS4 *pl_loc_hwacc, I
       l_check_wr_err = 2;
       goto bad_event;
     }
-#endif // USER_TRIG_CLEAR
 
     // eb_tlu_low_ts   represents 8 ns in the least significant bit (125 mhz)
-    // eb_tlu_fine_ts  represents 1 ns in the least significant bit (subject of change)
-    // if 1 ns granualrity is required for time sorting USE_TLU_FINE_TIME must be defined 
-
+    // eb_tlu_fine_ts  represents 1 ns in the least significant bit (NOTE: not implemented on VETAR)
     ll_ts_hi = (unsigned long long) (eb_tlu_high_ts & 0xFFFFFFFF);
-    ll_ts_lo = (unsigned long long) (eb_tlu_low_ts & 0xFFFFFFFF);    //  JAM4-2022 -avoid leading 1 bits when reading from mapped tlu
+    ll_ts_lo = (unsigned long long) (eb_tlu_low_ts & 0xFFFFFFFF);    //  JAM4-2022 -mask avoids leading 1 bits when reading from mapped tlu
     ll_ts_fi = (unsigned long long) (eb_tlu_fine_ts & 0xFFFFFFFF);
     //ll_ts_fi = 0;
 
