@@ -1,5 +1,6 @@
 // N.Kurz, EE, GSI, 4-Jul-2014
 // adjusted for ifc 11-Apr-2022 JAM
+// version for ifc without kernel module 14-Jun-2022 JAM
 // white rabbit vetar tlu time stamp triggered readout
 
 //------------- ---------------------------------------------------------------
@@ -25,9 +26,6 @@
 #define STATISTIC     1000000
 #define MAX_TRIG_TYPE      16
 
-#define SERIALIZE_IO __asm__ volatile ("eieio");
-#define IFC_LWSYNC   asm("lwsync");
-
 #define VETAR_REGS_ADDR   0x50000000ULL
 // for slot number 5, high ADER mapping (in driver)
 #define VETAR_REGS_SIZE   0x1000000
@@ -40,8 +38,6 @@
 #define VETAR_CTRL_ADDR 0x1400   
 // 5 * 0x400
 #define VETAR_CTRL_SIZE 0xA0
-//#define VETAR_CTRL_SIZE 0x1000
-//#define VETAR_CTRL_SIZE 0x80000
 
 #define PAGE_SHIFT 0x1000
 
@@ -130,7 +126,6 @@
  #define TS__ID_H16         0x5e1
  #define TS__ID_X16         0x6e1
 
- #define WR_DEVICE_NAME "dev/wbm0"     // vetar vme
  #define WR_TLU_FIFO_NR       3        // vetar vme 
 #endif // WR_TIME_STAMP
 
@@ -140,7 +135,6 @@ void  f_vetar_init ();
  void f_wr_reset_tlu_fifo ();
 #endif
 
-//static long          *pl_dat_save;
 static INTU4  *pl_dat_save;
 static unsigned long  l_tr_ct[MAX_TRIG_TYPE];
 static int            l_i;
@@ -157,13 +151,11 @@ static long           l_first = 0;
 // following is for enigma release:
 static int   tlu_address =   0x2000100;
 
-//2000100 also new enigma and fallout?
 #else
 // this is for doomsday and before:
 static int tlu_address = 0x4000100;
 #endif
 
-//static int tlu_direct_off = 0xFFFFFFFF;
 
 
 /* follwoing for direct mapping of ifc mem JAM 25-03-2022:*/
@@ -223,13 +215,12 @@ static INTU4*  pl_virt_vme_base_crcsr;
 static INTU4*  pl_virt_vme_base_control;   
 
 
- static  long              l_eb_first1=0, l_eb_first2=0;  
+ static  long              l_eb_first1=0;
  static  long              l_used_tlu_fifo = 1 << WR_TLU_FIFO_NR;    
  static  eb_status_t       eb_stat;
  static  eb_device_t       eb_device;
  static  eb_socket_t       eb_socket;
  static  eb_cycle_t        eb_cycle;
- static  struct sdb_device sdbDevice; 
  static  eb_address_t      wrTLU;
  static  eb_address_t      wrTLUFIFO;
  static  int               nDevices;
@@ -272,24 +263,10 @@ static INTU4*  pl_virt_vme_base_control;
  static long l_wr_init_ct   = 0;
  static long l_err_wr_ct    = 0;
 
- //static INTU4  l_check1_time_l16;
- //static INTU4  l_check2_time_l16;
-
- //static unsigned long long  ll_48_act_time=0;
- //static unsigned long long  ll_48_pre_time=0;
 #endif // WR_TIME_STAMP
 
-#ifdef MORE_VME_READ 
-static INTU4            l_first_more_vme_read = 0;
-static INTU4 volatile   *pl_virt_vme_base;
-static INTU4             l_n_loop = 0;
-static INTU4             l_count  = 0;
-#endif
 
-
-
-
-static struct timespec nanotime = {0,0}; // damit auch 11 kHz
+static struct timespec nanotime = {0,0};
 
 
 /*****************************************************************************/
@@ -536,10 +513,7 @@ int f_user_readout (CHARU    bh_trig_typ,
   #ifdef WR_TIME_STAMP  
   if (l_check_wr_err == 0)
   { 
-    //*l_se_read_len = (long)pl_dat - (long)pl_dat_save;
-
     *l_se_read_len = (INTS4)((long)pl_dat - (long)pl_dat_save);
-
   }
   else
   {
@@ -562,9 +536,6 @@ int f_user_readout (CHARU    bh_trig_typ,
   #ifdef MORE_VME_READ 
   *l_se_read_len = (long)pl_dat - (long)pl_dat_save;
   #endif
-
-  //printm("end of user reaadout sees *l_se_read_len=%d", *l_se_read_len);
-  //sleep(1);
   return (1);
 }
 
@@ -841,11 +812,6 @@ if(f_vetar_is_present()==0)
     printm ("f_vetar_init() - Error: could not find VETAR board!\n");
     exit (-1);
 }
- // below implementatino for mvlc, convert back to register writing! 
-  
-//    
-//     #    /* reset the core */
-
   /* reset the core */
   *cr_bit_set=RESET_CORE;
   usleep(10000);
@@ -855,7 +821,6 @@ if(f_vetar_is_present()==0)
   *cr_wb_32_64= WB32;
 
     am = 0x09; //VME_A32_USER_DATA_SCT
-    
     fa[0] = (VETAR_REGS_ADDR >> 24) & 0xFF;
     fa[1] = (VETAR_REGS_ADDR >> 16) & 0xFF;
     fa[2] = (VETAR_REGS_ADDR >> 8 ) & 0xFF;
@@ -866,7 +831,6 @@ if(f_vetar_is_present()==0)
     {
         *(cr_fun0_ader + i) =  fa[i]; // address increment is 4 here!
     }  
-
     am= 0x39; //VME_A24_USER_DATA_SCT;
      fa[0] = (VETAR_CTRL_ADDR >> 24) & 0xFF;
      fa[1] = (VETAR_CTRL_ADDR >> 16) & 0xFF;
@@ -876,19 +840,12 @@ if(f_vetar_is_present()==0)
     {
         *(cr_fun1_ader + i) =  fa[i]; // address increment is 4 here!
     }  
-    
-
-
  /* enable module, hence make FUN0/FUN1 available */
    *cr_bit_set=ENABLE_CORE;
-    usleep(100000);
-
     sleep(1);
     
     // JAM22: TODO now map control space to configure TLU and direct access:
     f_ifc_a24_vme_mas_map_CONTROL();
-    IFC_LWSYNC;SERIALIZE_IO;
-
     ctrl_master_control = (INTS4*) ((char*)(pl_virt_vme_base_control) + MASTER_CTRL); 
     ctrl_master_data    = (INTS4*) ((char*) (pl_virt_vme_base_control) + MASTER_DATA); 
     ctrl_emul_dat_wd    = (INTS4*) ((char*) (pl_virt_vme_base_control) + EMUL_DAT_WD);
@@ -897,29 +854,19 @@ if(f_vetar_is_present()==0)
     
 
 // #from vetar_wb_request// reply
-    IFC_LWSYNC;SERIALIZE_IO;
 // #  <- since we cannot branch on conditions much here, always acknowledge the control register JAM22;
     printm("first value of master control: 0x%x\n",*ctrl_master_control); 
     *ctrl_master_control=1;
     usleep(50000);
     *ctrl_master_data=0;
     *ctrl_master_control=3;
-    
-// 
 //following is in probe after wishbone register:
     *ctrl_emul_dat_wd=0;
     *ctrl_window_offset_low=0;
     *ctrl_master_control=0;
   printm("first value of dactl: 0x%x\n",*ctrl_direct_access_control);
-    
-
   printm("set to direct TLU access at address 0x%x\n",tlu_address);
   *ctrl_direct_access_control=tlu_address;
-  IFC_LWSYNC;
-  SERIALIZE_IO;
   printm("read back dactl: 0x%x\n",*ctrl_direct_access_control);
-
   usleep(100000);
-    
-    
 }
