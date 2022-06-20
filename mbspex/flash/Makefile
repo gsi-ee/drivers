@@ -27,7 +27,7 @@ flash_poland_failsave reset_poland_failsave flash_febex3_failsave reset_febex3_f
 exall: dirs depend $(BINARIES)
 
 
-$
+
 
 $(OBJDIR)/m_reset_poland_fpga_failsave.o: m_reset_poland_fpga.c
 	@echo -e "CC \t$<"
