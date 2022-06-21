@@ -383,7 +383,12 @@ static int setup_bar(struct pci_dev* pdev, struct pcie_wb_resource* res, int bar
 		return -ENOMEM;
 	}
 	
-	res->addr = ioremap_nocache(res->start, res->size);
+	//res->addr = ioremap_nocache(res->start, res->size);
+	// JAM 21-jun2-22: fix for bullseye
+	// from version 2.6.25 onwards we know for sure that ioremap_cache() has uncached semantics by default.
+	// see issue at https://www.virtualbox.org/ticket/19312
+
+	res->addr = ioremap_cache(res->start, res->size);
 	if (debug)
 		printk(KERN_ALERT PCIE_WB "/BAR%d: ioremap to %lx\n", bar, (unsigned long)res->addr);
 	

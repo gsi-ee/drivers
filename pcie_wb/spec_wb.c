@@ -202,7 +202,12 @@ static int setup_bar(struct pci_dev* pdev, struct spec_wb_resource* res, int bar
 		return -ENOMEM;
 	}
 	
-	res->addr = ioremap_nocache(res->start, res->size);
+	//res->addr = ioremap_nocache(res->start, res->size);
+	// JAM 21-jun2-22: fix for bullseye
+	// from version 2.6.25 onwards we know for sure that ioremap_cache() has uncached semantics by default.
+	// see issue at https://www.virtualbox.org/ticket/19312
+
+	res->addr = ioremap_cache(res->start, res->size);
 	if (debug)
 		printk(KERN_ALERT SPEC_WB "/BAR%d: ioremap to %lx\n", bar, (unsigned long)res->addr);
 	
@@ -275,10 +280,10 @@ static int probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	/* enable message signaled interrupts */
 	#if LINUX_VERSION_CODE < KERNEL_VERSION(3,16,0)
         ret = pci_enable_msi_block(pdev, 1);
-        #else
-        ret = pci_enable_msi_exact(pdev, 1);
-        #endif
-
+    #else
+        //ret = pci_enable_msi_exact(pdev, 1);
+        ret = pci_enable_msi(pdev); // JAM 21-06-22: this should work for debian stretch and bullseye
+    #endif
 	if (ret < 0) {
 		/* resort to legacy interrupts */
 		dev_err(&pdev->dev, "%s: could not enable MSI interrupting: error %i\n", __func__, ret);
