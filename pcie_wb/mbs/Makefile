@@ -92,6 +92,15 @@ SMILIBS = $(LIB)/lib_mbs.a $(LIB)/lib_tools.a $(LIB)/lib_mbs.a $(LIB)/lib_smi.a 
           $(LIB)/libedit.a  -lnetinet
 endif
 
+ifeq ($(GSI_OS_VERSION),5.10-64)
+POSIX   =
+CFLAGS  = $(POSIX) -DLinux -Dunix -DV40 -DGSI_MBS -D$(GSI_CPU_ENDIAN) -D$(GSI_CPU_PLATFORM)
+LIBS    = $(LIB)/lib_mbs.a $(LIB)/lib_tools.a $(LIB)/lib_mbs.a $(DIMLIB) \
+          $(LIB)/libedit.a  $(LIB)/lib_mbs.a -lpthread -lrt -lncurses
+SMILIBS = $(LIB)/lib_mbs.a $(LIB)/lib_tools.a $(LIB)/lib_mbs.a $(LIB)/lib_smi.a \
+          $(LIB)/libedit.a  -lnetinet
+endif
+
 
 # WR_INC = -I/daq/usr/kurz/etherbone/development/eb_demo -I/daq/usr/kurz/etherbone/development/wb_api -I/daq/usr/kurz/etherbone/development/wb_devices -I/daq/usr/kurz/etherbone/build/etherbone-core/api
 # 
@@ -103,8 +112,9 @@ endif
 
 #WRSYS = /mbs/driv/white_rabbit/balloon/$(GSI_CPU_PLATFORM)_$(GSI_OS)_$(GSI_OS_VERSIONX)_$(GSI_OS_TYPE)
 
-WRSYS = /mbs/driv/white_rabbit/cherry/$(GSI_CPU_PLATFORM)_$(GSI_OS)_$(GSI_OS_VERSIONX)_$(GSI_OS_TYPE)
+#WRSYS = /mbs/driv/white_rabbit/cherry/$(GSI_CPU_PLATFORM)_$(GSI_OS)_$(GSI_OS_VERSIONX)_$(GSI_OS_TYPE)
 
+WRSYS = /mbs/driv/white_rabbit/fallout/$(GSI_CPU_PLATFORM)_$(GSI_OS)_$(GSI_OS_VERSIONX)_$(GSI_OS_TYPE)
 
 WR_INC = -I $(WRSYS)/include -I$(WRSYS)/include/wb_devices 
 WR_LIB = $(WRSYS)/lib/libetherbone_$(shell uname -r).a

@@ -92,6 +92,15 @@ SMILIBS = $(LIB)/lib_mbs.a $(LIB)/lib_tools.a $(LIB)/lib_mbs.a $(LIB)/lib_smi.a 
           $(LIB)/libedit.a  -lnetinet
 endif
 
+ifeq ($(GSI_OS_VERSION),5.10-64)
+POSIX   =
+CFLAGS  = $(POSIX) -DLinux -Dunix -DV40 -DGSI_MBS -D$(GSI_CPU_ENDIAN) -D$(GSI_CPU_PLATFORM)
+LIBS    = $(LIB)/lib_mbs.a $(LIB)/lib_tools.a $(LIB)/lib_mbs.a $(DIMLIB) \
+          $(LIB)/libedit.a  $(LIB)/lib_mbs.a -lpthread -lrt -lncurses
+SMILIBS = $(LIB)/lib_mbs.a $(LIB)/lib_tools.a $(LIB)/lib_mbs.a $(LIB)/lib_smi.a \
+          $(LIB)/libedit.a  -lnetinet
+endif
+
 
 WRSYS = /mbs/driv/white_rabbit/fallout/$(GSI_CPU_PLATFORM)_$(GSI_OS)_$(GSI_OS_VERSIONX)_$(GSI_OS_TYPE)
 
