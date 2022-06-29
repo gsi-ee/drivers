@@ -4,13 +4,13 @@ include ../../common.mk
 
 INCDIR += ../../include
 LDINC += $(addprefix -L ,$(LIBDIR))
-LDFLAGS += -lrt
+LDFLAGS += -pthread -ldl -lrt -Wl,--no-as-needed 
 PEXORLIB = -Wl,-rpath,/usr/lib -Wl,-rpath,$(LIBDIR) -lpexor
 
-BINARIES = pexortest_simple test_pexor_1 sfptest registertest polandtest
+BINARIES = pexortest_simple  test_pexor_1 sfptest registertest polandtest
 
 ###############################################################
-# Target definitions
+# Target definitions 
 
 .PHONY: all dirs depend clean
 

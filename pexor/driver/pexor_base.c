@@ -512,7 +512,13 @@ int pexor_ioctl_mapbuffer (struct pexor_privdata *priv, unsigned long arg)
   sg_init_table (sg, nr_pages);
 
   /* Get the page information */
-  down_read (&current->mm->mmap_sem);
+
+  // JAM 28-06-22: adjustment for debian bullseye
+  #if LINUX_VERSION_CODE < KERNEL_VERSION(5,8,0)
+       down_read (&current->mm->mmap_sem);
+  #else
+       down_read (&current->mm->mmap_lock);
+  #endif
 
   // port to kernel 4.9/Debian 9.0 JAM 9-2017 - 8-2018 for pexor
   // kernel 4.9.0:
@@ -534,7 +540,14 @@ int pexor_ioctl_mapbuffer (struct pexor_privdata *priv, unsigned long arg)
        res = get_user_pages (dmabuf->virt_addr, nr_pages, FOLL_WRITE, pages, NULL );
   #endif
 
+  // JAM 28-06-22: adjustment for debian bullseye
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,8,0)
   up_read (&current->mm->mmap_sem);
+#else
+  up_read (&current->mm->mmap_lock);
+#endif
+
+
 
   /* Error, not all pages mapped */
   if (res < (int) nr_pages)
