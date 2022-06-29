@@ -144,11 +144,11 @@ int poland::Device::User_Readout (dabc::Buffer& buf, uint8_t trigtype)
 
             if (fBoard->ReadBus (REG_QFW_OFFSET_BASE + 4 * l_k, value, sfp, sl)!=0)
             {
-              EOUT("\n\nError in ReadBus: sfp %x slave %x\n", sfp, sl, REG_QFW_OFFSET_BASE + 4*l_k);
+              EOUT("\n\nError in ReadBus: sfp %x slave %x address 0x%x\n", sfp, sl, REG_QFW_OFFSET_BASE + 4*l_k);
               return dabc::di_SkipBuffer;
             }
 
-            DOUT0("oooooooo Read offset %d: 0x%x \n", l_k, value);
+            DOUT0("oooooooo Read offset %d: 0x%lx \n", l_k, value);
             pl_dat = (int*) ptr ();
             *pl_dat = value;
             ptr.shift (sizeof(int));
@@ -181,7 +181,7 @@ int poland::Device::User_Readout (dabc::Buffer& buf, uint8_t trigtype)
         // after stop acquisition interrupt. Note that mbs f_user.c for poland does the same!
           if (!InitQFWs ())
           {
-            EOUT("\n\nError initializing QFWs  after start acquisition\n", fDeviceNum);
+            EOUT("\n\nError initializing QFWs  after start acquisition\n");
             exit (1);    // TODO: how to tell DABC to shutdown properly?
           }
         }
@@ -279,7 +279,7 @@ bool poland::Device::InitQFWs ()
       int rev = fBoard->ReadBus (REG_BUF0, base_dbuf0, sfp, sl);
       if (rev == 0)
       {
-        DOUT1("Slave %x: Base address for Double Buffer 0  0x%x  \n", sl, base_dbuf0);
+        DOUT1("Slave %x: Base address for Double Buffer 0  0x%lx  \n", sl, base_dbuf0);
       }
       else
       {
@@ -289,7 +289,7 @@ bool poland::Device::InitQFWs ()
       rev = fBoard->ReadBus (REG_BUF1, base_dbuf1, sfp, sl);
       if (rev == 0)
       {
-        DOUT1("Slave %x: Base address for Double Buffer 1  0x%x  \n", sl, base_dbuf1);
+        DOUT1("Slave %x: Base address for Double Buffer 1  0x%lx  \n", sl, base_dbuf1);
       }
       else
       {
@@ -299,7 +299,7 @@ bool poland::Device::InitQFWs ()
       rev = fBoard->ReadBus (REG_SUBMEM_NUM, num_submem, sfp, sl);
       if (rev == 0)
       {
-        DOUT1("Slave %x: Number of Channels  0x%x  \n", sl, num_submem);
+        DOUT1("Slave %x: Number of Channels  0x%lx  \n", sl, num_submem);
       }
       else
       {
@@ -309,7 +309,7 @@ bool poland::Device::InitQFWs ()
       rev = fBoard->ReadBus (REG_SUBMEM_OFF, submem_offset, sfp, sl);
       if (rev == 0)
       {
-        DOUT1("Slave %x: Offset of Channel to the Base address  0x%x  \n", sl, submem_offset);
+        DOUT1("Slave %x: Offset of Channel to the Base address  0x%lx  \n", sl, submem_offset);
       }
       else
       {
