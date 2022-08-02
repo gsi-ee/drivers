@@ -76,7 +76,9 @@
 
 #define VETAR_CONFIGSIZE 0x80000 /* size of cr/csr space if any*/
 #define VETAR_REGS_ADDR   0x1000000 /* this is default*/
-#define VETAR_REGS_SIZE   0x1000000;
+//#define VETAR_REGS_SIZE   0x1000000;
+/* JAM 01-08-22: try smaller window to save mappings*/
+#define VETAR_REGS_SIZE 0x4000
 
 #define VETAR_CTRLREGS_SIZE 0xA0
 
