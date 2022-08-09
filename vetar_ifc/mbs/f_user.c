@@ -8,14 +8,14 @@
 //#define USER_TRIG_CLEAR_2  1
 
 /* set this to use direct mapping of VETAR registers with mbs local hw access*/
-#define VETAR_USE_DIRECTMAP 1
+//#define VETAR_USE_DIRECTMAP 1
 
 #define WR_TIME_STAMP  1  // white rabbit latched time stamp
 
 
 #ifdef WR_TIME_STAMP
  #define USE_TLU_FINE_TIME 1
-//#define WR_USE_TLU_DIRECT 1  // JAM8-2017: new for direct tlu access
+#define WR_USE_TLU_DIRECT 1  // JAM8-2017: new for direct tlu access
 //#define WR_RELEASE_ENIGMA 1  // JAM 8-2019: changed TLU addresses for ENIGMA
 #define WR_RELEASE_FALLOUT 1
 #endif
@@ -59,6 +59,7 @@
 #include "err_mask_def.h"
 #include "f_ut_printm.h"
 #include "f_user_trig_clear.h"
+#include "f_user_exit.h"
 
 
 
@@ -364,6 +365,9 @@ int f_user_init (unsigned char   bh_crate_nr,
   return (1);
 }
 
+
+
+
 /*****************************************************************************/
 int f_user_readout (CHARU    bh_trig_typ,
                     CHARU    bh_crate_nr,
@@ -641,6 +645,29 @@ int f_user_readout (CHARU    bh_trig_typ,
   return (1);
 }
 
+
+
+int f_user_exit ()
+
+{
+printf("My f_user_exit ()...");
+#ifdef WR_USE_TLU_DIRECT
+#ifndef VETAR_USE_DIRECTMAP
+  printf("freeing TLU mapping...");
+    f_ifc_a32_vme_mas_free_TLU();
+#endif
+#endif
+  printf("the End!\n");
+  return (1);
+}
+
+
+
+
+
+
+
+
 /*****************************************************************************/
 
 #ifdef WR_TIME_STAMP
@@ -781,12 +808,12 @@ void f_ifc_a32_vme_mas_map_TLU ()
 
 void f_ifc_a32_vme_mas_free_TLU ()
 {
-  // JAM 5-2021: note that this function is never called. Should be something like f_user_exit() later?
+  // JAM 8-2022: this function is called in f_user_exit()
   if (pl_virt_vme_base_tlu > 0)
   munmap ((void*) pl_virt_vme_base_tlu, alt_win.req.size);
  if(alt_map_free(&alt_win)<0)
      {
-         printm ("WARNING: alt_map_free failed.\n");
+         printf ("\nWARNING: alt_map_free failed.\n");
      }
   close (alt_fd);
 }
