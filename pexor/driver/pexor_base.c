@@ -589,7 +589,14 @@ int pexor_ioctl_mapbuffer (struct pexor_privdata *priv, unsigned long arg)
   /* Use the page list to populate the SG list */
   /* SG entries may be merged, res is the number of used entries */
   /* We have originally nr_pages entries in the sg list */
-  if ((nents = pci_map_sg (priv->pdev, sg, nr_pages, PCI_DMA_FROMDEVICE)) == 0)
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+ if ((nents = dma_map_sg (&(priv->pdev->dev), sg, nr_pages, DMA_FROM_DEVICE)) == 0)
+#else
+ if ((nents = pci_map_sg (priv->pdev, sg, nr_pages, PCI_DMA_FROMDEVICE)) == 0)
+#endif
+
+
     goto mapbuffer_unmap;
 
   pexor_dbg(KERN_NOTICE "Mapped SG list (0x%x entries).\n", nents);
@@ -674,10 +681,28 @@ int pexor_ioctl_freebuffer (struct pexor_privdata* priv, unsigned long arg)
       cursor->used_size=0;
       /* ? need to sync buffer for next dma */
       if(cursor->dma_addr!=0) /* kernel buffer*/
-        pci_dma_sync_single_for_device( priv->pdev, cursor->dma_addr, cursor->size, PCI_DMA_FROMDEVICE );
-      else /* sg buffer*/
-        pci_dma_sync_sg_for_device( priv->pdev, cursor->sg, cursor->sg_ents,PCI_DMA_FROMDEVICE );
+      {
+//        pci_dma_sync_single_for_device( priv->pdev, cursor->dma_addr, cursor->size, PCI_DMA_FROMDEVICE );
+//      else /* sg buffer*/
+//        pci_dma_sync_sg_for_device( priv->pdev, cursor->sg, cursor->sg_ents,PCI_DMA_FROMDEVICE );
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+  dma_sync_single_for_device( &(priv->pdev->dev), cursor->dma_addr, cursor->size,DMA_FROM_DEVICE );
+#else
+  pci_dma_sync_single_for_device (priv->pdev, cursor->dma_addr, cursor->size,PCI_DMA_FROMDEVICE );
+#endif
+  }
+    else
+    /* sg buffer*/
+  {
+    //pci_dma_sync_sg_for_cpu (priv->pdev, dmabuf->sg, dmabuf->sg_ents, PCI_DMA_FROMDEVICE);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+  dma_sync_sg_for_cpu( &(priv->pdev->dev), cursor->sg, cursor->sg_ents,DMA_FROM_DEVICE );
+#else
+  pci_dma_sync_sg_for_cpu (priv->pdev, cursor->sg, cursor->sg_ents,PCI_DMA_FROMDEVICE );
+#endif
+
+  }
       /* trigger here again dma flow*/
       state=atomic_read(&(priv->state));
       if(state==PEXOR_STATE_DMA_SUSPENDED)
@@ -718,11 +743,26 @@ int pexor_ioctl_usebuffer (struct pexor_privdata* priv, unsigned long arg)
   dmabuf=list_first_entry(&(priv->free_buffers), struct pexor_dmabuf, queue_list);
   list_move_tail (&(dmabuf->queue_list), &(priv->used_buffers));
   spin_unlock( &(priv->buffers_lock));
-  if (dmabuf->dma_addr != 0) /* kernel buffer*/
-    pci_dma_sync_single_for_cpu (priv->pdev, dmabuf->dma_addr, dmabuf->size, PCI_DMA_FROMDEVICE);
-  else
+  if (dmabuf->dma_addr != 0)
+  { /* kernel buffer*/
+ //   pci_dma_sync_single_for_cpu (priv->pdev, dmabuf->dma_addr, dmabuf->size, PCI_DMA_FROMDEVICE);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+  dma_sync_single_for_cpu( &(priv->pdev->dev), dmabuf->dma_addr, dmabuf->size,DMA_FROM_DEVICE );
+#else
+  pci_dma_sync_single_for_cpu (priv->pdev, dmabuf->dma_addr, dmabuf->size,PCI_DMA_FROMDEVICE );
+#endif
+  }
+    else
     /* sg buffer*/
-    pci_dma_sync_sg_for_cpu (priv->pdev, dmabuf->sg, dmabuf->sg_ents, PCI_DMA_FROMDEVICE);
+  {
+    //pci_dma_sync_sg_for_cpu (priv->pdev, dmabuf->sg, dmabuf->sg_ents, PCI_DMA_FROMDEVICE);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+  dma_sync_sg_for_cpu( &(priv->pdev->dev), dmabuf->sg, dmabuf->sg_ents,DMA_FROM_DEVICE );
+#else
+  pci_dma_sync_sg_for_cpu (priv->pdev, dmabuf->sg, dmabuf->sg_ents,PCI_DMA_FROMDEVICE );
+#endif
+  }
 
   userbuf.addr = dmabuf->virt_addr;
   userbuf.size = dmabuf->size;
@@ -1356,7 +1396,16 @@ struct pexor_dmabuf* new_dmabuffer (struct pci_dev * pdev, size_t size, unsigned
 
 #else
     /* here we get readily mapped dma memory which was preallocated for the device */
+   // descriptor->kernel_addr = (unsigned long) pci_alloc_consistent (pdev, size, &(descriptor->dma_addr));
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+    descriptor->kernel_addr = (unsigned long) dma_alloc_coherent(&(pdev->dev), size, &(descriptor->dma_addr), GFP_ATOMIC);
+#else
     descriptor->kernel_addr = (unsigned long) pci_alloc_consistent (pdev, size, &(descriptor->dma_addr));
+#endif
+
+	//return
+
     if (!descriptor->kernel_addr)
     {
       pexor_msg(KERN_ERR "new_dmabuffer: could not alloc pci dma buffer for size %d \n",(int)size);
@@ -1364,7 +1413,14 @@ struct pexor_dmabuf* new_dmabuffer (struct pci_dev * pdev, size_t size, unsigned
       return NULL ;
     }
     /* maybe obsolete here, but we could gain performance by defining the data direction...*/
-    pci_dma_sync_single_for_device (pdev, descriptor->dma_addr, descriptor->size, PCI_DMA_FROMDEVICE);
+  //  pci_dma_sync_single_for_device (pdev, descriptor->dma_addr, descriptor->size, PCI_DMA_FROMDEVICE);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+  dma_sync_single_for_device( &(pdev->dev), descriptor->dma_addr, descriptor->size,DMA_FROM_DEVICE );
+#else
+  pci_dma_sync_single_for_device( pdev, descriptor->dma_addr, descriptor->size,PCI_DMA_FROMDEVICE );
+#endif
+
     pexor_dbg(KERN_ERR "new_dmabuffer created coherent kernel buffer with dma address %p\n", (void*) descriptor->dma_addr);
 
 #endif
@@ -1375,7 +1431,15 @@ struct pexor_dmabuf* new_dmabuffer (struct pci_dev * pdev, size_t size, unsigned
     /* set dma buffer for external physical dma address*/
     descriptor->kernel_addr = 0; /* can not map external RAM into linux kernel space*/
     descriptor->dma_addr = pgoff << PAGE_SHIFT;
-    pci_dma_sync_single_for_device (pdev, descriptor->dma_addr, descriptor->size, PCI_DMA_FROMDEVICE);
+  //  pci_dma_sync_single_for_device (pdev, descriptor->dma_addr, descriptor->size, PCI_DMA_FROMDEVICE);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+  dma_sync_single_for_device( &(pdev->dev), descriptor->dma_addr, descriptor->size,DMA_FROM_DEVICE );
+#else
+    pci_dma_sync_single_for_device (pdev, descriptor->dma_addr, descriptor->size,PCI_DMA_FROMDEVICE);
+#endif
+
+
     pexor_dbg(KERN_ERR "new_dmabuffer created dma buffer for external dma address %p\n", (void*) descriptor->dma_addr);
   }
 
@@ -1400,7 +1464,14 @@ int delete_dmabuffer (struct pci_dev * pdev, struct pexor_dmabuf* buf)
       /* neither kernel address nor sg list -> external phys memory*/
       pexor_dbg(
           KERN_NOTICE "**pexor_delete_dmabuffer of size=%ld, unregistering external physaddr=%lx \n", buf->size, (unsigned long) buf->dma_addr);
-      pci_dma_sync_single_for_cpu (pdev, buf->dma_addr, buf->size, PCI_DMA_FROMDEVICE);
+     // pci_dma_sync_single_for_cpu (pdev, buf->dma_addr, buf->size, PCI_DMA_FROMDEVICE);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+  dma_sync_single_for_cpu( &(pdev->dev), buf->dma_addr, buf->size,DMA_FROM_DEVICE );
+#else
+    pci_dma_sync_single_for_cpu (pdev, buf->dma_addr, buf->size,PCI_DMA_FROMDEVICE);
+#endif
+
       /* Release descriptor memory */
       kfree (buf);
       return 0;
@@ -1416,12 +1487,30 @@ int delete_dmabuffer (struct pci_dev * pdev, struct pexor_dmabuf* buf)
   /* note: unmapping the virtual adresses is done in user application by munmap*/
 #ifdef	DMA_MAPPING_STREAMING
   /* release dma mapping and free kernel memory for dma buffer*/
-  dma_unmap_single(&(pdev->dev), buf->dma_addr, buf->size, PCI_DMA_FROMDEVICE);
+  //dma_unmap_single(&(pdev->dev), buf->dma_addr, buf->size, PCI_DMA_FROMDEVICE);
+
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+   dma_unmap_sg (&(priv->pdev->dev), (priv->pipe).sg, (priv->pipe).num_pages, DMA_FROM_DEVICE);
+#else
+   pci_unmap_sg (priv->pdev, (priv->pipe).sg, (priv->pipe).num_pages, PCI_DMA_FROMDEVICE);
+#endif
+
+
 
   kfree((void*) buf->kernel_addr);
 #else
   /* Release DMA memory */
+
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+  dma_free_coherent(&pdev->dev, buf->size, (void *) (buf->kernel_addr), buf->dma_addr);
+#else
   pci_free_consistent (pdev, buf->size, (void *) (buf->kernel_addr), buf->dma_addr);
+#endif
+
+ // dma_free_coherent(&hwdev->dev, size, vaddr, dma_handle);
+
 #endif
   /* Release descriptor memory */
   kfree (buf);
@@ -1432,7 +1521,15 @@ int unmap_sg_dmabuffer (struct pci_dev *pdev, struct pexor_dmabuf *buf)
 {
   int i = 0;
   pexor_dbg(KERN_NOTICE "**pexor unmapping sg dmabuffer, size=%ld, user address=%lx \n", buf->size, buf->virt_addr);
-  pci_unmap_sg (pdev, buf->sg, buf->num_pages, PCI_DMA_FROMDEVICE);
+ // pci_unmap_sg (pdev, buf->sg, buf->num_pages, PCI_DMA_FROMDEVICE);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+   dma_unmap_sg (&(pdev->dev), buf->sg, buf->num_pages, DMA_FROM_DEVICE);
+#else
+   pci_unmap_sg (pdev, buf->sg, buf->num_pages, PCI_DMA_FROMDEVICE);
+#endif
+
+
   for (i = 0; i < (buf->num_pages); i++)
   {
     if (!PageReserved (buf->pages[i]))
@@ -2349,10 +2446,28 @@ int pexor_wait_dma_buffer (struct pexor_privdata* priv, struct pexor_dmabuf* res
   list_move_tail (&(dmabuf->queue_list), &(priv->used_buffers));
   spin_unlock( &(priv->buffers_lock));
   if (dmabuf->dma_addr != 0) /* kernel buffer*/
-    pci_dma_sync_single_for_cpu (priv->pdev, dmabuf->dma_addr, dmabuf->size, PCI_DMA_FROMDEVICE);
-  else
+  {
+//    pci_dma_sync_single_for_cpu (priv->pdev, dmabuf->dma_addr, dmabuf->size, PCI_DMA_FROMDEVICE);
+//  else
+//    /* sg buffer*/
+//    pci_dma_sync_sg_for_cpu (priv->pdev, dmabuf->sg, dmabuf->sg_ents, PCI_DMA_FROMDEVICE);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+  dma_sync_single_for_cpu( &(priv->pdev->dev), dmabuf->dma_addr, dmabuf->size,DMA_FROM_DEVICE );
+#else
+  pci_dma_sync_single_for_cpu (priv->pdev, dmabuf->dma_addr, dmabuf->size,PCI_DMA_FROMDEVICE );
+#endif
+  }
+    else
     /* sg buffer*/
-    pci_dma_sync_sg_for_cpu (priv->pdev, dmabuf->sg, dmabuf->sg_ents, PCI_DMA_FROMDEVICE);
+  {
+    //pci_dma_sync_sg_for_cpu (priv->pdev, dmabuf->sg, dmabuf->sg_ents, PCI_DMA_FROMDEVICE);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+  dma_sync_sg_for_cpu( &(priv->pdev->dev), dmabuf->sg, dmabuf->sg_ents,DMA_FROM_DEVICE );
+#else
+  pci_dma_sync_sg_for_cpu (priv->pdev, dmabuf->sg, dmabuf->sg_ents,PCI_DMA_FROMDEVICE );
+#endif
+  }
 
   *result = *dmabuf;
   //spin_unlock(&(priv->dma_lock));

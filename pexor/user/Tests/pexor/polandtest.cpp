@@ -595,7 +595,7 @@ int main (int argc, char **argv)
 
       if(Debugmode)
         printf ("Polled for %d cycles of %d us, tokbuf=0x%x\n", pollcounter, WAITCYCLE, tokbuf);
-      if (tokbuf <=  0 || pollcounter>=MAXPOLLS)
+      if ((unsigned long)tokbuf <=  0 || pollcounter>=MAXPOLLS)
          {
            printf ("\n\nError in Token Request, pollcounter=%d \n",pollcounter);
            return 1;

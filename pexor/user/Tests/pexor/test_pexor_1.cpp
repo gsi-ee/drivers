@@ -249,7 +249,7 @@ int main(int argc, char **argv)
 		  int flags = MAP_SHARED;
 		  off_t off   = (off_t) DEVMEMTEST_BASE;
 		  int prot = PROT_READ | PROT_WRITE;
-		  if ((mybuf = (int*) mmap (NULL, mysize, prot, flags, fd, off)) < 0)
+		  if ((unsigned long) (mybuf = (int*) mmap (NULL, mysize, prot, flags, fd, off)) < 0)
 		  {
 		    printf("!!!! PEXOR Test failed to mmap dma target memory at %x, return value:%d \n", off,mybuf);
 		    return fd;
