@@ -831,7 +831,11 @@ int pex_ioctl_read_dma_pipe (struct pex_privdata* priv, unsigned long arg)
 
 #ifdef  PEX_SG_SYNCFULLPIPE
   // sync complete pipe buffer to allow device DMA:
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+  dma_sync_sg_for_device( &(priv->pdev->dev), pipe->sg, pipe->sg_ents,DMA_FROM_DEVICE );
+#else
   pci_dma_sync_sg_for_device( priv->pdev, pipe->sg, pipe->sg_ents,PCI_DMA_FROMDEVICE );
+#endif
 #endif
   // loop over all sg chunks:
   sgcursor = dmasource;
@@ -939,7 +943,11 @@ int pex_ioctl_read_dma_pipe (struct pex_privdata* priv, unsigned long arg)
 
 #ifndef  PEX_SG_SYNCFULLPIPE
     // only sync parts of pipe that really have been touched:
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+  dma_sync_sg_for_cpu( &(priv->pdev->dev), pipe->sg, pipe->sg_ents,DMA_FROMDEVICE );
+#else
     pci_dma_sync_sg_for_cpu (priv->pdev, firstentry, dmaentries, PCI_DMA_FROMDEVICE);
+#endif
     pex_dbg(KERN_NOTICE "#### pex_ioctl_read_dma_pipe has synced for cpu used %d entries\n", dmaentries);
     return rev;
 #endif
@@ -947,7 +955,12 @@ int pex_ioctl_read_dma_pipe (struct pex_privdata* priv, unsigned long arg)
     pipe_sync_for_cpu:
 
   // need to sync pipe for cpu after dma is complete:
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+   dma_sync_sg_for_cpu (&(priv->pdev->dev), pipe->sg, pipe->sg_ents, DMA_FROM_DEVICE);
+#else
    pci_dma_sync_sg_for_cpu (priv->pdev, pipe->sg, pipe->sg_ents, PCI_DMA_FROMDEVICE);
+#endif
+
    pex_dbg(KERN_NOTICE "#### pex_ioctl_read_dma_pipe has synced for cpu all %d pipe entries\n", pipe->sg_ents);
 
   return rev;
@@ -1145,7 +1158,12 @@ int pex_ioctl_map_pipe (struct pex_privdata *priv, unsigned long arg)
       /* Use the page list to populate the SG list */
       /* SG entries may be merged, res is the number of used entries */
       /* We have originally nr_pages entries in the sg list */
-      if ((nents = pci_map_sg (priv->pdev, sg, nr_pages, PCI_DMA_FROMDEVICE)) == 0)
+
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+  if ((nents = dma_map_sg (&(priv->pdev->dev), sg, nr_pages, DMA_FROM_DEVICE)) == 0)
+#else
+  if ((nents = pci_map_sg (priv->pdev, sg, nr_pages, PCI_DMA_FROMDEVICE)) == 0)
+#endif
         goto mapbuffer_unmap;
 
       pex_msg(KERN_NOTICE "Mapped SG list 0x%lx (0x%x entries).\n", (unsigned long) sg, nents);
@@ -1234,14 +1252,19 @@ int pex_ioctl_unmap_pipe (struct pex_privdata *priv, unsigned long arg)
   int i = 0;
   if((priv->pipe).size==0) return 1;
    pex_dbg(KERN_NOTICE "**mbspex unmapping sg pipe, size=%ld, user start address=%lx \n", (priv->pipe).size, (priv->pipe).virt_start);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
+   dma_unmap_sg (&(priv->pdev->dev), (priv->pipe).sg, (priv->pipe).num_pages, DMA_FROM_DEVICE);
+#else
    pci_unmap_sg (priv->pdev, (priv->pipe).sg, (priv->pipe).num_pages, PCI_DMA_FROMDEVICE);
-   for (i = 0; i < ((priv->pipe).num_pages); i++)
+#endif
+
+  for (i = 0; i < ((priv->pipe).num_pages); i++)
    {
      if (!PageReserved ((priv->pipe).pages[i]))
      {
+#ifndef     PEX_SG_NO_MEMLOCK
        SetPageDirty ((priv->pipe).pages[i]);
 
-#ifndef     PEX_SG_NO_MEMLOCK
        //  unlock_page((priv->pipe).pages[i]);
        __clear_page_locked ((priv->pipe).pages[i]);
        //ClearPageLocked(buf->pages[i]);
