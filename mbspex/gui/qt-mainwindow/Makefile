@@ -7,6 +7,7 @@ GUI_POLAND = poland
 GUI_FEBEX = febex
 GUI_NYXOR = nyxor
 GUI_APFEL = apfel
+GUI_AWAGS = awags
 GUI_TAMEX = tamexpadi
 
 .PHONY: all nombspex clean install  
@@ -24,6 +25,7 @@ endif
 	cd $(GUI_FEBEX); make
 	cd $(GUI_APFEL); make
 	cd $(GUI_TAMEX); make
+	cd $(GUI_AWAGS); make
 
 nombspex: 
 	cd $(GUI_FRAME); make nombspex
@@ -36,7 +38,7 @@ endif
 	cd $(GUI_FEBEX); make nombspex
 	cd $(GUI_APFEL); make nombspex
 	cd $(GUI_TAMEX); make nombspex
-	
+	cd $(GUI_AWAGS); make nombspex
 	
 	 
 install: 
@@ -49,7 +51,7 @@ endif
 	cd $(GUI_FEBEX); make install
 	cd $(GUI_APFEL); make install
 	cd $(GUI_TAMEX); make install	
-
+	cd $(GUI_AWAGS); make install
 clean:
 	cd $(GUI_TAMEX); make clean	
 	cd $(GUI_POLAND); make clean
@@ -57,6 +59,6 @@ clean:
 	cd $(GUI_FEBEX); make clean
 	cd $(GUI_APFEL); make clean
 	cd $(GUI_FRAME); make clean
-	
+	cd $(GUI_AWAGS); make clean
 
 
