@@ -37,19 +37,17 @@ private:
 
 
 
-#ifdef AWAGS_NOSTDMAP
-  AwagsTestResults fReferenceValues_1;
-  AwagsTestResults fReferenceValues_16;
-  AwagsTestResults fReferenceValues_32;
 
-#else
   /**
 
    /** This structure just contains sollwerte for comparison. mapped to gain*/
    std::map<int, AwagsTestResults> fReferenceValues;
 
-#endif
-   bool fMultiPulserMode;
+//   bool fMultiPulserMode;
+
+   /* Set current gain to the hardware*/
+   void ApplyCurrentGain();
+
 
 public:
 
@@ -62,8 +60,8 @@ public:
   void SetSetup(BoardSetup* set){fCurrentSetup=set;}
 
 
-  void SetMultiPulserMode(bool on){fMultiPulserMode=on;}
-  bool IsMultiPulserMode(){return fMultiPulserMode;}
+//  void SetMultiPulserMode(bool on){fMultiPulserMode=on;}
+//  bool IsMultiPulserMode(){return fMultiPulserMode;}
 
 
   /** access to reference values for gain 1,16, or 32*/

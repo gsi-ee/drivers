@@ -33,7 +33,10 @@
 #define AWAGS_NUMCHIPS 4
 
 /** number of DAC channels for each awags chip*/
-#define AWAGS_NUMDACS 1
+#define AWAGS_NUMDACS 4
+//1 - JAM22 NOTE: although awags has only one dac,
+// we use 4 separate entries in the setup structures
+// to account the measurements for the 4 connected output channels separately
 
 /** number of output channels for each awags chip*/
 #define AWAGS_NUMCHANS 4

@@ -27,8 +27,14 @@ private:
   /** the absolute values of the AWAGS dacs*/
   uint16_t fDACValueSet[AWAGS_NUMDACS];
 
+  /** gain specifier for the AWAGS dacs.
+   * Max be directly content of the gain register?*/
+  uint8_t fGain[AWAGS_NUMDACS];;
+
   /** low gain setting for high amplification mode (16 or 32). Default is 32*/
-  bool fLowGainSet[AWAGS_NUMCHANS];
+  //bool fLowGainSet[AWAGS_NUMCHANS];
+
+
 
 //  /** Enabled test pulser for channel*/
 //  bool fTestPulsEnable[AWAGS_NUMCHANS];
@@ -74,21 +80,27 @@ public:
 
   int SetDACValue (int dac, uint16_t value);
 
-  int SetLowGain (int chan, bool low = true);
 
-  int GetLowGain (int chan);
+  int GetGain (int dac);
 
-  int SetTestPulseEnable (int chan, bool on = true);
+  int SetGain (int dac, uint8_t value);
 
-  int GetTestPulseEnable (int chan);
 
-  int SetTestPulseAmplitude (int chan, uint8_t amp);
-
-  uint8_t GetTestPulseAmplitude (int chan);
-
-  int SetTestPulsePostive (bool pos = true);
-
-  int GetTestPulsePositive ();
+//  int SetLowGain (int chan, bool low = true);
+//
+//  int GetLowGain (int chan);
+//
+//  int SetTestPulseEnable (int chan, bool on = true);
+//
+//  int GetTestPulseEnable (int chan);
+//
+//  int SetTestPulseAmplitude (int chan, uint8_t amp);
+//
+//  uint8_t GetTestPulseAmplitude (int chan);
+//
+//  int SetTestPulsePostive (bool pos = true);
+//
+//  int GetTestPulsePositive ();
 
   void SetAddressID (uint8_t address);
 

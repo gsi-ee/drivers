@@ -233,35 +233,17 @@ protected:
   /** put io switch settings for awags chip from gui into setup structure*/
   void EvaluateIOSwitch();
 
-  /** put test pulser settings for awags chip from gui into setup structure*/
- // void EvaluatePulser(int awags);
 
-  /** decode pulser interval from frequency box index*/
- // int EvaluatePulserInterval(int index);
 
   /** put gain settings for awags chip and channel from gui into setup structure*/
-  void EvaluateGain(int awags, int channel);
+  void EvaluateGain(int awags);
 
   /** set register from status structure*/
   void SetRegisters ();
 
-//  /** apply test pulser settings for awags chip from setup structure to device*/
-//  void SetPulser(uint8_t awags);
-//
-//  /** apply test pulser broadcast settings to all awags chips*/
-//  void SetBroadcastPulser();
 
   /** set io switch from setup structures to device */
   void SetIOSwitch();
-
-
-  /** set awags addon boards to inverted mount mode
-   * (awags9-12 first, awags1-4 second) */
- // void SetInverseMapping(int on);
-
-
-  /** set DAC to ADC baseline slope for gain 16/32 into inverted mode (old boards)*/
-//  void SetBaselineInverted(int on);
 
 
   /** get register contents to status structure*/
@@ -316,10 +298,9 @@ protected:
     /** read a trace from the mbs buffer of febexchan into the fData field*/
     int AcquireMbsSample(uint8_t febexchan);
 
-    /** set gain factor for each awags channel on board. High gain switch must be enabled for board.
-     *  gain is 16 if useGain16=true, or 32 if useGain16=false (default)
+    /** set gain factor for each awags chip on board.
      * */
-    void SetGain(uint8_t awagschip, uint8_t chan, bool useGain16);
+    void SetGain(uint8_t awagschip, uint16_t gain);
 
     /** set test pulser properties for each awags channel on board.
          *  flag on=true switches pulser on
@@ -406,18 +387,6 @@ protected:
   void AutoApplySwitch();
 
 
-  /** send general pulser settings to all awags channels*/
- // void BroadcastPulser();
-
-
-  /** apply pulser settings directly
-    * This function is capable of usage in AWAGS_BROADCAST_ACTION macro*/
- // void AutoApplyPulser(int awags);
-
- /** slot forward when change of pulser settings on gui*/
- // void PulserChanged(int awags);
-
-
   /** apply chip power connection settings directly
      * This function is capable of usage in AWAGS_BROADCAST_ACTION macro*/
    void AutoApplyPower(int awags, int state);
@@ -427,11 +396,11 @@ protected:
 
   /** apply gain settings directly
       * This function is capable of usage in AWAGS_BROADCAST_ACTION macro*/
-  void AutoApplyGain(int awags, int channel);
+  void AutoApplyGain(int awags);
 
 
   /** slot forward when change of pulser settings on gui*/
-   void GainChanged(int awags, int channel);
+   void GainChanged(int awags);
 
 
 
@@ -456,8 +425,6 @@ protected:
 
   /** start interactive autocalibration of awags chip dacs.*/
   void AutoCalibrate(int awags);
-
-
 
   /** Automatic adjustment of adc baseline to adctarget value for global febex channel.
    * will return final dac setup value or -1 in case of error*/
@@ -550,12 +517,6 @@ protected:
     void EvaluateBaseline(int channel);
 
 
-    /** loop over all connected awags chips and perform address scan.*/
- //   void DoIdScan();
-
-    /** Perform ID Scan for awags chip at given slot */
-//    void ExecuteIDScanTest(int awags);
-
 
     /** Enable single chip communication and set local id*/
     void SetSingleChipCommID(int awags, int id);
@@ -590,7 +551,6 @@ public slots:
   virtual void UnzoomSampleBtn_clicked();
   virtual void RefreshSampleBtn_clicked();
 //
-//  virtual void PeakFinderBtn_clicked();
 
 
  
@@ -615,81 +575,83 @@ public slots:
 
 
   virtual void DAC_changed_0_0(int val);
-  virtual void DAC_changed_0_1(int val);
-  virtual void DAC_changed_0_2(int val);
-  virtual void DAC_changed_0_3(int val);
+
+//  virtual void DAC_changed_0_1(int val);
+//  virtual void DAC_changed_0_2(int val);
+//  virtual void DAC_changed_0_3(int val);
   virtual void DAC_changed_1_0(int val);
-  virtual void DAC_changed_1_1(int val);
-  virtual void DAC_changed_1_2(int val);
-  virtual void DAC_changed_1_3(int val);
+//  virtual void DAC_changed_1_1(int val);
+//  virtual void DAC_changed_1_2(int val);
+//  virtual void DAC_changed_1_3(int val);
   virtual void DAC_changed_2_0(int val);
-  virtual void DAC_changed_2_1(int val);
-  virtual void DAC_changed_2_2(int val);
-  virtual void DAC_changed_2_3(int val);
+//  virtual void DAC_changed_2_1(int val);
+//  virtual void DAC_changed_2_2(int val);
+//  virtual void DAC_changed_2_3(int val);
   virtual void DAC_changed_3_0(int val);
-  virtual void DAC_changed_3_1(int val);
-  virtual void DAC_changed_3_2(int val);
-  virtual void DAC_changed_3_3(int val);
-  virtual void DAC_changed_4_0(int val);
-  virtual void DAC_changed_4_1(int val);
-  virtual void DAC_changed_4_2(int val);
-  virtual void DAC_changed_4_3(int val);
-  virtual void DAC_changed_5_0(int val);
-  virtual void DAC_changed_5_1(int val);
-  virtual void DAC_changed_5_2(int val);
-  virtual void DAC_changed_5_3(int val);
-  virtual void DAC_changed_6_0(int val);
-  virtual void DAC_changed_6_1(int val);
-  virtual void DAC_changed_6_2(int val);
-  virtual void DAC_changed_6_3(int val);
-  virtual void DAC_changed_7_0(int val);
-  virtual void DAC_changed_7_1(int val);
-  virtual void DAC_changed_7_2(int val);
-  virtual void DAC_changed_7_3(int val);
+//  virtual void DAC_changed_3_1(int val);
+//  virtual void DAC_changed_3_2(int val);
+//  virtual void DAC_changed_3_3(int val);
+//  virtual void DAC_changed_4_0(int val);
+//  virtual void DAC_changed_4_1(int val);
+//  virtual void DAC_changed_4_2(int val);
+//  virtual void DAC_changed_4_3(int val);
+//  virtual void DAC_changed_5_0(int val);
+//  virtual void DAC_changed_5_1(int val);
+//  virtual void DAC_changed_5_2(int val);
+//  virtual void DAC_changed_5_3(int val);
+//  virtual void DAC_changed_6_0(int val);
+//  virtual void DAC_changed_6_1(int val);
+//  virtual void DAC_changed_6_2(int val);
+//  virtual void DAC_changed_6_3(int val);
+//  virtual void DAC_changed_7_0(int val);
+//  virtual void DAC_changed_7_1(int val);
+//  virtual void DAC_changed_7_2(int val);
+//  virtual void DAC_changed_7_3(int val);
 
 
   virtual void DAC_enterText_0_0 ();
-  virtual void DAC_enterText_0_1 ();
-  virtual void DAC_enterText_0_2 ();
-  virtual void DAC_enterText_0_3 ();
+//  virtual void DAC_enterText_0_1 ();
+//  virtual void DAC_enterText_0_2 ();
+//  virtual void DAC_enterText_0_3 ();
   virtual void DAC_enterText_1_0 ();
-  virtual void DAC_enterText_1_1 ();
-  virtual void DAC_enterText_1_2 ();
-  virtual void DAC_enterText_1_3 ();
+//  virtual void DAC_enterText_1_1 ();
+//  virtual void DAC_enterText_1_2 ();
+//  virtual void DAC_enterText_1_3 ();
   virtual void DAC_enterText_2_0 ();
-  virtual void DAC_enterText_2_1 ();
-  virtual void DAC_enterText_2_2 ();
-  virtual void DAC_enterText_2_3 ();
+//  virtual void DAC_enterText_2_1 ();
+//  virtual void DAC_enterText_2_2 ();
+//  virtual void DAC_enterText_2_3 ();
   virtual void DAC_enterText_3_0 ();
-  virtual void DAC_enterText_3_1 ();
-  virtual void DAC_enterText_3_2 ();
-  virtual void DAC_enterText_3_3 ();
-  virtual void DAC_enterText_4_0 ();
-  virtual void DAC_enterText_4_1 ();
-  virtual void DAC_enterText_4_2 ();
-  virtual void DAC_enterText_4_3 ();
-  virtual void DAC_enterText_5_0 ();
-  virtual void DAC_enterText_5_1 ();
-  virtual void DAC_enterText_5_2 ();
-  virtual void DAC_enterText_5_3 ();
-  virtual void DAC_enterText_6_0 ();
-  virtual void DAC_enterText_6_1 ();
-  virtual void DAC_enterText_6_2 ();
-  virtual void DAC_enterText_6_3 ();
-  virtual void DAC_enterText_7_0 ();
-  virtual void DAC_enterText_7_1 ();
-  virtual void DAC_enterText_7_2 ();
-  virtual void DAC_enterText_7_3 ();
+//  virtual void DAC_enterText_3_1 ();
+//  virtual void DAC_enterText_3_2 ();
+//  virtual void DAC_enterText_3_3 ();
+//  virtual void DAC_enterText_4_0 ();
+//  virtual void DAC_enterText_4_1 ();
+//  virtual void DAC_enterText_4_2 ();
+//  virtual void DAC_enterText_4_3 ();
+//  virtual void DAC_enterText_5_0 ();
+//  virtual void DAC_enterText_5_1 ();
+//  virtual void DAC_enterText_5_2 ();
+//  virtual void DAC_enterText_5_3 ();
+//  virtual void DAC_enterText_6_0 ();
+//  virtual void DAC_enterText_6_1 ();
+//  virtual void DAC_enterText_6_2 ();
+//  virtual void DAC_enterText_6_3 ();
+//  virtual void DAC_enterText_7_0 ();
+//  virtual void DAC_enterText_7_1 ();
+//  virtual void DAC_enterText_7_2 ();
+//  virtual void DAC_enterText_7_3 ();
 
 
   virtual void AutoCalibrate_0();
   virtual void AutoCalibrate_1();
   virtual void AutoCalibrate_2();
   virtual void AutoCalibrate_3();
-  virtual void AutoCalibrate_4();
-  virtual void AutoCalibrate_5();
-  virtual void AutoCalibrate_6();
-  virtual void AutoCalibrate_7();
+
+//  virtual void AutoCalibrate_4();
+//  virtual void AutoCalibrate_5();
+//  virtual void AutoCalibrate_6();
+//  virtual void AutoCalibrate_7();
   virtual void AutoCalibrate_all();
 
 //  virtual void PulserChanged_0();
@@ -706,28 +668,28 @@ public slots:
   virtual void GainChanged_1();
   virtual void GainChanged_2();
   virtual void GainChanged_3();
-  virtual void GainChanged_4();
-  virtual void GainChanged_5();
-  virtual void GainChanged_6();
-  virtual void GainChanged_7();
-  virtual void GainChanged_8();
-  virtual void GainChanged_9();
-  virtual void GainChanged_10();
-  virtual void GainChanged_11();
-  virtual void GainChanged_12();
-  virtual void GainChanged_13();
-  virtual void GainChanged_14();
-  virtual void GainChanged_15();
+//  virtual void GainChanged_4();
+//  virtual void GainChanged_5();
+//  virtual void GainChanged_6();
+//  virtual void GainChanged_7();
+//  virtual void GainChanged_8();
+//  virtual void GainChanged_9();
+//  virtual void GainChanged_10();
+//  virtual void GainChanged_11();
+//  virtual void GainChanged_12();
+//  virtual void GainChanged_13();
+//  virtual void GainChanged_14();
+//  virtual void GainChanged_15();
 
 
   virtual void PowerChanged_0(int checkstate);
   virtual void PowerChanged_1(int checkstate);
   virtual void PowerChanged_2(int checkstate);
   virtual void PowerChanged_3(int checkstate);
-  virtual void PowerChanged_4(int checkstate);
-  virtual void PowerChanged_5(int checkstate);
-  virtual void PowerChanged_6(int checkstate);
-  virtual void PowerChanged_7(int checkstate);
+//  virtual void PowerChanged_4(int checkstate);
+//  virtual void PowerChanged_5(int checkstate);
+//  virtual void PowerChanged_6(int checkstate);
+//  virtual void PowerChanged_7(int checkstate);
 
 
   virtual void SwitchChanged();

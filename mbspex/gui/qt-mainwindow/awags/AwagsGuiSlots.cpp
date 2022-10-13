@@ -204,92 +204,95 @@ void AwagsGui::SwitchChanged ()
 //  PulserChanged (7);
 //}
 
-void AwagsGui::GainChanged (int awags, int channel)
+void AwagsGui::GainChanged (int awags)
 {
-  GOSIP_AUTOAPPLY(AutoApplyGain(awags,channel));
+  GOSIP_AUTOAPPLY(AutoApplyGain(awags));
 }
 
 void AwagsGui::GainChanged_0 ()
 {
-  GainChanged (0, 0);
+  GainChanged (0);
 }
 
 void AwagsGui::GainChanged_1 ()
 {
-  GainChanged (0, 1);
+  GainChanged (1);
 }
 
 void AwagsGui::GainChanged_2 ()
 {
-  GainChanged (1, 0);
+  GainChanged (2);
 }
 
 void AwagsGui::GainChanged_3 ()
 {
-  GainChanged (1, 1);
-}
-
-void AwagsGui::GainChanged_4 ()
-{
-  GainChanged (2, 0);
-}
-
-void AwagsGui::GainChanged_5 ()
-{
-  GainChanged (2, 1);
-}
-
-void AwagsGui::GainChanged_6 ()
-{
-  GainChanged (3, 0);
-}
-
-void AwagsGui::GainChanged_7 ()
-{
-  GainChanged (3, 1);
-}
-
-void AwagsGui::GainChanged_8 ()
-{
-  GainChanged (4, 0);
-}
-
-void AwagsGui::GainChanged_9 ()
-{
-  GainChanged (4, 1);
-}
-
-void AwagsGui::GainChanged_10 ()
-{
-  GainChanged (5, 0);
-}
-
-void AwagsGui::GainChanged_11 ()
-{
-  GainChanged (5, 1);
-}
-
-void AwagsGui::GainChanged_12 ()
-{
-  GainChanged (6, 0);
-}
-
-void AwagsGui::GainChanged_13 ()
-{
-  GainChanged (6, 1);
-}
-
-void AwagsGui::GainChanged_14 ()
-{
-  GainChanged (7, 0);
-}
-
-void AwagsGui::GainChanged_15 ()
-{
-  GainChanged (7, 1);
+  GainChanged (3);
 }
 
 
+
+
+//void AwagsGui::GainChanged_4 ()
+//{
+//  GainChanged (2, 0);
+//}
+//
+//void AwagsGui::GainChanged_5 ()
+//{
+//  GainChanged (2, 1);
+//}
+//
+//void AwagsGui::GainChanged_6 ()
+//{
+//  GainChanged (3, 0);
+//}
+//
+//void AwagsGui::GainChanged_7 ()
+//{
+//  GainChanged (3, 1);
+//}
+//
+//void AwagsGui::GainChanged_8 ()
+//{
+//  GainChanged (4, 0);
+//}
+//
+//void AwagsGui::GainChanged_9 ()
+//{
+//  GainChanged (4, 1);
+//}
+//
+//void AwagsGui::GainChanged_10 ()
+//{
+//  GainChanged (5, 0);
+//}
+//
+//void AwagsGui::GainChanged_11 ()
+//{
+//  GainChanged (5, 1);
+//}
+//
+//void AwagsGui::GainChanged_12 ()
+//{
+//  GainChanged (6, 0);
+//}
+//
+//void AwagsGui::GainChanged_13 ()
+//{
+//  GainChanged (6, 1);
+//}
+//
+//void AwagsGui::GainChanged_14 ()
+//{
+//  GainChanged (7, 0);
+//}
+//
+//void AwagsGui::GainChanged_15 ()
+//{
+//  GainChanged (7, 1);
+//}
+//
+//
 
 
 
@@ -317,23 +320,23 @@ void AwagsGui::PowerChanged_3(int checkstate)
 {
   PowerChanged(3,checkstate);
 }
-void AwagsGui::PowerChanged_4(int checkstate)
-{
-  PowerChanged(4,checkstate);
-}
-void AwagsGui::PowerChanged_5(int checkstate)
-{
-  PowerChanged(5,checkstate);
-}
-void AwagsGui::PowerChanged_6(int checkstate)
-{
-  PowerChanged(6,checkstate);
-}
-void AwagsGui::PowerChanged_7(int checkstate)
-{
-  PowerChanged(7,checkstate);
-}
-
+//void AwagsGui::PowerChanged_4(int checkstate)
+//{
+//  PowerChanged(4,checkstate);
+//}
+//void AwagsGui::PowerChanged_5(int checkstate)
+//{
+//  PowerChanged(5,checkstate);
+//}
+//void AwagsGui::PowerChanged_6(int checkstate)
+//{
+//  PowerChanged(6,checkstate);
+//}
+//void AwagsGui::PowerChanged_7(int checkstate)
+//{
+//  PowerChanged(7,checkstate);
+//}
+//
 
 
 
@@ -364,155 +367,155 @@ void AwagsGui::DAC_enterText_0_0 ()
   DAC_enterText (0, 0);
 }
 
-void AwagsGui::DAC_enterText_0_1 ()
-{
-  DAC_enterText (0, 1);
-}
-
-void AwagsGui::DAC_enterText_0_2 ()
-{
-  DAC_enterText (0, 2);
-}
-
-void AwagsGui::DAC_enterText_0_3 ()
-{
-  DAC_enterText (0, 3);
-}
+//void AwagsGui::DAC_enterText_0_1 ()
+//{
+//  DAC_enterText (0, 1);
+//}
+//
+//void AwagsGui::DAC_enterText_0_2 ()
+//{
+//  DAC_enterText (0, 2);
+//}
+//
+//void AwagsGui::DAC_enterText_0_3 ()
+//{
+//  DAC_enterText (0, 3);
+//}
 
 void AwagsGui::DAC_enterText_1_0 ()
 {
   DAC_enterText (1, 0);
 }
 
-void AwagsGui::DAC_enterText_1_1 ()
-{
-  DAC_enterText (1, 1);
-}
-
-void AwagsGui::DAC_enterText_1_2 ()
-{
-  DAC_enterText (1, 2);
-}
-
-void AwagsGui::DAC_enterText_1_3 ()
-{
-  DAC_enterText (1, 3);
-}
+//void AwagsGui::DAC_enterText_1_1 ()
+//{
+//  DAC_enterText (1, 1);
+//}
+//
+//void AwagsGui::DAC_enterText_1_2 ()
+//{
+//  DAC_enterText (1, 2);
+//}
+//
+//void AwagsGui::DAC_enterText_1_3 ()
+//{
+//  DAC_enterText (1, 3);
+//}
 
 void AwagsGui::DAC_enterText_2_0 ()
 {
   DAC_enterText (2, 0);
 }
-void AwagsGui::DAC_enterText_2_1 ()
-{
-  DAC_enterText (2, 1);
-}
-
-void AwagsGui::DAC_enterText_2_2 ()
-{
-  DAC_enterText (2, 2);
-}
-
-void AwagsGui::DAC_enterText_2_3 ()
-{
-  DAC_enterText (2, 3);
-}
+//void AwagsGui::DAC_enterText_2_1 ()
+//{
+//  DAC_enterText (2, 1);
+//}
+//
+//void AwagsGui::DAC_enterText_2_2 ()
+//{
+//  DAC_enterText (2, 2);
+//}
+//
+//void AwagsGui::DAC_enterText_2_3 ()
+//{
+//  DAC_enterText (2, 3);
+//}
 
 void AwagsGui::DAC_enterText_3_0 ()
 {
   DAC_enterText (3, 0);
 }
 
-void AwagsGui::DAC_enterText_3_1 ()
-{
-  DAC_enterText (3, 1);
-}
-
-void AwagsGui::DAC_enterText_3_2 ()
-{
-  DAC_enterText (3, 2);
-}
-
-void AwagsGui::DAC_enterText_3_3 ()
-{
-  DAC_enterText (3, 3);
-}
-
-void AwagsGui::DAC_enterText_4_0 ()
-{
-  DAC_enterText (4, 0);
-}
-
-void AwagsGui::DAC_enterText_4_1 ()
-{
-  DAC_enterText (4, 1);
-}
-void AwagsGui::DAC_enterText_4_2 ()
-{
-  DAC_enterText (4, 2);
-}
-
-void AwagsGui::DAC_enterText_4_3 ()
-{
-  DAC_enterText (4, 3);
-}
-
-void AwagsGui::DAC_enterText_5_0 ()
-{
-  DAC_enterText (5, 0);
-}
-
-void AwagsGui::DAC_enterText_5_1 ()
-{
-  DAC_enterText (5, 1);
-}
-
-void AwagsGui::DAC_enterText_5_2 ()
-{
-  DAC_enterText (5, 2);
-}
-
-void AwagsGui::DAC_enterText_5_3 ()
-{
-  DAC_enterText (5, 3);
-}
-
-void AwagsGui::DAC_enterText_6_0 ()
-{
-  DAC_enterText (6, 0);
-}
-
-void AwagsGui::DAC_enterText_6_1 ()
-{
-  DAC_enterText (6, 1);
-}
-
-void AwagsGui::DAC_enterText_6_2 ()
-{
-  DAC_enterText (6, 2);
-}
-void AwagsGui::DAC_enterText_6_3 ()
-{
-  DAC_enterText (6, 3);
-}
-
-void AwagsGui::DAC_enterText_7_0 ()
-{
-  DAC_enterText (7, 0);
-}
-
-void AwagsGui::DAC_enterText_7_1 ()
-{
-  DAC_enterText (7, 1);
-}
-void AwagsGui::DAC_enterText_7_2 ()
-{
-  DAC_enterText (7, 2);
-}
-void AwagsGui::DAC_enterText_7_3 ()
-{
-  DAC_enterText (7, 3);
-}
+//void AwagsGui::DAC_enterText_3_1 ()
+//{
+//  DAC_enterText (3, 1);
+//}
+//
+//void AwagsGui::DAC_enterText_3_2 ()
+//{
+//  DAC_enterText (3, 2);
+//}
+//
+//void AwagsGui::DAC_enterText_3_3 ()
+//{
+//  DAC_enterText (3, 3);
+//}
+//
+//void AwagsGui::DAC_enterText_4_0 ()
+//{
+//  DAC_enterText (4, 0);
+//}
+//
+//void AwagsGui::DAC_enterText_4_1 ()
+//{
+//  DAC_enterText (4, 1);
+//}
+//void AwagsGui::DAC_enterText_4_2 ()
+//{
+//  DAC_enterText (4, 2);
+//}
+//
+//void AwagsGui::DAC_enterText_4_3 ()
+//{
+//  DAC_enterText (4, 3);
+//}
+//
+//void AwagsGui::DAC_enterText_5_0 ()
+//{
+//  DAC_enterText (5, 0);
+//}
+//
+//void AwagsGui::DAC_enterText_5_1 ()
+//{
+//  DAC_enterText (5, 1);
+//}
+//
+//void AwagsGui::DAC_enterText_5_2 ()
+//{
+//  DAC_enterText (5, 2);
+//}
+//
+//void AwagsGui::DAC_enterText_5_3 ()
+//{
+//  DAC_enterText (5, 3);
+//}
+//
+//void AwagsGui::DAC_enterText_6_0 ()
+//{
+//  DAC_enterText (6, 0);
+//}
+//
+//void AwagsGui::DAC_enterText_6_1 ()
+//{
+//  DAC_enterText (6, 1);
+//}
+//
+//void AwagsGui::DAC_enterText_6_2 ()
+//{
+//  DAC_enterText (6, 2);
+//}
+//void AwagsGui::DAC_enterText_6_3 ()
+//{
+//  DAC_enterText (6, 3);
+//}
+//
+//void AwagsGui::DAC_enterText_7_0 ()
+//{
+//  DAC_enterText (7, 0);
+//}
+//
+//void AwagsGui::DAC_enterText_7_1 ()
+//{
+//  DAC_enterText (7, 1);
+//}
+//void AwagsGui::DAC_enterText_7_2 ()
+//{
+//  DAC_enterText (7, 2);
+//}
+//void AwagsGui::DAC_enterText_7_3 ()
+//{
+//  DAC_enterText (7, 3);
+//}
 
 void AwagsGui::DAC_changed (int awags, int dac, int val)
 {
@@ -535,155 +538,155 @@ void AwagsGui::DAC_changed_0_0 (int val)
   DAC_changed (0, 0, val);
 }
 
-void AwagsGui::DAC_changed_0_1 (int val)
-{
-  DAC_changed (0, 1, val);
-}
-
-void AwagsGui::DAC_changed_0_2 (int val)
-{
-  DAC_changed (0, 2, val);
-}
-
-void AwagsGui::DAC_changed_0_3 (int val)
-{
-  DAC_changed (0, 3, val);
-}
+//void AwagsGui::DAC_changed_0_1 (int val)
+//{
+//  DAC_changed (0, 1, val);
+//}
+//
+//void AwagsGui::DAC_changed_0_2 (int val)
+//{
+//  DAC_changed (0, 2, val);
+//}
+//
+//void AwagsGui::DAC_changed_0_3 (int val)
+//{
+//  DAC_changed (0, 3, val);
+//}
 
 void AwagsGui::DAC_changed_1_0 (int val)
 {
   DAC_changed (1, 0, val);
 }
 
-void AwagsGui::DAC_changed_1_1 (int val)
-{
-  DAC_changed (1, 1, val);
-}
-
-void AwagsGui::DAC_changed_1_2 (int val)
-{
-  DAC_changed (1, 2, val);
-}
-
-void AwagsGui::DAC_changed_1_3 (int val)
-{
-  DAC_changed (1, 3, val);
-}
+//void AwagsGui::DAC_changed_1_1 (int val)
+//{
+//  DAC_changed (1, 1, val);
+//}
+//
+//void AwagsGui::DAC_changed_1_2 (int val)
+//{
+//  DAC_changed (1, 2, val);
+//}
+//
+//void AwagsGui::DAC_changed_1_3 (int val)
+//{
+//  DAC_changed (1, 3, val);
+//}
 
 void AwagsGui::DAC_changed_2_0 (int val)
 {
   DAC_changed (2, 0, val);
 }
-void AwagsGui::DAC_changed_2_1 (int val)
-{
-  DAC_changed (2, 1, val);
-}
-
-void AwagsGui::DAC_changed_2_2 (int val)
-{
-  DAC_changed (2, 2, val);
-}
-
-void AwagsGui::DAC_changed_2_3 (int val)
-{
-  DAC_changed (2, 3, val);
-}
+//void AwagsGui::DAC_changed_2_1 (int val)
+//{
+//  DAC_changed (2, 1, val);
+//}
+//
+//void AwagsGui::DAC_changed_2_2 (int val)
+//{
+//  DAC_changed (2, 2, val);
+//}
+//
+//void AwagsGui::DAC_changed_2_3 (int val)
+//{
+//  DAC_changed (2, 3, val);
+//}
 
 void AwagsGui::DAC_changed_3_0 (int val)
 {
   DAC_changed (3, 0, val);
 }
 
-void AwagsGui::DAC_changed_3_1 (int val)
-{
-  DAC_changed (3, 1, val);
-}
-
-void AwagsGui::DAC_changed_3_2 (int val)
-{
-  DAC_changed (3, 2, val);
-}
-
-void AwagsGui::DAC_changed_3_3 (int val)
-{
-  DAC_changed (3, 3, val);
-}
-
-void AwagsGui::DAC_changed_4_0 (int val)
-{
-  DAC_changed (4, 0, val);
-}
-
-void AwagsGui::DAC_changed_4_1 (int val)
-{
-  DAC_changed (4, 1, val);
-}
-void AwagsGui::DAC_changed_4_2 (int val)
-{
-  DAC_changed (4, 2, val);
-}
-
-void AwagsGui::DAC_changed_4_3 (int val)
-{
-  DAC_changed (4, 3, val);
-}
-
-void AwagsGui::DAC_changed_5_0 (int val)
-{
-  DAC_changed (5, 0, val);
-}
-
-void AwagsGui::DAC_changed_5_1 (int val)
-{
-  DAC_changed (5, 1, val);
-}
-
-void AwagsGui::DAC_changed_5_2 (int val)
-{
-  DAC_changed (5, 2, val);
-}
-
-void AwagsGui::DAC_changed_5_3 (int val)
-{
-  DAC_changed (5, 3, val);
-}
-
-void AwagsGui::DAC_changed_6_0 (int val)
-{
-  DAC_changed (6, 0, val);
-}
-
-void AwagsGui::DAC_changed_6_1 (int val)
-{
-  DAC_changed (6, 1, val);
-}
-
-void AwagsGui::DAC_changed_6_2 (int val)
-{
-  DAC_changed (6, 2, val);
-}
-void AwagsGui::DAC_changed_6_3 (int val)
-{
-  DAC_changed (6, 3, val);
-}
-
-void AwagsGui::DAC_changed_7_0 (int val)
-{
-  DAC_changed (7, 0, val);
-}
-
-void AwagsGui::DAC_changed_7_1 (int val)
-{
-  DAC_changed (7, 1, val);
-}
-void AwagsGui::DAC_changed_7_2 (int val)
-{
-  DAC_changed (7, 2, val);
-}
-void AwagsGui::DAC_changed_7_3 (int val)
-{
-  DAC_changed (7, 3, val);
-}
+//void AwagsGui::DAC_changed_3_1 (int val)
+//{
+//  DAC_changed (3, 1, val);
+//}
+//
+//void AwagsGui::DAC_changed_3_2 (int val)
+//{
+//  DAC_changed (3, 2, val);
+//}
+//
+//void AwagsGui::DAC_changed_3_3 (int val)
+//{
+//  DAC_changed (3, 3, val);
+//}
+//
+//void AwagsGui::DAC_changed_4_0 (int val)
+//{
+//  DAC_changed (4, 0, val);
+//}
+//
+//void AwagsGui::DAC_changed_4_1 (int val)
+//{
+//  DAC_changed (4, 1, val);
+//}
+//void AwagsGui::DAC_changed_4_2 (int val)
+//{
+//  DAC_changed (4, 2, val);
+//}
+//
+//void AwagsGui::DAC_changed_4_3 (int val)
+//{
+//  DAC_changed (4, 3, val);
+//}
+//
+//void AwagsGui::DAC_changed_5_0 (int val)
+//{
+//  DAC_changed (5, 0, val);
+//}
+//
+//void AwagsGui::DAC_changed_5_1 (int val)
+//{
+//  DAC_changed (5, 1, val);
+//}
+//
+//void AwagsGui::DAC_changed_5_2 (int val)
+//{
+//  DAC_changed (5, 2, val);
+//}
+//
+//void AwagsGui::DAC_changed_5_3 (int val)
+//{
+//  DAC_changed (5, 3, val);
+//}
+//
+//void AwagsGui::DAC_changed_6_0 (int val)
+//{
+//  DAC_changed (6, 0, val);
+//}
+//
+//void AwagsGui::DAC_changed_6_1 (int val)
+//{
+//  DAC_changed (6, 1, val);
+//}
+//
+//void AwagsGui::DAC_changed_6_2 (int val)
+//{
+//  DAC_changed (6, 2, val);
+//}
+//void AwagsGui::DAC_changed_6_3 (int val)
+//{
+//  DAC_changed (6, 3, val);
+//}
+//
+//void AwagsGui::DAC_changed_7_0 (int val)
+//{
+//  DAC_changed (7, 0, val);
+//}
+//
+//void AwagsGui::DAC_changed_7_1 (int val)
+//{
+//  DAC_changed (7, 1, val);
+//}
+//void AwagsGui::DAC_changed_7_2 (int val)
+//{
+//  DAC_changed (7, 2, val);
+//}
+//void AwagsGui::DAC_changed_7_3 (int val)
+//{
+//  DAC_changed (7, 3, val);
+//}
 
 
 
@@ -724,22 +727,22 @@ void AwagsGui::AutoCalibrate_3 ()
 {
   AutoCalibrate (3);
 }
-void AwagsGui::AutoCalibrate_4 ()
-{
-  AutoCalibrate (4);
-}
-void AwagsGui::AutoCalibrate_5 ()
-{
-  AutoCalibrate (5);
-}
-void AwagsGui::AutoCalibrate_6 ()
-{
-  AutoCalibrate (6);
-}
-void AwagsGui::AutoCalibrate_7 ()
-{
-  AutoCalibrate (7);
-}
+//void AwagsGui::AutoCalibrate_4 ()
+//{
+//  AutoCalibrate (4);
+//}
+//void AwagsGui::AutoCalibrate_5 ()
+//{
+//  AutoCalibrate (5);
+//}
+//void AwagsGui::AutoCalibrate_6 ()
+//{
+//  AutoCalibrate (6);
+//}
+//void AwagsGui::AutoCalibrate_7 ()
+//{
+//  AutoCalibrate (7);
+//}
 
 void AwagsGui::AutoCalibrate_all ()
 {
@@ -1064,21 +1067,12 @@ void AwagsGui::StartBenchmarkPressed ()
 
 
 
-
-
-
-
   printm ("Benchmark has been started for sfp %d slave %d", fSFP, fSlave);
 //  printm ("Board 1:%s Board2:%s Current=%f A Voltage=%f V", awags1.toLatin1 ().constData (), awags2.toLatin1 ().constData (),
 //      current, voltage);
 
   // here we evaluate a to do list that the timer should process:
   fBenchmark.SetSetup (theSetup);
-
-
-
-
-
 
   fBenchmark.ResetSequencerList ();
 
@@ -1097,32 +1091,25 @@ void AwagsGui::StartBenchmarkPressed ()
 
 
 
-
+//////////////////// GAIN 1
   if (fAwagsWidget->Gain1groupBox->isChecked ())
   {
-
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_1));
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_INIT));
-
     if (fAwagsWidget->Gain1TestAutocalCheckBox->isChecked ())
     {
       fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_AUTOCALIB));
     }
-
      if (fAwagsWidget->Gain1TestBaselineCheckBox->isChecked ())
     {
       for (int channel = 0; channel < AWAGS_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_BASELINE, channel));
-
     }
-
     if (fAwagsWidget->Gain1TestSigmaCheckBox->isChecked ())
     {
       for (int channel = 0; channel < AWAGS_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_NOISESAMPLE, channel));
-
     }
-
     if (fAwagsWidget->Gain1TestCurveCheckBox->isChecked ())
     {
       for (int channel = 0; channel < AWAGS_ADC_CHANNELS; ++channel)
@@ -1131,32 +1118,25 @@ void AwagsGui::StartBenchmarkPressed ()
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_FINALIZE));
   }
 
+////////////////////////// GAIN 2
   if (fAwagsWidget->Gain16groupBox->isChecked ())
   {
-
-//    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_16));
-//    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_32));
-    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_16)); // ensure that we really have gain 16 set???
+    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_2));
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_INIT));
-
-
     if (fAwagsWidget->Gain16TestAutocalCheckBox->isChecked ())
     {
       fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_AUTOCALIB));
     }
-
      if (fAwagsWidget->Gain16TestBaselineCheckBox->isChecked ())
     {
       for (int channel = 0; channel < AWAGS_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_BASELINE, channel));
     }
-
     if (fAwagsWidget->Gain16TestSigmaCheckBox->isChecked ())
     {
       for (int channel = 0; channel < AWAGS_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_NOISESAMPLE, channel));
     }
-
     if (fAwagsWidget->Gain16TestCurveCheckBox->isChecked ())
     {
       for (int channel = 0; channel < AWAGS_ADC_CHANNELS; ++channel)
@@ -1164,47 +1144,60 @@ void AwagsGui::StartBenchmarkPressed ()
     }
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_FINALIZE));
   }
+
+  /////////////////////////////////// GAIN 4
   if (fAwagsWidget->Gain32groupBox->isChecked ())
   {
-
-//    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_32));
-//    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_16));
-    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_32));// ensure that we really have gain 32 set???
-
+    fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_4));// ensure that we really have gain 32 set???
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_INIT));
-
     if (fAwagsWidget->Gain32TestAutocalCheckBox->isChecked ())
     {
       fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_AUTOCALIB));
     }
-
      if (fAwagsWidget->Gain32TestBaselineCheckBox->isChecked ())
     {
       for (int channel = 0; channel < AWAGS_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_BASELINE, channel));
     }
-
-
     if (fAwagsWidget->Gain32TestSigmaCheckBox->isChecked ())
     {
       for (int channel = 0; channel < AWAGS_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_NOISESAMPLE, channel));
     }
-
-
-
     if (fAwagsWidget->Gain32TestCurveCheckBox->isChecked ())
     {
       for (int channel = 0; channel < AWAGS_ADC_CHANNELS; ++channel)
         fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_CURVE, channel));
     }
     fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_FINALIZE));
-
   }
 
-  // TODO JAM22: correct gain test commands here
-
-  //fBenchmark.SetMultiPulserMode(fAwagsWidget->multiPulserRadio->isChecked());
+  /////////////////////////////////// GAIN 8
+  if (fAwagsWidget->Gain64groupBox->isChecked ())
+    {
+      fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_GAIN_8));// ensure that we really have gain 32 set???
+      fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_INIT));
+      if (fAwagsWidget->Gain64TestAutocalCheckBox->isChecked ())
+      {
+        fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_AUTOCALIB));
+      }
+       if (fAwagsWidget->Gain64TestBaselineCheckBox->isChecked ())
+      {
+        for (int channel = 0; channel < AWAGS_ADC_CHANNELS; ++channel)
+          fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_BASELINE, channel));
+      }
+      if (fAwagsWidget->Gain64TestSigmaCheckBox->isChecked ())
+      {
+        for (int channel = 0; channel < AWAGS_ADC_CHANNELS; ++channel)
+          fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_NOISESAMPLE, channel));
+      }
+      if (fAwagsWidget->Gain64TestCurveCheckBox->isChecked ())
+      {
+        for (int channel = 0; channel < AWAGS_ADC_CHANNELS; ++channel)
+          fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_CURVE, channel));
+      }
+      fBenchmark.AddSequencerCommand (SequencerCommand (SEQ_FINALIZE));
+    }
 
   fBenchmark.FinalizeSequencerList ();
   fSequencerStopwatch.start ();

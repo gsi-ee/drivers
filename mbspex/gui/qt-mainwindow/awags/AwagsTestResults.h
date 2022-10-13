@@ -45,17 +45,17 @@ private:
   /** Current for Diode mode measured by Keithley */
   double fCurrentDiode;
 
-  bool fIDScanOK;
+  //bool fIDScanOK;
 
   /** true if general call  test has passed. false for failed or not yet done.*/
-  bool fGeneralScanOK;
+  ///bool fGeneralScanOK;
 
    /** true if general call  test has passed. false for failed or not yet done.*/
-  bool fIDReverseScanOK;
+  //bool fIDReverseScanOK;
 
 
    /** true if register scan test has passed. false for failed or not yet done.*/
-  bool fRegisterScanOK;
+  //bool fRegisterScanOK;
 
 
 
@@ -94,10 +94,10 @@ private:
     uint16_t fMaxValue[AWAGS_NUMDACS];;
 
     /** keep result of peak finding on trace for each DAC*/
-    std::vector<AdcPeak> fPeaks[AWAGS_NUMDACS];
+   // std::vector<AdcPeak> fPeaks[AWAGS_NUMDACS];
 
     /** true if peak finding was applied for negative peaks (valleys in baseline)*/
-    bool fNegativePeaks[AWAGS_NUMDACS];
+    //bool fNegativePeaks[AWAGS_NUMDACS];
 
     /** record begin of benchmark*/
     QDateTime fStartTime;
@@ -180,14 +180,14 @@ public:
   double GetCurrentHV(){return fCurrentHV;}
   double GetCurrentDiode(){return fCurrentDiode;}
 
-  bool IsIDScanOK(){return fIDScanOK;}
-  bool IsGeneralCallScanOK(){return fGeneralScanOK;}
-  bool IsReverseIDScanOK(){return fIDReverseScanOK;}
-  bool IsRegisterScanOK(){return fRegisterScanOK;}
-  void SetIDScan(bool ok){fIDScanOK=ok;}
-  void SetGeneralCallScan(bool ok){fGeneralScanOK=ok;}
-  void SetReverseIDScan(bool ok){fIDReverseScanOK=ok;}
-  void SetRegisterScan(bool ok){fRegisterScanOK=ok;}
+//  bool IsIDScanOK(){return fIDScanOK;}
+//  bool IsGeneralCallScanOK(){return fGeneralScanOK;}
+//  bool IsReverseIDScanOK(){return fIDReverseScanOK;}
+//  bool IsRegisterScanOK(){return fRegisterScanOK;}
+//  void SetIDScan(bool ok){fIDScanOK=ok;}
+//  void SetGeneralCallScan(bool ok){fGeneralScanOK=ok;}
+//  void SetReverseIDScan(bool ok){fIDReverseScanOK=ok;}
+//  void SetRegisterScan(bool ok){fRegisterScanOK=ok;}
 
   /** set local address id of this chip on the board*/
   void SetAddressId(uint8_t ad);
@@ -268,26 +268,26 @@ double GetSlope (int dac, bool checkvalid=false);
  /** clear samples of the DAC working curve */
  int ResetDacSample(int dac);
 
- /** add another found peak in the adc trace for a given dac*/
- int AddAdcPeak(int dac, int position, uint16_t height);
-
- /** remove all found peaks of adc trace for dac*/
- int ResetAdcPeaks(int dac);
-
- /** number of adc trace peaks found.*/
- int NumAdcPeaks(int dac);
-
- /** positon of the indexth adc trace peak provided by dac */
- int GetAdcPeakPosition(int dac, int index, bool checkvalid=false);
-
- /** height of the indexth adc trace peak provided by dac */
- int GetAdcPeakHeight(int dac, int index, bool checkvalid=false);
-
-  /** returns true if peak finding was done with positive polarity. otherwise the peaks are valleys.*/
-  bool HasNegativeAdcPeaks(int dac);
-
-  /** mark trace peaks as valleys*/
-  int SetNegativeAdcPeaks(int dac, bool negative);
+// /** add another found peak in the adc trace for a given dac*/
+// int AddAdcPeak(int dac, int position, uint16_t height);
+//
+// /** remove all found peaks of adc trace for dac*/
+// int ResetAdcPeaks(int dac);
+//
+// /** number of adc trace peaks found.*/
+// int NumAdcPeaks(int dac);
+//
+// /** positon of the indexth adc trace peak provided by dac */
+// int GetAdcPeakPosition(int dac, int index, bool checkvalid=false);
+//
+// /** height of the indexth adc trace peak provided by dac */
+// int GetAdcPeakHeight(int dac, int index, bool checkvalid=false);
+//
+//  /** returns true if peak finding was done with positive polarity. otherwise the peaks are valleys.*/
+//  bool HasNegativeAdcPeaks(int dac);
+//
+//  /** mark trace peaks as valleys*/
+//  int SetNegativeAdcPeaks(int dac, bool negative);
 
 
 

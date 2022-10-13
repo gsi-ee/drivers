@@ -12,14 +12,15 @@ fCurrentAsic(1.0), fCurrentHV(1.0), fCurrentDiode(1.0)
   for (int c = 0; c < AWAGS_NUMDACS; ++c)
   {
     fDACValueSet[c] = 0;
+    fGain[c]=1;
   }
 
-  for (int c = 0; c < AWAGS_NUMCHANS; ++c)
-  {
-    fLowGainSet[c] = true;
-//    fTestPulsEnable[c] = false;
-
-  }
+//  for (int c = 0; c < AWAGS_NUMCHANS; ++c)
+//  {
+//    fLowGainSet[c] = true;
+////    fTestPulsEnable[c] = false;
+//
+//  }
   //fTestPulsPositive = true;
 
 }
@@ -40,54 +41,24 @@ int AwagsSetup::SetDACValue (int dac, uint16_t value)
   return 0;
 }
 
-int AwagsSetup::SetLowGain (int chan, bool low)
+
+int AwagsSetup::GetGain (int dac)
 {
-  ASSERT_CHAN_VALID(chan);
-  fLowGainSet[chan] = low;
+  ASSERT_DAC_VALID(dac)
+  //std::cout << "GetGain ("<<dac<<")="<< (int)(fGain[dac])<< std::endl;
+  return (fGain[dac] & 0xFF);
+}
+
+int AwagsSetup::SetGain (int dac, uint8_t value)
+{
+  ASSERT_DAC_VALID(dac)
+  fGain[dac] = value;
+  //std::cout << "SetGain ("<<dac<<")="<< (int)(fGain[dac])<<", val="<<(int) (value  & 0xFF)<< std::endl;
   return 0;
 }
 
-int AwagsSetup::GetLowGain (int chan)
-{
-  ASSERT_CHAN_VALID(chan);
-  return (fLowGainSet[chan] ? 1 : 0);
-}
-//int AwagsSetup::SetTestPulseEnable (int chan, bool on)
-//{
-//  ASSERT_CHAN_VALID(chan);
-//  fTestPulsEnable[chan] = on;
-//  return 0;
-//}
 
-//int AwagsSetup::GetTestPulseEnable (int chan)
-//{
-//  ASSERT_CHAN_VALID(chan);
-//  return (fTestPulsEnable[chan] ? 1 : 0);
-//}
-//
-//int AwagsSetup::SetTestPulseAmplitude (int chan, uint8_t amp)
-//{
-//  ASSERT_CHAN_VALID(chan);
-//  fTestPulseAmplitude[chan] = (amp & 0xF);
-//  return 0;
-//}
-//
-//uint8_t AwagsSetup::GetTestPulseAmplitude (int chan)
-//{
-//  ASSERT_CHAN_VALID(chan);
-//  return fTestPulseAmplitude[chan];
-//}
-//
-//int AwagsSetup::SetTestPulsePostive (bool pos)
-//{
-//  fTestPulsPositive = pos;
-//  return 0;
-//}
-//
-//int AwagsSetup::GetTestPulsePositive ()
-//{
-//  return (fTestPulsPositive ? 1 : 0);
-//}
+
 
 void AwagsSetup::SetAddressID (uint8_t address)
 {

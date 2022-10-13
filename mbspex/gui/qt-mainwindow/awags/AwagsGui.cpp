@@ -40,7 +40,7 @@ AwagsGui::AwagsGui (QWidget* parent) :
         fPlotMaxDac (AWAGS_DAC_MAXVALUE), fPlotMinAdc (0), fPlotMaxAdc (AWAGS_ADC_MAXVALUE), fUseSimpleSwitchAddressing(false)
 {
   fImplementationName="AWAGS";
-  fVersionString="Welcome to AWAGS GUI!\n\t v0.42 of 12-October-2022 by JAM (j.adamczewski@gsi.de)\n";
+  fVersionString="Welcome to AWAGS GUI!\n\t v0.421 of 13-October-2022 by JAM (j.adamczewski@gsi.de)\n";
 
   fSettings=new QSettings("GSI", fImplementationName);
 
@@ -737,10 +737,11 @@ mdiArea->addSubWindow(fAwagsWidget); // complete febex widget in one window
    fAwagsCurrentASICLabel[1]=fAwagsWidget->CurrentASIC_Label_2;
    fAwagsCurrentASICLabel[2]=fAwagsWidget->CurrentASIC_Label_3;
    fAwagsCurrentASICLabel[3]=fAwagsWidget->CurrentASIC_Label_4;
-   fAwagsCurrentASICLabel[4]=fAwagsWidget->CurrentASIC_Label_5;
-   fAwagsCurrentASICLabel[5]=fAwagsWidget->CurrentASIC_Label_6;
-   fAwagsCurrentASICLabel[6]=fAwagsWidget->CurrentASIC_Label_7;
-   fAwagsCurrentASICLabel[7]=fAwagsWidget->CurrentASIC_Label_8;
+
+//   fAwagsCurrentASICLabel[4]=fAwagsWidget->CurrentASIC_Label_5;
+//   fAwagsCurrentASICLabel[5]=fAwagsWidget->CurrentASIC_Label_6;
+//   fAwagsCurrentASICLabel[6]=fAwagsWidget->CurrentASIC_Label_7;
+//   fAwagsCurrentASICLabel[7]=fAwagsWidget->CurrentASIC_Label_8;
 
 
 
@@ -789,47 +790,47 @@ mdiArea->addSubWindow(fAwagsWidget); // complete febex widget in one window
    fAwagsCurrentHVLabel[1]=fAwagsWidget->CurrentHV_Label_2;
    fAwagsCurrentHVLabel[2]=fAwagsWidget->CurrentHV_Label_3;
    fAwagsCurrentHVLabel[3]=fAwagsWidget->CurrentHV_Label_4;
-   fAwagsCurrentHVLabel[4]=fAwagsWidget->CurrentHV_Label_5;
-   fAwagsCurrentHVLabel[5]=fAwagsWidget->CurrentHV_Label_6;
-   fAwagsCurrentHVLabel[6]=fAwagsWidget->CurrentHV_Label_7;
-   fAwagsCurrentHVLabel[7]=fAwagsWidget->CurrentHV_Label_8;
+//   fAwagsCurrentHVLabel[4]=fAwagsWidget->CurrentHV_Label_5;
+//   fAwagsCurrentHVLabel[5]=fAwagsWidget->CurrentHV_Label_6;
+//   fAwagsCurrentHVLabel[6]=fAwagsWidget->CurrentHV_Label_7;
+//   fAwagsCurrentHVLabel[7]=fAwagsWidget->CurrentHV_Label_8;
 
 
    fAwagsCurrentDiodeLabel[0]=fAwagsWidget->CurrentDiode_Label_1;
    fAwagsCurrentDiodeLabel[1]=fAwagsWidget->CurrentDiode_Label_2;
    fAwagsCurrentDiodeLabel[2]=fAwagsWidget->CurrentDiode_Label_3;
    fAwagsCurrentDiodeLabel[3]=fAwagsWidget->CurrentDiode_Label_4;
-   fAwagsCurrentDiodeLabel[4]=fAwagsWidget->CurrentDiode_Label_5;
-   fAwagsCurrentDiodeLabel[5]=fAwagsWidget->CurrentDiode_Label_6;
-   fAwagsCurrentDiodeLabel[6]=fAwagsWidget->CurrentDiode_Label_7;
-   fAwagsCurrentDiodeLabel[7]=fAwagsWidget->CurrentDiode_Label_8;
+//   fAwagsCurrentDiodeLabel[4]=fAwagsWidget->CurrentDiode_Label_5;
+//   fAwagsCurrentDiodeLabel[5]=fAwagsWidget->CurrentDiode_Label_6;
+//   fAwagsCurrentDiodeLabel[6]=fAwagsWidget->CurrentDiode_Label_7;
+//   fAwagsCurrentDiodeLabel[7]=fAwagsWidget->CurrentDiode_Label_8;
 
    fAwagsCurrentASICSpin[0]=fAwagsWidget->CurrentASIC_DoubleSpinBox_1;
    fAwagsCurrentASICSpin[1]=fAwagsWidget->CurrentASIC_DoubleSpinBox_2;
    fAwagsCurrentASICSpin[2]=fAwagsWidget->CurrentASIC_DoubleSpinBox_3;
    fAwagsCurrentASICSpin[3]=fAwagsWidget->CurrentASIC_DoubleSpinBox_4;
-   fAwagsCurrentASICSpin[4]=fAwagsWidget->CurrentASIC_DoubleSpinBox_5;
-   fAwagsCurrentASICSpin[5]=fAwagsWidget->CurrentASIC_DoubleSpinBox_6;
-   fAwagsCurrentASICSpin[6]=fAwagsWidget->CurrentASIC_DoubleSpinBox_7;
-   fAwagsCurrentASICSpin[7]=fAwagsWidget->CurrentASIC_DoubleSpinBox_8;
+//   fAwagsCurrentASICSpin[4]=fAwagsWidget->CurrentASIC_DoubleSpinBox_5;
+//   fAwagsCurrentASICSpin[5]=fAwagsWidget->CurrentASIC_DoubleSpinBox_6;
+//   fAwagsCurrentASICSpin[6]=fAwagsWidget->CurrentASIC_DoubleSpinBox_7;
+//   fAwagsCurrentASICSpin[7]=fAwagsWidget->CurrentASIC_DoubleSpinBox_8;
 
    fAwagsCurrentHVSpin[0]=fAwagsWidget->CurrentHV_DoubleSpinBox_1;
    fAwagsCurrentHVSpin[1]=fAwagsWidget->CurrentHV_DoubleSpinBox_2;
    fAwagsCurrentHVSpin[2]=fAwagsWidget->CurrentHV_DoubleSpinBox_3;
    fAwagsCurrentHVSpin[3]=fAwagsWidget->CurrentHV_DoubleSpinBox_4;
-   fAwagsCurrentHVSpin[4]=fAwagsWidget->CurrentHV_DoubleSpinBox_5;
-   fAwagsCurrentHVSpin[5]=fAwagsWidget->CurrentHV_DoubleSpinBox_6;
-   fAwagsCurrentHVSpin[6]=fAwagsWidget->CurrentHV_DoubleSpinBox_7;
-   fAwagsCurrentHVSpin[7]=fAwagsWidget->CurrentHV_DoubleSpinBox_8;
+//   fAwagsCurrentHVSpin[4]=fAwagsWidget->CurrentHV_DoubleSpinBox_5;
+//   fAwagsCurrentHVSpin[5]=fAwagsWidget->CurrentHV_DoubleSpinBox_6;
+//   fAwagsCurrentHVSpin[6]=fAwagsWidget->CurrentHV_DoubleSpinBox_7;
+//   fAwagsCurrentHVSpin[7]=fAwagsWidget->CurrentHV_DoubleSpinBox_8;
 
    fAwagsCurrentDiodeSpin[0]=fAwagsWidget->CurrentDiode_DoubleSpinBox_1;
    fAwagsCurrentDiodeSpin[1]=fAwagsWidget->CurrentDiode_DoubleSpinBox_2;
    fAwagsCurrentDiodeSpin[2]=fAwagsWidget->CurrentDiode_DoubleSpinBox_3;
    fAwagsCurrentDiodeSpin[3]=fAwagsWidget->CurrentDiode_DoubleSpinBox_4;
-   fAwagsCurrentDiodeSpin[4]=fAwagsWidget->CurrentDiode_DoubleSpinBox_5;
-   fAwagsCurrentDiodeSpin[5]=fAwagsWidget->CurrentDiode_DoubleSpinBox_6;
-   fAwagsCurrentDiodeSpin[6]=fAwagsWidget->CurrentDiode_DoubleSpinBox_7;
-   fAwagsCurrentDiodeSpin[7]=fAwagsWidget->CurrentDiode_DoubleSpinBox_8;
+//   fAwagsCurrentDiodeSpin[4]=fAwagsWidget->CurrentDiode_DoubleSpinBox_5;
+//   fAwagsCurrentDiodeSpin[5]=fAwagsWidget->CurrentDiode_DoubleSpinBox_6;
+//   fAwagsCurrentDiodeSpin[6]=fAwagsWidget->CurrentDiode_DoubleSpinBox_7;
+//   fAwagsCurrentDiodeSpin[7]=fAwagsWidget->CurrentDiode_DoubleSpinBox_8;
 
 
 
@@ -1822,13 +1823,13 @@ void AwagsGui::AutoApplySwitch ()
 //}
 
 
-void AwagsGui::AutoApplyGain (int awags, int channel)
+void AwagsGui::AutoApplyGain (int awags)
 {
   theSetup_GET_FOR_SLAVE(BoardSetup);
-  EvaluateGain (awags, channel);
+  EvaluateGain (awags);
   //std::cout << "AutoApplyGain awags=" << awags << ", channel=" << channel << ", lowgain:"
   //    << theSetup->GetLowGain (awags, channel) << std::endl;
-  SetGain (awags, channel, theSetup->GetLowGain (awags, channel));
+  SetGain (awags, theSetup->GetGain (awags,0));
 }
 
 
@@ -1836,13 +1837,17 @@ void AwagsGui::AutoApplyDAC (int awags, int dac, int val)
 {
   // keep setup structure always consistent:
   theSetup_GET_FOR_SLAVE(BoardSetup);
-
-  theSetup->SetDACValue (awags, dac, val);
-  if (theSetup->IsAwagsPresent (awags))
+  // this one is only called for dac index 0, since there are no other sliders on gui
+  // we have to keep track for all existing dac indices in setup though:
+  for(int d=0; d<AWAGS_NUMDACS; ++d)
   {
-    // only access chip if it is connected
-    WriteDAC_AwagsI2c (awags, dac, theSetup->GetDACValue (awags, dac));
-    RefreshADC_Awags (awags, dac);
+    theSetup->SetDACValue (awags, d, val);
+    if (theSetup->IsAwagsPresent (awags))
+    {
+      // only access chip if it is connected
+      WriteDAC_AwagsI2c (awags, d, theSetup->GetDACValue (awags, d)); // internally will address only dac 0
+      RefreshADC_Awags (awags, d); // will update all febex channels connected to dac 0
+    }
   }
 }
 
@@ -1870,7 +1875,7 @@ void AwagsGui::SetDefaultIOConfig()
     {
       if(theSetup->HasAwagsPower(a)) powermask |= (1 << a);
     }
-    SetPower(powermask, theSetup->IsHighGain());
+    SetPower(powermask, false); // TODO: new functions here
 
 }
 
@@ -1958,12 +1963,13 @@ void AwagsGui::RefreshDAC (int awags)
   QString pre;
   fNumberBase == 16 ? pre = "0x" : pre = "";
    theSetup_GET_FOR_SLAVE(BoardSetup);
-  for (int dac = 0; dac < AWAGS_NUMDACS; ++dac)
-  {
+//  for (int dac = 0; dac < AWAGS_NUMDACS; ++dac)
+//    {
+    int dac=0; // JAM22 we have only one real dac, but 4 entries in setup
     int value = theSetup->GetDACValue (awags, dac);
     fDACSlider[awags][dac]->setValue (value);
     fDACLineEdit[awags][dac]->setText (pre + text.setNum (value, fNumberBase));
-  }
+//  }
 
   // 2017: disable DAC widget if DAC has not responded last request
   //fAwagsPulseGroup[awags]->setEnabled(theSetup->IsAwagsPresent(awags));
@@ -2235,78 +2241,16 @@ void AwagsGui::RefreshADC_Awags (int awagschip, int dac)
   {
     // only refresh adc channels once for active dacs
     int gain = theSetup->GetGain (awagschip, dac);
-    RefreshADC_channel (chan, gain);
-    if (!theSetup->IsHighGain ())
-      RefreshADC_channel (chan + 1, gain);    // kludge to cover both adc channels set by dac2 for gain 1
+    for (int c=chan; c<chan + AWAGS_NUMCHANS; ++c)
+    {
+      RefreshADC_channel (chan, gain);
+      // the single dac of each awags works on the next AWAGS_NUMCHANS=4 FEBEX channels
+      // refresh them all!
+    }
   }
-
 }
 
 
-//void AwagsGui::RefreshAwagsLabels(bool ispandatest)
-//{
-//  // for panda test mode, we may change text on DAC adresses:
-//
-//
-//  if(ispandatest)
-//  {
-//      fAwagsWidget->AwagsDACTabset->setTabText(1,"AWAGS 5-8");
-//      fAwagsWidget->AwagsBox5->setTitle("AWAGS 5");
-//      fAwagsWidget->AwagsBox6->setTitle("AWAGS 6");
-//      fAwagsWidget->AwagsBox7->setTitle("AWAGS 7");
-//      fAwagsWidget->AwagsBox8->setTitle("AWAGS 8");
-//
-//      fAwagsWidget->AwagsGainBox_5->setTitle("AWAGS 5");
-//      fAwagsWidget->AwagsGainBox_6->setTitle("AWAGS 6");
-//      fAwagsWidget->AwagsGainBox_7->setTitle("AWAGS 7");
-//      fAwagsWidget->AwagsGainBox_8->setTitle("AWAGS 8");
-//
-////      fAwagsWidget->AwagsPulseBox_5->setTitle("AWAGS 5");
-////      fAwagsWidget->AwagsPulseBox_6->setTitle("AWAGS 6");
-////      fAwagsWidget->AwagsPulseBox_7->setTitle("AWAGS 7");
-////      fAwagsWidget->AwagsPulseBox_8->setTitle("AWAGS 8");
-//
-//      fAwagsWidget->AwagsAdressLabel_5->setText("AWAGS  5");
-//      fAwagsWidget->AwagsAdressLabel_6->setText("AWAGS  6");
-//      fAwagsWidget->AwagsAdressLabel_7->setText("AWAGS  7");
-//      fAwagsWidget->AwagsAdressLabel_8->setText("AWAGS  8");
-//
-//
-//
-//
-//
-//
-//
-//
-//  }
-//  else
-//  {
-//    fAwagsWidget->AwagsDACTabset->setTabText(1,"AWAGS 9-12");
-//    fAwagsWidget->AwagsBox5->setTitle("AWAGS  9");
-//    fAwagsWidget->AwagsBox6->setTitle("AWAGS 10");
-//    fAwagsWidget->AwagsBox7->setTitle("AWAGS 11");
-//    fAwagsWidget->AwagsBox8->setTitle("AWAGS 12");
-//
-//    fAwagsWidget->AwagsGainBox_5->setTitle("AWAGS  9");
-//    fAwagsWidget->AwagsGainBox_6->setTitle("AWAGS 10");
-//    fAwagsWidget->AwagsGainBox_7->setTitle("AWAGS 11");
-//    fAwagsWidget->AwagsGainBox_8->setTitle("AWAGS 12");
-//
-////    fAwagsWidget->AwagsPulseBox_5->setTitle("AWAGS  9");
-////    fAwagsWidget->AwagsPulseBox_6->setTitle("AWAGS 10");
-////    fAwagsWidget->AwagsPulseBox_7->setTitle("AWAGS 11");
-////    fAwagsWidget->AwagsPulseBox_8->setTitle("AWAGS 12");
-//
-//    fAwagsWidget->AwagsAdressLabel_5->setText("AWAGS  9");
-//    fAwagsWidget->AwagsAdressLabel_6->setText("AWAGS 10");
-//    fAwagsWidget->AwagsAdressLabel_7->setText("AWAGS 11");
-//    fAwagsWidget->AwagsAdressLabel_8->setText("AWAGS 12");
-//
-//  }
-//
-//  fAwagsWidget->InverseMappingCheckBox->setEnabled(!ispandatest);
-//
-//}
 
 
 void AwagsGui::RefreshView ()
@@ -2324,34 +2268,27 @@ void AwagsGui::RefreshView ()
 //
   fAwagsWidget->ProtoRadioButton->setChecked (isprotoboard);
 
-//  RefreshAwagsLabels(ispandatestboard);
+// JAM22: here refresh gains:
+  int gain=1;
+  for (int awags = 0; awags < AWAGS_NUMCHIPS; ++awags)
+     {
+      gain=theSetup->GetGain (awags, 0);
+      int ix=0;
+      int mask=gain;
+      for(ix=0; ix<5; ++ix)
+      {
+        if((mask && 0x1) == 0x1) break;
+        mask= (mask>>1);
+      }
+      if(ix==4)
+      {
+        printf("Never come here: RefreshView() could not find correct gain bit, gain=0x%x \n",gain);
+        ix=0; // avoid crashing the gui, but need to debug in this case...
+      }
+        fAwagsGainCombo[awags]->setCurrentIndex (ix);
+     }
+///////////////////////////////// JAM22
 
-
-//  fAwagsWidget->AwagsRadioButton->setChecked (theSetup->IsAwagsInUse ());
-//  fAwagsWidget->PolandRadioButton->setChecked (!theSetup->IsAwagsInUse ());    // probably we do not need this because of autoExclusive flag
-  //fAwagsWidget->LoGainRadioButton->setChecked (!theSetup->IsHighGain ());
-  ///fAwagsWidget->HiGainRadioButton->setChecked (theSetup->IsHighGain ());    // probably we do not need this because of autoExclusive flag
-//  fAwagsWidget->StretcherOnRadioButton->setChecked (theSetup->IsStretcherInUse ());
-//  fAwagsWidget->StretcherOffRadioButton->setChecked (!theSetup->IsStretcherInUse ());
-//
-//  fAwagsWidget->InverseMappingCheckBox->setChecked (!theSetup->IsRegularMapping ());
-
-  // TODO: treat 4 equivalent gain steps here in setup and in gui JAM22
-//  if (theSetup->IsHighGain ())
-//  {
-//    // only refresh gain entries if we are in high gain mode
-//    for (int awags = 0; awags < AWAGS_NUMCHIPS; ++awags)
-//    {
-//      for (int chan = 0; chan < AWAGS_NUMCHANS; ++chan)
-//      {
-//        bool logain = theSetup->GetLowGain (awags, chan);
-//        if (logain)
-//          fAwagsGainCombo[awags][chan]->setCurrentIndex (0);
-//        else
-//          fAwagsGainCombo[awags][chan]->setCurrentIndex (1);
-//      }
-//    }
-//  }
 
 ///////////////////////////////////////////////////////
 // show DAC and test result values:
@@ -2385,21 +2322,7 @@ void AwagsGui::RefreshView ()
    }
 
 
-///////////////////////////////////////////////////////
-//show pulser setup:
-//  for (int awags = 0; awags < AWAGS_NUMCHIPS; ++awags)
-//  {
-//    bool positive = theSetup->GetTestPulsePositive (awags);
-//    if (positive)
-//      fAwagsPulsePolarityCombo[awags]->setCurrentIndex (0);
-//    else
-//      fAwagsPulsePolarityCombo[awags]->setCurrentIndex (1);
-//    for (int chan = 0; chan < AWAGS_NUMCHANS; ++chan)
-//    {
-//      bool on = theSetup->GetTestPulseEnable (awags, chan);
-//      fAwagsPulseEnabledCheckbox[awags][chan]->setChecked (on);
-//    }
-//  }
+
 
   RefreshBaselines();
 
@@ -2408,7 +2331,7 @@ void AwagsGui::RefreshView ()
   //fAwagsWidget->Baseline_Box_invert->setChecked (!theSetup->IsBaselineInverted());
 // dac relative baseline settings and adc sample:
   int awags = 0, dac = 0;
-  for (int channel = 0; channel < 16; ++channel)
+  for (int channel = 0; channel < AWAGS_ADC_CHANNELS; ++channel)
   {
     theSetup->EvaluateDACIndices (channel, awags, dac);
     int gain = theSetup->GetGain (awags, dac);
@@ -2425,25 +2348,15 @@ void AwagsGui::RefreshView ()
 
 
 
-//void AwagsGui::EvaluatePulser (int awags)
-//{
-//  theSetup_GET_FOR_SLAVE(BoardSetup);
-//  bool positive = (fAwagsPulsePolarityCombo[awags]->currentIndex () == 0);
-//  theSetup->SetTestPulsePostive (awags, positive);
-//  for (int chan = 0; chan < AWAGS_NUMCHANS; ++chan)
-//  {
-//    bool on = fAwagsPulseEnabledCheckbox[awags][chan]->isChecked ();
-//    theSetup->SetTestPulseEnable (awags, chan, on);
-//    int amplitude = fAwagsPulseAmplitudeSpin[awags][chan]->value ();
-//    theSetup->SetTestPulseAmplitude (awags, chan, amplitude);
-//  }
-//}
 
-void AwagsGui::EvaluateGain (int awags, int channel)
+void AwagsGui::EvaluateGain (int awags)
 {
   theSetup_GET_FOR_SLAVE(BoardSetup);
-  bool logain = (fAwagsGainCombo[awags]->currentIndex () == 0);
-  theSetup->SetLowGain (awags, channel, logain);
+  int ix = fAwagsGainCombo[awags]->currentIndex ();
+  int gain=(1<<ix);
+  //printf("EvaluateGain for awags %d gives gain %d from index %d\n",
+  //    awags, gain, ix);
+  theSetup->SetGain (awags, 0, gain);
 }
 
 void AwagsGui::EvaluateIOSwitch ()
@@ -2451,15 +2364,7 @@ void AwagsGui::EvaluateIOSwitch ()
   theSetup_GET_FOR_SLAVE(BoardSetup);
   // get io config from gui
 
-  //theSetup->SetAwagsMapping (!fAwagsWidget->InverseMappingCheckBox->isChecked (), fAwagsWidget->PandaRadioButton->isChecked ());
-
   theSetup->SetUsePrototypeBoard(fAwagsWidget->ProtoRadioButton->isChecked());
-//  theSetup->SetAwagsInUse (fAwagsWidget->AwagsRadioButton->isChecked ());
-//  theSetup->SetHighGain (fAwagsWidget->HiGainRadioButton->isChecked ());
-//  theSetup->SetStretcherInUse (fAwagsWidget->StretcherOnRadioButton->isChecked ());
-//
-//  RefreshAwagsLabels(fAwagsWidget->PandaRadioButton->isChecked ());
-
 }
 
 void AwagsGui::EvaluateView ()
@@ -2470,28 +2375,21 @@ void AwagsGui::EvaluateView ()
 
   EvaluateIOSwitch ();
 
-  if (theSetup->IsHighGain ())
-  {
-    // only apply gain entries if we are in high gain mode
+
     for (int awags = 0; awags < AWAGS_NUMCHIPS; ++awags)
     {
-      for (int chan = 0; chan < AWAGS_NUMCHANS; ++chan)
-      {
-        EvaluateGain (awags, chan);
-      }
+        EvaluateGain (awags);
     }
-  }
+
 // here baseline sliders for dacs:
 
-  // switch regular dac-baseline slope (panda) or inverted baseline (pasem)
-  //theSetup->SetBaselineInverted (!fAwagsWidget->Baseline_Box_invert->isChecked ());
 
 // prevent different settings from DAC and ADC tabs; check which tab is active?
 // TODO JAM2019 - handle this depending on visible subwindow?
 //  if (fAwagsWidget->AwagsTabWidget->currentIndex () == 3)
   {
     // only apply the adc sliders when visible
-    for (int channel = 0; channel < 16; ++channel)
+    for (int channel = 0; channel < AWAGS_ADC_CHANNELS; ++channel)
     {
       int permille = fDACSpinBoxes[channel]->value ();
       int value = theSetup->EvaluateDACvalueAbsolute (permille);
@@ -2514,11 +2412,7 @@ void AwagsGui::EvaluateView ()
 //    }
 //  }    //if(AwagsTabWidget->currentIndex()==3)
 
-// pulser config from gui
-//  for (int awags = 0; awags < AWAGS_NUMCHIPS; ++awags)
-//  {
-//    EvaluatePulser (awags);
-//  }
+
 
 }
 
@@ -2546,34 +2440,43 @@ int AwagsGui::ScanDACCurve (int gain, int channel)
   theSetup->EvaluateDACIndices (channel, awags, dac);
   AwagsTestResults& theResults = theSetup->AccessTestResults (gain, awags);
   dacrecord=dac;
+
+  // JAM22: note that with this we will repeat measurments for each awags dac 4 times
+  // (for each of the awags channels), but only record the last curve
+  // to account differences of the 4 output channels, should work with separate dac indices here?
+
+
+
   // kludge to get also results from second adc for dac3: we record it for dac4
-  if (gain == 1)
-  {
-    if ((channel % 2) != 0)
-    {
-      dacrecord++;
-      printm ("\tScanDACCurve for channel %d  at gain 1: -shifted dac to index %d to record results", channel, dacrecord);
-    }
-  }
+//  if (gain == 1)
+//  {
+//    if ((channel % 2) != 0)
+//    {
+//      dacrecord++;
+//      printm ("\tScanDACCurve for channel %d  at gain 1: -shifted dac to index %d to record results", channel, dacrecord);
+//    }
+//  }
   ////////////////////////
 
   theResults.ResetDacSample (dacrecord);
   int points = AWAGS_DAC_CURVEPOINTS;
   // depending on gain, we have different stepsizes
-  int step = 0;
-  switch (gain)
-  {
-    case 1:
-      step = 16;
-      //dac = 2;
-      break;
-    case 16:
-      step = 2;
-      break;
-    case 32:
-      step = 1;
-      break;
-  }
+  //int step = 2/gain * 8; // JAM22 preliminary
+  int step=8;
+
+//  switch (gain)
+//  {
+//    case 1:
+//      step = 16;
+//      //dac = 2;
+//      break;
+//    case 16:
+//      step = 2;
+//      break;
+//    case 32:
+//      step = 1;
+//      break;
+//  }
 
   // we start in the middle of the autocalibration point:
   uint16_t dac_mid = theResults.GetDacValueCalibrate (dac);
@@ -2592,11 +2495,7 @@ int AwagsGui::ScanDACCurve (int gain, int channel)
     theSetup->SetDACValue (awags, dac, dacval);
     WriteDAC_AwagsI2c (awags, dac, theSetup->GetDACValue (awags, dac));
     int adcval = AcquireBaselineSample (channel);
-   // std::cout<<"   ScanDACCurve got d:"<<dacval<<", adc:"<<adcval << std::endl;
-
-
-
-
+   //std::cout<<"   ScanDACCurve got d:"<<dacval<<", adc:"<<adcval << std::endl;
     theResults.AddDacSample (dacrecord, dacval, adcval);
   }
   DisableI2C ();
@@ -2787,19 +2686,17 @@ void AwagsGui::SaveTestResults ()
     WriteTestFile (QString ("\tDAC_%1 \tADC_%2").arg (i).arg (i));
   }
 
-  WriteTestFile (QString ("\tPeakPolarity"));
-  for (int i = 0; i < AWAGS_ADC_NUMMAXIMA; ++i)
-    {
-      WriteTestFile (QString ("\tPeakPos_%1 \tPeakHeight_%2").arg (i).arg (i));
-    }
+//  WriteTestFile (QString ("\tPeakPolarity"));
+//  for (int i = 0; i < AWAGS_ADC_NUMMAXIMA; ++i)
+//    {
+//      WriteTestFile (QString ("\tPeakPos_%1 \tPeakHeight_%2").arg (i).arg (i));
+//    }
 
-  WriteTestFile (QString ("\tI_ASIC(A) \tI_HV(A)  \tI_Diode(A) \tIDScan \tGeneralCall \tReverseID \tRegIO \tTemp (C) \t\tStartDate \t StartTime \tStopDate \tStopTime"));
+  WriteTestFile (QString ("\tI_ASIC(A) \tI_HV(A)  \tI_Diode(A)  \tTemp (C) \t\tStartDate \t StartTime \tStopDate \tStopTime"));
   WriteTestFile (QString ("\n"));
   // loop over gain:
-  for (int gain = 1; gain < 40; gain += 15)
+  for (int gain = 1; gain < 16; gain *=2) // JAM22 TTODO: check for real gain values later
   {
-    if (gain == 31)
-      gain = 32;    // :)
     for (int awags = 0; awags < AWAGS_NUMCHIPS; ++awags)
     {
       AwagsTestResults& theResult = theSetup->AccessTestResults (gain, awags);
@@ -2821,52 +2718,12 @@ void AwagsGui::SaveTestResults ()
         double currentasic = theResult.GetCurrentASIC ();
         double currenthv = theResult.GetCurrentHV ();
         double currentdiode = theResult.GetCurrentDiode ();
-        bool idscanok=theResult.IsIDScanOK();
-        bool generalcallok=theResult.IsGeneralCallScanOK();
-        bool reverseidok=theResult.IsReverseIDScanOK();
-        bool registerok=theResult.IsRegisterScanOK();
+//        bool idscanok=theResult.IsIDScanOK();
+//        bool generalcallok=theResult.IsGeneralCallScanOK();
+//        bool reverseidok=theResult.IsReverseIDScanOK();
+//        bool registerok=theResult.IsRegisterScanOK();
 
         // here we should supress/mark as invalid the results that are not meaningful for the selected gain:
-
-        if (gain == 1)
-        {
-          if (dac == 0 || dac == 1 )
-          {
-            baseline = AWAGS_NOVALUE;
-            sigma = AWAGS_NOVALUE;
-            startbase = AWAGS_NOVALUE;
-            stopbase = AWAGS_NOVALUE;
-            slope = AWAGS_NOVALUE;
-            dac0 = AWAGS_NOVALUE;
-            dacmin = AWAGS_NOVALUE;
-            dacmax = AWAGS_NOVALUE;
-            adcmin = AWAGS_NOVALUE;
-//            current = AWAGS_NOVALUE;
-//            voltage = AWAGS_NOVALUE;
-
-
-          }
-
-        }
-        else if (gain == 16 || gain == 32)
-        {
-          if (dac == 2 || dac == 3)
-          {
-            baseline = AWAGS_NOVALUE;
-            sigma = AWAGS_NOVALUE;
-            startbase = AWAGS_NOVALUE;
-            stopbase = AWAGS_NOVALUE;
-            slope = AWAGS_NOVALUE;
-            dac0 = AWAGS_NOVALUE;
-            dacmin = AWAGS_NOVALUE;
-            dacmax = AWAGS_NOVALUE;
-            adcmin = AWAGS_NOVALUE;
-//            current = AWAGS_NOVALUE;
-//            voltage = AWAGS_NOVALUE;
-          }
-
-        }
-
 
 
 
@@ -2896,17 +2753,17 @@ void AwagsGui::SaveTestResults ()
         }
 
         // put here location of peak finder
-        bool isnegative=theResult.HasNegativeAdcPeaks(dac);
-        line.append((isnegative ? QString("\t -1") : QString("\t 1")));
-        for (int i = 0; i < AWAGS_ADC_NUMMAXIMA; ++i)
-                {
-                  int pos = theResult.GetAdcPeakPosition(dac,i,true);
-                  int max = theResult.GetAdcPeakHeight(dac,i,true);
-                  line.append (QString ("\t%1 \t%2").arg (pos).arg (max));
-                }
+//        bool isnegative=theResult.HasNegativeAdcPeaks(dac);
+//        line.append((isnegative ? QString("\t -1") : QString("\t 1")));
+//        for (int i = 0; i < AWAGS_ADC_NUMMAXIMA; ++i)
+//                {
+//                  int pos = theResult.GetAdcPeakPosition(dac,i,true);
+//                  int max = theResult.GetAdcPeakHeight(dac,i,true);
+//                  line.append (QString ("\t%1 \t%2").arg (pos).arg (max));
+//                }
 
         line.append(QString ("\t%1 \t%2 \t%3\t").arg(currentasic).arg(currenthv).arg(currentdiode));
-        line.append(QString ("\t%1 \t%2 \t%3 \t%4 \t").arg(idscanok).arg(generalcallok).arg(reverseidok).arg(registerok));
+//        line.append(QString ("\t%1 \t%2 \t%3 \t%4 \t").arg(idscanok).arg(generalcallok).arg(reverseidok).arg(registerok));
         line.append("\t");
         line.append(theResult.GetTemperatureInfo());
         line.append("\t");

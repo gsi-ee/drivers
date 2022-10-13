@@ -37,40 +37,21 @@ private:
   /* switch output between gain 16/32 (true) and gain 1 (false)*/
   bool fHighGainOutput;
 
-//  /** use stretcher in output (true) or not (false)*/
-//  bool fStretcher;
-//
-//  /** property for regular or inverse mounts of awags addon boards*/
-//  bool fRegularMapping;
-//
-//  /** if true, the baseline to dac slop relation is inverted (for old hardware)*/
-//  bool fBaselineInverted;
+
 
 
   /** setups of each awags chip on board*/
   AwagsSetup fAwags[AWAGS_NUMCHIPS];
 
 
-#ifdef AWAGS_NOSTDMAP
-  GainSetup fGainSetups_1[AWAGS_ADC_CHANNELS];
-  GainSetup fGainSetups_16[AWAGS_ADC_CHANNELS];
-  GainSetup fGainSetups_32[AWAGS_ADC_CHANNELS];
 
-#else
-  /** calibration parameters (adc/dac) mapped to gain1,16, 32*/
+  /** calibration parameters (adc/dac) mapped to gain 1, 2, 4, 8*/
   std::map<int, GainSetup> fGainSetups[AWAGS_ADC_CHANNELS];
-#endif
+
   AdcSample fLastSample[AWAGS_ADC_CHANNELS];
 
-#ifdef AWAGS_NOSTDMAP
-  AwagsTestResults fTestResults_1[AWAGS_NUMCHIPS];
-  AwagsTestResults fTestResults_16[AWAGS_NUMCHIPS];
-  AwagsTestResults fTestResults_32[AWAGS_NUMCHIPS];
-
-#else
   /** This structure contains the test results for comparison. mapped to gain 1,16,32*/
   std::map<int, AwagsTestResults> fTestResults[AWAGS_NUMCHIPS];
-#endif
   /** carrier board id tag*/
   QString fBoardID;
 
@@ -117,36 +98,7 @@ public:
   {
     fUseAwags = on;
   }
-  bool IsHighGain ()
-  {
-    return fHighGainOutput;
-  }
-  void SetHighGain (bool on)
-  {
-    fHighGainOutput = on;
-  }
-//  bool IsStretcherInUse ()
-//  {
-//    return fStretcher;
-//  }
-//  void SetStretcherInUse (bool on)
-//  {
-//    fStretcher = on;
-//  }
-//  bool IsRegularMapping ()
-//  {
-//    return fRegularMapping;
-//  }
-//
-//  void SetBaselineInverted(bool inverted)
-//  {
-//    fBaselineInverted=inverted;
-//  }
-//
-//  bool IsBaselineInverted()
-//   {
-//     return fBaselineInverted;
-//   }
+
 
   void SetUsePrototypeBoard(bool on)
   {
@@ -159,18 +111,17 @@ public:
   }
 
 
- // void SetAwagsMapping (bool regular = true, bool pandatest=false);
 
   /** access to test result structure for gain and awags id.
    * Todo: separate setters and getters?*/
   AwagsTestResults& AccessTestResults (int gain, int awags);
 
   /** fetch full gain structure to copy it into the test results*/
-  GainSetup& AccessGainSetup (int gain, int febexchannel);
+  GainSetup& AccessGainSetup (int gain, int febchannel);
 
   /** following functions belong to gain related DAC/ADC calilbration:*/
 
-  void ResetGain1Calibration ();
+
 
   int SetDACmin (int gain, int febexchannel, double val);
 
@@ -225,23 +176,6 @@ public:
   /** helper function to set DAC value via global febex channel number*/
   int SetDACValue (int febexchannel, uint16_t value);
 
-  /** set gain 16 (low=true) or 32 for local channel (0,1) on awags of index*/
-  int SetLowGain (int awags, int chan, bool low = true);
-
-  /** returns true for gain 16 or false for gain 32 in local channel (0,1) on awags of index*/
-  int GetLowGain (int awags, int chan);
-
-//  int SetTestPulseEnable (int awags, int chan, bool on = true);
-//
-//  int GetTestPulseEnable (int awags, int chan);
-//
-//  int SetTestPulseAmplitude (int awags, int chan, uint8_t val);
-//
-//  int GetTestPulseAmplitude (int awags, int chan);
-//
-//  int SetTestPulsePostive (int awags, bool pos = true);
-//
-//  int GetTestPulsePositive (int awags);
 
   // awags bus address id as configured
   int GetAwagsID (int awags);
@@ -251,7 +185,6 @@ public:
 
   // awags chip id as taken from tag sticker. passes description as string val. Returns -1 in case of error.
   int GetChipID (int awags,  QString& val);
-
 
   int SetCurrentASIC(int awags, double val);
 
@@ -266,20 +199,14 @@ public:
   double GetCurrentDiode(int awags);
 
 
-//  int IsIDScanOK(int awags);
-//  int IsGeneralScanOK(int awags);
-//  int IsReverseIDScanOK(int awags);
-//  int IsRegisterScanOK(int awags);
-//
-//  int SetIDScan(int awags, bool ok);
-//  int SetGeneralScan(int awags, bool ok);
-//  int SetReverseIDScan(int awags, bool ok);
-//  int SetRegisterScan(int awags, bool ok);
 
 
-
-  /** evaluate gain factor from setup. returns 1, 16 or 32*/
+  /** evaluate gain factor from setup. returns 1, 2,4, or 8*/
   int GetGain (int awags, int dac);
+
+  /** record current gain factor to setup. */
+  int SetGain (int awags, int dac, uint8_t value);
+
 
   /** clear values and statistics of ADC sample for single febexchannel*/
   int ResetADCSample (int febexchannel);

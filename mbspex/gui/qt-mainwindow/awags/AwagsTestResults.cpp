@@ -23,8 +23,8 @@
           fMaxValue[dac]=0;
           fDAC_ADC_Gain[dac].ResetCalibration(!invertedslope);
           fDAC_Curve[dac].Reset();
-          fPeaks[dac].clear();
-          fNegativePeaks[dac]=false;
+//          fPeaks[dac].clear();
+//          fNegativePeaks[dac]=false;
 
 
         }
@@ -242,54 +242,54 @@ double AwagsTestResults::GetSlope (int dac, bool checkvalid)
 
  }
 
- int AwagsTestResults::AddAdcPeak(int dac, int position, uint16_t height)
- {
-     ASSERT_DAC_VALID(dac);
-     fPeaks[dac].push_back(AdcPeak(position, height));
-     return 0;
- }
-
-  int AwagsTestResults::ResetAdcPeaks(int dac)
-  {
-    ASSERT_DAC_VALID(dac);
-    fPeaks[dac].clear();
-  }
-
-  int AwagsTestResults::NumAdcPeaks(int dac)
-  {
-    ASSERT_DAC_VALID(dac);
-    return fPeaks[dac].size();
-  }
-
-  int AwagsTestResults::GetAdcPeakPosition(int dac, int index,bool checkvalid)
-  {
-    ASSERT_TEST_VALID;
-    ASSERT_DAC_VALID(dac);
-    if(index>=fPeaks[dac].size()) return AWAGS_NOVALUE;
-    AdcPeak& peak=fPeaks[dac].at(index);
-    return peak.fPosition;
-  }
-
-
-   int AwagsTestResults::GetAdcPeakHeight(int dac, int index, bool checkvalid)
-   {
-     ASSERT_TEST_VALID
-     ASSERT_DAC_VALID(dac);
-     if(index>=fPeaks[dac].size()) return AWAGS_NOVALUE;
-     AdcPeak& peak=fPeaks[dac].at(index);
-     return peak.fHeight;
-   }
-
-    bool AwagsTestResults::HasNegativeAdcPeaks(int dac)
-    {
-      ASSERT_DAC_VALID(dac);
-      return fNegativePeaks[dac];
-    }
-
-    int AwagsTestResults::SetNegativeAdcPeaks(int dac, bool negative)
-    {
-      ASSERT_DAC_VALID(dac);
-      fNegativePeaks[dac]=negative;
-      return 0;
-    }
+// int AwagsTestResults::AddAdcPeak(int dac, int position, uint16_t height)
+// {
+//     ASSERT_DAC_VALID(dac);
+//     fPeaks[dac].push_back(AdcPeak(position, height));
+//     return 0;
+// }
+//
+//  int AwagsTestResults::ResetAdcPeaks(int dac)
+//  {
+//    ASSERT_DAC_VALID(dac);
+//    fPeaks[dac].clear();
+//  }
+//
+//  int AwagsTestResults::NumAdcPeaks(int dac)
+//  {
+//    ASSERT_DAC_VALID(dac);
+//    return fPeaks[dac].size();
+//  }
+//
+//  int AwagsTestResults::GetAdcPeakPosition(int dac, int index,bool checkvalid)
+//  {
+//    ASSERT_TEST_VALID;
+//    ASSERT_DAC_VALID(dac);
+//    if(index>=fPeaks[dac].size()) return AWAGS_NOVALUE;
+//    AdcPeak& peak=fPeaks[dac].at(index);
+//    return peak.fPosition;
+//  }
+//
+//
+//   int AwagsTestResults::GetAdcPeakHeight(int dac, int index, bool checkvalid)
+//   {
+//     ASSERT_TEST_VALID
+//     ASSERT_DAC_VALID(dac);
+//     if(index>=fPeaks[dac].size()) return AWAGS_NOVALUE;
+//     AdcPeak& peak=fPeaks[dac].at(index);
+//     return peak.fHeight;
+//   }
+//
+//    bool AwagsTestResults::HasNegativeAdcPeaks(int dac)
+//    {
+//      ASSERT_DAC_VALID(dac);
+//      return fNegativePeaks[dac];
+//    }
+//
+//    int AwagsTestResults::SetNegativeAdcPeaks(int dac, bool negative)
+//    {
+//      ASSERT_DAC_VALID(dac);
+//      fNegativePeaks[dac]=negative;
+//      return 0;
+//    }
 

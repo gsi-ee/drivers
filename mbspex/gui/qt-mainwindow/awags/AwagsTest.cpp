@@ -10,25 +10,16 @@
 #include <unistd.h>
 
 AwagsTest::AwagsTest () :
-    fOwner (0), fCurrentSetup (0), fTestLength (0), fCurrentGain(0), fMultiPulserMode(false)
+    fOwner (0), fCurrentSetup (0), fTestLength (0), fCurrentGain(0)
 {
-
-#ifdef AWAGS_NOSTDMAP
-  // nothing to init, objects are on memberstack
-
-#else
-
-  fReferenceValues[1]=AwagsTestResults();
-  fReferenceValues[16]=AwagsTestResults();
-  fReferenceValues[32]=AwagsTestResults();
-#endif
-  InitReferenceValues();
+  InitReferenceValues(false);
   ResetSequencerList();
 }
 
 
 void AwagsTest::InitReferenceValues(bool invertedslope)
 {
+  // JAM22 TODO: provide real references for the awags gains. these are just dummies from apfel to show anything
 
   GetReferenceValues(1).Reset(invertedslope); // gain 1 is always opposite slope of high gains
   // gain 1, dac2
@@ -42,21 +33,23 @@ void AwagsTest::InitReferenceValues(bool invertedslope)
   for(int i=0; i<AWAGS_DAC_CURVEPOINTS; ++i)
   {
     // fake the default reference curve in case of inverted slope:
+    for(int dac=0; dac<AWAGS_NUMDACS; ++dac) // we have only one read dac, but 4 different indices for benchmark results. set them all!
+    {
     if(invertedslope)
     {
-      GetReferenceValues(1).AddDacSample(2, valDAC_1[i], -1*valADC_1[i]);
+      GetReferenceValues(1).AddDacSample(dac, valDAC_1[i], -1*valADC_1[i]);
     }
     else
     {
-      GetReferenceValues(1).AddDacSample(2, valDAC_1[i], valADC_1[i]);
+      GetReferenceValues(1).AddDacSample(dac, valDAC_1[i], valADC_1[i]);
     }
-
+    }
 
     //std::cout<< "InitReferenceValues for gain1: i:"<<i<<" ("<<valDAC_1[i]<<","<<valADC_1[i]<<"="<< std::endl;
   }
 
 
-  GetReferenceValues(16).Reset(!invertedslope);
+  GetReferenceValues(2).Reset(invertedslope);
 
   // gain 16, dac0 and dac1
   //780   12222   782     13743   784     11987   786     11142   788     9712    790     9606    792     8817    794     7959    796     7179    798     7119    800     4409    802     3606    804     2909    806     2464    808     1615    810     1379    812     974 814     781 816     680 818     669 820     678 822     673 824     665 826     701
@@ -67,27 +60,28 @@ void AwagsTest::InitReferenceValues(bool invertedslope)
   {14222,13743,11987,11142,9712,9606,8817,7959,7179,7119,4409,3606,2909,2464,1615,1379,974,781,680,669,678,673,665,701};
 
 
-  for(int i=0; i<AWAGS_DAC_CURVEPOINTS; ++i)
-    {
-    if(invertedslope)
-      {
-        GetReferenceValues(16).AddDacSample(0, valDAC_16[i], -1*valADC_16[i]);
-        GetReferenceValues(16).AddDacSample(1, valDAC_16[i], -1*valADC_16[i]);
-      }
-    else
-    {
-      GetReferenceValues(16).AddDacSample(0, valDAC_16[i], valADC_16[i]);
-      GetReferenceValues(16).AddDacSample(1, valDAC_16[i], valADC_16[i]);
-    }
+      for(int i=0; i<AWAGS_DAC_CURVEPOINTS; ++i)
+        {
+        for(int dac=0; dac<AWAGS_NUMDACS; ++dac) // we have only one read dac, but 4 different indices for benchmark results. set them all!
+             {
+                if(!invertedslope)
+                  {
+                    GetReferenceValues(2).AddDacSample(dac, valDAC_16[i], -1*valADC_16[i]);
+                  }
+                else
+                {
+                  GetReferenceValues(2).AddDacSample(dac, valDAC_16[i], valADC_16[i]);
+                }
+            }
 
       //std::cout<< "InitReferenceValues for gain16: i:"<<i<<" ("<<valDAC_16[i]<<","<<valADC_16[i]<<"="<< std::endl;
-    }
+        }
 
   // gain 32, dac0 and dac1
   //821   7626    822     6724    823     6152    824     5507    825     4819    826     3966    827     7243    828     2811    829     4279    830     3663    831     1400    832     766 833     735 834     718 835     749 836     784 837     656 838     741 839     611 840     710 841     766 842     709 843     707 844     722
 
 
-  GetReferenceValues(32).Reset(!invertedslope);
+  GetReferenceValues(4).Reset(!invertedslope);
 
   int valDAC_32[AWAGS_DAC_CURVEPOINTS]=
   { 821,822,823,824,825,826,827,828,829,830,831,832,833,834,835,836,837,838,839,840,841,842,843,844};
@@ -99,21 +93,47 @@ void AwagsTest::InitReferenceValues(bool invertedslope)
 
   for(int i=0; i<AWAGS_DAC_CURVEPOINTS; ++i)
       {
-    if(invertedslope)
-          {
-            GetReferenceValues(32).AddDacSample(0, valDAC_32[i], -1*valADC_32[i]);
-            GetReferenceValues(32).AddDacSample(1, valDAC_32[i], -1*valADC_32[i]);
-          }
-    else
-    {
-           GetReferenceValues(32).AddDacSample(0, valDAC_32[i], valADC_32[i]);
-           GetReferenceValues(32).AddDacSample(1, valDAC_32[i], valADC_32[i]);
-    }
-
-
-
+    for(int dac=0; dac<AWAGS_NUMDACS; ++dac) // we have only one read dac, but 4 different indices for benchmark results. set them all!
+         {
+            if(!invertedslope)
+                  {
+                    GetReferenceValues(4).AddDacSample(dac, valDAC_32[i], -1*valADC_32[i]);
+                  }
+            else
+            {
+                   GetReferenceValues(4).AddDacSample(dac, valDAC_32[i], valADC_32[i]);
+            }
+         }
         //std::cout<< "InitReferenceValues for gain32: i:"<<i<<" ("<<valDAC_32[i]<<","<<valADC_32[i]<<"="<< std::endl;
       }
+
+
+  GetReferenceValues(8).Reset(!invertedslope);
+
+   int valDAC_64[AWAGS_DAC_CURVEPOINTS]=
+   { 821,822,823,824,825,826,827,828,829,830,831,832,833,834,835,836,837,838,839,840,841,842,843,844};
+
+   int valADC_64[AWAGS_DAC_CURVEPOINTS]=
+   {
+      7626,6724,6152,5507,4819,3966,3243,2811,2279,1663,1400,766,735,718,749,784,656,741,611,710,766,709,707,722
+   };
+
+   for(int i=0; i<AWAGS_DAC_CURVEPOINTS; ++i)
+       {
+     for(int dac=0; dac<AWAGS_NUMDACS; ++dac) // we have only one read dac, but 4 different indices for benchmark results. set them all!
+              {
+               if(!invertedslope)
+                     {
+                       GetReferenceValues(8).AddDacSample(dac, valDAC_64[i], -1*valADC_64[i]);
+                     }
+               else
+               {
+                      GetReferenceValues(8).AddDacSample(dac, valDAC_64[i], valADC_64[i]);
+               }
+              }
+         //std::cout<< "InitReferenceValues for gain32: i:"<<i<<" ("<<valDAC_32[i]<<","<<valADC_32[i]<<"="<< std::endl;
+       }
+
 
 
 }
@@ -121,6 +141,8 @@ void AwagsTest::InitReferenceValues(bool invertedslope)
 
 void AwagsTest::LoadReferenceValues(const QString& fname)
 {
+
+  //// JAM22 TODO after we've written a real data file
   size_t nbuf=32768;
   char* buffer= (char*) malloc(32768);
   char** lineptr = &buffer;
@@ -250,27 +272,7 @@ void AwagsTest::LoadReferenceValues(const QString& fname)
 
 AwagsTestResults& AwagsTest::GetReferenceValues(int gain)
 {
-#ifdef AWAGS_NOSTDMAP
-  switch(gain)
-  {
-    default:
-    std::cout<<"NEVER COME HERE - GetReferenceValues with undefined gain "<<gain << std::endl;
-    case 1:
-    return fReferenceValues_1;
-    break;
-    case 16:
-    return fReferenceValues_16;
-    break;
-    case 32:
-    return fReferenceValues_32;
-    break;
-  }
-#else
-
-
    return  fReferenceValues[gain];
-
-#endif
 }
 
 
@@ -339,19 +341,6 @@ bool AwagsTest::ProcessBenchmark ()
           theResults.SetCurrentHV(fCurrentSetup->GetCurrentHV(awags));
           theResults.SetCurrentDiode(fCurrentSetup->GetCurrentDiode(awags));
 
-
-          // copy here the most recent addressing scan tests if done before sequencer
-//          theResults.SetIDScan(fCurrentSetup->IsIDScanOK(awags));
-//          theResults.SetGeneralCallScan(fCurrentSetup->IsGeneralScanOK(awags));
-//          theResults.SetReverseIDScan(fCurrentSetup->IsReverseIDScanOK(awags));
-//          theResults.SetRegisterScan(fCurrentSetup->IsRegisterScanOK(awags));
-          // JAM2020 - always reset to false if not done in the sequencer
-          theResults.SetIDScan(false);
-          theResults.SetGeneralCallScan(false);
-          theResults.SetReverseIDScan(false);
-          theResults.SetRegisterScan(false);
-
-
           // qr tag for single chip:
           QString descriptor;
           fCurrentSetup->GetChipID(awags, descriptor);
@@ -380,10 +369,6 @@ bool AwagsTest::ProcessBenchmark ()
         AwagsTestResults& theResults=fCurrentSetup->AccessTestResults(fCurrentGain, awags);
 
         // after the gain measurements, we have to copy the results of the general tests to structure for the very gain
-//        theResults.SetIDScan(fCurrentSetup->IsIDScanOK(awags));
-//        theResults.SetGeneralCallScan(fCurrentSetup->IsGeneralScanOK(awags));
-//        theResults.SetReverseIDScan(fCurrentSetup->IsReverseIDScanOK(awags));
-//        theResults.SetRegisterScan(fCurrentSetup->IsRegisterScanOK(awags));
         theResults.SetCurrentASIC(fCurrentSetup->GetCurrentASIC(awags));
         theResults.SetCurrentHV(fCurrentSetup->GetCurrentHV(awags));
         theResults.SetCurrentDiode(fCurrentSetup->GetCurrentDiode(awags));
@@ -396,49 +381,23 @@ bool AwagsTest::ProcessBenchmark ()
       break;
 
     case SEQ_GAIN_1:
-      printm("AwagsTest Sets to gain 1.");
-      // always keep setup consistent with the applied values:
-      fCurrentSetup->SetHighGain(false); // apply gain 1 by this.
-      fOwner->SetSwitches(fCurrentSetup->IsUsePrototypeBoard());
       fCurrentGain=1;
+      ApplyCurrentGain();
       break;
-    case SEQ_GAIN_16:
-       printm("AwagsTest Sets to gain 16.");
-       // always keep setup consistent with the applied values:
-       fCurrentSetup->SetHighGain(true); // apply gain 1 by this.
-       fOwner->SetSwitches(fCurrentSetup->IsUsePrototypeBoard());
+    case SEQ_GAIN_2:
+      fCurrentGain=2;
+      ApplyCurrentGain();
+      break;
+    case SEQ_GAIN_4:
+      fCurrentGain=4;
+      ApplyCurrentGain();
+      break;
 
-       for(int awags=0; awags<AWAGS_NUMCHIPS; ++awags)
-       {
-           for(int channel=0; channel<AWAGS_NUMCHANS;++channel)
-           {
-             fCurrentSetup->SetLowGain (awags, channel, true);
-             fOwner->SetGain(awags, channel, true);
-           }
+    case SEQ_GAIN_8:
+      fCurrentGain=8;
+      ApplyCurrentGain();
+      break;
 
-       }
-       fCurrentGain=16;
-       break;
-
-    case SEQ_GAIN_32:
-           printm("AwagsTest Sets to gain 32.");
-           // always keep setup consistent with the applied values:
-           fCurrentSetup->SetHighGain(true); // apply gain 1 by this.
-           // note that we do not change other switches for the moment.
-           fOwner->SetSwitches(fCurrentSetup->IsUsePrototypeBoard());
-           // now need to change channel gains:
-
-           for(int awags=0; awags<AWAGS_NUMCHIPS; ++awags)
-           {
-               for(int channel=0; channel<AWAGS_NUMCHANS;++channel)
-               {
-                 fCurrentSetup->SetLowGain (awags, channel, false);
-                 fOwner->SetGain(awags, channel, false);
-               }
-
-           }
-           fCurrentGain=32;
-           break;
     case  SEQ_AUTOCALIB:
       printm("AwagsTest is doing DAC Autocalibration.");
       fOwner->AutoCalibrate_all();
@@ -468,24 +427,24 @@ bool AwagsTest::ProcessBenchmark ()
 
 
         // set baseline to standard values and define polarities:
-        int polarityflag=-1;
-        if(fCurrentGain==1)
-        {
-          fOwner->AutoAdjustChannel(febexchannel, 12000); // negative peaks, high baseline
-          polarityflag=0;
-//          fOwner->SetPeakfinderPolarityNegative(true); // TODO 2016: check slope setup here?
-//          if(IsMultiPulserMode())
-//            fCurrentSetup->SetTestPulsePostive (awags, true); // for pandatestboard we send positive pulses anyway, but get negative peaks
-
-        }
-        else
-        {
+//        int polarityflag=-1;
+//        if(fCurrentGain==1)
+//        {
+//          fOwner->AutoAdjustChannel(febexchannel, 12000); // negative peaks, high baseline
+//          polarityflag=0;
+////          fOwner->SetPeakfinderPolarityNegative(true); // TODO 2016: check slope setup here?
+////          if(IsMultiPulserMode())
+////            fCurrentSetup->SetTestPulsePostive (awags, true); // for pandatestboard we send positive pulses anyway, but get negative peaks
+//
+//        }
+//        else
+//        {
           fOwner->AutoAdjustChannel(febexchannel, 4000); // positive peaks
-          polarityflag=1;
+//          polarityflag=1;
 //          fOwner->SetPeakfinderPolarityNegative(false);
 //          if(IsMultiPulserMode())
 //            fCurrentSetup->SetTestPulsePostive (awags, true);
-        }
+//        }
 
 
 
@@ -557,10 +516,10 @@ bool AwagsTest::ProcessBenchmark ()
 
           // note that this works only in mbs mode due to the trigger that we still not have for adc buffer
 
-
+      fOwner->AcquireSample(febexchannel);
 
        // in any case we only show last sample and take baselines from it:
-      //fOwner->ShowSample(febexchannel,true);
+      fOwner->ShowSample(febexchannel,true);
       double mean=fCurrentSetup->GetADCMean(febexchannel);
       double sigma=fCurrentSetup->GetADCSigma(febexchannel);
       double minimum=fCurrentSetup->GetADCMiminum(febexchannel);
@@ -572,16 +531,6 @@ bool AwagsTest::ProcessBenchmark ()
 
 
       AwagsTestResults& theResults=fCurrentSetup->AccessTestResults(fCurrentGain, awags);
-
-      // kludge to get also results from second adc for dac3: we record it
-           if(fCurrentGain==1)
-           {
-             if((febexchannel%2)!=0)
-             {
-               dac++;
-               printm("\tChannel %d  sample for gain 1: -shifted dac to index %d to record results",febexchannel, dac);
-             }
-           }
 
 
       theResults.SetAdcSampleMean(dac,mean);
@@ -640,14 +589,14 @@ bool AwagsTest::ProcessBenchmark ()
         GainSetup gainSetup=fCurrentSetup->AccessGainSetup(fCurrentGain,febexchannel);
 
         // kludge to get also results from second adc for dac3: we record it for dac4
-        if (fCurrentGain == 1)
-        {
-          if ((febexchannel % 2) != 0)
-          {
-            dac++;
-            printm ("\tChannel %d  baseline for gain 1: -shifted dac to index %d to record results", febexchannel, dac);
-          }
-        }
+//        if (fCurrentGain == 1)
+//        {
+//          if ((febexchannel % 2) != 0)
+//          {
+//            dac++;
+//            printm ("\tChannel %d  baseline for gain 1: -shifted dac to index %d to record results", febexchannel, dac);
+//          }
+//        }
 
         // will not work here, since result has only gain curve for channel, not for dac
 
@@ -689,4 +638,20 @@ bool AwagsTest::ProcessBenchmark ()
   };
   return true;
 }
+
+
+
+void AwagsTest::ApplyCurrentGain()
+{
+  printm("AwagsTest Sets to gain %d", fCurrentGain);
+  // always keep setup consistent with the applied values:
+       for(int awags=0; awags<AWAGS_NUMCHIPS; ++awags)
+       {
+         for(int dac=0; dac<AWAGS_NUMDACS; ++dac)
+           fCurrentSetup->SetGain (awags, dac, fCurrentGain);
+         fOwner->SetGain(awags,fCurrentGain);
+        }
+  fOwner->SetSwitches();
+}
+
 

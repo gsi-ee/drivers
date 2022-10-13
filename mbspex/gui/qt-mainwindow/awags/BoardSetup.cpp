@@ -6,19 +6,17 @@
 //////// the whole slave board setup:
 
 BoardSetup::BoardSetup () : GosipSetup(),
- fProtoBoard(false), fUseAwags (true), fHighGainOutput (true)
+ fProtoBoard(false), fUseAwags (true)
 {
   //std::cout<<"CTOR  BoardSetup..." << std:endl;
 
 
   for (int i = 0; i < AWAGS_NUMCHIPS; ++i)
   {
-
-
-
     fTestResults[i][1] = AwagsTestResults ();
-    fTestResults[i][16] = AwagsTestResults ();
-    fTestResults[i][32] = AwagsTestResults ();
+    fTestResults[i][2] = AwagsTestResults ();
+    fTestResults[i][4] = AwagsTestResults ();
+    fTestResults[i][8] = AwagsTestResults ();
   }
 
   for (int c = 0; c < AWAGS_ADC_CHANNELS; ++c)
@@ -26,10 +24,12 @@ BoardSetup::BoardSetup () : GosipSetup(),
 
     fGainSetups[c][1] = GainSetup ();
     fGainSetups[c][1].ResetCalibration(true); // consistent with default state of board setup
-    fGainSetups[c][16] = GainSetup ();
-    fGainSetups[c][16].ResetCalibration(true);
-    fGainSetups[c][32] = GainSetup ();
-    fGainSetups[c][32].ResetCalibration(true);
+    fGainSetups[c][2] = GainSetup ();
+    fGainSetups[c][2].ResetCalibration(true);
+    fGainSetups[c][4] = GainSetup ();
+    fGainSetups[c][4].ResetCalibration(true);
+    fGainSetups[c][8] = GainSetup ();
+        fGainSetups[c][8].ResetCalibration(true);
   }
 
 //  SetAwagsMapping (true);
@@ -39,94 +39,28 @@ BoardSetup::BoardSetup () : GosipSetup(),
 
 }
 
-//void BoardSetup::SetAwagsMapping (bool regular, bool pandatest)
-//{
-//  //std::cout << "SetAwagsMapping("<<regular<<","<< pandatest<<"):"<< std::endl;
-//  fRegularMapping = regular;
-//  for (int i = 0; i < AWAGS_NUMCHIPS; ++i)
-//  {
-//    uint8_t add = 0;
-//
-//    if (pandatest)
-//    {
-//      // PANDA test board: ignore regular and inverted mapping. Default setup is just ids 1-8 in ascending order
-//      add=i;
-//    }
-//    else
-//    {
-//      // awagssem with optionally inverted addresses on mezzanine boards:
-//      if (i < 4)
-//      {
-//        // regular mapping: indices 0..3 before 8...11
-//        add = (regular ? i : i + 8);
-//      }
-//      else
-//      {
-//        add = (regular ? i + 4 : i - 4);
-//      }
-//    }
-//
-//    fAwags[i].SetAddressID (add + 1);    // shift to id number 1...12 already here!
-//    //std::cout << "  AWAGS["<<i<<"] <- "<<add+1<< std::endl;
-//  }
-//
-//}
+
 
 AwagsTestResults& BoardSetup::AccessTestResults (int gain, int awags)
 {
-
-#ifdef AWAGS_NOSTDMAP
-  switch(gain)
-  {
-    default:
-    std::cout<<"NEVER COME HERE - AccessTestResults with unefined gain "<<gain << std::endl;
-    case 1:
-    return fTestResults_1[awags];
-    break;
-    case 16:
-    return fTestResults_16[awags];
-    break;
-    case 32:
-    return fTestResults_32[awags];
-    break;
-  }
-#else
   return fTestResults[awags].at (gain);
-#endif
 }
 
 GainSetup& BoardSetup::AccessGainSetup (int gain, int febexchannel)
 {
-#ifdef AWAGS_NOSTDMAP
-  switch(gain)
-  {
-    default:
-    std::cout<<"NEVER COME HERE - AccessGainSetup with undefined gain "<<gain << std::endl;
-    case 1:
-    return fGainSetups_1[febexchannel];
-    break;
-    case 16:
-    return fGainSetups_16[febexchannel];
-    break;
-    case 32:
-    return fGainSetups_32[febexchannel];
-    break;
-  }
-#else
   return fGainSetups[febexchannel].at (gain);
-#endif
 }
 
-void BoardSetup::ResetGain1Calibration ()
-{
-  // workaround to account inverse polarity of gain 1 dac-adc by default
-  for (int ch = 0; ch < AWAGS_ADC_CHANNELS; ++ch)
-  {
-    //fGainSetups[ch].at (1).ResetCalibration (false);
-    //fGainSetups[ch].at (1).ResetCalibration (fBaselineInverted); // 2017: take into account inverted state?
-    AccessGainSetup (1, ch).ResetCalibration (false);
-  }
-}
+//void BoardSetup::ResetGain1Calibration ()
+//{
+//  // workaround to account inverse polarity of gain 1 dac-adc by default
+//  for (int ch = 0; ch < AWAGS_ADC_CHANNELS; ++ch)
+//  {
+//    //fGainSetups[ch].at (1).ResetCalibration (false);
+//    //fGainSetups[ch].at (1).ResetCalibration (fBaselineInverted); // 2017: take into account inverted state?
+//    AccessGainSetup (1, ch).ResetCalibration (false);
+//  }
+//}
 
 int BoardSetup::SetDACmin (int gain, int febexchannel, double val)
 {
@@ -209,40 +143,17 @@ void BoardSetup::EvaluateDACIndices (int febexchannel, int& awags, int& dac)
   // this function is used for automatic baseline adjustments
 
   // JAM22: for awags, there is only one dac for each awags
-
+  // but we treat it internally with 4 different indices
+  // according to the 4 connected output channels
   awags = febexchannel / AWAGS_NUMCHANS;
-  dac=0;
-
-//  if (fHighGainOutput)
-//  {
-//    // use first 2 dacs for baseline adjustment if set to high gain:
-//    dac = febexchannel - awags * AWAGS_NUMCHANS;
-//  }
-//  else
-//  {
-//    // for the moment we always use DAC3 only for gain 1
-//    dac = 2;    // DAC3 with index 2
-//  }
-
-  // TODO: take into account DAC4 when regulating the low gain case
+  dac=   febexchannel % AWAGS_NUMDACS;
 
 }
 
 int BoardSetup::EvaluateADCChannel (int awags, int dac)
 {
-  int chan = awags * AWAGS_NUMCHANS;
-//  if (fHighGainOutput)
-//  {
-//    if (dac < AWAGS_NUMCHANS)
-//      chan += dac;
-//    else
-//      chan = -1;    // mark dac as invalid for adc
-//  }
-//  else
-//  {
-//    if (dac != 2)
-//      chan = -1;       // not sufficient! dac2 works on both adc channels...
-//  }
+  int chan = awags * AWAGS_NUMCHANS + dac;
+  // all 4 channels of each awags share same dac, but we use internally different dac indices for the benchmark results
   return chan;
 }
 
@@ -251,16 +162,7 @@ int BoardSetup::EvaluateDACvalueAbsolute (int permillevalue, int febexchannel, i
 {
   //std::cout<<"EvaluateDACvalueAbsolute for gain:"<<gain<<", channel:"<<febexchannel << std::endl;
   int value = 0;
-
-//  if(fBaselineInverted)
-//  {
-//    value = AWAGS_DAC_MAXVALUE - round ((permillevalue * ((double) AWAGS_DAC_MAXVALUE) / 1000.0));
-//  }
-//  else
-//  {
-//    value = round ((permillevalue * ((double) AWAGS_DAC_MAXVALUE) / 1000.0));
-//  }
-
+  value = round ((permillevalue * ((double) AWAGS_DAC_MAXVALUE) / 1000.0));
   // default: linear interpolation of DAC for complete slider range, note inverted DAC polarity effect on baseline
   if (febexchannel >= 0)
   {
@@ -273,17 +175,7 @@ int BoardSetup::EvaluateDACvalueAbsolute (int permillevalue, int febexchannel, i
 /** get relative ADC slider value from given dac setting*/
 int BoardSetup::EvaluateADCvaluePermille (int value, int febexchannel, int gain)
 {
-  int permille=0;
-
-//  if (fBaselineInverted)
-//  {
-//    int permille = 1000 - round (1000.0 * ((double) value / (double) AWAGS_DAC_MAXVALUE));
-//  }
-//  else
-//  {
-//    int permille = round (1000.0 * ((double) value / (double) AWAGS_DAC_MAXVALUE));
-//  }
-
+  int permille = round (1000.0 * ((double) value / (double) AWAGS_DAC_MAXVALUE));
   // default: linear interpolation of DAC for complete slider range, note inverted DAC polarity effect on baseline
   if (febexchannel >= 0)
   {
@@ -373,58 +265,7 @@ double  BoardSetup::GetCurrentDiode(int awags)
  }
 
 
-//int  BoardSetup::IsIDScanOK(int awags)
-//{
-//  ASSERT_AWAGS_VALID(awags);
-//  return (fAwags[awags].IsIDScanOK() ? 1 :0);
-//
-//}
-// int  BoardSetup::IsGeneralScanOK(int awags)
-// {
-//   ASSERT_AWAGS_VALID(awags);
-//     return (fAwags[awags].IsGeneralCallScanOK() ? 1 :0);
-// }
-// int  BoardSetup::IsReverseIDScanOK(int awags)
-// {
-//   ASSERT_AWAGS_VALID(awags);
-//   return (fAwags[awags].IsReverseIDScanOK() ? 1 :0);
-// }
-//
-//
-// int  BoardSetup::IsRegisterScanOK(int awags)
-// {
-//   ASSERT_AWAGS_VALID(awags);
-//   return (fAwags[awags].IsRegisterScanOK() ? 1 :0);
-// }
 
-// int  BoardSetup::SetIDScan(int awags, bool ok)
-// {
-//   ASSERT_AWAGS_VALID(awags);
-//   fAwags[awags].SetIDScan(ok);
-//   return 0;
-// }
-//
-// int  BoardSetup::SetGeneralScan(int awags, bool ok)
-// {
-//   ASSERT_AWAGS_VALID(awags);
-//     fAwags[awags].SetGeneralCallScan(ok);
-//     return 0;
-// }
-//
-// int  BoardSetup::SetReverseIDScan(int awags, bool ok)
-// {
-//   ASSERT_AWAGS_VALID(awags);
-//   fAwags[awags].SetReverseIDScan(ok);
-//   return 0;
-// }
-//
-// int  BoardSetup::SetRegisterScan(int awags, bool ok)
-// {
-//   ASSERT_AWAGS_VALID(awags);
-//   fAwags[awags].SetRegisterScan(ok);
-//   return 0;
-// }
-//
 
 
 int BoardSetup::GetDACValue (int awags, int dac)
@@ -455,55 +296,20 @@ int BoardSetup::SetDACValue (int febexchannel, uint16_t value)
   return SetDACValue (chip, chan, value);
 }
 
-int BoardSetup::SetLowGain (int awags, int chan, bool low)
-{
-  ASSERT_AWAGS_VALID(awags);
-  return fAwags[awags].SetLowGain (chan, low);
+//int BoardSetup::SetLowGain (int awags, int chan, bool low)
+//{
+//  ASSERT_AWAGS_VALID(awags);
+//  return fAwags[awags].SetLowGain (chan, low);
+//
+//}
+//
+//int BoardSetup::GetLowGain (int awags, int chan)
+//{
+//  ASSERT_AWAGS_VALID(awags);
+//  return fAwags[awags].GetLowGain (chan);
+//}
 
-}
 
-int BoardSetup::GetLowGain (int awags, int chan)
-{
-  ASSERT_AWAGS_VALID(awags);
-  return fAwags[awags].GetLowGain (chan);
-}
-
-//int BoardSetup::SetTestPulseEnable (int awags, int chan, bool on)
-//{
-//  ASSERT_AWAGS_VALID(awags);
-//  return fAwags[awags].SetTestPulseEnable (chan, on);
-//}
-//
-//int BoardSetup::GetTestPulseEnable (int awags, int chan)
-//{
-//  ASSERT_AWAGS_VALID(awags);
-//  return fAwags[awags].GetTestPulseEnable (chan);
-//}
-//
-//int BoardSetup::SetTestPulsePostive (int awags, bool pos)
-//{
-//  ASSERT_AWAGS_VALID(awags);
-//  return fAwags[awags].SetTestPulsePostive (pos);
-//}
-//
-//int BoardSetup::GetTestPulsePositive (int awags)
-//{
-//  ASSERT_AWAGS_VALID(awags);
-//  return fAwags[awags].GetTestPulsePositive ();
-//}
-//
-//int BoardSetup::SetTestPulseAmplitude (int awags, int chan, uint8_t val)
-//{
-//  ASSERT_AWAGS_VALID(awags);
-//  return fAwags[awags].SetTestPulseAmplitude (chan, val);
-//
-//}
-//
-//int BoardSetup::GetTestPulseAmplitude (int awags, int chan)
-//{
-//  ASSERT_AWAGS_VALID(awags);
-//  return fAwags[awags].GetTestPulseAmplitude (chan);
-//}
 
 int BoardSetup::GetAwagsID (int awags)
 {
@@ -512,24 +318,24 @@ int BoardSetup::GetAwagsID (int awags)
 
 }
 
-/** evaluate gain factor from setup. returns 1, 16 or 32*/
+/** evaluate gain factor from setup. returns 1, 2,  4, or 8*/
 int BoardSetup::GetGain (int awags, int dac)
 {
   int gain = 1;
-// TODO JAM22
-  //  if (!IsHighGain ())
-//  {
-//    gain = 1;
-//  }
-//  else
-//  {
-//    if (GetLowGain (awags, dac))    // for high gain, awags channel index is same as dac index
-//      gain = 16;
-//    else
-//      gain = 32;
-//  }
+  ASSERT_AWAGS_VALID(awags);
+  gain=fAwags[awags].GetGain (dac);
   return gain;
 }
+
+
+ /** record current gain factor to setup. */
+ int BoardSetup::SetGain (int awags, int dac, uint8_t value)
+ {
+   ASSERT_AWAGS_VALID(awags);
+   fAwags[awags].SetGain (dac,value);
+ }
+
+
 
 int BoardSetup::ResetADCSample (int febexchannel)
 {
@@ -556,50 +362,6 @@ int BoardSetup::GetADCSampleLength (int febexchannel)
   ASSERT_FEBCHAN_VALID(febexchannel);
   return fLastSample[febexchannel].GetNumSamples();
 }
-
-//int BoardSetup::EvaluatePeaks(int febexchannel, double deltaratio, double falldistance, bool negative)
-//{
-//  ASSERT_FEBCHAN_VALID(febexchannel);
-//  fLastSample[febexchannel].FindPeaks(deltaratio, falldistance, negative);
-//  return 0;
-//}
-//
-//
-//uint16_t BoardSetup::GetSamplePeakHeight (int febexchannel, int num)
-//{
-//  ASSERT_FEBCHAN_VALID(febexchannel);
-//  return fLastSample[febexchannel].GetPeakHeight (num);
-//}
-//
-//int BoardSetup::GetSamplePeakPosition (int febexchannel, int num)
-//{
-//  ASSERT_FEBCHAN_VALID(febexchannel);
-//  return fLastSample[febexchannel].GetPeakPosition (num);
-//}
-//
-//int BoardSetup::NumSamplePeaks (int febexchannel)
-//{
-//  ASSERT_FEBCHAN_VALID(febexchannel);
-//  return fLastSample[febexchannel].GetNumPeaks ();
-//}
-//
-// bool  BoardSetup::IsSamplePeaksNegative(int febexchannel)
-// {
-//   ASSERT_FEBCHAN_VALID(febexchannel);
-//   return fLastSample[febexchannel].IsNegativePeaks();
-// }
-//
-// double  BoardSetup::GetSamplePeaksHeightDelta(int febexchannel)
-// {
-//   ASSERT_FEBCHAN_VALID(febexchannel);
-//   return fLastSample[febexchannel].GetHeightDelta();
-// }
-//
-// double  BoardSetup::GetSamplePeaksPositionDelta(int febexchannel)
-// {
-//   ASSERT_FEBCHAN_VALID(febexchannel);
-//   return fLastSample[febexchannel].GetPosDelta();
-// }
 
 
  int BoardSetup::EvaluateBaseline(int febexchannel, int firstindex, int lastindex)

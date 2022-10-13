@@ -224,22 +224,16 @@ void AwagsGui::SetRegisters ()
   SetIOSwitch ();
   for (uint8_t apf = 0; apf < AWAGS_NUMCHIPS; ++apf)
   {
-    for (uint8_t dac = 0; dac < AWAGS_NUMDACS; ++dac)
-    {
+//    for (uint8_t dac = 0; dac < AWAGS_NUMDACS; ++dac) // JAM there is only one dac now. we leave the loop despite this for future changes :-)
+//    {
+      int dac=0;
+       // JAM22 TODO: setup keeps 4 dacs per awags for different benchmarks,
+      // but in reality there is only one. we just use the first one:
       int val = theSetup->GetDACValue (apf, dac);
       WriteDAC_AwagsI2c (apf, dac, val);
       //std::cout << "SetRegisters DAC(" << apf <<"," << dac << ") val=" <<  val << std::endl;
-    }
-
-    for (uint8_t ch = 0; ch < AWAGS_NUMCHANS; ++ch)
-    {
-      // here set gain factors for each channel:
-      SetGain (apf, ch, theSetup->GetLowGain (apf, ch));
-
-    }
-
-    // no use to apply pulser here, since it will start a single pulse
-    //SetPulser(apf);
+      SetGain (apf, theSetup->GetGain (apf,dac));
+    //}
   }
 
   DisableI2C ();
@@ -283,6 +277,8 @@ void AwagsGui::SetIOSwitch ()
 void AwagsGui::GetDACs (int chip)
 {
   theSetup_GET_FOR_SLAVE(BoardSetup);
+
+  // JAM22 TODO: read value from single dac on chip, but set it for all 4 status entries in setup
 
   for (int dac = 0; dac < AWAGS_NUMDACS; ++dac)
   {
@@ -340,6 +336,7 @@ void AwagsGui::GetRegisters ()
 int AwagsGui::ReadDAC_AwagsI2c (uint8_t awagschip, uint8_t dac)
 {
 //  int val = 0;
+  return 0; // JAM22 disabled for testing
   if (awagschip >= AWAGS_NUMCHIPS)
   {
     AppendTextWindow ("#Error: ReadDAC_AwagsI2c with illegal chip number!");
@@ -353,6 +350,8 @@ int AwagsGui::ReadDAC_AwagsI2c (uint8_t awagschip, uint8_t dac)
 int AwagsGui::ReadDAC_AwagsI2c_FromID (uint8_t apid, uint8_t dac)
 {
   int val = 0;
+  // TODO: ignore given dac index, but always use single dac on chip
+
   // first: read transfer request from awags chip with id to core register
   int dat = AWAGS_TRANSFER_BASE_RD + (dac + 1) * AWAGS_TRANSFER_DAC_OFFSET + (apid & 0xFF);
   // mind that dac index starts with 0 for dac1 here!
@@ -419,6 +418,8 @@ int AwagsGui::ReadADC_Awags (uint8_t adc, uint8_t chan)
 
 int AwagsGui::WriteDAC_AwagsI2c (uint8_t awagschip, uint8_t dac, uint16_t value)
 {
+  return 0; // JAM22 disabled
+  // TODO: ignore given dac id from setup, but only address to dac 0
 
   //std::cout << "WriteDAC_AwagsI2c(" << awagschip <<"," << dac << ") value=" << value << std::endl;
   //(0:  shift to max adc value)
@@ -433,6 +434,12 @@ int AwagsGui::WriteDAC_AwagsI2c (uint8_t awagschip, uint8_t dac, uint16_t value)
 
 int  AwagsGui::WriteDAC_AwagsI2c_ToID (uint8_t awagsid, uint8_t dac, uint16_t value)
 {
+return 0; // JAM22
+
+
+
+
+
 // first write value to core register:
 int dat = AWAGS_CORE_REQUEST_BASE_WR + dac * AWAGS_CORE_REQUEST_DAC_OFFSET;
 dat |= (value & 0x3FF);
@@ -446,69 +453,37 @@ WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
 return 0;
 }
 
-void AwagsGui::SetGain (uint8_t awagschip, uint8_t chan, bool useGain16)
+void AwagsGui::SetGain (uint8_t awagschip, uint16_t gain)
 {
   int apid = GetAwagsId (fSFP, fSlave, awagschip);
-  //std::cout << "SetGain DAC(" << (int) awagschip <<", id:"<<apid << (int) chan << ") gain16=" << useGain16 << std::endl;
+  //std::cout << "SetGain DAC(" << (int) awagschip <<", id:"<<apid << ") gain=" << gain << std::endl;
+  // JAM22 TODO
   // first set gain to core:
-  int mask = 0;
-  mask |= apid & 0xFF;
-  if (chan == 0)
-  {
-    // CH1
-    if (useGain16)
-      mask |= 0x100;
-    else
-      mask |= 0x000;    // just for completeness..
-  }
-  else
-  {
-    // CH2
-    if (useGain16)
-      mask |= 0x300;
-    else
-      mask |= 0x200;
-  }
-
-  int dat = AWAGS_GAIN_BASE_WR | mask;
-  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
-
-}
-
-//void AwagsGui::SetTestPulse (uint8_t awagschip, bool on, uint8_t amp1, uint8_t amp2, bool positive)
-//{
-//  int apid = GetAwagsId (fSFP, fSlave, awagschip);
-//  //std::cout << "SetTestPulse(" << (int) awagschip <<", id:"<<apid<<"): on=" << on << ", ch1="<<(int) amp1<<", ch2="<< (int) amp2 << std::endl;
-//
-//  int dat = 0;
-//  int awagsid = apid & 0xFF;
-//  if (!on)
+//  int mask = 0;
+//  mask |= apid & 0xFF;
+//  if (chan == 0)
 //  {
-//    // test pulse is not continuous, so we never need to reset it?
-//    //dat=AWAGS_TESTPULSE_FLAG_WR | awagsid;
-//    //WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
-//
+//    // CH1
+//    if (useGain16)
+//      mask |= 0x100;
+//    else
+//      mask |= 0x000;    // just for completeness..
 //  }
 //  else
 //  {
-//    // first set channel amplitudes for ch1 and ch2:
-//    dat = AWAGS_TESTPULSE_CHAN_WR | awagsid;
-//    if (amp1)
-//      dat |= ((amp1 & 0xF) << 8);
-//    if (amp2)
-//      dat |= ((amp2 & 0xF) << 12);
-//    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
-//
-//    // activate correct polarity:
-//    dat = AWAGS_TESTPULSE_FLAG_WR | awagsid;
-//    if (positive)
-//      dat |= 0x100;
+//    // CH2
+//    if (useGain16)
+//      mask |= 0x300;
 //    else
-//      dat |= 0x300;
-//    WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
+//      mask |= 0x200;
 //  }
 //
-//}
+//  int dat = AWAGS_GAIN_BASE_WR | mask;
+//  WriteGosip (fSFP, fSlave, GOS_I2C_DWR, dat);
+
+}
+
+
 
 void AwagsGui::DoAutoCalibrate (uint8_t awagschip)
 {
@@ -546,6 +521,7 @@ void AwagsGui::DoAutoCalibrateAll ()
 
 void AwagsGui::WriteSwitchRegister(int lo, int hi, bool simplemode)
 {
+  return; // JAM22 ////////////////////////////////////
   int dat = AWAGS_IO_CONTROL_WR;
   if(simplemode)
   {
@@ -662,6 +638,7 @@ void AwagsGui::SetSwitches (bool isPrototype)
 
 void AwagsGui::SetPower (int powermask, bool highgain)
 {
+  return; // JAM22
 //printf("SetPower mask:0x%x, highgain:%d \n",powermask, highgain);
 
 // this switching only works for new pandatest hardware
@@ -1065,9 +1042,9 @@ void AwagsGui::SetSingleChipCommID(int awags, int id)
   lo |= (chipID & 0xF) << 4;
 
   // lsb for gain setup, this time we also activate bit 1 - SelIDAsic
-  if(theSetup->IsHighGain())
-    lo |= (0x000e);
-  else
+//  if(theSetup->IsHighGain())
+//    lo |= (0x000e);
+//  else
     lo |= (0x000f);
 
   WriteSwitchRegister(lo, hi, fUseSimpleSwitchAddressing ); //AWAGS_USE_SIMPLE_SWITCHES
@@ -1136,9 +1113,9 @@ void AwagsGui::SetSingleChipCurrentMode(int awags, bool selectHV, bool selectDio
   lo |= (chipID & 0xF) << 4;
 
   // lsb for gain setup: this time we _do_ use bit 1 - SelIDAsic, always set id 0 here because of pull up resistors on chip (?Sven)
-  if(theSetup->IsHighGain())
-    lo |= (0x0003);
-  else
+//  if(theSetup->IsHighGain())
+//    lo |= (0x0003);
+//  else
     lo |= (0x0002);
 
   // finally set the hv/diode switches:
