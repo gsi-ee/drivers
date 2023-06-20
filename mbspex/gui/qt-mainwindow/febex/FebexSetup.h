@@ -94,13 +94,23 @@
 #define REG_FEB_TIME       0x200018
 #define REG_FEB_XXX        0x20001C
 
-
+// JAM 20-06-23: define number of ADC samples to skip (0...255)
+#define REG_SAMPLE_SKIP        0x208074
 
 #define DATA_FILT_CONTROL_REG 0x2080C0
 #define DATA_FILT_CONTROL_DAT 0x80         // (0x80 E,t summary always +  data trace                 always
                                            // (0x82 E,t summery always + (data trace + filter trace) always
                                            // (0x84 E,t summery always +  data trace                 if > 1 hit
                                            // (0x86 E,t summery always + (data trace + filter trace) if > 1 hit
+
+#define DATA_FILT_CONTROL_DAT_SKIP 0xC0
+                                           // if samples are skipped, these are the values to set:
+                                           // (0xc0 E,t summary always +  data trace                 always
+                                           // (0xc2 E,t summery always + (data trace + filter trace) always
+                                           // (0xc4 E,t summery always +  data trace                 if > 1 hit
+                                           // (0xc6 E,t summery always + (data trace + filter trace) if > 1 hit
+
+
 // Trigger/Hit finder filter
 
 #define TRIG_SUM_A_REG    0x2080D0
@@ -250,15 +260,15 @@ public:
    uint8_t fFilterControl;
 
 
-
-
+   /** number of ADC samples to skip (0..255) */
+   uint8_t fSkippedSamples;
 
 
 
   /* all initialization here:*/
   FebexSetup (): GosipSetup(),
       fTraceLength(200), fTriggerDelay(100), fControl_0(0),fControl_1(0),fControl_2(0),
-      fTriggerSumA(8), fTriggerGap(4), fTriggerSumB(8), fEnergySumA(64), fEnergyGap(32), fEnergySumB(64), fFilterControl(0x84)
+      fTriggerSumA(8), fTriggerGap(4), fTriggerSumB(8), fEnergySumA(64), fEnergyGap(32), fEnergySumB(64), fFilterControl(0x84), fSkippedSamples(0)
   {
     for (int m = 0; m < FEBEX_MCP433_NUMCHIPS; ++m)
     {
@@ -627,6 +637,17 @@ public:
    }
 
 
+  void SetSkippedSamples (uint8_t val)
+    {
+      fSkippedSamples=val;
+    }
+
+    uint8_t GetSkippedSamples ()
+     {
+       return fSkippedSamples;
+     }
+
+
   void SetSendDataTrace(bool on)
   {
       // dummy method, maybe there is a bit to switch here?
@@ -672,6 +693,21 @@ public:
        uint8_t control=GetFilterControl();
        return ((control & 0x04) == 0x04);
      }
+
+
+     void SetDoSkipsamples(uint8_t number)
+         {
+             bool on= (number>0);
+             SetSkippedSamples(number);
+             uint8_t control=GetFilterControl();
+             if(on)
+                   control |= 0x40;
+             else
+                 control &= ~0x40;
+             SetFilterControl(control);
+         }
+
+
 
 
 

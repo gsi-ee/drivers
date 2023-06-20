@@ -37,7 +37,7 @@ FebexGui::FebexGui (QWidget* parent) : GosipGui (parent)
  
 
  fImplementationName="FEBEX";
- fVersionString="Welcome to FEBEX GUI!\n\t v0.981 of 27-May-2021 by JAM (j.adamczewski@gsi.de)";
+ fVersionString="Welcome to FEBEX GUI!\n\t v0.990 of 20-June-2023 by JAM (j.adamczewski@gsi.de)";
 
  fSettings=new QSettings("GSI", fImplementationName);
 
@@ -1226,6 +1226,9 @@ void FebexGui::RefreshView ()
   fFebexWidget->FilterTraceCheckBox->setChecked(theSetup->IsSendFilterTrace());
   fFebexWidget->MoreThanOneHitCheckBox->setChecked(theSetup->IsSendMoreThanOneHitsOnly());
 
+  fFebexWidget->SampleDecimationspinBox->setValue(theSetup->GetSkippedSamples());
+
+
   //printf("FebexGui::RefreshView with raw control 2 =  0x%x\n",theSetup->GetRawControl_2());
   for(uint8_t channel=0; channel<16;++channel)
        {
@@ -1325,6 +1328,9 @@ void FebexGui::EvaluateView ()
   theSetup->SetSendDataTrace (fFebexWidget->DataTraceCheckBox->isChecked ());
   theSetup->SetSendFilterTrace (fFebexWidget->FilterTraceCheckBox->isChecked ());
   theSetup->SetSendMoreThanOneHitsOnly (fFebexWidget->MoreThanOneHitCheckBox->isChecked ());
+
+  theSetup->SetDoSkipsamples(fFebexWidget->SampleDecimationspinBox->value()); // JAM 20.06.2023
+
 
   for (uint8_t channel = 0; channel < 16; ++channel)
   {
@@ -1444,7 +1450,11 @@ void FebexGui::SetRegisters ()
 
   usleep(50);
     // enabling after "ini" of all registers (Ivan - 16.01.2013):
+
+  WriteGosip (fSFP, fSlave, REG_SAMPLE_SKIP, theSetup->GetSkippedSamples()); // JAM 20-06-2023
+
   WriteGosip (fSFP, fSlave, DATA_FILT_CONTROL_REG, theSetup->GetFilterControl());
+
 
 
 
@@ -1584,9 +1594,11 @@ void FebexGui::GetRegisters ()
 
 
   dat=ReadGosip (fSFP, fSlave, DATA_FILT_CONTROL_REG);
-  theSetup->SetFilterControl(dat);
+  theSetup->SetFilterControl(dat & 0xFF);
   //printf("FebexGui::GetRegisters with data filter control 0x%x\n",dat);
 
+  dat=ReadGosip (fSFP, fSlave, REG_SAMPLE_SKIP);
+  theSetup->SetSkippedSamples(dat & 0xFF);
 
 /// TODO: mode to disable tum addon!!!!!!!!!!!!!!!!!
 
