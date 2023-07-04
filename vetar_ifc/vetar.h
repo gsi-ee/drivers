@@ -76,9 +76,13 @@
 
 #define VETAR_CONFIGSIZE 0x80000 /* size of cr/csr space if any*/
 #define VETAR_REGS_ADDR   0x1000000 /* this is default*/
+
 //#define VETAR_REGS_SIZE   0x1000000;
 /* JAM 01-08-22: try smaller window to save mappings*/
-#define VETAR_REGS_SIZE 0x4000
+//#define VETAR_REGS_SIZE 0x4000
+
+/* JAM 04-07-23: back to full range for eb-flash!*/
+#define VETAR_REGS_SIZE 0x1000000;
 
 #define VETAR_CTRLREGS_SIZE 0xA0
 
@@ -119,7 +123,7 @@
 #define WINDOW_LOW  0x0000FFFCUL
 
 
-#define VETARVERSION     "0.9.0"
+#define VETARVERSION     "1.0.0"
 #define VETARAUTHORS     "Joern Adamczewski-Musch, Cesar Prados, GSI Darmstadt (www.gsi.de)"
 #define VETARDESC        "VETAR2 ALTHEA/VME driver for IFC Linux"
 
