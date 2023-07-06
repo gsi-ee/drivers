@@ -81,9 +81,8 @@
 /* JAM 01-08-22: try smaller window to save mappings*/
 //#define VETAR_REGS_SIZE 0x4000
 
-/* JAM 04-07-23: back to full range for eb-flash!*/
-#define VETAR_REGS_SIZE 0x1000000;
-
+/* JAM 06-07-23: larger range for eb-flash!*/
+#define VETAR_REGS_SIZE 0x400000
 #define VETAR_CTRLREGS_SIZE 0xA0
 
 
