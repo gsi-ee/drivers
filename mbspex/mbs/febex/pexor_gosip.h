@@ -1,4 +1,7 @@
- ////
+//// 10/09/2020 for gosip master version 5.0 "USE_KINPEX_V5" is defined in f_user.c.
+//// 14/10/2021 new registers for the system with more than 32 channels.
+//// 17/10/2022 PEXOR_RX_Clear_Pattern without USE_KINPEX_V5 mode debugged.
+
 #ifndef PEXOR_NAME
 #define PEXOR_NAME "PEXOR"
 //#define DEBUG
@@ -81,7 +84,12 @@
 #define REG_DATA_REDUCTION  0xFFFFB0  // Nth bit = 1 enable data reduction of  Nth channel from block transfer readout. (bit0:time, bit1-8:adc)
 #define REG_MEM_DISABLE     0xFFFFB4  // Nth bit =1  disable Nth channel from block transfer readout.(bit0:time, bit1-8:adc)
 #define REG_MEM_FLAG_0      0xFFFFB8  // read only:
-#define REG_MEM_FLAG_1      0xFFFFBc  // read only:
+#define REG_MEM_FLAG_1      0xFFFFBC  // read only:
+
+#define REG_DATA_REDUCTION_32  0xFFFC00  // Nth bit = 1 enable data reduction of  Nth channel from block transfer readout. (bit0:time, bit1-8:adc)
+#define REG_MEM_DISABLE_32     0xFFFC04  // Nth bit =1  disable Nth channel from block transfer readout.(bit0:time, bit1-8:adc)
+#define REG_MEM_FLAG_0_32      0xFFFC08  // read only:
+#define REG_MEM_FLAG_1_32      0xFFFC0C  // read only:
 
 
 #define REG_BUF0     0xFFFFD0 // base address for buffer 0 : 0x0000
@@ -97,7 +105,6 @@
 #define REG_RST 0xFFFFF4
 #define REG_LED 0xFFFFF8
 #define REG_VERSION 0xFFFFFC
-
 
 
 // registers should be 32 bit size also on 64 bit architecture: JAM64
@@ -139,6 +146,11 @@ typedef struct
 
   int volatile *pexor_version;
 } s_pexor ;
+
+
+
+
+
 
 int PEXOR_GetPointer( unsigned long PEXOR_BASE_OFF, volatile int *pl_virt_sram, s_pexor *ps_pexor )
 {
@@ -188,180 +200,31 @@ int PEXOR_GetPointer( unsigned long PEXOR_BASE_OFF, volatile int *pl_virt_sram, 
   return(1);
 }
 
-int PEXOR_Read (s_pexor *ps_pexor, long *addr, long *data)
+int PEXOR_RX_Clear_Ch (s_pexor *ps_pexor, long ch);
+//int PEXOR_TX( s_pexor *ps_pexor,  long comm, long addr, long data );
+//int PEXOR_RX( s_pexor *ps_pexor, int sfp_id,  long *comm, long *addr, long *data );
+//int PEXOR_Slave_Write (s_pexor *ps_pexor, long l_sfp, long l_slave, long l_addr, long l_data);
+int PEXOR_RX_Clear (s_pexor *ps_pexor);
+
+
+#ifdef USE_KINPEX_V5
+int PEXOR_TX( s_pexor *ps_pexor,  long comm, long addr, long data )
 {
-  *data =  * ( ps_pexor->pexor_base + (*addr >>2) );
-  //  printf ("PEXOR_Read: 0x%x  0x%x \n",(ps_pexor->pexor_base),*(ps_pexor->pexor_base) );
-  //  printf ("PEXOR_Read: 0x%x  0x%x \n",(ps_pexor->pexor_base+(addr>>2)),*(ps_pexor->pexor_base+(addr>>2) ) );
-}
-
-
-int PEXOR_Slave_Read (s_pexor *ps_pexor, long l_sfp, long l_slave, long l_addr, long *data)
-{
-  long l_comm, l_address;
-  long a,b,c;
-  int status;
-
-  status=1;
-  l_comm = PEXOR_PT_AD_R_REQ | (0x1<<16+l_sfp);
-  l_address = l_addr+ (l_slave << 24);
-
-  PEXOR_RX_Clear_Ch(ps_pexor, l_sfp); 
-
-  PEXOR_TX( ps_pexor, l_comm, l_address, 0x0) ; 
-  if (PEXOR_RX( ps_pexor, l_sfp, &a , &b, &c)==1)
-  {
-    #ifdef DEBUT
-    printf ("PEXOR_Slave_Read: Reply to PEXOR from SFP: 0x%x ", l_sfp);
-    printf (" 0x%x 0x%x 0x%x \n", a,b,c);
-    #endif
-    *data = c;
-    if( (a&0xfff) == PEXOR_PT_AD_R_REP)
+  if( (comm&0xfff) == PEXOR_PT_TK_R_REQ ) 
     {
-      if(a&0x4000!=0)
-      {
-        printf ("PEXOR_Slave_Read: ERROR: Packet Structure : Command Reply 0x%x \n", a);
-        status=-1;
-      }
+      *ps_pexor->req_comm = comm | (data&0xf) << 20 | (addr&0x3) << 24 | 1<<28 ;
+      //                  printf ("PEXOR_TX: req_comm  %x \n", *ps_pexor->req_comm);
     }
-    else
-    {
-      printf ("PEXOR_Slave_Read: ERROR : Access to empty slave or address: Module  0x%x Address 0x%x  Command Reply  0x%x \n",
-                                                                      ( l_address&0xff000000) >> 24 , l_address&0xffffff, a );
-      status=-1;
-    }
-  }
   else
-  {
-    status=-1;
-    printf ("PEXOR_Slave_Read: no reply: 0x%x 0x%x 0x%x \n", a,b,c);
-  }
-  return status;
-}
-
-int PEXOR_Slave_Write (s_pexor *ps_pexor, long l_sfp, long l_slave, long l_addr, long l_data)
-{
-  long l_comm, l_address;
-  long a,b,c;
-  int status;
-
-  status=1;
-  l_comm = PEXOR_PT_AD_W_REQ | (0x1<<16+l_sfp);
-  l_address = l_addr+ (l_slave << 24);
-
-  PEXOR_RX_Clear(ps_pexor); 
-
-  PEXOR_TX( ps_pexor, l_comm, l_address, l_data) ; 
-  if(PEXOR_RX( ps_pexor, l_sfp, &a , &b, &c)==1)
-  {
-    #ifdef DEBUT
-    printf ("PEXOR_Slave_Write: Reply to PEXOR from SFP: 0x%x ", l_sfp);
-    printf (" 0x%x 0x%x 0x%x \n", a,b,c);
-    #endif
-    if( (a&0xfff) == PEXOR_PT_AD_W_REP)
     {
-      if(a&0x4000!=0)
-      {
-        printf ("PEXOR_Slave_Write: ERROR: Packet Structure : Command Reply 0x%x \n", a);
-        status=-1;
-      }
+      *ps_pexor->req_addr = addr;
+      *ps_pexor->req_data = data;
+      *ps_pexor->req_comm = comm;
     }
-    else
-    {
-      printf ("PEXOR_Slave_Write: ERROR : Access to empty slave or address: Module  0x%x Address 0x%x  Command Reply  0x%x \n",
-                                                                       ( l_address&0xff000000) >> 24 , l_address&0xffffff, a );
-      status=-1;
-    }
-  }
-  else
-  {
-    status=-1;
-    printf ("PEXOR_Slave_Write: no reply: 0x%x 0x%x 0x%x \n", a,b,c);
-  }
-  return status;
-}
-
-int PEXOR_TK_TX_Mem_Read (s_pexor *ps_pexor, long *addr, long *data)
-{
-  *data =  * ( ps_pexor->tk_mem + (*addr >>2) );
-  //  printf ("PEXOR_Read: 0x%x  0x%x \n",(ps_pexor->tk_mem),*(ps_pexor->tk_mem) );
-  //  printf ("PEXOR_Read: 0x%x  0x%x \n",(ps_pexor->tk_mem+(addr>>2)),*(ps_pexor->tk_mem+(addr>>2) ) );
-}
-
-int PEXOR_TK_Mem_Write (s_pexor *ps_pexor, long *addr, long *data)
-{
-   *( ps_pexor->tk_mem + (*addr >>2) )= *data;
-  //  printf ("PEXOR_Read: 0x%x  0x%x \n",(ps_pexor->pexor_base),*(ps_pexor->pexor_base) );
-  //  printf ("PEXOR_Read: 0x%x  0x%x \n",(ps_pexor->pexor_base+(addr>>2)),*(ps_pexor->pexor_base+(addr>>2) ) );
-}
-
-int PEXOR_RX_Clear (s_pexor *ps_pexor)
-{
-  //  while( (*ps_pexor->rep_stat&0xcccc)!=0x0 ){
-  while( (*ps_pexor->rep_stat)!=0x0 )
-  {
-    *ps_pexor->rep_clr=0xf;
-    //    sleep(1);
-    #ifdef DEBUG
-    //  printf ("PEXOR_RX_Clear: rep_stat: 0x%x 0x%x \n",ps_pexor->rep_stat, *ps_pexor->rep_stat );
-    #endif
-  }
   return(1);
 }
 
-int PEXOR_RX_Clear_Ch (s_pexor *ps_pexor, long ch)
-{
-  long val;
-  val = 0x1<<ch;
-  while ((*(ps_pexor->rep_stat_0+ch)&0xf000)!=0x0 || (*(ps_pexor->sfp_tk_stat+ch)&0xf000)!=0x0 )
-  {
-    // while( (*ps_pexor->rep_stat)!=0x0 ){
-    // *ps_pexor->rep_clr=0xf;
-    *ps_pexor->rep_clr=val;
-    // sleep(1);
-    #ifdef DEBUG
-    // printf ("PEXOR_RX_Clear_Ch: rep_stat: ch 0x%x 0x%x  0x%x , registers 0x%p and 0x%p\n",ch,
-    // *(ps_pexor->sfp_tk_stat+ch), *(ps_pexor->rep_stat_0+ch), ps_pexor->sfp_tk_stat+ch, ps_pexor->rep_stat_0+ch);
-    #endif
-  }
-  return(1);
-}
-
-int PEXOR_RX_Clear_Pattern (s_pexor *ps_pexor, long l_ptn)
-{
-  long mask;
-  mask=(l_ptn<<8)|(l_ptn<<4)|l_ptn;
-  //  while( (*ps_pexor->rep_stat&0xcccc)!=0x0 ){
-  while( ((*ps_pexor->rep_stat)&mask)!=0x0 )
-  {
-    *ps_pexor->rep_clr=l_ptn;
-    // sleep(1);
-    #ifdef DEBUG
-    // printf ("PEXOR_RX_Clear: rep_stat: 0x%x 0x%x \n",ps_pexor->rep_stat, *ps_pexor->rep_stat );
-    #endif
-  }
-  return(1);
-}
-
-int PEXOR_TX_Reset_Ch (s_pexor *ps_pexor, long ch)
-{
-  long val;
-  val = 0x1<<(ch+4);
-  *ps_pexor->rx_rst= val;
-  return(1);
-}
-
-int PEXOR_SERDES_Reset( s_pexor *ps_pexor)
-{
-  long val;
-  *ps_pexor->rx_rst= 0x100;
-  *ps_pexor->rx_rst= 0x0;
-  sleep(1);
-  return(1);
-}
-
-
-
+#else //USE_KINPEX_V5
 int PEXOR_TX( s_pexor *ps_pexor,  long comm, long addr, long data )
 {
   *ps_pexor->req_addr = addr;
@@ -369,7 +232,93 @@ int PEXOR_TX( s_pexor *ps_pexor,  long comm, long addr, long data )
   *ps_pexor->req_comm = comm;
   return(1);
 }
+#endif //USE_KINPEX_V5
 
+
+#ifdef USE_KINPEX_V5
+int PEXOR_RX( s_pexor *ps_pexor, int sfp_id,  long *comm, long *addr, long *data )
+{
+  int stat;
+  int loop=0;
+  int loop_max=1000000;
+  //  INTU4 rep_stat;
+
+  stat=-1;
+  if (sfp_id==0)
+    {
+    while( (((*comm = *ps_pexor->rep_stat_0) & 0x3000)>>12)!=2 && loop < loop_max)
+    {
+      loop++;
+    }
+    if( (*comm&0xfff) == PEXOR_PT_TK_R_REQ )
+      {
+	*addr =  (*comm & 0xf000000)>>24;
+	*data =  (*comm & 0xf0000)>>16;
+      }
+    else
+      {
+      *addr =  *ps_pexor->rep_addr_0;
+      *data =  *ps_pexor->rep_data_0;
+      }
+    }
+    else if (sfp_id==1)
+    {
+    while( (((*comm = *ps_pexor->rep_stat_1) & 0x3000)>>12)!=2 && loop < loop_max)
+    {
+      loop++;
+    }
+    if( (*comm&0xfff) == PEXOR_PT_TK_R_REQ )
+      {
+	*addr =  (*comm & 0xf000000)>>24;
+	*data =  (*comm & 0xf0000)>>16;
+      }
+    else
+      {
+      *addr =  *ps_pexor->rep_addr_1;
+      *data =  *ps_pexor->rep_data_1;
+      }
+    }
+
+    else if (sfp_id==2)
+    {
+    while( (((*comm = *ps_pexor->rep_stat_2) & 0x3000)>>12)!=2 && loop < loop_max)
+    {
+      loop++;
+    }
+    if( (*comm&0xfff) == PEXOR_PT_TK_R_REQ )
+      {
+	*addr =  (*comm & 0xf000000)>>24;
+	*data =  (*comm & 0xf0000)>>16;
+      }
+    else
+      {
+      *addr =  *ps_pexor->rep_addr_2;
+      *data =  *ps_pexor->rep_data_2;
+      }
+    }
+    else if (sfp_id==3)
+    {
+    while( (((*comm = *ps_pexor->rep_stat_3) & 0x3000)>>12)!=2 && loop < loop_max)
+    {
+      loop++;
+    }
+    if( (*comm&0xfff) == PEXOR_PT_TK_R_REQ )
+      {
+	*addr =  (*comm & 0xf000000)>>24;
+	*data =  (*comm & 0xf0000)>>16;
+      }
+    else
+      {
+      *addr =  *ps_pexor->rep_addr_3;
+      *data =  *ps_pexor->rep_data_3;
+      }
+    }
+
+  if(loop!=loop_max) stat =1;
+  return(stat);
+}
+
+#else //USE_KINPEX_V5
 int PEXOR_RX( s_pexor *ps_pexor, int sfp_id,  long *comm, long *addr, long *data )
 {
   int stat;
@@ -385,6 +334,7 @@ int PEXOR_RX( s_pexor *ps_pexor, int sfp_id,  long *comm, long *addr, long *data
       loop++;
       //      printf ("PEXOR_RX: rep_stat: sfp0:0x%x  loop %d \n", *ps_pexor->rep_stat_0, loop);
     }
+    //    usleep(1);
     *comm =  *ps_pexor->rep_stat_0;
     *addr =  *ps_pexor->rep_addr_0;
     *data =  *ps_pexor->rep_data_0;
@@ -428,6 +378,225 @@ int PEXOR_RX( s_pexor *ps_pexor, int sfp_id,  long *comm, long *addr, long *data
   if(loop!=loop_max) stat =1;
   return(stat);
 }
+#endif
+
+
+int PEXOR_Read (s_pexor *ps_pexor, long *addr, long *data)
+{
+  *data =  * ( ps_pexor->pexor_base + (*addr >>2) );
+  //  printf ("PEXOR_Read: 0x%x  0x%x \n",(ps_pexor->pexor_base),*(ps_pexor->pexor_base) );
+  //  printf ("PEXOR_Read: 0x%x  0x%x \n",(ps_pexor->pexor_base+(addr>>2)),*(ps_pexor->pexor_base+(addr>>2) ) );
+}
+
+int PEXOR_Write (s_pexor *ps_pexor, long *addr, long *data)
+{
+   *( ps_pexor->pexor_base + (*addr >>2) )= *data;
+  //  printf ("PEXOR_Read: 0x%x  0x%x \n",(ps_pexor->pexor_base),*(ps_pexor->pexor_base) );
+  //  printf ("PEXOR_Read: 0x%x  0x%x \n",(ps_pexor->pexor_base+(addr>>2)),*(ps_pexor->pexor_base+(addr>>2) ) );
+}
+
+int PEXOR_Slave_Read (s_pexor *ps_pexor, long l_sfp, long l_slave, long l_addr, long *data)
+{
+  long l_comm, l_address;
+  long a,b,c;
+  int status;
+
+  status=1;
+  l_comm = PEXOR_PT_AD_R_REQ | (0x1<<16+l_sfp);
+  l_address = l_addr+ (l_slave << 24);
+
+  //  PEXOR_RX_Clear_Ch( *ps_pexor, l_sfp);
+  PEXOR_RX_Clear_Ch( ps_pexor, l_sfp);   
+
+  PEXOR_TX( ps_pexor, l_comm, l_address, 0x0) ; 
+  if (PEXOR_RX( ps_pexor, l_sfp, &a , &b, &c)==1)
+  {
+    #ifdef DEBUG
+    printf ("PEXOR_Slave_Read: Reply to PEXOR from SFP: 0x%x ", l_sfp);
+    printf (" 0x%x 0x%x 0x%x \n", a,b,c);
+    #endif
+    *data = c;
+    if( (a&0xfff) == PEXOR_PT_AD_R_REP)
+    {
+      if(a&0x4000!=0)
+      {
+        printf ("PEXOR_Slave_Read: ERROR: Packet Structure : Command Reply 0x%x \n", a);
+        status=-1;
+      }
+    }
+    else
+    {
+      printf ("PEXOR_Slave_Read: ERROR : Access to empty slave or address: Module  0x%x Address 0x%x  Command Reply  0x%x \n",
+                                                                      ( l_address&0xff000000) >> 24 , l_address&0xffffff, a );
+      status=-1;
+    }
+  }
+  else
+  {
+    status=-1;
+    printf ("PEXOR_Slave_Read: no reply: 0x%x 0x%x 0x%x \n", a,b,c);
+  }
+  return status;
+}
+
+int PEXOR_Slave_Write (s_pexor *ps_pexor, long l_sfp, long l_slave, long l_addr, long l_data)
+{
+  long l_comm, l_address;
+  long a,b,c;
+  int status;
+
+  status=1;
+  l_comm = PEXOR_PT_AD_W_REQ | (0x1<<16+l_sfp);
+  l_address = l_addr+ (l_slave << 24);
+
+  //  PEXOR_RX_Clear( *ps_pexor);
+  PEXOR_RX_Clear( ps_pexor);   
+
+  PEXOR_TX( ps_pexor, l_comm, l_address, l_data) ; 
+  if(PEXOR_RX( ps_pexor, l_sfp, &a , &b, &c)==1)
+  {
+    #ifdef DEBUG
+    printf ("PEXOR_Slave_Write: Reply to PEXOR from SFP: 0x%x ", l_sfp);
+    printf (" 0x%x 0x%x 0x%x \n", a,b,c);
+    #endif
+    if( (a&0xfff) == PEXOR_PT_AD_W_REP)
+    {
+      if(a&0x4000!=0)
+      {
+        printf ("PEXOR_Slave_Write: ERROR: Packet Structure : Command Reply 0x%x \n", a);
+        status=-1;
+      }
+    }
+    else
+    {
+      printf ("PEXOR_Slave_Write: ERROR : Access to empty slave or address: Module  0x%x Address 0x%x  Command Reply  0x%x \n",
+                                                                       ( l_address&0xff000000) >> 24 , l_address&0xffffff, a );
+      status=-1;
+    }
+  }
+  else
+  {
+    status=-1;
+    printf ("PEXOR_Slave_Write: no reply: 0x%x 0x%x 0x%x \n", a,b,c);
+  }
+  return status;
+}
+
+int PEXOR_TK_TX_Mem_Read (s_pexor *ps_pexor, long *addr, long *data)
+{
+  *data =  * ( ps_pexor->tk_mem + (*addr >>2) );
+  //  printf ("PEXOR_Read: 0x%x  0x%x \n",(ps_pexor->tk_mem),*(ps_pexor->tk_mem) );
+  //  printf ("PEXOR_Read: 0x%x  0x%x \n",(ps_pexor->tk_mem+(addr>>2)),*(ps_pexor->tk_mem+(addr>>2) ) );
+}
+
+int PEXOR_TK_Mem_Write (s_pexor *ps_pexor, long *addr, long *data)
+{
+   *( ps_pexor->tk_mem + (*addr >>2) )= *data;
+  //  printf ("PEXOR_Read: 0x%x  0x%x \n",(ps_pexor->pexor_base),*(ps_pexor->pexor_base) );
+  //  printf ("PEXOR_Read: 0x%x  0x%x \n",(ps_pexor->pexor_base+(addr>>2)),*(ps_pexor->pexor_base+(addr>>2) ) );
+}
+
+#ifdef USE_KINPEX_V5
+int PEXOR_RX_Clear (s_pexor *ps_pexor)
+{
+  *ps_pexor->rep_clr=0xf;
+  return(1);
+}
+#else //USE_KINPEX_V5
+int PEXOR_RX_Clear (s_pexor *ps_pexor)
+{
+  //  while( (*ps_pexor->rep_stat&0xcccc)!=0x0 ){
+  while( (*ps_pexor->rep_stat)!=0x0 )
+  {
+    *ps_pexor->rep_clr=0xf;
+    //    sleep(1);
+    #ifdef DEBUG
+    //  printf ("PEXOR_RX_Clear: rep_stat: 0x%x 0x%x \n",ps_pexor->rep_stat, *ps_pexor->rep_stat );
+    #endif
+  }
+  return(1);
+}
+#endif//USE_KINPEX_V5
+
+#ifdef USE_KINPEX_V5
+int PEXOR_RX_Clear_Ch (s_pexor *ps_pexor, long ch)
+{
+  long val;
+  val = 0x1<<ch;
+  *ps_pexor->rep_clr=val;
+  return(1);
+}
+#else //USE_KINPEX_V5
+int PEXOR_RX_Clear_Ch (s_pexor *ps_pexor, long ch)
+{
+  long val;
+  val = 0x1<<ch;
+  while ((*(ps_pexor->rep_stat_0+ch)&0xf000)!=0x0 || (*(ps_pexor->sfp_tk_stat+ch)&0xf000)!=0x0 )
+  {
+    // while( (*ps_pexor->rep_stat)!=0x0 ){
+    // *ps_pexor->rep_clr=0xf;
+    *ps_pexor->rep_clr=val;
+    // sleep(1);
+    #ifdef DEBUG
+    // printf ("PEXOR_RX_Clear_Ch: rep_stat: ch 0x%x 0x%x  0x%x , registers 0x%p and 0x%p\n",ch,
+    // *(ps_pexor->sfp_tk_stat+ch), *(ps_pexor->rep_stat_0+ch), ps_pexor->sfp_tk_stat+ch, ps_pexor->rep_stat_0+ch);
+    #endif
+  }
+  return(1);
+}
+#endif//USE_KINPEX_V5
+
+
+
+#ifdef USE_KINPEX_V5
+int PEXOR_RX_Clear_Pattern (s_pexor *ps_pexor, long l_ptn)
+{
+  long mask;
+  long i=0;
+    *ps_pexor->rep_clr=l_ptn;
+    //#ifdef DEBUG
+    //        printf ("PEXOR_RX_Clear: rep_stat: 0x%x 0x%x \n",ps_pexor->rep_stat, *ps_pexor->rep_stat );
+    //#endif
+  return(1);
+}
+#else //USE_KINPEX_V5
+int PEXOR_RX_Clear_Pattern (s_pexor *ps_pexor, long l_ptn)
+{
+  long mask;
+  long i=0;
+  mask=(l_ptn<<8)|(l_ptn<<4)|l_ptn;
+  while( ((*ps_pexor->rep_stat)&mask)!=0x0 )
+    {
+      *ps_pexor->rep_clr=l_ptn;
+    // sleep(1);
+#ifdef DEBUG
+      printf ("PEXOR_RX_Clear: rep_stat: 0x%x 0x%x \n",ps_pexor->rep_stat, *ps_pexor->rep_stat );
+#endif
+	}
+  return(1);
+}
+#endif//USE_KINPEX_V5
+
+
+
+int PEXOR_TX_Reset_Ch (s_pexor *ps_pexor, long ch)
+{
+  long val;
+  val = 0x1<<(ch+4);
+  *ps_pexor->rx_rst= val;
+  return(1);
+}
+
+int PEXOR_SERDES_Reset( s_pexor *ps_pexor)
+{
+  long val;
+  *ps_pexor->rx_rst= 0x100;
+  *ps_pexor->rx_rst= 0x0;
+  sleep(1);
+  return(1);
+}
+
+
 
 long PEXOR_TK_Data_Size (s_pexor *ps_pexor, long l_sfp,  long slave_id)
 {

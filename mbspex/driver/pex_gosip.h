@@ -10,7 +10,8 @@
 
 #include "pex_common.h"
 
-
+/** JAM 18-09-23: switch to version 5 of kinpex gosip engine */
+#define PEX_SFP_USE_KINPEX_V5 1
 
 /* SFP registers and commands: this definition was moved to pex_user.h*/
 /*#define PEX_SFP_NUMBER 4  number of used sfp connections */
@@ -123,12 +124,12 @@
 
 /* delay in nanoseconds (ns) for any operation on gosip sfp protocol*/
 #define PEX_SFP_DELAY 20
-
+//20
 
 /* pseudo function to work with delay:*/
 #define pex_sfp_delay()                       \
   mb();      \
-  ndelay(PEX_SFP_DELAY);
+  if(PEX_SFP_DELAY>0) ndelay(PEX_SFP_DELAY);
 
 
 /*  ndelay(20); too short for multiprocesses with semaphore wait?*/
@@ -192,9 +193,9 @@ int pex_sfp_get_reply(struct pex_privdata *privdata, int ch, u32 * comm,
 
 /** wait for sfp token reply on channel ch.
  * return values are put into stat, head, and foot. */
-int pex_sfp_get_token_reply(struct pex_privdata *privdata, int ch,
-                              u32 * stat, u32 * head, u32 * foot);
-
+//int pex_sfp_get_token_reply(struct pex_privdata *privdata, int ch,
+//                              u32 * stat, u32 * head, u32 * foot);
+//
 
 
 /** initialize the connected slaves on sfp channel ch */

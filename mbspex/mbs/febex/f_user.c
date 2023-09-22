@@ -8,6 +8,10 @@
 
 #define USE_MBSPEX_LIB       1 // this define will switch on usage of mbspex lib with locked ioctls
                                // instead of direct register mapping usage
+
+#ifndef USE_MBSPEX_LIB
+#define USE_KINPEX_V5 1
+#endif
 //#define WR_TIME_STAMP        1 // white rabbit latched time stamp
 #define WRITE_ANALYSIS_PARAM 1 
 #define DEBUG                1
@@ -23,7 +27,7 @@
 #include "stdarg.h"
 #include <sys/file.h>
 #ifndef Linux
- #include <mem.h>
+ #include <mem.h> 
  #include <smem.h>
 #else
  #include "smem_mbs.h"
@@ -61,7 +65,8 @@
 
 // nr of slaves on SFP 0   1   2   3
 //                     |   |   |   |
-#define NR_SLAVES    { 2,  0,  0,  0} 
+//#define NR_SLAVES    { 1,  0,  0,  0}
+#define NR_SLAVES    { 0,  1,  0,  0}
 
                               // maximum trace length 8000 (133 us)
                               // attention
@@ -72,16 +77,19 @@
 #define FEB_TRACE_LEN   300  // in nr of samples
 #define FEB_TRIG_DELAY   30  // in nr.of samples
 
-//#define CLK_SOURCE_ID     {0xff,0}  // sfp_port, module_id of the module to distribute clock
-#define CLK_SOURCE_ID     {0x0,0}  // sfp_port, module_id of the module to distribute clock
+#define CLK_SOURCE_ID     {0xff,0}  // sfp_port, module_id of the module to distribute clock
+//#define CLK_SOURCE_ID     {0x0,0}  // sfp_port, module_id of the module to distribute clock
 
 //--------------------------------------------------------------------------------------------------------
 
 #define DATA_FILT_CONTROL_REG 0x2080C0
-#define DATA_FILT_CONTROL_DAT 0x80         // (0x80 E,t summary always +  data trace                 always
+//#define DATA_FILT_CONTROL_DAT 0x80         // (0x80 E,t summary always +  data trace                 always
                                            // (0x82 E,t summery always + (data trace + filter trace) always
                                            // (0x84 E,t summery always +  data trace                 if > 1 hit
                                            // (0x86 E,t summery always + (data trace + filter trace) if > 1 hit
+
+#define DATA_FILT_CONTROL_DAT 0x84
+
 // Trigger/Hit finder filter
 
 #define TRIG_SUM_A_REG    0x2080D0
@@ -163,7 +171,7 @@ static long l_sfp0_feb_ctrl1[MAX_SLAVE] = { 0x0, 0x0, 0x0, 0x0,
                                             0x0, 0x0, 0x0, 0x0,
                                             0x0, 0x0, 0x0, 0x0 };
 
-static long l_sfp1_feb_ctrl1[MAX_SLAVE] = { 0x0,     0x1ffff, 0x1ffff, 0x1ffff,
+static long l_sfp1_feb_ctrl1[MAX_SLAVE] = { 0x0, 0x1ffff, 0x1ffff, 0x1ffff,
                                             0x1ffff, 0x1ffff, 0x1ffff, 0x1ffff,
                                             0x1ffff, 0x1ffff, 0x1ffff, 0x1ffff,
                                             0x1ffff, 0x1ffff, 0x1ffff, 0x1ffff };
@@ -378,7 +386,7 @@ void f_feb_init ();
  void f_wr_init ();
  void f_wr_reset_tlu_fifo ();
 #endif
-static l_check;
+//static l_check;
 
 static  long          l_first = 0, l_first2 = 0, l_first3 = 0, l_first4 = 0;       
 static  unsigned long l_tr_ct[MAX_TRIG_TYPE];
@@ -427,10 +435,10 @@ static  long  l_spec_trail;
 
 static  INTU4 *pl_dat_save, *pl_tmp;
 
-#ifndef SEQUENTIAL_TOKEN_SEND
+//#ifndef SEQUENTIAL_TOKEN_SEND
  static  long  l_dat_len_sum[MAX_SFP];
  static  long  l_dat_len_sum_long[MAX_SFP];
-#endif
+//#endif
 
 static  INTU4 volatile *pl_pex_sfp_mem_base[MAX_SFP];
 static  INTU4 volatile *pl_dma_source_base;
@@ -830,7 +838,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
   // think about if and where you shall do this ....
   *l_read_stat = 0;               
   #ifdef USER_TRIG_CLEAR
-  if (bh_trig_typ < 14)
+  if (bh_trig_typ < 14) 
   {
     *l_read_stat = TRIG__CLEARED;
     f_user_trig_clear (bh_trig_typ);
@@ -1047,6 +1055,14 @@ int f_user_readout (unsigned char   bh_trig_typ,
         l_err_prot_ct++;
         l_check_err = 2; goto bad_event;
       }
+      
+      // check here the case of all zero suppressed data, lenght should be below 4 words
+      if(l_dma_trans_size <=16)
+      {
+	//printm("mbspex_send_and_receive_parallel_tok sees l_dma_trans_size , 0x%x \n", l_dma_trans_size);
+	// we just discard the extra padding words send by the kernel module DMA
+	l_dma_trans_size=0;
+      }
       pl_dat += (l_dma_trans_size>>2); // l_dma_trans_size bytes to pointer units - int
       #else // (USE_DRIVER_PARALLEL_TOKENREAD) &&  ! (SEQUENTIAL_TOKEN_SEND)
 
@@ -1081,6 +1097,17 @@ int f_user_readout (unsigned char   bh_trig_typ,
           l_stat = mbspex_send_and_receive_tok (fd_pex, l_i, l_tog | l_tok_mode,
                   (long) l_dma_target_base, (long unsigned*) &l_dma_trans_size, 
                   &l_dummy, &l_tok_check, &l_n_slaves);
+	  
+	  // try to check if we have zero suppression.
+	  if(l_dma_trans_size<=16) // minimum kernel module automatic burst size?
+	    {
+	      //printm("mbspex_send_and_receive_tok for sfp %d has l_dma_trans_size=%d\n",l_i,l_dma_trans_size );
+	      l_dma_trans_size=0; // frontend zero suppression: skip filling up with padding words.
+	    }
+	    
+	     mbspex_register_wr(fd_pex,0, (long)PEX_REG_OFF + (long) 0x10, 0); // reset dma for zero suppression mode
+	     mbspex_register_wr(fd_pex,0,(long)PEX_REG_OFF + (long) 0x8,0); // reset previous dma length, for zero supression
+	     
           #else
           *pl_dma_target_base = l_dma_target_base;
           l_stat = f_pex_send_and_receive_tok (l_i, l_tog | l_tok_mode, &l_dummy, &l_tok_check, &l_n_slaves);
@@ -1157,13 +1184,27 @@ int f_user_readout (unsigned char   bh_trig_typ,
             #endif
           }
           l_dma_trans_size = *pl_dma_trans_size; // in this case true, not BURST_SIZE aligned size
+          
+
+          *pl_dma_stat = 0;// shizu debugging.... de-activate dma 
+	  *pl_dma_trans_size=0; // shizu debugging.... set data size 0
+
+	  
           #endif // not USE_MBSPEX_LIB
 
           //if(l_dma_trans_size % 8 != 0) {printm ("dma data size  0x%x\n", l_dma_trans_size);}
 
           // adjust pl_dat, pl_dat comes always 4 byte aligned
           // fill padding space with pattern
+
+	  if(l_dma_trans_size == 0) // zero suppression //shizu
+	    { 
+	      l_padd[l_i]= 0;
+	    }
+	  else
+	    {
           l_padd[l_i] = l_padd[l_i] >> 2;                  // now in 4 bytes (longs) 
+       }
           for (l_k=0; l_k<l_padd[l_i]; l_k++)
           {
             //*pl_dat++ = 0xadd00000 + (l_i*0x1000) + l_k;
@@ -1256,7 +1297,9 @@ int f_user_readout (unsigned char   bh_trig_typ,
           l_dat_len_sum[l_i] = mbspex_get_tok_memsize(fd_pex, l_i); // in bytes
           #else
           l_dat_len_sum[l_i] = PEXOR_TK_Mem_Size (&sPEXOR, l_i);    // in bytes
-          #endif // USE_MBSPEX_LIB
+	    	PEXOR_RX_Clear_Ch (&sPEXOR, l_i);  // shizu
+	      #endif // USE_MBSPEX_LIB
+	    if(l_dat_len_sum[l_i] > 0x0)// zero suppression by shizu
           l_dat_len_sum[l_i] += 4; // wg. shizu !!??
       
           #ifdef PEXOR_PC_DRAM_DMA
@@ -1281,7 +1324,11 @@ int f_user_readout (unsigned char   bh_trig_typ,
           }      
 
           l_padd[l_i] = 0;
-          if ( ((long)pl_dat % l_burst_size) != 0)
+
+          if ( l_dma_trans_size == 0) // Shizu : Zero suppression
+	    {
+	    }
+          else if ( ((long)pl_dat % l_burst_size) != 0)
           {
             l_padd[l_i] = l_burst_size - ((long)pl_dat % l_burst_size);  
             l_dma_target_base = (long) pl_dat + l_diff_pipe_phys_virt + l_padd[l_i];
@@ -1292,6 +1339,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
           }
 
           #ifdef USE_MBSPEX_LIB
+           if(l_dma_trans_size > 0x0) // JAM zero suppression by shizu
           mbspex_dma_rd (fd_pex, l_pex_sfp_phys_mem_base[l_i], l_dma_target_base,
                                                                          l_dma_trans_size,l_burst_size);
           // note: return value is true dma transfer size, we do not use this here
@@ -1305,6 +1353,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
           *pl_dma_trans_size  = l_dma_trans_size;   
 
           // do dma transfer pexor memory -> pc dram (sub-event pipe)
+	  if(l_dma_trans_size > 0x0) // zero suppression by shizu
           *pl_dma_stat = 1;    // start dma
           l_ct = 0; 
           while (1)    // check if dma transfer finished 
@@ -1443,6 +1492,8 @@ int f_user_readout (unsigned char   bh_trig_typ,
     #ifdef WRITE_ANALYSIS_PARAM
     pl_tmp += 7;
     #endif
+
+ if (l_dat_len_sum[l_i]>16){ // shizu - skip data check when the data is supressed.
 
     //printm ("total data size (in 4 bytes): %d \n", pl_dat - pl_dat_save);
     while (pl_tmp < pl_dat)
@@ -1681,7 +1732,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
             printm (RON"ERROR>>"RES" trace trailer id is not 0xbb \n");
             l_err_prot_ct++;
           }
-        }
+       }
       }
       else
       {
@@ -1690,6 +1741,8 @@ int f_user_readout (unsigned char   bh_trig_typ,
         goto bad_event;
       }       
     }
+
+    } // if (l_dat_len_sum[l_i]>16){ // shizu
     #endif // CHECK_META_DATA 
 
   bad_event:

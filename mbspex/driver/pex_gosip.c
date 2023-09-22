@@ -604,6 +604,8 @@ void pex_sfp_reset (struct pex_privdata* privdata)
   int i;
   struct pex_sfp* sfp = &(privdata->regs.sfp);
   pex_dbg(KERN_NOTICE "**pex_sfp_reset\n");
+
+
   iowrite32 (0xF, sfp->reset);
   mb();
   pex_sfp_delay()
@@ -617,13 +619,38 @@ void pex_sfp_reset (struct pex_privdata* privdata)
   {
     sfp->num_slaves[i] = 0;
   }
-
 }
 
 void pex_sfp_request (struct pex_privdata* privdata, u32 comm, u32 addr, u32 data)
 {
   struct pex_sfp* sfp = &(privdata->regs.sfp);
   pex_dbg(KERN_NOTICE "**pex_sfp_request, comm=%x, addr=%x data=%x\n", comm, addr, data);
+#ifdef PEX_SFP_USE_KINPEX_V5
+  if( (comm & 0xfff) == PEX_SFP_PT_TK_R_REQ )
+      {
+        //*ps_pexor->req_comm = comm | (data&0xf) << 20 | (addr&0x3) << 24 | 1<<28 ;
+        //                  printf ("PEXOR_TX: req_comm  %x \n", *ps_pexor->req_comm);
+
+        iowrite32 ((comm | (data & 0xf) << 20 | (addr & 0x3) << 24 | 1<<28) , sfp->req_comm);
+        pex_sfp_delay();
+      }
+  else
+      {
+        iowrite32 (addr, sfp->req_addr);
+        pex_sfp_delay();
+        iowrite32 (data, sfp->req_data);
+        pex_sfp_delay();
+        iowrite32 (comm, sfp->req_comm);
+        pex_sfp_delay();
+      }
+
+
+
+
+#else
+
+
+
   iowrite32 (addr, sfp->req_addr);
   pex_sfp_delay()
   ;
@@ -633,6 +660,7 @@ void pex_sfp_request (struct pex_privdata* privdata, u32 comm, u32 addr, u32 dat
   iowrite32 (comm, sfp->req_comm);
   pex_sfp_delay()
   ;
+#endif
 }
 
 int pex_sfp_get_reply (struct pex_privdata* privdata, int ch, u32* comm, u32 *addr, u32 *data, u32 checkvalue)
@@ -658,6 +686,23 @@ int pex_sfp_get_reply (struct pex_privdata* privdata, int ch, u32* comm, u32 *ad
     loopcount++;
   } while (((status & 0x3000) >> 12) != 0x02); /* packet received bit is set*/
 
+#ifdef PEX_SFP_USE_KINPEX_V5
+
+  *comm=status; // JAM: TODO- different to Shizu code which has one variable for status and comm
+  if( (status & 0xfff) == PEX_SFP_PT_TK_R_REQ )
+      {
+        *addr =  (status & 0xf000000)>>24;
+        *data =  (status & 0xf0000)>>16;
+      }
+  else
+      {
+        *addr = ioread32 (sfp->rep_addr[ch]);
+        pex_sfp_delay();
+        *data = ioread32 (sfp->rep_data[ch]);
+        pex_sfp_delay();
+      }
+#else //PEX_SFP_USE_KINPEX_V5
+
   *comm = ioread32 (sfp->rep_stat[ch]);
   pex_sfp_delay()
   ;
@@ -666,10 +711,10 @@ int pex_sfp_get_reply (struct pex_privdata* privdata, int ch, u32* comm, u32 *ad
   ;
   *data = ioread32 (sfp->rep_data[ch]);
   pex_sfp_delay()
+#endif //PEX_SFP_USE_KINPEX_V5
   ;pex_dbg(KERN_NOTICE "pex_sfp_get_reply from SFP: %x got status:%x address:%x data: %x \n", ch, *comm, *addr, *data);
   if (checkvalue == 0)
     return 0;    // no check of reply structure
-  //if ((*comm & 0xfff) == checkvalue) // bugfix JAM2016
   if ((*comm & checkvalue) == checkvalue)
   {
     if ((*comm & 0x4000) != 0)
@@ -688,42 +733,44 @@ int pex_sfp_get_reply (struct pex_privdata* privdata, int ch, u32* comm, u32 *ad
 
 }
 
-int pex_sfp_get_token_reply (struct pex_privdata* privdata, int ch, u32* stat, u32* head, u32* foot)
-{
-  u32 status = 0, loopcount = 0;
-  struct pex_sfp* sfp = &(privdata->regs.sfp);
-  pex_dbg(KERN_NOTICE "**pex_sfp_get_token_reply ***\n");
-  pex_sfp_assert_channel(ch);
 
-  do
-  {
-    if (loopcount > privdata->sfp_maxpolls)
-    {
-      pex_msg(KERN_WARNING "**pex_sfp_get_token reply polled %d times = %d ns without success, abort\n", loopcount, (loopcount* PEX_SFP_DELAY));
-      print_register (" ... status after FAILED pex_sfp_get_token_reply:0x%x", sfp->tk_stat[ch]);
-      return -EIO;
-    }
-    status = ioread32 (sfp->tk_stat[ch]);
-    pex_sfp_delay()
-    ;
-
-    loopcount++;
-  } while (((status & 0x3000) >> 12) != 0x02); /* packet received bit is set*/
-
-  *stat = ioread32 (sfp->tk_stat[ch]);
-  pex_sfp_delay()
-  ;
-  *head = ioread32 (sfp->tk_head[ch]);
-  pex_sfp_delay()
-  ;
-  *foot = ioread32 (sfp->tk_foot[ch]);
-  pex_sfp_delay()
-  ;
-  pex_dbg(
-      KERN_NOTICE "pex_sfp_get_token_reply from SFP: %x got token status:%x header:%x footer: %x \n", ch, *stat, *head, *foot);
-
-  return 0;
-}
+/** JAM 18-09-2023: this function migh be redundant all the time ?*/
+//int pex_sfp_get_token_reply (struct pex_privdata* privdata, int ch, u32* stat, u32* head, u32* foot)
+//{
+//  u32 status = 0, loopcount = 0;
+//  struct pex_sfp* sfp = &(privdata->regs.sfp);
+//  pex_dbg(KERN_NOTICE "**pex_sfp_get_token_reply ***\n");
+//  pex_sfp_assert_channel(ch);
+//
+//  do
+//  {
+//    if (loopcount > privdata->sfp_maxpolls)
+//    {
+//      pex_msg(KERN_WARNING "**pex_sfp_get_token reply polled %d times = %d ns without success, abort\n", loopcount, (loopcount* PEX_SFP_DELAY));
+//      print_register (" ... status after FAILED pex_sfp_get_token_reply:0x%x", sfp->tk_stat[ch]);
+//      return -EIO;
+//    }
+//    status = ioread32 (sfp->tk_stat[ch]);
+//    pex_sfp_delay()
+//    ;
+//
+//    loopcount++;
+//  } while (((status & 0x3000) >> 12) != 0x02); /* packet received bit is set*/
+//
+//  *stat = ioread32 (sfp->tk_stat[ch]);
+//  pex_sfp_delay()
+//  ;
+//  *head = ioread32 (sfp->tk_head[ch]);
+//  pex_sfp_delay()
+//  ;
+//  *foot = ioread32 (sfp->tk_foot[ch]);
+//  pex_sfp_delay()
+//  ;
+//  pex_dbg(
+//      KERN_NOTICE "pex_sfp_get_token_reply from SFP: %x got token status:%x header:%x footer: %x \n", ch, *stat, *head, *foot);
+//
+//  return 0;
+//}
 
 int pex_sfp_init_request (struct pex_privdata* privdata, int ch, int numslaves)
 {
@@ -758,12 +805,20 @@ int pex_sfp_init_request (struct pex_privdata* privdata, int ch, int numslaves)
 
 int pex_sfp_clear_all (struct pex_privdata* privdata)
 {
-  u32 status = 0, loopcount = 0, clrval;
+#ifndef PEX_SFP_USE_KINPEX_V5
+  u32 status = 0, loopcount = 0;
+#endif
+  u32 clrval=0xf;
   struct pex_sfp* sfp = &(privdata->regs.sfp);
-  clrval = 0xf;
   pex_dbg(KERN_NOTICE "**pex_sfp_clear_all ***\n");
-  /*iowrite32(clrval, sfp->rep_stat_clr);
-   pex_sfp_delay();*/
+
+#ifdef PEX_SFP_USE_KINPEX_V5
+
+  iowrite32 (clrval, sfp->rep_stat_clr);
+  pex_sfp_delay();
+
+#else
+
   do
   {
     if (loopcount > privdata->sfp_maxpolls)
@@ -781,18 +836,27 @@ int pex_sfp_clear_all (struct pex_privdata* privdata)
     loopcount++;
   } while (status != 0x0);pex_dbg(KERN_INFO "**after pex_sfp_clear_all: loopcount:%d \n", loopcount);
   print_register (" ... stat_clr after pex_sfp_clear_all:", sfp->rep_stat_clr);
+
+#endif
   return 0;
 }
 
 int pex_sfp_clear_channel (struct pex_privdata* privdata, int ch)
 {
-  u32 repstatus = 0, tokenstatus = 0, chstatus = 0, loopcount = 0, clrval;
+#ifndef PEX_SFP_USE_KINPEX_V5
+  u32 repstatus = 0, tokenstatus = 0, chstatus = 0, loopcount = 0;
+#endif
+  u32 clrval;
   struct pex_sfp* sfp = &(privdata->regs.sfp);
   pex_dbg(KERN_NOTICE "**pex_sfp_clear_channel %d ***\n", ch);
   pex_sfp_assert_channel(ch);
   clrval = (0x1 << ch);
-  /*iowrite32(clrval, sfp->rep_stat_clr);
-   pex_sfp_delay();*/
+#ifdef PEX_SFP_USE_KINPEX_V5
+  iowrite32 (clrval, sfp->rep_stat_clr);
+  pex_sfp_delay();
+
+#else
+
   do
   {
     if (loopcount > privdata->sfp_maxpolls)
@@ -822,15 +886,22 @@ int pex_sfp_clear_channel (struct pex_privdata* privdata, int ch)
   pex_dbg(" ... reply status: 0x%x", readl(sfp->rep_stat[ch]));
   pex_dbg(" ... token reply status: 0x%xx", readl(sfp->tk_stat[ch]));
   pex_dbg(" ... statclr: 0x%x", readl(sfp->rep_stat_clr));
-
+#endif //PEX_SFP_USE_KINPEX_V5
   return 0;
 }
 
 int pex_sfp_clear_channelpattern (struct pex_privdata* privdata, int pat)
 {
+#ifndef PEX_SFP_USE_KINPEX_V5
   u32 repstatus = 0, loopcount = 0, clrval, mask;
+#endif
   struct pex_sfp* sfp = &(privdata->regs.sfp);
   pex_dbg(KERN_NOTICE "**pex_sfp_clear_channel pattern 0x%x ***\n", pat);
+#ifdef PEX_SFP_USE_KINPEX_V5
+  iowrite32 (pat, sfp->rep_stat_clr);
+  pex_sfp_delay();
+
+#else
   clrval = pat;
   mask = (pat << 8) | (pat << 4) | pat;
   do
@@ -853,6 +924,7 @@ int pex_sfp_clear_channelpattern (struct pex_privdata* privdata, int pat)
 
   pex_dbg(KERN_INFO "**after pex_sfp_clear_channelpattern 0x%x : loopcount:%d \n", pat, loopcount);
   /*print_register(" ... reply status:", sfp->rep_stat_clr); */
+#endif
   return 0;
 }
 
@@ -935,6 +1007,7 @@ void print_sfp (struct pex_sfp* sfp)
 void pex_show_version (struct pex_sfp* sfp, char* buf)
 {
   /* stolen from pex_gosip.h*/
+  ssize_t curs = 0;
   u32 tmp, year, month, day, version[2];
   char txt[512];
   tmp = ioread32 (sfp->version);
@@ -945,8 +1018,14 @@ void pex_show_version (struct pex_sfp* sfp, char* buf)
   day = (tmp & 0xff00) >> 8;
   version[0] = (tmp & 0xf0) >> 4;
   version[1] = (tmp & 0xf);
-  snprintf (txt, 512, "GOSIP FPGA code compiled at Year=%x Month=%x Date=%x Version=%x.%x \n", year, month, day,
+  curs+=snprintf (txt+curs, 512, "GOSIP FPGA code compiled at Year=%x Month=%x Date=%x Version=%x.%x \n", year, month, day,
       version[0], version[1]);
+#ifdef PEX_SFP_USE_KINPEX_V5
+  curs+=snprintf (txt+curs, 512-curs, " - kernel module uses kinpex gosip version 5.\n");
+  if(version[0]<5)
+    curs+=snprintf (txt+curs, 512-curs, " !!! FPGA gosip version is only %d.%d !!!\n",version[0], version[1])
+#endif
+
   pex_dbg(KERN_NOTICE "%s", txt);
   if (buf)
     snprintf (buf, 1024, "%s", txt);

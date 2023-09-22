@@ -10,6 +10,11 @@
  *
  */
 
+/** JAM 18-09-2023:
+ * turn on static structures for ioctl descriptors. May speed up things by avoiding memory allocation in each function
+ * */
+//#define MBSPEX_IOCTL_GLOBAL_DESCRIPTORS 1
+
 
 
 #include "../include/pex_user.h"
@@ -145,7 +150,6 @@ int mbspex_map_pipe (int handle, unsigned long startaddress, unsigned long size)
 
 /* unmap internal sg list*/
 int mbspex_unmap_pipe (int handle);
-
 
 
 

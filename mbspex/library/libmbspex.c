@@ -14,7 +14,15 @@
 #define RON  "\x1B[7m"
 #define RES  "\x1B[0m"
 
+#ifdef MBSPEX_IOCTL_GLOBAL_DESCRIPTORS
 
+struct pex_bus_io   bus_descriptor;
+struct pex_token_io token_descriptor;
+struct pex_reg_io   reg_descriptor;
+struct pex_dma_io   dma_descriptor;
+struct pex_pipebuf  pipe_descriptor;
+
+#endif
 
 int mbspex_open(int devnum)
 {
@@ -66,12 +74,15 @@ int  mbspex_slave_init (int handle, long l_sfp, long l_n_slaves)
 {
 
   int rev = 0, errsv=0;
-  struct pex_bus_io descriptor;
+#ifndef MBSPEX_IOCTL_GLOBAL_DESCRIPTORS
+  struct pex_bus_io bus_descriptor;
+#endif
+
   mbspex_assert_handle(handle);
-  descriptor.sfp = l_sfp;
-  descriptor.slave = l_n_slaves;
+  bus_descriptor.sfp = l_sfp;
+  bus_descriptor.slave = l_n_slaves;
   printm ("mbspex: initialize SFP chain %d with %d slaves...", l_sfp, l_n_slaves);
-  rev = ioctl (handle, PEX_IOC_INIT_BUS, &descriptor);
+  rev = ioctl (handle, PEX_IOC_INIT_BUS, &bus_descriptor);
   errsv = errno;
   if (rev)
   {
@@ -89,14 +100,16 @@ int  mbspex_slave_init (int handle, long l_sfp, long l_n_slaves)
 int mbspex_slave_wr (int handle, long l_sfp, long l_slave, long l_slave_off, long l_dat)
 {
   int rev = 0, errsv=0;
-  struct pex_bus_io descriptor;
+#ifndef MBSPEX_IOCTL_GLOBAL_DESCRIPTORS
+  struct pex_bus_io bus_descriptor;
+#endif
   mbspex_assert_handle(handle);
   //PexorInfo("WriteBus writes %x to %x \n",value, address);
-  descriptor.address = l_slave_off;
-  descriptor.value = l_dat;
-  descriptor.sfp = l_sfp;
-  descriptor.slave = l_slave;
-  rev = ioctl (handle, PEX_IOC_WRITE_BUS, &descriptor);
+  bus_descriptor.address = l_slave_off;
+  bus_descriptor.value = l_dat;
+  bus_descriptor.sfp = l_sfp;
+  bus_descriptor.slave = l_slave;
+  rev = ioctl (handle, PEX_IOC_WRITE_BUS, &bus_descriptor);
   errsv = errno;
   if (rev)
   {
@@ -136,13 +149,15 @@ int mbspex_slave_config (int handle, struct pex_bus_config* config)
 int mbspex_slave_rd (int handle, long l_sfp, long l_slave, long l_slave_off, long *l_dat)
 {
   int rev = 0, errsv=0;
-  struct pex_bus_io descriptor;
+#ifndef MBSPEX_IOCTL_GLOBAL_DESCRIPTORS
+  struct pex_bus_io bus_descriptor;
+#endif
   mbspex_assert_handle(handle);
-  descriptor.address = l_slave_off;
-  descriptor.value = 0;
-  descriptor.sfp = l_sfp;
-  descriptor.slave = l_slave;
-  rev = ioctl (handle, PEX_IOC_READ_BUS, &descriptor);
+  bus_descriptor.address = l_slave_off;
+  bus_descriptor.value = 0;
+  bus_descriptor.sfp = l_sfp;
+  bus_descriptor.slave = l_slave;
+  rev = ioctl (handle, PEX_IOC_READ_BUS, &bus_descriptor);
   errsv = errno;
   if (rev)
   {
@@ -150,7 +165,7 @@ int mbspex_slave_rd (int handle, long l_sfp, long l_slave, long l_slave_off, lon
         strerror (errsv));
     return rev;
   }
-  *l_dat = descriptor.value;
+  *l_dat = bus_descriptor.value;
   return 0;
 
 }
@@ -160,24 +175,26 @@ int mbspex_send_and_receive_parallel_tok (int handle, long l_sfp_p, long l_toggl
     unsigned long* pl_transfersize, long *pl_check_comm, long *pl_check_token, long *pl_check_slaves)
 {
   int rev=0, errsv=0;
-       struct pex_token_io descriptor;
-       descriptor.bufid=l_toggle;
-       descriptor.sfp=(l_sfp_p << 16); // upper bytes expected as sfp pattern by driver
-       descriptor.sync=1; // redundant, this call is always synchronous
-       descriptor.directdma=0; // redundant, parallel mode requires intermediate buffering in pex mem
-       descriptor.dmatarget= l_dma_target; // begin of pipe memory for writing. initial padding is done without dma though.
-       descriptor.dmaburst=0; // is adjusted inside driver due to actual chain payload
-       rev=ioctl(handle, PEX_IOC_REQUEST_RECEIVE_TOKENS, &descriptor);
+#ifndef MBSPEX_IOCTL_GLOBAL_DESCRIPTORS
+       struct pex_token_io token_descriptor;
+#endif
+       token_descriptor.bufid=l_toggle;
+       token_descriptor.sfp=(l_sfp_p << 16); // upper bytes expected as sfp pattern by driver
+       token_descriptor.sync=1; // redundant, this call is always synchronous
+       token_descriptor.directdma=0; // redundant, parallel mode requires intermediate buffering in pex mem
+       token_descriptor.dmatarget= l_dma_target; // begin of pipe memory for writing. initial padding is done without dma though.
+       token_descriptor.dmaburst=0; // is adjusted inside driver due to actual chain payload
+       rev=ioctl(handle, PEX_IOC_REQUEST_RECEIVE_TOKENS, &token_descriptor);
        errsv = errno;
        if(rev)
            {
                printm(RON"ERROR>>"RES" mbspex_send_and_receive_parallel_tok -Error %d  on token request, sfp 0x%x toggle:0x%x - %s\n",errsv, l_sfp_p, l_toggle, strerror(errsv));
                return -1;
            }
-       *pl_check_comm=descriptor.check_comm;
-       *pl_check_token=descriptor.check_token;
-       *pl_check_slaves=descriptor.check_numslaves;
-       *pl_transfersize=descriptor.dmasize; // offset to adjust pipe pointer after call
+       *pl_check_comm=token_descriptor.check_comm;
+       *pl_check_token=token_descriptor.check_token;
+       *pl_check_slaves=token_descriptor.check_numslaves;
+       *pl_transfersize=token_descriptor.dmasize; // offset to adjust pipe pointer after call
 
  return rev;
 
@@ -195,24 +212,26 @@ int  mbspex_send_and_receive_tok (int handle, long l_sfp, long l_toggle, unsigne
 
 {
   int rev=0, errsv=0;
-      struct pex_token_io descriptor;
-      descriptor.bufid=l_toggle;
-      descriptor.sfp=l_sfp;
-      descriptor.sync=1;
-      descriptor.directdma=1;
-      descriptor.dmatarget= l_dma_target;
-      descriptor.dmaburst=0;
-      rev=ioctl(handle, PEX_IOC_REQUEST_TOKEN, &descriptor);
+#ifndef MBSPEX_IOCTL_GLOBAL_DESCRIPTORS
+      struct pex_token_io token_descriptor;
+#endif
+      token_descriptor.bufid=l_toggle;
+      token_descriptor.sfp=l_sfp;
+      token_descriptor.sync=1;
+      token_descriptor.directdma=1;
+      token_descriptor.dmatarget= l_dma_target;
+      token_descriptor.dmaburst=0;
+      rev=ioctl(handle, PEX_IOC_REQUEST_TOKEN, &token_descriptor);
       errsv = errno;
       if(rev)
           {
               printm(RON"ERROR>>"RES" mbspex_send_and_receive_tok -Error %d  on token request, sfp 0x%x toggle:0x%x - %s\n",errsv, l_sfp, l_toggle, strerror(errsv));
               return -1;
           }
-      *pl_check_comm=descriptor.check_comm;
-      *pl_check_token=descriptor.check_token;
-      *pl_check_slaves=descriptor.check_numslaves;
-      *pl_transfersize=descriptor.dmasize;
+      *pl_check_comm=token_descriptor.check_comm;
+      *pl_check_token=token_descriptor.check_token;
+      *pl_check_slaves=token_descriptor.check_numslaves;
+      *pl_transfersize=token_descriptor.dmasize;
 
 return rev;
 }
@@ -227,12 +246,14 @@ int  mbspex_send_tok (int handle, long l_sfp_p, long l_toggle)
 {
 
   int rev=0, errsv=0;
-       struct pex_token_io descriptor;
-       descriptor.bufid=l_toggle;
-       descriptor.sfp= (l_sfp_p << 16); // upper bytes expected as sfp pattern by driver
-       descriptor.sync=0;
-       descriptor.directdma=0;
-       rev=ioctl(handle, PEX_IOC_REQUEST_TOKEN, &descriptor);
+#ifndef MBSPEX_IOCTL_GLOBAL_DESCRIPTORS
+       struct pex_token_io token_descriptor;
+#endif
+       token_descriptor.bufid=l_toggle;
+       token_descriptor.sfp= (l_sfp_p << 16); // upper bytes expected as sfp pattern by driver
+       token_descriptor.sync=0;
+       token_descriptor.directdma=0;
+       rev=ioctl(handle, PEX_IOC_REQUEST_TOKEN, &token_descriptor);
        errsv = errno;
        if(rev)
            {
@@ -249,23 +270,25 @@ return rev;
 int  mbspex_receive_tok (int handle, long l_sfp, unsigned long l_dma_target, unsigned long* pl_transfersize, long *pl_check_comm, long *pl_check_token, long *pl_check_slaves)
 {
   int rev=0, errsv=0;
-      struct pex_token_io descriptor;
-      descriptor.sfp=l_sfp;
-      descriptor.dmatarget= l_dma_target;
-      descriptor.dmaburst=0;
-      descriptor.directdma=0;
-      if(l_dma_target==0) descriptor.directdma=1; // we disable the automatic DMA sending after token reception by this
-      rev=ioctl(handle, PEX_IOC_WAIT_TOKEN, &descriptor);
+#ifndef MBSPEX_IOCTL_GLOBAL_DESCRIPTORS
+      struct pex_token_io token_descriptor;
+#endif
+      token_descriptor.sfp=l_sfp;
+      token_descriptor.dmatarget= l_dma_target;
+      token_descriptor.dmaburst=0;
+      token_descriptor.directdma=0;
+      if(l_dma_target==0) token_descriptor.directdma=1; // we disable the automatic DMA sending after token reception by this
+      rev=ioctl(handle, PEX_IOC_WAIT_TOKEN, &token_descriptor);
       errsv = errno;
       if(rev)
           {
               printm(RON"ERROR>>"RES "Error %d  on wait token from channel 0x%x - %s\n",errsv,l_sfp, strerror(errsv));
               return -1;
           }
-      *pl_check_comm=descriptor.check_comm;
-      *pl_check_token=descriptor.check_token;
-      *pl_check_slaves=descriptor.check_numslaves;
-      *pl_transfersize=descriptor.dmasize;
+      *pl_check_comm=token_descriptor.check_comm;
+      *pl_check_token=token_descriptor.check_token;
+      *pl_check_slaves=token_descriptor.check_numslaves;
+      *pl_transfersize=token_descriptor.dmasize;
       return 0;
 }
 
@@ -312,12 +335,14 @@ int mbspex_get_configured_slaves(int handle , struct pex_sfp_links* setup)
 int mbspex_register_wr (int handle, unsigned char s_bar, long l_address, long l_dat)
 {
   int rev = 0, errsv = 0;
-  struct pex_reg_io descriptor;
+#ifndef MBSPEX_IOCTL_GLOBAL_DESCRIPTORS
+  struct pex_reg_io reg_descriptor;
+#endif
   mbspex_assert_handle(handle);
-  descriptor.address = l_address;
-  descriptor.value = l_dat;
-  descriptor.bar = s_bar;
-  rev = ioctl (handle, PEX_IOC_WRITE_REGISTER, &descriptor);
+  reg_descriptor.address = l_address;
+  reg_descriptor.value = l_dat;
+  reg_descriptor.bar = s_bar;
+  rev = ioctl (handle, PEX_IOC_WRITE_REGISTER, &reg_descriptor);
   errsv = errno;
   if (rev)
   {
@@ -330,18 +355,20 @@ int mbspex_register_wr (int handle, unsigned char s_bar, long l_address, long l_
 int mbspex_register_rd (int handle, unsigned char s_bar, long l_address, long * l_dat)
 {
   int rev = 0, errsv = 0;
-  struct pex_reg_io descriptor;
+#ifndef MBSPEX_IOCTL_GLOBAL_DESCRIPTORS
+  struct pex_reg_io reg_descriptor;
+#endif
   mbspex_assert_handle(handle);
-  descriptor.address = l_address;
-  descriptor.bar = s_bar;
-  rev = ioctl (handle, PEX_IOC_READ_REGISTER, &descriptor);
+  reg_descriptor.address = l_address;
+  reg_descriptor.bar = s_bar;
+  rev = ioctl (handle, PEX_IOC_READ_REGISTER, &reg_descriptor);
   errsv = errno;
   if (rev)
   {
     printm (RON"ERROR>>"RES"Error %d  on reading from address 0x%lx (bar:%d)- %s\n", errsv, l_address,
         s_bar, strerror (errsv));
   }
-  * l_dat=descriptor.value;
+  * l_dat=reg_descriptor.value;
   return rev;
 }
 
@@ -349,57 +376,63 @@ int mbspex_register_rd (int handle, unsigned char s_bar, long l_address, long * 
 int mbspex_dma_rd (int handle, long source, long dest, long size, int burst)
 {
   int rev = 0, errsv = 0;;
-  struct pex_dma_io descriptor;
+#ifndef MBSPEX_IOCTL_GLOBAL_DESCRIPTORS
+  struct pex_dma_io dma_descriptor;
+#endif
   mbspex_assert_handle(handle);
-  descriptor.source = source;
-  descriptor.target = dest;
-  descriptor.size = size;
-  descriptor.burst=burst;
-  rev = ioctl (handle, PEX_IOC_READ_DMA, &descriptor);
+  dma_descriptor.source = source;
+  dma_descriptor.target = dest;
+  dma_descriptor.size = size;
+  dma_descriptor.burst=burst;
+  rev = ioctl (handle, PEX_IOC_READ_DMA, &dma_descriptor);
   errsv = errno;
   if (rev)
   {
     printm (RON"ERROR>>"RES"Error %d  on DMA reading 0x%x bytes from address 0x%lx  to 0x%lx (%s)\n", errsv, size, source,dest, strerror (errsv));
     return -1;
   }
-  return descriptor.size;
+  return dma_descriptor.size;
 }
 
 
 int mbspex_dma_rd_virt (int handle, unsigned int source, unsigned long virtdest, unsigned int size, unsigned int burst)
 {
-  int rev = 0, errsv = 0;;
-    struct pex_dma_io descriptor;
+  int rev = 0, errsv = 0;
+#ifndef MBSPEX_IOCTL_GLOBAL_DESCRIPTORS
+    struct pex_dma_io dma_descriptor;
+#endif
     mbspex_assert_handle(handle);
-    descriptor.source = source;
-    descriptor.virtdest = virtdest;
-    descriptor.size = size;
-    descriptor.burst=burst;
-    rev = ioctl (handle, PEX_IOC_READ_DMA_PIPE, &descriptor);
+    dma_descriptor.source = source;
+    dma_descriptor.virtdest = virtdest;
+    dma_descriptor.size = size;
+    dma_descriptor.burst=burst;
+    rev = ioctl (handle, PEX_IOC_READ_DMA_PIPE, &dma_descriptor);
     errsv = errno;
     if (rev)
     {
       printm (RON"ERROR>>"RES"Error %d  on DMA reading 0x%x bytes from address 0x%lx  to 0x%lx (%s)\n", errsv, size, source, virtdest, strerror (errsv));
       return -1;
     }
-    return descriptor.size;
+    return dma_descriptor.size;
 }
 
 int mbspex_map_pipe (int handle, unsigned long startaddress, unsigned long size)
 {
       int rev = 0, errsv = 0;;
-     struct pex_pipebuf descriptor;
+#ifndef MBSPEX_IOCTL_GLOBAL_DESCRIPTORS
+     struct pex_pipebuf pipe_descriptor;
+#endif
       mbspex_assert_handle(handle);
-      descriptor.addr = startaddress;
-      descriptor.size = size;
-      rev = ioctl (handle, PEX_IOC_MAP_PIPE, &descriptor);
+      pipe_descriptor.addr = startaddress;
+      pipe_descriptor.size = size;
+      rev = ioctl (handle, PEX_IOC_MAP_PIPE, &pipe_descriptor);
       errsv = errno;
       if (rev)
       {
         printm (RON"ERROR>>"RES"Error %d  on mapping PIPE of 0x%x bytes from address 0x%lx  (%s)\n", errsv, size, startaddress,  strerror (errsv));
         return -1;
       }
-      return descriptor.size;
+      return pipe_descriptor.size;
 }
 
 int mbspex_unmap_pipe (int handle){

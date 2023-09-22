@@ -2,6 +2,7 @@
 // J.Adamczewski-Musch, EE, GSI, added mmap and some small fixes 24-Jan-2013
 // JAM added generic probe/cleanup, privdata structure, sysfs, etc.  28-Jan-2013
 // JAM merge pexormbs driver with large pexor to mbspex driver 8-Apr-2014
+// JAM upgrade gosip to fpga code version 5 19-Sep-2023
 //-----------------------------------------------------------------------------
 
 #include "pex_base.h"
@@ -11,9 +12,10 @@ static dev_t pex_devt;
 static atomic_t pex_numdevs = ATOMIC_INIT(0);
 static int my_major_nr = 0;
 
-MODULE_AUTHOR("Nikolaus Kurz, Joern Adamczewski-Musch, EE, GSI, 10-Sep-2015");
+MODULE_AUTHOR(PEXAUTHORS);
 MODULE_LICENSE("Dual BSD/GPL");
-
+MODULE_VERSION(PEXVERSION);
+MODULE_DESCRIPTION(PEXDESC);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
 static struct class* pex_class;
@@ -70,12 +72,12 @@ ssize_t pex_sysfs_trixorbase_show (struct device *dev, struct device_attribute *
 
 ssize_t pex_sysfs_codeversion_show (struct device *dev, struct device_attribute *attr, char *buf)
 {
-  char vstring[512];
+  char vstring[1024];
   ssize_t curs = 0;
   struct regs_pex* pg;
   struct pex_privdata *privdata;
   privdata = (struct pex_privdata*) dev_get_drvdata (dev);
-  curs = snprintf (vstring, 512, "*** This is MBSPEX driver version %s build on %s at %s \n \t", PEXVERSION, __DATE__,
+  curs = snprintf (vstring, 1024, "*** This is %s by %s \n \tVersion %s build on %s at %s \n \t", PEXDESC,  PEXAUTHORS, PEXVERSION, __DATE__,
       __TIME__);
   pg = &(privdata->regs);
   pex_show_version (&(pg->sfp), vstring + curs);
@@ -544,7 +546,7 @@ int pex_mmap (struct file *filp, struct vm_area_struct *vma)
     barsize = privdata->l_bar0_end - privdata->l_bar0_base;
     if (bufsize > barsize)
     {
-      pex_msg(
+      pex_dbg(
           KERN_WARNING "Requested length %ld exceeds bar0 size, shrinking to %ld bytes\n", bufsize, barsize);
       bufsize = barsize;
     }
