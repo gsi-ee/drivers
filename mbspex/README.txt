@@ -1,10 +1,12 @@
 ------------------------------------------------------------------------
 ---------- MBSPEX kernel driver, library and tools
 ---------- v0.2 03-06-2014 by JAM
+---------- v2.0 04-10-2023 by JAM - updated for gosip protocol V5
+           v2.1 05-10-2023 by JAM - automatic detection of gosip protocol by fpga version
 ------------------------------------------------------------------------
 Copyright (C) 2014- Gesellschaft f. Schwerionenforschung, GSI
                     Planckstr. 1, 64291 Darmstadt, Germany
-Contact:            Joern Adamczewski-Musch (JAM), CSEE-Department, GSI
+Contact:            Joern Adamczewski-Musch (JAM), EEL-Department, GSI
 					j.adamczewski@gsi.de
 -----------------------------------------------------------------------
 This is free software; you can redistribute it and/or
@@ -31,7 +33,13 @@ GNU General Public License for more details (http://www.gnu.org).
 - templates of mbs user readout functions using libmbspex in subfolder mbs:
 	- streamingDMA: most generic template, first try
 	- PolandLinux: readout of beam diagnostic qfw modules (POLAND) tested!
-
+	- febex: generic readout of febex module. contains example how to use locked parallel token read within kernel module
+	
+- graphical user interfaces in subfolder gui:
+    - qt-mainwindow: top level Makefile will build special gosip guis for control of frontends poland, febex, apfel, nyxor, etc.
+       for details please see: IEEE TNS Vol.68,Iss:8 (August 2021) doi:10.1109/TNS.2021.3084351
+	- qt subfolder contains deprecated old gui!
+	
 2) Building:
 Top level Makefile will	build kernel module, library and all test programs by invoking "make" in top directory. 
 Libraries are compiled to folder lib, all binaries appear in bin

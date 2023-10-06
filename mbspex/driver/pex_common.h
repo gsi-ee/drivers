@@ -59,7 +59,7 @@
 
 #define PEXAUTHORS     "Nikolaus Kurz, Joern Adamczewski-Musch, EEL, GSI, 2015-2023"
 #define PEXDESC        "MBSPEX driver for PCIe DAQ with Multi Branch System"
-#define PEXVERSION     "2.00"
+#define PEXVERSION     "2.10"
 
 
 //#define PEX_DEBUGPRINT 1
