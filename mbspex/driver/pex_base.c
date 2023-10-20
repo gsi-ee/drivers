@@ -946,7 +946,7 @@ int pex_ioctl_read_dma_pipe (struct pex_privdata* priv, unsigned long arg)
 #ifndef  PEX_SG_SYNCFULLPIPE
     // only sync parts of pipe that really have been touched:
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
-  dma_sync_sg_for_cpu( &(priv->pdev->dev), pipe->sg, pipe->sg_ents,DMA_FROMDEVICE );
+  dma_sync_sg_for_cpu( &(priv->pdev->dev), pipe->sg, pipe->sg_ents,DMA_FROM_DEVICE );
 #else
     pci_dma_sync_sg_for_cpu (priv->pdev, firstentry, dmaentries, PCI_DMA_FROMDEVICE);
 #endif
@@ -1096,8 +1096,10 @@ int pex_ioctl_map_pipe (struct pex_privdata *priv, unsigned long arg)
      res = get_user_pages (current, current->mm, pipedesc.addr, nr_pages, 1, 0, pages, NULL );
 #elif  LINUX_VERSION_CODE < KERNEL_VERSION(4,9,0)
      res = get_user_pages (pipedesc.addr, nr_pages, 1, 0, pages, NULL );
-#else
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(6,5,0)
      res = get_user_pages (pipedesc.addr, nr_pages, FOLL_WRITE, pages, NULL );
+#else
+     res = get_user_pages (pipedesc.addr, nr_pages, FOLL_WRITE, pages);
 #endif
 
      // JAM 15-06-22: adjustment for debian bullseye
@@ -2138,7 +2140,12 @@ static int __init pex_init (void)
     return result;
   }
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6,4,0)
   pex_class = class_create (THIS_MODULE, PEXNAME);
+#else
+  pex_class = class_create (PEXNAME);
+#endif
+
   if (IS_ERR (pex_class))
   {
     pex_msg(KERN_ALERT "Could not create class for sysfs support!\n");
