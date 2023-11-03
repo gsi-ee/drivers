@@ -68,22 +68,21 @@ static struct class* pexor_class;
 
 /* JAM2016 the following nice thing was googled and stolen from compat.h of M.Stapelberg, 2009:
  * https://github.com/lerwys/FPGA_PCIe_drivers/blob/master/opencores_driver/src/driver/compat.h*/
-/** TODO: adjust for kernels > 4.4*/
-/* SetPageLocked disappeared in v2.6.27 */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-    #define compat_lock_page SetPageLocked
-    #define compat_unlock_page ClearPageLocked
-#else
+/* JAM 11-2023: rearranged this for most recent kernel developments: */
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,0,0)
+/* JAM 2023 -in v6.., transformation ongoing for memory folios*/
+	#define compat_lock_page(X)   folio_lock_killable(page_folio(X))
+	#define compat_unlock_page  unlock_page
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4,5,0)
 /* JAM 2018 -in v4.5., lock_page_killable and unlock_page was introduced */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,5,0)
-#define compat_lock_page    lock_page_killable
-#define compat_unlock_page  unlock_page
-#else
-  /* in v2.6.28, __set_page_locked and __clear_page_locked was introduced */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
-        #define compat_lock_page __set_page_locked
-        #define compat_unlock_page __clear_page_locked
-    #else
+	#define compat_lock_page    lock_page_killable
+	#define compat_unlock_page  unlock_page
+/* in v2.6.28, __set_page_locked and __clear_page_locked was introduced */
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
+	#define compat_lock_page __set_page_locked
+	#define compat_unlock_page __clear_page_locked
+#elif LINUX_VERSION_CODE == KERNEL_VERSION(2,6,27)
         /* However, in v2.6.27 itself, neither of them is there, so
          * we need to use our own function fiddling with bits inside
          * the page struct :-\ */
@@ -94,10 +93,12 @@ static struct class* pexor_class;
         static inline void compat_unlock_page(struct page *page) {
             __clear_bit(PG_locked, &page->flags);
         }
-    #endif
+#else
+        /* SetPageLocked disappeared in v2.6.27 */
+        //#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
+	#define compat_lock_page SetPageLocked
+	#define compat_unlock_page ClearPageLocked
 
-
-#endif
 #endif
 /** End M.Stapelbergs helper*/
 
@@ -536,9 +537,15 @@ int pexor_ioctl_mapbuffer (struct pexor_privdata *priv, unsigned long arg)
        res = get_user_pages (current, current->mm, dmabuf->virt_addr, nr_pages, 1, 0, pages, NULL );
   #elif  LINUX_VERSION_CODE < KERNEL_VERSION(4,9,0)
        res = get_user_pages (dmabuf->virt_addr, nr_pages, 1, 0, pages, NULL );
-  #else
+  #elif LINUX_VERSION_CODE < KERNEL_VERSION(6,5,0)
        res = get_user_pages (dmabuf->virt_addr, nr_pages, FOLL_WRITE, pages, NULL );
+  #else
+       res = get_user_pages (dmabuf->virt_addr, nr_pages, FOLL_WRITE, pages);
   #endif
+
+
+
+
 
   // JAM 28-06-22: adjustment for debian bullseye
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5,8,0)
@@ -3440,13 +3447,20 @@ static int __init pexor_init (void)
     return result;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
-  pexor_class = class_create (THIS_MODULE, PEXORNAME);
+  #if LINUX_VERSION_CODE <= KERNEL_VERSION(6,4,0)
+    pexor_class = class_create (THIS_MODULE, PEXORNAME);
+  #else
+    pexor_class = class_create (PEXORNAME);
+  #endif
+
+
   if (IS_ERR (pexor_class))
   {
     pexor_msg(KERN_ALERT "Could not create class for sysfs support!\n");
   }
 
 #endif
+
 
   if (pci_register_driver (&pci_driver) < 0)
   {
