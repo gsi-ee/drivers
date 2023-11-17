@@ -3,6 +3,7 @@
 // JAM added generic probe/cleanup, privdata structure, sysfs, etc.  28-Jan-2013
 // JAM merge pexormbs driver with large pexor to mbspex driver 8-Apr-2014
 // JAM upgrade gosip to fpga code version 5 19-Sep-2023
+// JAM added 64 bit DMA for new KINPEX code 17-Nov-2023
 //-----------------------------------------------------------------------------
 
 #include "pex_base.h"
@@ -103,10 +104,14 @@ ssize_t pex_sysfs_dmaregs_show (struct device *dev, struct device_attribute *att
   pex_bus_delay();
   curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t trixor cvti: 0x%x\n", readl(pg->trix_cvti));
 #endif
-  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t dma source      address: 0x%x\n", readl(pg->dma_source));
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t dma source  address: 0x%x\n", readl(pg->dma_source));
   pex_bus_delay();
   curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t dma destination address: 0x%x\n", readl(pg->dma_dest));
   pex_bus_delay();
+#ifdef   PEX_DMA_64BIT
+  curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t dma destination high address: 0x%x\n", readl(pg->dma_dest_high));
+    pex_bus_delay();
+#endif
   curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t dma length:              0x%x\n", readl(pg->dma_len));
   pex_bus_delay();
   curs += snprintf (buf + curs, PAGE_SIZE - curs, "\t dma burst size:          0x%x\n", readl(pg->dma_burstsize));
@@ -350,6 +355,9 @@ void set_pointers (struct regs_pex* pg, void* membase, unsigned long bar)
   pg->dma_control_stat = (u32*) (dmabase + PEX_DMA_CTRLSTAT);
   pg->dma_source = (u32*) (dmabase + PEX_DMA_SRC);
   pg->dma_dest = (u32*) (dmabase + PEX_DMA_DEST);
+#ifdef   PEX_DMA_64BIT
+  pg->dma_dest_high = (u32*) (dmabase + PEX_DMA_DEST_HI);
+#endif
   pg->dma_len = (u32*) (dmabase + PEX_DMA_LEN);
   pg->dma_burstsize = (u32*) (dmabase + PEX_DMA_BURSTSIZE);
 
@@ -393,6 +401,9 @@ void print_regs (struct regs_pex* pg)
 
   print_register ("dma source address", pg->dma_source);
   print_register ("dma dest   address", pg->dma_dest);
+#ifdef   PEX_DMA_64BIT
+  print_register ("dma dest high  address", pg->dma_dest_high);
+#endif
   print_register ("dma len   address", pg->dma_len);
   print_register ("dma burstsize", pg->dma_burstsize);
 
@@ -410,6 +421,9 @@ int pex_start_dma (struct pex_privdata *priv, dma_addr_t source, dma_addr_t dest
 {
   int rev;
   u32 enable = PEX_DMA_ENABLED_BIT; /* this will start dma immediately from given source address*/
+  u32 lodest, highdest;
+  lodest=   (u32)   (dest & 0xFFFFFFFF);
+  highdest = (u32)   (dest>>32)& 0xFFFFFFFF;
   if (burstsize > PEX_BURST)
     burstsize = PEX_BURST;
   if (channelmask > 1)
@@ -453,8 +467,12 @@ int pex_start_dma (struct pex_privdata *priv, dma_addr_t source, dma_addr_t dest
 
   iowrite32 (source, priv->regs.dma_source);
   mb();
-  iowrite32 ((u32) dest, priv->regs.dma_dest);
+  iowrite32 (lodest, priv->regs.dma_dest);
   mb();
+#ifdef   PEX_DMA_64BIT
+  iowrite32 (highdest, priv->regs.dma_dest_high);
+  mb();
+#endif
   iowrite32 (burstsize, priv->regs.dma_burstsize);
   mb();
   iowrite32 (dmasize, priv->regs.dma_len);
@@ -2061,6 +2079,17 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
       {
         pex_msg(KERN_ERR "Could not add device file node for gosip bus wait.\n");
       }
+
+
+#ifdef   PEX_DMA_64BIT
+
+    if (dma_set_mask_and_coherent(privdata->class_dev, DMA_BIT_MASK(64))) {
+            pex_msg(KERN_ERR "Could not set 64 bit DMA mask for device .\n");
+    }
+
+#endif
+
+
 
 
 #ifdef INTERNAL_TRIG_TEST

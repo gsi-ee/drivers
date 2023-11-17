@@ -7,6 +7,8 @@
  * JAM added generic probe/cleanup, privdata structure, sysfs, etc.  28-Jan-2013
  *
  * JAM refactoring of driver for mbs adding gosip ioctls etc. 3-Apr-2014 started...
+ *
+ * JAM added 64 bit DMA for new KINPEX code 17-Nov-2023
  */
 
 //-----------------------------------------------------------------------------
@@ -32,11 +34,11 @@
 /** DMA registers and commands:*/
 #define PEX_DMA_BASE        0x20000
 #define PEX_DMA_SRC         0x00
-#define PEX_DMA_DEST            0x04
+#define PEX_DMA_DEST        0x04
+#define PEX_DMA_DEST_HI     0x1C /** JAM 2023: new for 64 bit DMA */
 #define PEX_DMA_LEN         0x08
 #define PEX_DMA_BURSTSIZE       0x0C
 #define PEX_DMA_CTRLSTAT        0x10 /**< control, 1:-start*/
-
 
 
  /**OLD REGISTERS pex 1*/
@@ -129,6 +131,9 @@ struct regs_pex
   u32 *dma_control_stat;        /**< dma control and statusregister */
   u32 *dma_source;              /**< dma source address */
   u32 *dma_dest;                /**< dma destination address */
+#ifdef   PEX_DMA_64BIT
+  u32 *dma_dest_high;           /** dma destination address, high 32 bits*/
+#endif
   u32 *dma_len;                 /**< dma length */
   u32 *dma_burstsize;           /**< dma burstsize, <=0x80 */
   u32 *ram_start;               /**< RAM start */
