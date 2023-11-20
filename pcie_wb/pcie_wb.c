@@ -459,8 +459,10 @@ int pcie_wb_mmap (struct file *filp, struct vm_area_struct *vma)
 
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(3,7,0)
     vma->vm_flags |= (VM_RESERVED);
-#else
+#elif LINUX_VERSION_CODE <= KERNEL_VERSION(6,3,0)
     vma->vm_flags |= (VM_DONTEXPAND | VM_DONTDUMP);
+#else
+    vm_flags_set(vma, VM_DONTEXPAND | VM_DONTDUMP);
 #endif
 
 
@@ -489,9 +491,12 @@ int pcie_wb_mmap (struct file *filp, struct vm_area_struct *vma)
 
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(3,7,0)
     vma->vm_flags |= (VM_RESERVED);
-#else
+#elif LINUX_VERSION_CODE <= KERNEL_VERSION(6,3,0)
     vma->vm_flags |= (VM_DONTEXPAND | VM_DONTDUMP);
+#else
+    vm_flags_set(vma, VM_DONTEXPAND | VM_DONTDUMP);
 #endif
+
 
     ret = remap_pfn_range (vma, vma->vm_start, vma->vm_pgoff, bufsize, vma->vm_page_prot);
 
@@ -767,7 +772,12 @@ static int __init pcie_wb_init(void)
     }
 
   #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
+
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6,4,0)
     pcie_wb_class = class_create (THIS_MODULE, PCIE_WB_NAME);
+#else
+    pcie_wb_class = class_create (PCIE_WB_NAME);
+#endif
     if (IS_ERR (pcie_wb_class))
     {
       pcie_wb_msg(KERN_ALERT "Could not create class for sysfs support!\n");
