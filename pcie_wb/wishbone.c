@@ -608,13 +608,23 @@ static int char_master_fasync(int fd, struct file *file, int on)
 #if LINUX_VERSION_CODE > KERNEL_VERSION(4,1,0)
 static ssize_t char_master_aio_read_iter(struct kiocb *iocb, struct iov_iter *iter)
 {
-	return char_master_aio_read(iocb, iter->iov, iter->nr_segs, iter->iov_offset);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,4,0)
+   return char_master_aio_read(iocb, iter->iov, iter->nr_segs, iter->iov_offset);
+#else
+   return char_master_aio_read(iocb, iter_iov((const struct iov_iter *) iter), iter->nr_segs, iter->iov_offset);
+#endif
 }
 
 static ssize_t char_master_aio_write_iter(struct kiocb *iocb, struct iov_iter *iter)
 {
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,4,0)
+
 	return char_master_aio_write(iocb, iter->iov, iter->nr_segs, iter->iov_offset);
+#else
+	return char_master_aio_write(iocb, iter_iov((const struct iov_iter *) iter), iter->nr_segs, iter->iov_offset);
+#endif
+
 }
 
 #endif
@@ -789,7 +799,17 @@ static int __init wishbone_init(void)
 		goto fail_last;
 	}
 	
-	wishbone_master_class = class_create(THIS_MODULE, "wbm");
+
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(6,4,0)
+    wishbone_master_class = class_create(THIS_MODULE, "wbm");
+
+#else
+    wishbone_master_class = class_create("wbm");
+
+#endif
+
+
+
 	if (IS_ERR(wishbone_master_class)) {
 		err = PTR_ERR(wishbone_master_class);
 		goto fail_last;
