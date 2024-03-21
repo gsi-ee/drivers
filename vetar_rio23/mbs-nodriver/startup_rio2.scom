@@ -1,6 +1,6 @@
 
 start task m_util
-load setup setup.usf 
+load setup setup_rio2.usf 
 set trig_mod
 disable irq
 #enable irq
@@ -8,6 +8,6 @@ start task m_read_meb "./m_read_meb"
 start task m_collector
 start task m_transport
 start task m_stream_serv
-#sta ta m_daq_rate
+sta ta m_daq_rate
 ena tcp
 #sta ac

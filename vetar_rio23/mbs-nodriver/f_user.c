@@ -40,6 +40,11 @@
 #define RON  "\x1B[7m"
 #define RES  "\x1B[0m"
 
+#define SERIALIZE_IO __asm__ volatile ("eieio")
+
+
+
+
 #define STATISTIC     1000000
 #define MAX_TRIG_TYPE      16
 
@@ -98,10 +103,13 @@
 #include <sys/file.h>
 
 #ifdef USE_RIO_LYNX
-typedef ADDR64 uint64_t;
+# ifdef RIO3
+# include <stdint.h>
+# else
+  typedef ADDR64 uint64_t;
+# endif
 #else
 #include <stdint.h>   /* uint32_t ... */
-
 #endif
 
 #ifndef Linux
@@ -177,6 +185,7 @@ static long l_first = 0;
 // following is for enigma release:
 //static int tlu_address = 0x2000100;
 
+// this works in my crate JAM:
 static int tlu_address = 0x2000200;
 
 #else
@@ -220,6 +229,8 @@ char    *p_mem;
 
 struct pdparam_master param;
 unsigned long vmeaddr,vme_len,vme_am;
+unsigned long offset,size;
+
 //unsigned long vme_virt_addr;
 
 #endif
@@ -350,6 +361,8 @@ int f_user_init (unsigned char bh_crate_nr, long *pl_loc_hwacc, long *pl_rem_cam
   return (1);
 }
 
+
+
 /*****************************************************************************/
 int f_user_readout (CHARU bh_trig_typ, CHARU bh_crate_nr, INTS4 *pl_loc_hwacc, INTS4 *pl_rem_cam, INTS4 *pl_dat,
     s_veshe *ps_veshe, INTS4 *l_se_read_len, INTS4 *l_read_stat)
@@ -381,6 +394,10 @@ int f_user_readout (CHARU bh_trig_typ, CHARU bh_crate_nr, INTS4 *pl_loc_hwacc, I
     *fifo_pop = 0xF;
 #ifdef USE_IFC
     nanosleep (0);    // -> needed on ifc for implicit sched_yield() ?
+#endif
+
+#ifdef USE_RIO_LYNX
+    SERIALIZE_IO;
 #endif
 
     eb_tlu_high_ts = *ft_shi;
@@ -792,7 +809,6 @@ void f_a32_vme_mas_map_CRCSR ()
 #endif
 
 #ifdef  USE_RIO_LYNX
-  // TODO: meaning of this parameters?
    param.iack  = 1;
    param.rdpref = 0;
    param.wrpost = 0;
@@ -800,12 +816,17 @@ void f_a32_vme_mas_map_CRCSR ()
    vmeaddr = VETAR_CRCSR_ADDR;
    vme_len = VETAR_CRCSR_SIZE;
    vme_am = 0x2F;    //VME_AM_CRCSR;
-   pl_virt_vme_base_crcsr  = (INTU4*) find_controller(vmeaddr,vme_len,vme_am,0,0,&param);
+   // JAM RIO3: extend test already on mapping time:
+   offset=VME_VENDOR_ID_OFFSET; //0
+   size=4; // 0
+   pl_virt_vme_base_crcsr  = (INTU4*) find_controller(vmeaddr,vme_len,vme_am,offset,size,&param);
    if( pl_virt_vme_base_crcsr ==  (INTU4*) -1 )
    {
        printm ("f_a32_vme_mas_map_CRCSR ERROR>> find_controller() failed, cannot get user space address. exiting...\n");
+       //pl_virt_vme_base_crcsr=0;
        exit (-1);
    }
+   printm ("f_a32_vme_mas_map_CRCSR has mapped VME address 0x%x to:0x%x, param.sgmin=0x%x, testing with off:0x%x, size=%d",vmeaddr, pl_virt_vme_base_crcsr, param.sgmin, offset, size);
 
 #endif
 
@@ -867,6 +888,7 @@ void f_vetar_init ()
   // map crcsr space here:
   f_a32_vme_mas_map_CRCSR ();
   // prepare vetar crcsr space registers
+  sleep(1); // JAM RIO3 TEST
   cr_vendor_id = f_set_csr_address (VME_VENDOR_ID_OFFSET);
   cr_bit_set = f_set_csr_address (BIT_SET_REG);
   cr_bit_clear = f_set_csr_address (BIT_CLR_REG);
@@ -936,3 +958,18 @@ void f_vetar_init ()
   printm ("read back dactl: 0x%x\n", *ctrl_direct_access_control);
   usleep (100000);
 }
+
+
+
+int f_user_exit ()
+{
+  printf("My f_user_exit ()...");
+  f_a32_vme_mas_free_TLU ();
+  f_a24_vme_mas_free_CONTROL ();
+  f_a32_vme_mas_free_CRCSR ();
+  printf("the End!\n");
+  return (1);
+}
+
+
+
