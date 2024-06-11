@@ -102,6 +102,29 @@ struct pex_trixor_set {
         unsigned int cvt;     /**< optional argument for trixor settings (conversion time)*/
 };
 
+////////////// JAM 2024: new for changing link speeds
+
+/* this one is for user space ioctls: */
+enum pex_linkspeed
+{
+  PEX_SPEED_NONE,
+  PEX_SPEED_2_GBS,
+  PEX_SPEED_2_5_GBS,
+  PEX_SPEED_3_125_GBS,
+  PEX_SPEED_5_GBS
+};
+
+
+struct pex_linkspeed_set
+{
+  int sfp;                    /**< gtx link id 0..3 (-1 for all configured sfps) = sfp chain id*/
+  enum pex_linkspeed specs;   /** specifications of speed id as from enumeration*/
+};
+
+
+
+
+
 
 /** the ioctl stuff here:*/
 #define PEX_IOC_MAGIC  0xE0
@@ -131,7 +154,7 @@ struct pex_trixor_set {
 #define PEX_IOC_UNMAP_PIPE       _IO(  PEX_IOC_MAGIC, 20)        /**< unmap virtual mbs pipe and clear driver sg list*/
 #define PEX_IOC_READ_DMA_PIPE    _IOWR(  PEX_IOC_MAGIC, 21, struct pex_dma_io)      /**< directly initiate DMA transfer from pexor/kinpex board memory to _virtual_ destination address in pipe. Pipe must be mapped before into internal sg list by PEX_IOC_MAP_PIPE*/
 #define PEX_IOC_REQUEST_RECEIVE_TOKENS    _IOWR(  PEX_IOC_MAGIC, 22, struct pex_token_io)    /**<  Request data from parallel slaves via token and initiate DMA to destination address in PC memory. MBS padding words are provided between slave DMA data sections.*/
-
+#define PEX_IOC_CHANGE_LINKSPEED    _IOW(  PEX_IOC_MAGIC, 23, struct pex_linkspeed_set)     /**< change speed for given sfp only (?) or for all sfps. JAM2024*/
 
 
 /** we keep old ioctl definitions for backward compatibility and patch it in ioctl function*/
@@ -140,7 +163,7 @@ struct pex_trixor_set {
 #define GET_BAR0_BASE       0x1234
 #define GET_BAR0_TRIX_BASE  0x1235
 #define RESET_SEM           0x1236
-#define PEX_IOC_MAXNR 28
+#define PEX_IOC_MAXNR 29
 
 
 /* note: we do not redefine ioctls existing in mbs user code!*/

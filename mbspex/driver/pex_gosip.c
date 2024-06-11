@@ -9,6 +9,416 @@ int gosip_version = 5;
 int gosip_version = 0;
 #endif
 
+///////////////////////////
+// here predefined speed setting. indexed by the type?
+
+
+static struct pex_gtx_params gParamsGtx[PEX_MAX_SPEEDSETUP][PEX_SFP_NUMBER];
+static struct pex_mmcm_params gParamsMmcm[PEX_MAX_SPEEDSETUP];
+
+static struct pex_gtx_set gPrefsGtx[PEX_MAX_SPEEDSETUP][PEX_SFP_NUMBER];
+static struct pex_mmcm_set gPrefsMmcm[PEX_MAX_SPEEDSETUP];
+
+/** simple map of gtx divider values depending on the drp bits */
+struct pex_fbdiv_decode
+{
+  char attr;
+  char drp;
+};
+
+/** for decoding of drp bit values into fbdiv factor (table D2 of
+   https://docs.amd.com/v/u/en-US/ug476_7Series_Transceivers)  */
+static struct pex_fbdiv_decode gFbdivCode[16]={
+{1, 16},
+{2, 0},
+{3, 1},
+{4, 2},
+{5, 3},
+{6, 5},
+{8, 6},
+{10, 7},
+{12, 13},
+{16, 14},
+{20, 15},
+};
+
+/** relate speed setup index to desired link speed */
+static char gLinkspeed[PEX_MAX_SPEEDSETUP][64] = {
+    "none",
+    "2.0 Gb",
+    "2.5 Gb",
+    "3.125 Gb",
+    "5.0 Gb"};
+
+
+ssize_t pex_gtx_register_dump(struct pex_gtx_set* conf, char *buf, size_t maxsize)
+{
+  ssize_t curs=0;
+  curs+=snprintf(buf+curs, maxsize-curs, "*** PEX gtx register setup:\n");
+  curs+=snprintf(buf+curs, maxsize-curs, "\t channel:                          %d\n",   conf->sfp);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t PEX_DRP_GTX_CPLL      (0x%x):   0x%x\n",   PEX_DRP_GTX_CPLL,       conf->pll);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t PEX_DRP_GTX_TXRX_DIV  (0x%x):   0x%x\n",   PEX_DRP_GTX_TXRX_DIV,   conf->div);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t PEX_DRP_GTX_RXCDR_CFG (0x%x):   0x%x\n",   PEX_DRP_GTX_TXRX_DIV,   conf->rxcdr);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t PEX_DRP_GTX_QPLL      (0x%x):   0x%x\n",   PEX_DRP_GTX_QPLL,   conf->qpll);
+  return curs;
+}
+
+
+ssize_t pex_gtx_parameter_dump(struct pex_gtx_params* pars, char *buf, size_t maxsize)
+{
+  ssize_t curs=0;
+  int i=0;
+  int M=0,N1=0,N2=0,Dtx=0,Drx=0;
+ // double speed,rspeed=0,tspeed=0;
+  curs+=snprintf(buf+curs, maxsize-curs, "*** PEX gtx parameter setup:\n");
+  // here deciper the drp bits according to xylinx gtx manual, table D-2:
+  N1=(pars->cpll_fbdiv_45>0 ? 5:4);
+  PEX_FBDIV_DRPDECODE(pars->cpll_refclk_div,M);
+  PEX_FBDIV_DRPDECODE(pars->cpll_fbdiv,N2);
+  Dtx= (1 << pars->txout_div);
+  Drx= (1 << pars->rxout_div);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  QPLL_FBDIV:     0x%x\n"    , pars->qpll_fdiv);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  CPLL_REFCLK_DIV 0x%x  ->  M   =%d \n"    , pars->cpll_refclk_div,M);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  CPLL_FBDIV_45   0x%x  ->  N1  =%d \n"    ,  pars->cpll_fbdiv_45, N1);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  CPLL_FBDIV      0x%x  ->  N2  =%d \n"    ,  pars->cpll_fbdiv,N2);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  TXOUT_DIV       0x%x  ->  D   =%d\n"    ,  pars->txout_div,Dtx);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  RXOUT_DIV       0x%x  ->  D   =%d\n"    ,  pars->rxout_div,Drx);
+
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  Reference clock is set to %s \n",PEX_GTX_REF_CLOCK_TEXT);
+
+  curs+=snprintf(buf+curs, maxsize-curs, "** Line speed will be: 2 * f *N1 * N2 / (M * D)");
+
+  // JAM: floating point operations not possible in kernel module ;-)
+  // here calculate desired speed from formula (Eq 2-1 and 2-2):
+//  if(M)   speed=2*PEX_GTX_REF_CLOCK *N1*N2/M;
+//  if(Dtx) tspeed=speed/Dtx;
+//  if(Drx) rspeed=speed/Drx;
+//  curs+=snprintf(buf+curs, maxsize-curs, "\n\t CPLL frequency  %E Hz\n"    ,  speed);
+//  curs+=snprintf(buf+curs, maxsize-curs, "\t  => Tx speed  %E Hz\n"    ,  tspeed);
+//  curs+=snprintf(buf+curs, maxsize-curs, "\t  => rx speed  %E Hz\n"    ,  rspeed);
+
+
+  return curs;
+}
+
+
+ssize_t pex_mmcm_register_dump(struct pex_mmcm_set* conf, char *buf, size_t maxsize)
+{
+  ssize_t curs=0;
+  int i=0;
+  curs+=snprintf(buf+curs, maxsize-curs, "*** PEX mmcm register setup:\n");
+  for(i=0; i<2;++i)
+    curs+=snprintf(buf+curs, maxsize-curs, "\t  PEX_DRP_MMC_CLKOUT0_%d      \t(0x%x):   0x%x\n", i,   PEX_DRP_MMC_CLKOUT0_1 + i,       conf->clkout0[i]);
+  for(i=0; i<2;++i)
+    curs+=snprintf(buf+curs, maxsize-curs, "\t  PEX_DRP_MMC_CLKBUFOUT_%d     \t(0x%x):   0x%x\n",  i,  PEX_DRP_MMC_CLKBUFOUT_1 + i,   conf->clkbufout[i]);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  PEX_DRP_MMC_DIVCLK      \t(0x%x):   0x%x\n",   PEX_DRP_MMC_DIVCLK,   conf->divclk);
+  for(i=0; i<3;++i)
+     curs+=snprintf(buf+curs, maxsize-curs, "\t  PEX_DRP_MMC_LOCK_%d     \t(0x%x):   0x%x\n",   i+1, PEX_DRP_MMC_LOCK_1 + i,   conf->lock[i]);
+  for(i=0; i<2;++i)
+     curs+=snprintf(buf+curs, maxsize-curs, "\t  PEX_DRP_MMC_FILT_%d     \t(0x%x):   0x%x\n",   i+1, PEX_DRP_MMC_FILT_1 + i,   conf->filter[i]);
+
+  return curs;
+}
+
+
+
+ssize_t pex_mmcm_parameter_dump(struct pex_mmcm_params* pars, char *buf, size_t maxsize)
+{
+  ssize_t curs=0;
+  unsigned long long locktable,x,y,z;
+  unsigned long long filtertable;
+  curs+=snprintf(buf+curs, maxsize-curs, "*** PEX mmcm parameter setup:\n");
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  CLKOUT0:\n" );
+  curs+=snprintf(buf+curs, maxsize-curs, "\t    HIGH TIME:     0x%x\n"    , pars->clkout0_hitime);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t    LOW  TIME:     0x%x\n"    , pars->clkout0_lotime);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t    EDGE     :     0x%x\n"    , pars->clkout0_edge);
+
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  CLKBUFOUT:\n" );
+  curs+=snprintf(buf+curs, maxsize-curs, "\t    HIGH TIME:     0x%x\n"    , pars->clkbufout_hitime);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t    LOW  TIME:     0x%x\n"    , pars->clkbufout_lotime);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t    EDGE     :     0x%x\n"    , pars->clkbufout_edge);
+
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  DIVCLK:\n" );
+  curs+=snprintf(buf+curs, maxsize-curs, "\t    HIGH TIME:     0x%x\n"    , pars->divclk_hitime);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t    LOW  TIME:     0x%x\n"    , pars->divclk_lotime);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t    EDGE     :     0x%x\n"    , pars->divclk_edge);
+
+  x=pars->lock[0]; // need this to suppress long shift warnings from macros...
+  y=pars->lock[1];
+  z=pars->lock[2];
+  locktable=PEX_GET_MMCM_LOCK_TABLE(x, y, z);
+  x=pars->filter[0];
+  y= pars->filter[1];
+  filtertable=PEX_GET_MMCM_FILT_TABLE(x, y);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t lock   table:0x%llx:\n",locktable );
+  curs+=snprintf(buf+curs, maxsize-curs, "\t filter table:0x%llx:\n",filtertable );
+
+
+  return curs;
+}
+
+
+
+
+/* convert kinpex gtx register contents to appropriate paramter structure **/
+void pex_gtx_register2pars(struct pex_gtx_set* conf, struct pex_gtx_params* pars)
+{
+      pars->qpll_fdiv       =PEX_GET_QPLL_FBDIV(conf->qpll);
+      pars->cpll_refclk_div =PEX_GET_CPLL_REFCLK_DIV(conf->pll);
+      pars->cpll_fbdiv_45   =PEX_GET_CPLL_FBDIV_45(conf->pll);
+      pars->cpll_fbdiv      =PEX_GET_CPLL_FBDIV(conf->pll);
+      pars->txout_div       =PEX_GET_TXOUT_DIV(conf->div);
+      pars->rxout_div       =PEX_GET_RXOUT_DIV(conf->div);
+
+
+}
+
+/* convert kinpex gtx parameters to appropriate kinpex register contents **/
+void pex_gtx_pars2register(struct pex_gtx_params* pars, struct pex_gtx_set* conf)
+{
+  PEX_CLEAR_QPLL_FBDIV(conf->qpll);
+  PEX_SET_QPLL_FBDIV(conf->qpll, pars->qpll_fdiv);
+
+  PEX_CLEAR_CPLL_REFCLK_DIV(conf->pll);
+  PEX_SET_CPLL_REFCLK_DIV(conf->pll,pars->cpll_refclk_div);
+  PEX_CLEAR_CPLL_FBDIV_45(conf->pll);
+  PEX_SET_CPLL_FBDIV_45(conf->pll,pars->cpll_fbdiv_45);
+  PEX_CLEAR_CPLL_FBDIV(conf->pll);
+  PEX_SET_CPLL_FBDIV(conf->pll,pars->cpll_fbdiv);
+
+  PEX_CLEAR_TXOUT_DIV(conf->div);
+  PEX_SET_TXOUT_DIV(conf->div,pars->txout_div);
+  PEX_CLEAR_RXOUT_DIV(conf->div);
+  PEX_SET_RXOUT_DIV(conf->div,pars->rxout_div);
+}
+
+
+
+
+/* convert kinpex gtx register contents to appropriate paramter structure **/
+void pex_mmcm_register2pars(struct pex_mmcm_set* conf, struct pex_mmcm_params* pars)
+{
+  int i=0;
+  pars->clkout0_hitime=PEX_GET_MMCM_HIGH_TIME(conf->clkout0[0]);
+  pars->clkout0_lotime=PEX_GET_MMCM_LOW_TIME(conf->clkout0[0]);
+  pars->clkout0_edge=PEX_GET_MMCM_CLK_EDGE(conf->clkout0[1]);
+  pars->clkbufout_hitime=PEX_GET_MMCM_HIGH_TIME(conf->clkbufout[0]);
+  pars->clkbufout_lotime=PEX_GET_MMCM_LOW_TIME(conf->clkbufout[0]);
+  pars->clkbufout_edge=PEX_GET_MMCM_CLK_EDGE(conf->clkbufout[1]);
+  pars->divclk_hitime=PEX_GET_MMCM_HIGH_TIME(conf->divclk);
+  pars->divclk_lotime=PEX_GET_MMCM_LOW_TIME(conf->divclk);
+  pars->divclk_edge=PEX_GET_MMCM_DIVCLK_EDGE(conf->divclk);
+  for(i=0; i<3;++i)
+    pars->lock[i]=conf->lock[i];
+  for(i=0; i<2;++i)
+    pars->filter[i]=conf->filter[i];
+}
+
+/* convert kinpex gtx parameters to appropriate kinpex register contents **/
+void pex_mmcm_pars2register(struct pex_mmcm_params* pars, struct pex_mmcm_set* conf)
+{
+  int i=0;
+  PEX_CLEAR_MMCM_HIGH_TIME(conf->clkout0[0]);
+  PEX_SET_MMCM_HIGH_TIME(conf->clkout0[0], pars->clkout0_hitime);
+  PEX_CLEAR_MMCM_LOW_TIME(conf->clkout0[0]);
+  PEX_SET_MMCM_LOW_TIME(conf->clkout0[0],pars->clkout0_lotime);
+  PEX_CLEAR_MMCM_CLK_EDGE(conf->clkout0[1]);
+  PEX_SET_MMCM_CLK_EDGE(conf->clkout0[1],pars->clkout0_edge);
+  PEX_CLEAR_MMCM_HIGH_TIME(conf->clkbufout[0]);
+  PEX_SET_MMCM_HIGH_TIME(conf->clkbufout[0], pars->clkbufout_hitime);
+  PEX_CLEAR_MMCM_LOW_TIME(conf->clkbufout[0]);
+  PEX_SET_MMCM_LOW_TIME(conf->clkbufout[0],pars->clkbufout_lotime);
+  PEX_CLEAR_MMCM_CLK_EDGE(conf->clkbufout[1]);
+  PEX_SET_MMCM_CLK_EDGE(conf->clkbufout[1],pars->clkbufout_edge);
+  PEX_CLEAR_MMCM_HIGH_TIME(conf->divclk);
+  PEX_SET_MMCM_HIGH_TIME(conf->divclk,pars->divclk_hitime);
+  PEX_CLEAR_MMCM_LOW_TIME(conf->divclk);
+  PEX_SET_MMCM_LOW_TIME(conf->divclk, pars->divclk_lotime);
+  PEX_CLEAR_MMCM_DIVCLK_EDGE(conf->divclk);
+  PEX_SET_MMCM_DIVCLK_EDGE(conf->divclk,pars->divclk_edge);
+  for(i=0; i<3;++i)
+    conf->lock[i]=pars->lock[i];
+  for(i=0; i<2;++i)
+    conf->filter[i]=pars->filter[i];
+}
+
+
+
+
+void pex_gtx_init_defaults (void)
+{
+  int ch = 0;
+  enum pex_linkspeed speed = PEX_SPEED_NONE;
+  struct pex_gtx_set *theSetup;
+  struct pex_gtx_params *thePars;
+#ifdef  PEX_GTXDEBUG
+  char txt[1024];
+  pex_msg(KERN_NOTICE "********** pex_gtx_init_defaults:\n");
+#endif
+
+  speed = PEX_SPEED_2_GBS;
+  for (ch = 0; ch < PEX_SFP_NUMBER; ++ch)
+  {
+    theSetup = &gPrefsGtx[speed][ch];
+    thePars = &gParamsGtx[speed][ch];
+    theSetup->sfp = ch;
+    theSetup->pll = 0x1002;
+    theSetup->div = 0x0011;
+    theSetup->rxcdr = 0x1020;
+    theSetup->qpll = 0x0020;
+    pex_gtx_register2pars (theSetup, thePars);
+
+#ifdef  PEX_GTXDEBUG
+    PEX_GTX_SETUPDUMP(speed);
+#endif
+  }
+
+
+  speed = PEX_SPEED_2_5_GBS;
+  for (ch = 0; ch < PEX_SFP_NUMBER; ++ch)
+  {
+    theSetup = &gPrefsGtx[speed][ch];
+    thePars = &gParamsGtx[speed][ch];
+    theSetup->sfp = ch;
+    theSetup->pll = 0x1082;
+    theSetup->div = 0x0011;
+    theSetup->rxcdr = 0x1020;
+    theSetup->qpll = 0x0020;
+    pex_gtx_register2pars (theSetup, thePars);
+#ifdef  PEX_GTXDEBUG
+    PEX_GTX_SETUPDUMP(speed);
+#endif
+  }
+
+  speed = PEX_SPEED_3_125_GBS;
+
+  for (ch = 0; ch < PEX_SFP_NUMBER; ++ch)
+  {
+    theSetup = &gPrefsGtx[speed][ch];
+    thePars = &gParamsGtx[speed][ch];
+    theSetup->sfp = ch;
+    theSetup->pll = 0x1083;
+    theSetup->div = 0x0011;
+    theSetup->rxcdr = 0x1020;
+    theSetup->qpll = 0x0020;
+    pex_gtx_register2pars (theSetup, thePars);
+#ifdef  PEX_GTXDEBUG
+    PEX_GTX_SETUPDUMP(speed);
+#endif
+  }
+
+  speed = PEX_SPEED_5_GBS;
+  for (ch = 0; ch < PEX_SFP_NUMBER; ++ch)
+  {
+    theSetup = &gPrefsGtx[speed][ch];
+    thePars = &gParamsGtx[speed][ch];
+    theSetup->sfp = ch;
+    theSetup->pll = 0x1082;
+    theSetup->div = 0x0000;
+    theSetup->rxcdr = 0x1040;
+    theSetup->qpll = 0x0020;
+    pex_gtx_register2pars (theSetup, thePars);
+#ifdef  PEX_GTXDEBUG
+    PEX_GTX_SETUPDUMP(speed);
+#endif
+  }
+
+}
+
+void pex_mmcm_init_defaults (void)
+{
+
+  enum pex_linkspeed speed = PEX_SPEED_NONE;
+  struct pex_mmcm_set *theSetup;
+  struct pex_mmcm_params *thePars;
+#ifdef  PEX_GTXDEBUG
+  char txt[1024];
+  pex_msg(KERN_NOTICE "********** pex_mmcm_init_defaults:\n");
+#endif
+
+  speed = PEX_SPEED_2_GBS;
+  theSetup = &gPrefsMmcm[speed];
+  thePars = &gParamsMmcm[speed];
+  theSetup->clkout0[0] = 0x1187;
+  theSetup->clkout0[1] = 0x0080;
+  theSetup->clkbufout[0] = 0x134d;
+  theSetup->clkbufout[1] = 0x0000;
+  theSetup->divclk = 0x2083;
+  theSetup->lock[0] = 0x0177;
+  theSetup->lock[1] = 0x7c01;
+  theSetup->lock[2] = 0xffe9;
+  theSetup->filter[0] = 0x0908;
+  theSetup->filter[1] = 0x1000;
+
+  pex_mmcm_register2pars (theSetup, thePars);
+#ifdef PEX_GTXDEBUG
+  PEX_MMCM_SETUPDUMP(speed);
+#endif
+
+  speed = PEX_SPEED_2_5_GBS;
+  theSetup = &gPrefsMmcm[speed];
+  thePars = &gParamsMmcm[speed];
+  theSetup->clkout0[0] = 0x1042;
+  theSetup->clkout0[1] = 0x0080;
+  theSetup->clkbufout[0] = 0x10c3;
+  theSetup->clkbufout[1] = 0x0000;
+  theSetup->divclk = 0x0041;
+  theSetup->lock[0] = 0x03e8;
+  theSetup->lock[1] = 0x4401;
+  theSetup->lock[2] = 0xc7e9;
+  theSetup->filter[0] = 0x0908;
+  theSetup->filter[1] = 0x8900;
+
+  pex_mmcm_register2pars (theSetup, thePars);
+#ifdef PEX_GTXDEBUG
+  PEX_MMCM_SETUPDUMP(speed);
+#endif
+
+  speed = PEX_SPEED_3_125_GBS;
+  theSetup = &gPrefsMmcm[speed];
+  thePars = &gParamsMmcm[speed];
+  theSetup->clkout0[0] = 0x1104;
+  theSetup->clkout0[1] = 0x0000;
+  theSetup->clkbufout[0] = 0x1083;
+  theSetup->clkbufout[1] = 0x0080;
+  theSetup->divclk = 0x1041;
+  theSetup->lock[0] = 0x03e8;
+  theSetup->lock[1] = 0x3801;
+  theSetup->lock[2] = 0xbbe9;
+  theSetup->filter[0] = 0x9108;
+  theSetup->filter[1] = 0x1900;
+
+  pex_mmcm_register2pars (theSetup, thePars);
+#ifdef PEX_GTXDEBUG
+  PEX_MMCM_SETUPDUMP(speed);
+#endif
+
+  speed = PEX_SPEED_5_GBS;
+  theSetup = &gPrefsMmcm[speed];
+  thePars = &gParamsMmcm[speed];
+  theSetup->clkout0[0] = 0x1042;
+  theSetup->clkout0[1] = 0x0080;
+  theSetup->clkbufout[0] = 0x10c3;
+  theSetup->clkbufout[1] = 0x0000;
+  theSetup->divclk = 0x0041;
+  theSetup->lock[0] = 0x03e8;
+  theSetup->lock[1] = 0x4401;
+  theSetup->lock[2] = 0xc7e9;
+  theSetup->filter[0] = 0x0908;
+  theSetup->filter[1] = 0x8900;
+
+  pex_mmcm_register2pars (theSetup, thePars);
+#ifdef PEX_GTXDEBUG
+  PEX_MMCM_SETUPDUMP(speed);
+#endif
+
+
+}
+
+
+
+
+//////////////////////////77
 
 int pex_ioctl_init_bus (struct pex_privdata* priv, unsigned long arg)
 {
@@ -606,6 +1016,322 @@ int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigne
 
 }
 
+/// JAM2024:
+
+/* read value from address via drp port*/
+int pex_drp_read(struct pex_privdata* priv, unsigned short address, unsigned short* value)
+{
+  int retval = 0;
+  unsigned int portvalue;
+  unsigned short retaddress;
+  struct pex_sfp* sfp;
+  struct regs_pex *pg;
+  pg=&(priv->regs);
+  sfp=&(pg->sfp);
+  portvalue= (address << 16);
+  iowrite32 (portvalue, sfp->drp_port);
+  pex_sfp_delay();
+  portvalue= ioread32 (sfp->drp_port);
+  pex_sfp_delay();
+  retaddress = (portvalue >>16) & 0xFFFF ;
+  if(address != retaddress)
+  {
+      pex_msg(KERN_ERR "** pex_drp_read problem: return address 0x%x does not match requested address 0x%x  ",retaddress , address);
+      //*value=0;
+      //return -EIO;
+  }
+  *value=portvalue & 0xFFFF;
+  pex_dbg(KERN_NOTICE "** pex_drp_read: value=%x from addr=%x data=%x\n", *value, address);
+   return retval;
+}
+
+
+/* write value via drp port*/
+int pex_drp_write(struct pex_privdata* priv, unsigned short address, unsigned short value)
+{
+  int retval = 0;
+  unsigned int portvalue;
+  unsigned short retaddress, retvalue;
+  struct pex_sfp* sfp;
+  struct regs_pex *pg;
+  pg=&(priv->regs);
+  sfp=&(pg->sfp);
+  address= address | 0x8000; // automatically set the address write bit here
+  portvalue = address;
+  portvalue= (portvalue << 16) | value;
+  iowrite32 (portvalue, sfp->drp_port);
+  pex_sfp_delay();
+
+  // do we really need this additional read to take the write into effect?
+  portvalue= ioread32 (sfp->drp_port);
+  pex_sfp_delay();
+  retaddress = (portvalue >>16) & 0xFFFF;
+   if(address != retaddress)
+   {
+       pex_msg(KERN_ERR "** pex_drp_write problem: return address 0x%x does not match requested address 0x%x  ",retaddress , address);
+       return -EIO;
+   }
+
+   retvalue = portvalue& 0xFFFF;
+     if(value != retvalue)
+     {
+         pex_msg(KERN_ERR "** pex_drp_write problem: value  0x%x does not match set value 0x%x  ",retvalue , value);
+         return -EIO;
+     }
+     pex_dbg(KERN_NOTICE "** pex_drp_write: wrote value=0x%x to addr=0x%x\n", value, address);
+  return retval;
+}
+
+
+
+
+
+int pex_ioctl_set_linkspeed(struct pex_privdata* privdata, struct pex_linkspeed_set* data)
+{
+  int retval = 0;
+  struct pex_sfp* sfp;
+  struct regs_pex *pg;
+  pg=&(privdata->regs);
+  sfp=&(pg->sfp);
+
+  /////// TODO:
+
+
+  return retval;
+}
+
+
+int pex_configure_linkspeed(struct pex_privdata* privdata, int ch, enum pex_linkspeed setup)
+{
+  int retval = 0, i = 0;
+  struct pex_gtx_set *gtx;
+  struct pex_mmcm_set *mmcm;
+  struct pex_sfp* sfp;
+  struct regs_pex *pg;
+  pg=&(privdata->regs);
+  sfp=&(pg->sfp);
+   if(setup <0 || setup>PEX_SPEED_5_GBS) return -1;
+  pex_msg(KERN_NOTICE "** pex_configure_linkspeed wants to set link speed type %d (%s) for SFP channel %d  ",setup, gLinkspeed[setup], ch);
+
+  // first change speed status structures in driver privdata:
+  if (ch < 0)
+  {
+    // change all chains
+    for (i = 0; i < PEX_SFP_NUMBER; ++i)
+    {
+      gtx = &(sfp->gtx_setup[i]);
+      *gtx = gPrefsGtx[setup][i];
+      sfp->lspeed[i]=setup;
+    }
+  }
+  else
+  {
+    // dedicated sfp chain only
+    gtx = &(sfp->gtx_setup[ch]);
+    *gtx = gPrefsGtx[setup][ch];
+    sfp->lspeed[ch]=setup;
+    // NOTE: it is not clear what reallly to do with the mmcm when we have different gtx setups for each channels...
+  }
+
+  mmcm = &(sfp->mmcm_setup);
+  *mmcm = gPrefsMmcm[setup];
+
+  // now apply setup from privdata cache to kinpex hardware:
+  return pex_write_linkspeed_registers(privdata);
+
+
+
+
+  return retval;
+}
+
+
+
+int pex_read_linkspeed_registers (struct pex_privdata *privdata)
+{
+  int retval = 0, i = 0;
+  unsigned short prefix, address = 0, value = 0, qvalue=0;
+  struct pex_gtx_set *gtx;
+  struct pex_mmcm_set *mmcm;
+  struct pex_sfp *sfp;
+  struct regs_pex *pg;
+
+  pg = &(privdata->regs);
+  sfp = &(pg->sfp);
+
+  // first setup of common quad group pll:
+  prefix = PEX_DRP_GTX_CMN_R << 12;
+  address = prefix | PEX_DRP_GTX_QPLL;
+  retval = pex_drp_read (privdata, address, &value);
+  PEX_DRP_CHECK(retval, address);
+  qvalue=value; // put to all channel structures later
+
+  for (i = 0; i < PEX_SFP_NUMBER; ++i)
+  {
+    gtx = &(sfp->gtx_setup[i]);
+    gtx->sfp = i;
+    gtx->qpll = qvalue;
+
+    prefix = ((PEX_DRP_GTX_R_0 + i) << 12);
+    address = prefix | PEX_DRP_GTX_CPLL;
+    retval = pex_drp_read (privdata, address, &value);
+    PEX_DRP_CHECK(retval, address);
+    gtx->pll = value;
+
+    address = prefix | PEX_DRP_GTX_TXRX_DIV;
+    retval = pex_drp_read (privdata, address, &value);
+    PEX_DRP_CHECK(retval, address);
+    gtx->div = value;
+
+    address = prefix | PEX_DRP_GTX_RXCDR_CFG;
+    retval = pex_drp_read (privdata, address, &value);
+    PEX_DRP_CHECK(retval, address);
+    gtx->rxcdr = value;
+  }
+
+  mmcm = &(sfp->mmcm_setup);
+  prefix = PEX_DRP_MMC_R << 12;
+
+  for (i = 0; i < 2; ++i)
+  {
+    address = prefix | (PEX_DRP_MMC_CLKOUT0_1 + i);
+    retval = pex_drp_read (privdata, address, &value);
+    PEX_DRP_CHECK(retval, address);
+    mmcm->clkout0[i] = value;
+  }
+  for (i = 0; i < 2; ++i)
+  {
+    address = prefix | (PEX_DRP_MMC_CLKBUFOUT_1 + i);
+    retval = pex_drp_read (privdata, address, &value);
+    PEX_DRP_CHECK(retval, address);
+    mmcm->clkbufout[i] = value;
+
+  }
+
+  address = prefix | PEX_DRP_MMC_DIVCLK;
+  retval = pex_drp_read (privdata, address, &value);
+  PEX_DRP_CHECK(retval, address);
+  mmcm->divclk = value;
+
+  for (i = 0; i < 3; ++i)
+  {
+    address = prefix | (PEX_DRP_MMC_LOCK_1 + i);
+    retval = pex_drp_read (privdata, address, &value);
+    PEX_DRP_CHECK(retval, address);
+    mmcm->lock[i] = value;
+  }
+
+  for (i = 0; i < 2; ++i)
+  {
+    address = prefix | (PEX_DRP_MMC_FILT_1 + i);
+    retval = pex_drp_read (privdata, address, &value);
+    PEX_DRP_CHECK(retval, address);
+    mmcm->filter[i] = value;
+  }
+  return retval;
+}
+
+int pex_write_linkspeed_registers(struct pex_privdata* privdata)
+{
+  int retval = 0, i;
+  unsigned short prefix, address = 0, qvalue=0;
+  struct pex_gtx_set* gtx;
+  struct pex_mmcm_set* mmcm;
+  struct pex_sfp* sfp;
+  struct regs_pex *pg;
+  pg=&(privdata->regs);
+  sfp=&(pg->sfp);
+   for (i = 0; i < PEX_SFP_NUMBER; ++i)
+   {
+     gtx = &(sfp->gtx_setup[i]);
+     if(i==0) qvalue=gtx->qpll;
+
+     prefix = ((PEX_DRP_GTX_R_0 + i) << 12);
+     address = prefix | PEX_DRP_GTX_CPLL;
+     retval = pex_drp_write (privdata, address, gtx->pll);
+     PEX_DRP_CHECK(retval, address);
+
+     address = prefix | PEX_DRP_GTX_TXRX_DIV;
+     retval = pex_drp_write (privdata, address, gtx->div);
+     PEX_DRP_CHECK(retval, address);
+
+     address = prefix | PEX_DRP_GTX_RXCDR_CFG;
+     retval = pex_drp_write (privdata, address, gtx->rxcdr);
+     PEX_DRP_CHECK(retval, address);
+   }
+
+
+   // put setup of common quad group pll:
+   prefix = PEX_DRP_GTX_CMN_R << 12;
+   address = prefix | PEX_DRP_GTX_QPLL;
+   retval = pex_drp_write (privdata, address, qvalue);
+   PEX_DRP_CHECK(retval, address);
+
+   mmcm = &(sfp->mmcm_setup);
+   prefix = PEX_DRP_MMC_R << 12;
+
+   for (i = 0; i < 2; ++i)
+   {
+     address = prefix | (PEX_DRP_MMC_CLKOUT0_1 + i);
+     retval = pex_drp_write (privdata, address,  mmcm->clkout0[i]);
+     PEX_DRP_CHECK(retval, address);
+   }
+   for (i = 0; i < 2; ++i)
+   {
+     address = prefix | (PEX_DRP_MMC_CLKBUFOUT_1 + i);
+     retval = pex_drp_write (privdata, address, mmcm->clkbufout[i]);
+     PEX_DRP_CHECK(retval, address);
+   }
+
+   address = prefix | PEX_DRP_MMC_DIVCLK;
+   retval = pex_drp_write (privdata, address,  mmcm->divclk);
+   PEX_DRP_CHECK(retval, address);
+
+   for (i = 0; i < 3; ++i)
+   {
+     address = prefix | (PEX_DRP_MMC_LOCK_1 + i);
+     retval = pex_drp_write (privdata, address,  mmcm->lock[i]);
+     PEX_DRP_CHECK(retval, address);
+   }
+
+   for (i = 0; i < 2; ++i)
+   {
+     address = prefix | (PEX_DRP_MMC_FILT_1 + i);
+     retval = pex_drp_write (privdata, address, mmcm->filter[i]);
+     PEX_DRP_CHECK(retval, address);
+   }
+   return retval;
+}
+
+/** configure speed of GTX for given channel*/
+int pex_gtx_configure(struct pex_privdata* priv, struct pex_gtx_set* conf)
+{
+  int retval = 0;
+
+   /////// TODO:
+
+
+   return retval;
+}
+
+/** configure MMCM for new channel speed*/
+int pex_mmcm_configure(struct pex_privdata* priv, struct pex_mmcm_set* conf)
+{
+  int retval = 0;
+
+   /////// TODO:
+
+
+   return retval;
+}
+
+
+
+
+
+
+
+//////////////////////////////////////////////////////////
 
 
 void pex_sfp_reset (struct pex_privdata* privdata)
@@ -914,6 +1640,7 @@ void set_sfp (struct pex_sfp* sfp, void* membase, unsigned long bar)
   sfp->rep_stat_clr = (u32*) (sfpbase + PEX_SFP_REP_STAT_CLR);
   sfp->rx_moni = (u32*) (sfpbase + PEX_SFP_RX_MONI);
   sfp->tx_stat = (u32*) (sfpbase + PEX_SFP_TX_STAT);
+  sfp->drp_port = (u32*) (sfpbase + PEX_SFP_DRP_PORT);
   sfp->reset = (u32*) (sfpbase + PEX_SFP_RX_RST);
   sfp->disable = (u32*) (sfpbase + PEX_SFP_DISA);
   sfp->fault = (u32*) (sfpbase + PEX_SFP_FAULT);
@@ -950,6 +1677,7 @@ void print_sfp (struct pex_sfp* sfp)
   print_register ("reply status /clear", sfp->rep_stat_clr);
   print_register ("monitor", sfp->rx_moni);
   print_register ("tx status", sfp->tx_stat);
+  print_register ("drp port", sfp->drp_port);
   print_register ("reset", sfp->reset);
   print_register ("disable", sfp->disable);
   print_register ("fault", sfp->fault);
@@ -1050,6 +1778,77 @@ ssize_t pex_sysfs_sfpregs_show(struct device *dev, struct device_attribute *attr
   }
 
   return curs;
+}
+
+ssize_t pex_sysfs_linkspeed_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+  ssize_t curs=0;
+  int i=0;
+  struct pex_gtx_set *gtx;
+  struct pex_mmcm_set *mmcm;
+  struct regs_pex* pg;
+  struct pex_sfp* sfp;
+  struct pex_privdata *privdata;
+  struct pex_gtx_params gtx_pars;
+  struct pex_mmcm_params mmcm_pars;
+  privdata= (struct pex_privdata*) dev_get_drvdata(dev);
+  pg=&(privdata->regs);
+  sfp=&(pg->sfp);
+  curs+=snprintf(buf+curs, PAGE_SIZE-curs, "*** PEX current GTX linkspeed:\n");
+  // first get content of gtx and mmcm registers into private data
+  pex_read_linkspeed_registers(privdata);
+  // then printout values:
+  for (i = 0; i < PEX_SFP_NUMBER; ++i)
+  {
+    gtx = &(sfp->gtx_setup[i]);
+    curs+=pex_gtx_register_dump(gtx, buf+curs,  PAGE_SIZE-curs );
+    pex_gtx_register2pars(gtx, &gtx_pars);
+    curs+=pex_gtx_parameter_dump(&gtx_pars , buf+curs,  PAGE_SIZE-curs);
+  }
+
+  mmcm = &(sfp->mmcm_setup);
+  curs+=pex_mmcm_register_dump(mmcm, buf+curs,  PAGE_SIZE-curs );
+  pex_mmcm_register2pars(mmcm, &mmcm_pars);
+  curs+=pex_mmcm_parameter_dump(&mmcm_pars , buf+curs,  PAGE_SIZE-curs);
+
+  return curs;
+}
+
+
+ssize_t  pex_sysfs_linkspeed_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+  unsigned int val=0;
+  struct regs_pex* pg;
+  struct pex_sfp* sfp;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+  int rev=0;
+#else
+  char* endp=0;
+#endif
+  struct pex_privdata *privdata;
+  privdata = (struct pex_privdata*) dev_get_drvdata (dev);
+  pg=&(privdata->regs);
+  sfp=&(pg->sfp);
+
+  #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+  rev=kstrtouint(buf,0,&val); // this can handle both decimal, hex and octal formats if specified by prefix JAM
+  if(rev!=0) return rev;
+#else
+  val=simple_strtoul(buf,&endp, 0);
+  count= endp - buf; // do we need this?
+#endif
+   //privdata->sfp_maxpolls=val;
+  if(val<0 || val > PEX_SPEED_5_GBS)
+  {
+    pex_msg( KERN_NOTICE "PEX: invalid linkspeed index %d! Do not change anything.", val);
+  }
+  else
+  {
+    pex_msg( KERN_NOTICE "PEX: linkspeed will be set to preset %d (%s)\n", val, gLinkspeed[val]);
+    pex_configure_linkspeed(privdata,-1,val);
+  }
+  return count;
 }
 
 #endif

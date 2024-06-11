@@ -30,6 +30,7 @@ static DEVICE_ATTR(mbspipe, S_IRUGO, pex_sysfs_pipe_show, NULL);
 static DEVICE_ATTR(gosipretries, (S_IWUSR| S_IWGRP | S_IRUGO) , pex_sysfs_sfp_retries_show, pex_sysfs_sfp_retries_store);
 static DEVICE_ATTR(gosipbuswait, (S_IWUSR| S_IWGRP | S_IRUGO) , pex_sysfs_buswait_show, pex_sysfs_buswait_store);
 
+static DEVICE_ATTR(linkspeed, (S_IWUSR| S_IWGRP | S_IRUGO),  pex_sysfs_linkspeed_show, pex_sysfs_linkspeed_store);
 
 ssize_t pex_sysfs_trixorregs_show (struct device *dev, struct device_attribute *attr, char *buf)
 {
@@ -1746,6 +1747,10 @@ void cleanup_device (struct pex_privdata* priv)
     device_remove_file (priv->class_dev, &dev_attr_mbspipe);
     device_remove_file (priv->class_dev, &dev_attr_gosipretries);
     device_remove_file (priv->class_dev, &dev_attr_gosipbuswait);
+    if (priv->board_type == BOARDTYPE_KINPEX)
+    {
+      device_remove_file (priv->class_dev, &dev_attr_linkspeed);
+    }
     device_destroy (pex_class, priv->devno);
     priv->class_dev = 0;
   }
@@ -1844,6 +1849,7 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
     privdata->board_type = BOARDTYPE_PEXOR;
     strncpy (devnameformat, PEXORNAMEFMT, 32);
     pex_msg(KERN_NOTICE "  Found board type PEXOR, vendor id: 0x%x, device id:0x%x\n",vid,did);
+
   }
   else if (vid == PEXARIA_VENDOR_ID && did == PEXARIA_DEVICE_ID)
   {
@@ -1857,6 +1863,11 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
     privdata->board_type = BOARDTYPE_KINPEX;
     strncpy (devnameformat, KINPEXNAMEFMT, 32);
     pex_msg(KERN_NOTICE "  Found board type KINPEX, vendor id: 0x%x, device id:0x%x\n",vid,did);
+
+
+    // JAM 6-2024: for kinpex init the possible speed preferences here
+    pex_gtx_init_defaults();
+    pex_mmcm_init_defaults();
   }
   else
   {
@@ -2079,12 +2090,20 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
       {
         pex_msg(KERN_ERR "Could not add device file node for gosip bus wait.\n");
       }
-
+    if (privdata->board_type == BOARDTYPE_KINPEX)
+       {
+        if (device_create_file (privdata->class_dev, &dev_attr_linkspeed) != 0)
+            {
+              pex_msg(KERN_ERR "Could not add device file node for gtx link speed.\n");
+            }
+         }
 
 #ifdef   PEX_DMA_64BIT
 
-    if (dma_set_mask_and_coherent(privdata->class_dev, DMA_BIT_MASK(64))) {
-            pex_msg(KERN_ERR "Could not set 64 bit DMA mask for device .\n");
+    //if (dma_set_mask_and_coherent(privdata->class_dev, DMA_BIT_MASK(64))) // not working for kinpex?
+    if (dma_set_coherent_mask(privdata->class_dev,  DMA_BIT_MASK(64))) // JAM23: probably not necessary at all for MBS use case, as we write to memory outside the OS
+    {
+            pex_msg(KERN_ERR "Could not set 64 bit coherent DMA mask for device .\n");
     }
 
 #endif

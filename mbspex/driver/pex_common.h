@@ -1,7 +1,7 @@
 /***
  * pexor_common.h
  *
- *  Created on: 08.04.2014
+ *  Created on: 08.04.2014 - 06.2024
  *      Author: J. Adamczewski-Musch, GSI
  *
  *      PEXOR/KINPEX driver common includes for all modules
@@ -57,9 +57,9 @@
 #define BOARDTYPE_PEXARIA 1
 #define BOARDTYPE_KINPEX 2
 
-#define PEXAUTHORS     "Nikolaus Kurz, Joern Adamczewski-Musch, EEL, GSI, 2015-2023"
+#define PEXAUTHORS     "Nikolaus Kurz, Joern Adamczewski-Musch, EEL, GSI, 2015-2024"
 #define PEXDESC        "MBSPEX driver for PCIe DAQ with Multi Branch System"
-#define PEXVERSION     "2.20"
+#define PEXVERSION     "3.00"
 
 
 //#define PEX_DEBUGPRINT 1
@@ -67,6 +67,9 @@
 
 /* debug latencies of trigger/token request*/
 //#define PEX_TRIGGERDEBUG 1
+
+/* enable this to get printouts of GTX/MCMCM setups  */
+#define PEX_GTXDEBUG 1
 
 
 /** this will enable a faster parameter copy between kernel and user space at ioctls
@@ -159,6 +162,9 @@
 #else
 #define pex_tdbg( args... ) ;
 #endif
+
+
+
 
 #define pex_msg( args... )                    \
   printk( args );

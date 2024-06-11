@@ -3,6 +3,7 @@
 ---------- v0.2 03-06-2014 by JAM
 ---------- v2.0 04-10-2023 by JAM - updated for gosip protocol V5
            v2.1 05-10-2023 by JAM - automatic detection of gosip protocol by fpga version
+           v3.0 11-06-2024 by JAM - added functionality to change sfp link speeds (new kinpex firmware only!)
 ------------------------------------------------------------------------
 Copyright (C) 2014- Gesellschaft f. Schwerionenforschung, GSI
                     Planckstr. 1, 64291 Darmstadt, Germany

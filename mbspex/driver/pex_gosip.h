@@ -76,6 +76,8 @@
 
 #define PEX_SFP_TX_STAT 0xc0
 
+// JAM 2024: new for changing gosip link speed
+#define PEX_SFP_DRP_PORT 0xc8
 
 #define PEX_SFP_VERSION 0x1fc
 
@@ -101,8 +103,151 @@
 #define PEX_SFP_PT_INI_REP 0x244
 #define PEX_SFP_PT_ERR_REP 0x544
 
+/** DRP address prefixes JAM2024*/
+
+#define PEX_DRP_GTX_R_0 0x0
+#define PEX_DRP_GTX_R_1 0x1
+#define PEX_DRP_GTX_R_2 0x2
+#define PEX_DRP_GTX_R_3 0x3
+
+#define PEX_DRP_GTX_W_0 0x8
+#define PEX_DRP_GTX_W_1 0x9
+#define PEX_DRP_GTX_W_2 0xA
+#define PEX_DRP_GTX_W_3 0xB
+
+#define PEX_DRP_MMC_R 0x5
+#define PEX_DRP_MMC_W 0xD
+
+#define PEX_DRP_GTX_CMN_R 0x4
+#define PEX_DRP_GTX_CMN_W 0xC
+
+/** KINPEX DRP addresses JAM2024
+ * Please see:
+ *
+   https://docs.amd.com/v/u/en-US/ug476_7Series_Transceivers
+
+   https://docs.amd.com/v/u/en-US/ug472_7Series_Clocking
+
+   https://docs.amd.com/v/u/en-US/xapp888_7Series_DynamicRecon
+
+ *
+ * */
 
 
+
+#define PEX_DRP_GTX_CPLL        0x05E
+#define PEX_DRP_GTX_TXRX_DIV    0x088
+#define PEX_DRP_GTX_RXCDR_CFG   0x0a9
+
+#define PEX_DRP_GTX_QPLL        0x036
+
+#define PEX_DRP_MMC_CLKOUT0_1   0x008
+#define PEX_DRP_MMC_CLKOUT0_2   0x009
+#define PEX_DRP_MMC_CLKBUFOUT_1 0x014
+#define PEX_DRP_MMC_CLKBUFOUT_2 0x015
+#define PEX_DRP_MMC_DIVCLK      0x016
+#define PEX_DRP_MMC_LOCK_1      0x018
+#define PEX_DRP_MMC_LOCK_2      0x019
+#define PEX_DRP_MMC_LOCK_3      0x01A
+#define PEX_DRP_MMC_FILT_1      0x04E
+#define PEX_DRP_MMC_FILT_2      0x04F
+
+
+
+/* here bitmask evaluations of register contents:*/
+
+#define PEX_GET_SATA_CPLL_CFG(X)    ((X >>14) & 0x11)
+#define PEX_GET_CPLL_REFCLK_DIV(X)  ((X >>8) & 0x1F)
+#define PEX_GET_CPLL_FBDIV_45(X)    ((X >>7) & 0x1)
+#define PEX_GET_CPLL_FBDIV(X)       ((X >>0) & 0x3F)
+#define PEX_GET_TXOUT_DIV(X)       ((X >>4) & 0x7)
+#define PEX_GET_RXOUT_DIV(X)       ((X >>0) & 0x7)
+
+#define PEX_GET_QPLL_FBDIV(X)       ((X >>0) & 0x3FF)
+
+
+#define PEX_CLEAR_SATA_CPLL_CFG(X)    X &= ~(0x11<<14)
+#define PEX_CLEAR_CPLL_REFCLK_DIV(X)  X &= ~(0x1F<<8)
+#define PEX_CLEAR_CPLL_FBDIV_45(X)    X &= ~(0x1<<7)
+#define PEX_CLEAR_CPLL_FBDIV(X)       X &= ~(0x3F)
+#define PEX_CLEAR_TXOUT_DIV(X)        X &= ~(0x7<<4)
+#define PEX_CLEAR_RXOUT_DIV(X)        X &= ~(0x7)
+
+#define PEX_CLEAR_QPLL_FBDIV(X)       X &= ~(0x3FF)
+
+
+#define PEX_SET_SATA_CPLL_CFG(X, V)    X|= ((V & 0x11)<<14)
+#define PEX_SET_CPLL_REFCLK_DIV(X, V)  X |= ((V & 0x1F) << 8)
+#define PEX_SET_CPLL_FBDIV_45(X, V)    X |= ((V & 0x1)<<7)
+#define PEX_SET_CPLL_FBDIV(X, V)       X |= (V & 0x3F)
+#define PEX_SET_TXOUT_DIV(X, V)        X |= ((V & 0x7)<<4)
+#define PEX_SET_RXOUT_DIV(X, V)        X |= (V & 0x7)
+
+#define PEX_SET_QPLL_FBDIV(X, V)       X |= (V & 0x3FF)
+
+
+#define PEX_GET_MMCM_HIGH_TIME(X)       ((X >>6) & 0x3F)
+#define PEX_GET_MMCM_LOW_TIME(X)        ((X >>0) & 0x3F)
+#define PEX_GET_MMCM_CLK_EDGE(X)        ((X >>7) & 0x1)
+#define PEX_GET_MMCM_DIVCLK_EDGE(X)     ((X >>13) & 0x1)
+
+#define PEX_CLEAR_MMCM_HIGH_TIME(X)     X &=  ~(0x3F<<6)
+#define PEX_CLEAR_MMCM_LOW_TIME(X)      X &=  ~(0x3F)
+#define PEX_CLEAR_MMCM_CLK_EDGE(X)      X &=  ~(0x1<< 7)
+#define PEX_CLEAR_MMCM_DIVCLK_EDGE(X)   X &=  ~(0x1<<13)
+
+#define PEX_SET_MMCM_HIGH_TIME(X, V)     X |=  ((V & 0x3F)<<6)
+#define PEX_SET_MMCM_LOW_TIME(X, V)      X |= (V & 0x3F)
+#define PEX_SET_MMCM_CLK_EDGE(X, V)      X |= ((V & 0x1) << 7)
+#define PEX_SET_MMCM_DIVCLK_EDGE(X, V)   X |= ((V & 0x1)<<13)
+
+/* X:lock register 1, Y:lock register 2. Z: lock register 3*/
+#define PEX_GET_MMCM_LOCK_TABLE(X,Y,Z) \
+  ((X & 0x3FF) << 20) | (Y & 0x3FF) | (((Y >>10) & 0x1F) << 30)  | ((Z & 0x3FF) << 10) | (((Z>>10) & 0x1F) << 35)
+
+/* X:filter register 1, Y:filter register 2 */
+#define PEX_GET_MMCM_FILT_TABLE(X,Y) \
+  (((X >> 15) & 0x1) << 9) | (((X >> 11) & 0x3) << 7) | (( (X>>8) & 0x1)<<6) | (((Y>>15) & 0x1) <<5) | (((Y >>11) & 0x3)<<3) | (((Y>>7) & 0x3) <<1) | ((Y << 4) & 0x1)
+
+
+
+
+
+#define PEX_FBDIV_DRPDECODE(X,V) \
+    for(i=0;i<16;++i)\
+      if(gFbdivCode[i].drp==X) V=gFbdivCode[i].attr;
+
+
+// JAM24: helpers for inspecting the setups:
+#define PEX_GTX_SETUPDUMP(X) \
+  pex_msg(KERN_NOTICE "** GTX setup for speed %d (%s);\n", X, gLinkspeed[X]);\
+  pex_gtx_register_dump(theSetup, txt, 1024);\
+  pex_msg(KERN_NOTICE "%s", txt);\
+  pex_gtx_parameter_dump(thePars, txt, 1024);\
+  pex_msg(KERN_NOTICE "%s", txt);
+
+#define PEX_MMCM_SETUPDUMP(X) \
+  pex_msg(KERN_NOTICE "** MMCM setup for speed %d (%s);\n", X,  gLinkspeed[X]);\
+  pex_mmcm_register_dump(theSetup, txt, 1024);\
+  pex_msg(KERN_NOTICE "%s", txt);\
+  pex_mmcm_parameter_dump(thePars, txt, 1024);\
+  pex_msg(KERN_NOTICE "%s", txt);
+
+
+/* reference clock*/
+#define PEX_GTX_REF_CLOCK 125.0E+6
+#define PEX_GTX_REF_CLOCK_TEXT "125 MHz"
+
+#define PEX_DRP_CHECK(X,Y) \
+    if(X){ \
+          pex_msg(KERN_ERR "** pex read/write linkspeed_registers problem: return value %d when reading/writing address 0x%x, never come here!",X,Y);\
+          return X;\
+        }\
+
+#define PEX_MAX_SPEEDSETUP 5
+
+
+///////////////////////////////////////////////////77
 
 #define pex_sfp_assert_channel(ch)                                    \
   if(ch < 0 || ch >= PEX_SFP_NUMBER)                                  \
@@ -136,6 +281,56 @@
 /*udelay(10);*/
 
 
+ ///////////
+// JAM2024: new for changing link speeds: ///////////////////////////////////
+
+/* this has plain register contents*/
+ struct pex_gtx_set
+ {
+    int sfp;                 /**< gtx link id 0..3 (-1 for all configured sfps) = sfp chain id*/
+    unsigned short pll;      /**< value of drp pll register PEX_DRP_GTX_CPLL */
+    unsigned short div;      /**< value of drp div register PEX_DRP_GTX_TXRX_DIV */
+    unsigned short rxcdr;    /**< value of drp rxclock data recovery register PEX_DRP_GTX_RXCDR_CFG */
+    unsigned short qpll;      /**< value of drp quad pll register PEX_DRP_GTX_QPLL (same for all link lines) */
+ };
+
+ /* this has plain register contents*/
+ struct pex_mmcm_set
+ {
+   unsigned short clkout0[2];    /**< values of drp mmcm registers PEX_DRP_MMC_CLKOUT0_1 and  PEX_DRP_MMC_CLKOUT0_2*/
+   unsigned short clkbufout[2];  /**< values of drp mmcm registers PEX_DRP_MMC_CLKBUFOUT_1 and  PEX_DRP_MMC_CLKBUFOUT_2*/
+   unsigned short divclk;        /**< value of drp mmcm register PEX_DRP_MMC_DIVCLK */
+   unsigned short lock[3];       /**< values of drp mmcm registers PEX_DRP_MMC_LOCK_1 _2 _3*/
+   unsigned short filter[2];     /**< values of drp mmcm registers PEX_DRP_MMC_FILT_1 _2 */
+ };
+
+
+/** these are the primitive  parameters for GTX link speed definitions*/
+ struct pex_gtx_params
+ {
+   unsigned char qpll_fdiv;
+   unsigned char cpll_refclk_div;
+   unsigned char cpll_fbdiv_45;
+   unsigned char cpll_fbdiv;
+   unsigned char txout_div;
+   unsigned char rxout_div;
+ };
+
+ struct pex_mmcm_params
+  {
+    unsigned char clkout0_hitime;
+    unsigned char clkout0_lotime;
+    unsigned char clkout0_edge;
+    unsigned char clkbufout_hitime;
+    unsigned char clkbufout_lotime;
+    unsigned char clkbufout_edge;
+    unsigned char divclk_hitime;
+    unsigned char divclk_lotime;
+    unsigned char divclk_edge;
+    unsigned short lock[3];       /**< plain register values here, or reduced to 40 bit words*/
+    unsigned short filter[2];
+
+  };
 
 
 
@@ -169,6 +364,11 @@ struct pex_sfp
   dma_addr_t tk_mem_dma[PEX_SFP_NUMBER];  /**< token data memory area
                                                expressed as dma bus address */
   int num_slaves[PEX_SFP_NUMBER]; /**< number of initialized slaves, for bus broadcast*/
+  // JAM2022 below:
+  u32 *drp_port;                 /**< Dynamic reconfiguration port */
+  struct pex_gtx_set gtx_setup[PEX_SFP_NUMBER]; /**< gtx tranceiver speed setup of sfp 0...3 */
+  struct pex_mmcm_set mmcm_setup;    /**< mixed mode clock manager speed setup */
+  enum pex_linkspeed lspeed[PEX_SFP_NUMBER];  /**< link speed presets identifier, per channel */
 };
 
 
@@ -265,6 +465,59 @@ int pex_sfp_write_bus(struct pex_privdata* priv, struct pex_bus_io* data);
 int pex_sfp_read_bus(struct pex_privdata* priv, struct pex_bus_io* data);
 
 
+///////////////////////////////////////////////////////// new 2024:
+
+/* read value from address via drp port*/
+int pex_drp_read(struct pex_privdata* priv, unsigned short address, unsigned short* value);
+
+/* write value via drp port*/
+int pex_drp_write(struct pex_privdata* priv, unsigned short address, unsigned short value);
+
+
+
+
+/** configure gtx and mmcm depending on desired setup*/
+int pex_ioctl_set_linkspeed(struct pex_privdata* privdata, struct pex_linkspeed_set* data);
+
+
+/** configure speed for given sfp channels. configure all channels if ch<0 (broadcast mode)*/
+int pex_configure_linkspeed(struct pex_privdata* privdata, int ch, enum pex_linkspeed setup);
+
+
+/** refresh information of linkspeed from drp registers into privdata cache*/
+int pex_read_linkspeed_registers(struct pex_privdata* privdata);
+
+
+/** apply linkspeed setup from privdata to the drp registers*/
+int pex_write_linkspeed_registers(struct pex_privdata* privdata);
+
+
+
+/** configure speed of GTX for given channel*/
+int pex_gtx_configure(struct pex_privdata* priv, struct pex_gtx_set* conf);
+
+/** configure MMCM for new channel speed*/
+int pex_mmcm_configure(struct pex_privdata* priv, struct pex_mmcm_set* conf);
+
+/** Define the default values for the possible gtx setup*/
+void pex_gtx_init_defaults(void);
+
+/** Define the default values for the possible mmcm setup*/
+void pex_mmcm_init_defaults(void);
+
+
+/* convert kinpex gtx register contents to appropriate paramter structure **/
+void pex_gtx_register2pars(struct pex_gtx_set* conf, struct pex_gtx_params* pars);
+
+/* convert kinpex gtx parameters to appropriate kinpex register contents **/
+void pex_gtx_pars2register(struct pex_gtx_params* pars, struct pex_gtx_set* conf);
+
+/* convert kinpex gtx register contents to appropriate paramter structure **/
+void pex_mmcm_register2pars(struct pex_mmcm_set* conf, struct pex_mmcm_params* pars);
+
+/* convert kinpex gtx parameters to appropriate kinpex register contents **/
+void pex_mmcm_pars2register(struct pex_mmcm_params* pars, struct pex_mmcm_set* conf);
+
 
 #ifdef PEX_SYSFS_ENABLE
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
@@ -272,6 +525,11 @@ int pex_sfp_read_bus(struct pex_privdata* priv, struct pex_bus_io* data);
 ssize_t pex_sysfs_sfpregs_show(struct device *dev,
                                  struct device_attribute *attr, char *buf);
 
+
+ssize_t pex_sysfs_linkspeed_show(struct device *dev,
+                                 struct device_attribute *attr, char *buf);
+
+ssize_t  pex_sysfs_linkspeed_store (struct device *dev, struct device_attribute *attr, const char *buf, size_t count);
 
 #endif
 #endif
