@@ -234,8 +234,9 @@
   pex_msg(KERN_NOTICE "%s", txt);
 
 
-/* reference clock*/
-#define PEX_GTX_REF_CLOCK 125.0E+6
+/* reference clock frequency, MHz*/
+#define PEX_GTX_REF_CLOCK 125
+// no floats in the kernel please 125.0E+6 :-))
 #define PEX_GTX_REF_CLOCK_TEXT "125 MHz"
 
 #define PEX_DRP_CHECK(X,Y) \

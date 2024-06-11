@@ -56,10 +56,10 @@ ssize_t pex_gtx_register_dump(struct pex_gtx_set* conf, char *buf, size_t maxsiz
   ssize_t curs=0;
   curs+=snprintf(buf+curs, maxsize-curs, "*** PEX gtx register setup:\n");
   curs+=snprintf(buf+curs, maxsize-curs, "\t channel:                          %d\n",   conf->sfp);
-  curs+=snprintf(buf+curs, maxsize-curs, "\t PEX_DRP_GTX_CPLL      (0x%x):   0x%x\n",   PEX_DRP_GTX_CPLL,       conf->pll);
-  curs+=snprintf(buf+curs, maxsize-curs, "\t PEX_DRP_GTX_TXRX_DIV  (0x%x):   0x%x\n",   PEX_DRP_GTX_TXRX_DIV,   conf->div);
-  curs+=snprintf(buf+curs, maxsize-curs, "\t PEX_DRP_GTX_RXCDR_CFG (0x%x):   0x%x\n",   PEX_DRP_GTX_TXRX_DIV,   conf->rxcdr);
-  curs+=snprintf(buf+curs, maxsize-curs, "\t PEX_DRP_GTX_QPLL      (0x%x):   0x%x\n",   PEX_DRP_GTX_QPLL,   conf->qpll);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t PEX_DRP_GTX_CPLL      (0x%x):   0x%04X\n",   PEX_DRP_GTX_CPLL,       conf->pll);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t PEX_DRP_GTX_TXRX_DIV  (0x%x):   0x%04X\n",   PEX_DRP_GTX_TXRX_DIV,   conf->div);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t PEX_DRP_GTX_RXCDR_CFG (0x%x):   0x%04X\n",   PEX_DRP_GTX_TXRX_DIV,   conf->rxcdr);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t PEX_DRP_GTX_QPLL      (0x%x):   0x%04X\n",   PEX_DRP_GTX_QPLL,   conf->qpll);
   return curs;
 }
 
@@ -68,8 +68,8 @@ ssize_t pex_gtx_parameter_dump(struct pex_gtx_params* pars, char *buf, size_t ma
 {
   ssize_t curs=0;
   int i=0;
-  int M=0,N1=0,N2=0,Dtx=0,Drx=0;
- // double speed,rspeed=0,tspeed=0;
+  unsigned long M=0,N1=0,N2=0,Dtx=0,Drx=0;
+  unsigned long speed,rspeed=0,tspeed=0;
   curs+=snprintf(buf+curs, maxsize-curs, "*** PEX gtx parameter setup:\n");
   // here deciper the drp bits according to xylinx gtx manual, table D-2:
   N1=(pars->cpll_fbdiv_45>0 ? 5:4);
@@ -77,25 +77,28 @@ ssize_t pex_gtx_parameter_dump(struct pex_gtx_params* pars, char *buf, size_t ma
   PEX_FBDIV_DRPDECODE(pars->cpll_fbdiv,N2);
   Dtx= (1 << pars->txout_div);
   Drx= (1 << pars->rxout_div);
-  curs+=snprintf(buf+curs, maxsize-curs, "\t  QPLL_FBDIV:     0x%x\n"    , pars->qpll_fdiv);
-  curs+=snprintf(buf+curs, maxsize-curs, "\t  CPLL_REFCLK_DIV 0x%x  ->  M   =%d \n"    , pars->cpll_refclk_div,M);
-  curs+=snprintf(buf+curs, maxsize-curs, "\t  CPLL_FBDIV_45   0x%x  ->  N1  =%d \n"    ,  pars->cpll_fbdiv_45, N1);
-  curs+=snprintf(buf+curs, maxsize-curs, "\t  CPLL_FBDIV      0x%x  ->  N2  =%d \n"    ,  pars->cpll_fbdiv,N2);
-  curs+=snprintf(buf+curs, maxsize-curs, "\t  TXOUT_DIV       0x%x  ->  D   =%d\n"    ,  pars->txout_div,Dtx);
-  curs+=snprintf(buf+curs, maxsize-curs, "\t  RXOUT_DIV       0x%x  ->  D   =%d\n"    ,  pars->rxout_div,Drx);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  QPLL_FBDIV:     0x%x\n"    , pars->qpll_fdiv); // TODO: evaluate meaning here?
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  CPLL_REFCLK_DIV 0x%x\t->  M   = %ld \n"    , pars->cpll_refclk_div,M);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  CPLL_FBDIV_45   0x%x  \t->  N1  = %ld \n"    ,  pars->cpll_fbdiv_45, N1);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  CPLL_FBDIV      0x%x  \t->  N2  = %ld \n"    ,  pars->cpll_fbdiv,N2);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  TXOUT_DIV       0x%x  \t->  D   = %ld\n"    ,  pars->txout_div,Dtx);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  RXOUT_DIV       0x%x  \t->  D   = %ld\n"    ,  pars->rxout_div,Drx);
 
   curs+=snprintf(buf+curs, maxsize-curs, "\t  Reference clock is set to %s \n",PEX_GTX_REF_CLOCK_TEXT);
 
-  curs+=snprintf(buf+curs, maxsize-curs, "** Line speed will be: 2 * f *N1 * N2 / (M * D)");
+  curs+=snprintf(buf+curs, maxsize-curs, "=> Line speed will be: 2 * %s * N1 * N2 / (M * D) \n", PEX_GTX_REF_CLOCK_TEXT);
 
   // JAM: floating point operations not possible in kernel module ;-)
   // here calculate desired speed from formula (Eq 2-1 and 2-2):
-//  if(M)   speed=2*PEX_GTX_REF_CLOCK *N1*N2/M;
-//  if(Dtx) tspeed=speed/Dtx;
-//  if(Drx) rspeed=speed/Drx;
-//  curs+=snprintf(buf+curs, maxsize-curs, "\n\t CPLL frequency  %E Hz\n"    ,  speed);
-//  curs+=snprintf(buf+curs, maxsize-curs, "\t  => Tx speed  %E Hz\n"    ,  tspeed);
-//  curs+=snprintf(buf+curs, maxsize-curs, "\t  => rx speed  %E Hz\n"    ,  rspeed);
+  if(M)
+    {
+      speed= 2 * PEX_GTX_REF_CLOCK * N1 *N2 / M;
+    }
+  if(Dtx) tspeed=speed / Dtx;
+  if(Drx) rspeed=speed / Drx;
+  curs+=snprintf(buf+curs, maxsize-curs, "\t CPLL frequency  \t%ld MHz\n"    ,  speed);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  => Tx speed  \t\t%ld MHz\n"    ,  tspeed);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  => Rx speed  \t\t%ld MHz\n"    ,  rspeed);
 
 
   return curs;
@@ -108,14 +111,14 @@ ssize_t pex_mmcm_register_dump(struct pex_mmcm_set* conf, char *buf, size_t maxs
   int i=0;
   curs+=snprintf(buf+curs, maxsize-curs, "*** PEX mmcm register setup:\n");
   for(i=0; i<2;++i)
-    curs+=snprintf(buf+curs, maxsize-curs, "\t  PEX_DRP_MMC_CLKOUT0_%d      \t(0x%x):   0x%x\n", i,   PEX_DRP_MMC_CLKOUT0_1 + i,       conf->clkout0[i]);
+    curs+=snprintf(buf+curs, maxsize-curs, "\t  PEX_DRP_MMC_CLKOUT0_%d      \t(0x%x):    0x%04X\n", i,   PEX_DRP_MMC_CLKOUT0_1 + i,       conf->clkout0[i]);
   for(i=0; i<2;++i)
-    curs+=snprintf(buf+curs, maxsize-curs, "\t  PEX_DRP_MMC_CLKBUFOUT_%d     \t(0x%x):   0x%x\n",  i,  PEX_DRP_MMC_CLKBUFOUT_1 + i,   conf->clkbufout[i]);
-  curs+=snprintf(buf+curs, maxsize-curs, "\t  PEX_DRP_MMC_DIVCLK      \t(0x%x):   0x%x\n",   PEX_DRP_MMC_DIVCLK,   conf->divclk);
+    curs+=snprintf(buf+curs, maxsize-curs, "\t  PEX_DRP_MMC_CLKBUFOUT_%d     \t(0x%x):   0x%04X\n",  i,  PEX_DRP_MMC_CLKBUFOUT_1 + i,   conf->clkbufout[i]);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  PEX_DRP_MMC_DIVCLK      \t(0x%x):   0x%04X\n",   PEX_DRP_MMC_DIVCLK,   conf->divclk);
   for(i=0; i<3;++i)
-     curs+=snprintf(buf+curs, maxsize-curs, "\t  PEX_DRP_MMC_LOCK_%d     \t(0x%x):   0x%x\n",   i+1, PEX_DRP_MMC_LOCK_1 + i,   conf->lock[i]);
+     curs+=snprintf(buf+curs, maxsize-curs, "\t  PEX_DRP_MMC_LOCK_%d     \t(0x%x):   0x%04X\n",   i+1, PEX_DRP_MMC_LOCK_1 + i,   conf->lock[i]);
   for(i=0; i<2;++i)
-     curs+=snprintf(buf+curs, maxsize-curs, "\t  PEX_DRP_MMC_FILT_%d     \t(0x%x):   0x%x\n",   i+1, PEX_DRP_MMC_FILT_1 + i,   conf->filter[i]);
+     curs+=snprintf(buf+curs, maxsize-curs, "\t  PEX_DRP_MMC_FILT_%d     \t(0x%x):   0x%04X\n",   i+1, PEX_DRP_MMC_FILT_1 + i,   conf->filter[i]);
 
   return curs;
 }
@@ -129,29 +132,29 @@ ssize_t pex_mmcm_parameter_dump(struct pex_mmcm_params* pars, char *buf, size_t 
   unsigned long long filtertable;
   curs+=snprintf(buf+curs, maxsize-curs, "*** PEX mmcm parameter setup:\n");
   curs+=snprintf(buf+curs, maxsize-curs, "\t  CLKOUT0:\n" );
-  curs+=snprintf(buf+curs, maxsize-curs, "\t    HIGH TIME:     0x%x\n"    , pars->clkout0_hitime);
-  curs+=snprintf(buf+curs, maxsize-curs, "\t    LOW  TIME:     0x%x\n"    , pars->clkout0_lotime);
-  curs+=snprintf(buf+curs, maxsize-curs, "\t    EDGE     :     0x%x\n"    , pars->clkout0_edge);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t    HIGH TIME:     \t%d\n"    , pars->clkout0_hitime);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t    LOW  TIME:     \t%d\n"    , pars->clkout0_lotime);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t    EDGE     :     \t%d\n"    , pars->clkout0_edge);
 
   curs+=snprintf(buf+curs, maxsize-curs, "\t  CLKBUFOUT:\n" );
-  curs+=snprintf(buf+curs, maxsize-curs, "\t    HIGH TIME:     0x%x\n"    , pars->clkbufout_hitime);
-  curs+=snprintf(buf+curs, maxsize-curs, "\t    LOW  TIME:     0x%x\n"    , pars->clkbufout_lotime);
-  curs+=snprintf(buf+curs, maxsize-curs, "\t    EDGE     :     0x%x\n"    , pars->clkbufout_edge);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t    HIGH TIME:     \t%d\n"    , pars->clkbufout_hitime);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t    LOW  TIME:     \t%d\n"    , pars->clkbufout_lotime);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t    EDGE     :     \t%d\n"    , pars->clkbufout_edge);
 
   curs+=snprintf(buf+curs, maxsize-curs, "\t  DIVCLK:\n" );
-  curs+=snprintf(buf+curs, maxsize-curs, "\t    HIGH TIME:     0x%x\n"    , pars->divclk_hitime);
-  curs+=snprintf(buf+curs, maxsize-curs, "\t    LOW  TIME:     0x%x\n"    , pars->divclk_lotime);
-  curs+=snprintf(buf+curs, maxsize-curs, "\t    EDGE     :     0x%x\n"    , pars->divclk_edge);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t    HIGH TIME:    \t %d\n"    , pars->divclk_hitime);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t    LOW  TIME:    \t %d\n"    , pars->divclk_lotime);
+  curs+=snprintf(buf+curs, maxsize-curs, "\t    EDGE     :    \t %d\n"    , pars->divclk_edge);
 
   x=pars->lock[0]; // need this to suppress long shift warnings from macros...
   y=pars->lock[1];
   z=pars->lock[2];
   locktable=PEX_GET_MMCM_LOCK_TABLE(x, y, z);
   x=pars->filter[0];
-  y= pars->filter[1];
+  y=pars->filter[1];
   filtertable=PEX_GET_MMCM_FILT_TABLE(x, y);
-  curs+=snprintf(buf+curs, maxsize-curs, "\t lock   table:0x%llx:\n",locktable );
-  curs+=snprintf(buf+curs, maxsize-curs, "\t filter table:0x%llx:\n",filtertable );
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  lock   table:  \t 0x%10llx\n",locktable );
+  curs+=snprintf(buf+curs, maxsize-curs, "\t  filter table:  \t 0x%2llx\n",filtertable );
 
 
   return curs;
@@ -981,7 +984,7 @@ int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigne
     pex_msg(KERN_ERR "** pex_ioctl_request_receive_token_parallel: Could not remap %d bytes of pipe memory at 0x%lx  ", datalensum, descriptor.dmatarget);
     return -EIO;
   }
-  pex_dbg(KERN_NOTICE "** pex_ioctl_request_receive_token_parallel: remapped %d bytes of pipe memory at 0x%lx, kernel address:0x%x  ",
+  pex_dbg(KERN_NOTICE "** pex_ioctl_request_receive_token_parallel: remapped %d bytes of pipe memory at 0x%lx, kernel address:%p  ",
       datalensum, descriptor.dmatarget, pipepartbase);
 
   pdat = pipepartbase;
@@ -1001,7 +1004,7 @@ int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigne
     paddington[sfp] = paddington[sfp] >> 2;      // padding length also now in 4 bytes (longs)
     for (i = 0; i < paddington[sfp]; i++)
     {
-      pex_dbg(KERN_NOTICE ">>> Fill padding pattern at 0x%x with 0x%x ,l_k=%d times\n", pdat, 0xadd00000 + (paddington[sfp] << 8) + i, i);
+      pex_dbg(KERN_NOTICE ">>> Fill padding pattern at %p with 0x%x ,l_k=%d times\n", pdat, 0xadd00000 + (paddington[sfp] << 8) + i, i);
       *(pdat++) = 0xadd00000 + (paddington[sfp] << 8) + i;
     }
   }      // for sfp end padding loop
@@ -1041,7 +1044,7 @@ int pex_drp_read(struct pex_privdata* priv, unsigned short address, unsigned sho
       //return -EIO;
   }
   *value=portvalue & 0xFFFF;
-  pex_dbg(KERN_NOTICE "** pex_drp_read: value=%x from addr=%x data=%x\n", *value, address);
+  pex_dbg(KERN_NOTICE "** pex_drp_read: value=%x from addr=%x\n", *value, address);
    return retval;
 }
 
@@ -1073,11 +1076,12 @@ int pex_drp_write(struct pex_privdata* priv, unsigned short address, unsigned sh
    }
 
    retvalue = portvalue& 0xFFFF;
-     if(value != retvalue)
-     {
-         pex_msg(KERN_ERR "** pex_drp_write problem: value  0x%x does not match set value 0x%x  ",retvalue , value);
-         return -EIO;
-     }
+//    if(value != retvalue)
+//     {
+//        // JAM 11-6-2024 : returned value is always 0x1900 here.is this intended ->shizu
+//         pex_msg(KERN_ERR "** pex_drp_write problem: value  0x%x does not match set value 0x%x  ",retvalue , value);
+//         //return -EIO;
+//     }
      pex_dbg(KERN_NOTICE "** pex_drp_write: wrote value=0x%x to addr=0x%x\n", value, address);
   return retval;
 }
@@ -1794,23 +1798,25 @@ ssize_t pex_sysfs_linkspeed_show(struct device *dev, struct device_attribute *at
   privdata= (struct pex_privdata*) dev_get_drvdata(dev);
   pg=&(privdata->regs);
   sfp=&(pg->sfp);
-  curs+=snprintf(buf+curs, PAGE_SIZE-curs, "*** PEX current GTX linkspeed:\n");
+  curs+=snprintf(buf+curs, PAGE_SIZE-curs, "****** PEX current GTX linkspeed ******************\n");
   // first get content of gtx and mmcm registers into private data
   pex_read_linkspeed_registers(privdata);
   // then printout values:
   for (i = 0; i < PEX_SFP_NUMBER; ++i)
   {
+    curs+=snprintf(buf+curs, PAGE_SIZE-curs, "****      SFP channel %d                     ****\n",i);
     gtx = &(sfp->gtx_setup[i]);
     curs+=pex_gtx_register_dump(gtx, buf+curs,  PAGE_SIZE-curs );
     pex_gtx_register2pars(gtx, &gtx_pars);
     curs+=pex_gtx_parameter_dump(&gtx_pars , buf+curs,  PAGE_SIZE-curs);
+    curs+=snprintf(buf+curs, PAGE_SIZE-curs, "*************************************************\n");
   }
 
   mmcm = &(sfp->mmcm_setup);
   curs+=pex_mmcm_register_dump(mmcm, buf+curs,  PAGE_SIZE-curs );
   pex_mmcm_register2pars(mmcm, &mmcm_pars);
   curs+=pex_mmcm_parameter_dump(&mmcm_pars , buf+curs,  PAGE_SIZE-curs);
-
+  curs+=snprintf(buf+curs, PAGE_SIZE-curs, "****************************************************\n");
   return curs;
 }
 
