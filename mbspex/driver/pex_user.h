@@ -111,7 +111,8 @@ enum pex_linkspeed
   PEX_SPEED_2_GBS,
   PEX_SPEED_2_5_GBS,
   PEX_SPEED_3_125_GBS,
-  PEX_SPEED_5_GBS
+  PEX_SPEED_5_GBS,
+  PEX_SPEED_6_250_GBS
 };
 
 

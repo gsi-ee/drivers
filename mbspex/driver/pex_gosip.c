@@ -48,7 +48,9 @@ static char gLinkspeed[PEX_MAX_SPEEDSETUP][64] = {
     "2.0 Gb",
     "2.5 Gb",
     "3.125 Gb",
-    "5.0 Gb"};
+    "5.0 Gb",
+    "6.250"
+    };
 
 
 ssize_t pex_gtx_register_dump(struct pex_gtx_set* conf, char *buf, size_t maxsize)
@@ -326,6 +328,25 @@ void pex_gtx_init_defaults (void)
 #endif
   }
 
+
+  speed = PEX_SPEED_6_250_GBS;
+    for (ch = 0; ch < PEX_SFP_NUMBER; ++ch)
+    {
+      theSetup = &gPrefsGtx[speed][ch];
+      thePars = &gParamsGtx[speed][ch];
+      theSetup->sfp = ch;
+      theSetup->pll = 0x1083;
+      theSetup->div = 0x0000;
+      theSetup->rxcdr = 0x1040;
+      theSetup->qpll = 0x0080;
+      pex_gtx_register2pars (theSetup, thePars);
+  #ifdef  PEX_GTXDEBUG
+      PEX_GTX_SETUPDUMP(speed);
+  #endif
+    }
+
+
+
 }
 
 void pex_mmcm_init_defaults (void)
@@ -414,6 +435,27 @@ void pex_mmcm_init_defaults (void)
 #ifdef PEX_GTXDEBUG
   PEX_MMCM_SETUPDUMP(speed);
 #endif
+
+
+  speed = PEX_SPEED_6_250_GBS;
+  theSetup = &gPrefsMmcm[speed];
+  thePars = &gParamsMmcm[speed];
+  theSetup->clkout0[0] = 0x1082;
+  theSetup->clkout0[1] = 0x0000;
+  theSetup->clkbufout[0] = 0x1083;
+  theSetup->clkbufout[1] = 0x0080;
+  theSetup->divclk = 0x1041;
+  theSetup->lock[0] = 0x03E8;
+  theSetup->lock[1] = 0x3801;
+  theSetup->lock[2] = 0xBBE9;
+  theSetup->filter[0] = 0x9108;
+  theSetup->filter[1] = 0x1900;
+
+  pex_mmcm_register2pars (theSetup, thePars);
+#ifdef PEX_GTXDEBUG
+  PEX_MMCM_SETUPDUMP(speed);
+#endif
+
 
 
 }
@@ -1090,17 +1132,19 @@ int pex_drp_write(struct pex_privdata* priv, unsigned short address, unsigned sh
 
 
 
-int pex_ioctl_set_linkspeed(struct pex_privdata* privdata, struct pex_linkspeed_set* data)
+int pex_ioctl_set_linkspeed(struct pex_privdata* privdata, unsigned long arg)
 {
   int retval = 0;
-  struct pex_sfp* sfp;
-  struct regs_pex *pg;
-  pg=&(privdata->regs);
-  sfp=&(pg->sfp);
-
-  /////// TODO:
-
-
+  int ch=0;
+  enum pex_linkspeed setup;
+  struct pex_linkspeed_set descriptor;
+  retval = pex_copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_linkspeed_set));
+    if (retval)
+      return retval;
+   ch=descriptor.sfp;
+   setup=descriptor.specs;
+  retval=pex_configure_linkspeed(privdata, ch, setup);
+  if(retval) return -EIO;
   return retval;
 }
 
@@ -1142,10 +1186,6 @@ int pex_configure_linkspeed(struct pex_privdata* privdata, int ch, enum pex_link
 
   // now apply setup from privdata cache to kinpex hardware:
   return pex_write_linkspeed_registers(privdata);
-
-
-
-
   return retval;
 }
 

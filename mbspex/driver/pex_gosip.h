@@ -245,7 +245,7 @@
           return X;\
         }\
 
-#define PEX_MAX_SPEEDSETUP 5
+#define PEX_MAX_SPEEDSETUP 6
 
 
 ///////////////////////////////////////////////////77
@@ -455,6 +455,10 @@ int pex_ioctl_configure_bus(struct pex_privdata* priv, unsigned long arg);
 /** pass information about configured slaves to user*/
 int pex_ioctl_get_sfp_links(struct pex_privdata* privdata, unsigned long arg);
 
+/** configure gtx and mmcm depending on desired setup*/
+int pex_ioctl_set_linkspeed(struct pex_privdata* privdata,  unsigned long arg);
+
+
 /** write values as specified in data to frontend and optionally treat broadcast write
  * if sfp or slave numbers are negative*/
 int pex_sfp_broadcast_write_bus(struct pex_privdata* priv, struct pex_bus_io* data);
@@ -473,12 +477,6 @@ int pex_drp_read(struct pex_privdata* priv, unsigned short address, unsigned sho
 
 /* write value via drp port*/
 int pex_drp_write(struct pex_privdata* priv, unsigned short address, unsigned short value);
-
-
-
-
-/** configure gtx and mmcm depending on desired setup*/
-int pex_ioctl_set_linkspeed(struct pex_privdata* privdata, struct pex_linkspeed_set* data);
 
 
 /** configure speed for given sfp channels. configure all channels if ch<0 (broadcast mode)*/

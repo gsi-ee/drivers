@@ -45,3 +45,12 @@ ln -sf /dev/${device} /dev/pexor
 
 ls -l /dev/*pex*
 
+if  [ -e "/sys/class/${class}/${device}/gosipbuswait" ]
+	then
+	echo "opening  sysfs handles at /sys/class/${class}/${device}"
+	chmod a+rw  /sys/class/${class}/${device}/linkspeed
+	chmod a+rw  /sys/class/${class}/${device}/gosipretries
+	chmod a+rw  /sys/class/${class}/${device}/gosipbuswait	
+fi
+
+
