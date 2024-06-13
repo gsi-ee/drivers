@@ -57,7 +57,7 @@ struct pex_pipebuf {
 
 struct pex_dma_io {
     unsigned int source;     /**< DMA source start address on the *pex* pciEx board*/
-    unsigned int target;     /**< physical DMA target start address in host memory*/
+    unsigned long target;     /**< physical DMA target start address in host memory*/
     unsigned long virtdest;   /**< virtual target start address in readout process. only for pipe type 4 with sg mapping*/
     unsigned int size;      /**< size of bytes to transfer. returns real transfer size*/
     unsigned int burst;     /**< burst lenght in bytes*/
@@ -105,6 +105,9 @@ struct pex_trixor_set {
 ////////////// JAM 2024: new for changing link speeds
 
 /* this one is for user space ioctls: */
+
+#define PEX_MAX_SPEEDSETUP 6
+
 enum pex_linkspeed
 {
   PEX_SPEED_NONE,
@@ -114,6 +117,16 @@ enum pex_linkspeed
   PEX_SPEED_5_GBS,
   PEX_SPEED_6_250_GBS
 };
+
+/** relate speed setup index to desired link speed */
+static char gLinkspeed[PEX_MAX_SPEEDSETUP][64] = {
+    "none",
+    "2.0 Gb",
+    "2.5 Gb",
+    "3.125 Gb",
+    "5.0 Gb",
+    "6.250"
+    };
 
 
 struct pex_linkspeed_set

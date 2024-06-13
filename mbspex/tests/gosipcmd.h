@@ -5,7 +5,7 @@
  * \file
  * Command line interface for gosip io protocol with mbxpex library
  * \author J.Adamczewski-Musch (j.adamczewski@gsi.de)
- * \date 26-Aug_2014
+ * \date 26-Aug_2014- 14-Jun-2024
  *
  */
 
@@ -48,7 +48,8 @@ typedef enum
   GOSIP_SETBIT,
   GOSIP_CLEARBIT,
   GOSIP_CONFIGURE,
-  GOSIP_VERIFY
+  GOSIP_VERIFY,
+  GOSIP_SETSPEED
 } gos_cmd_id;
 
 
@@ -128,6 +129,9 @@ int goscmd_busio(struct gosip_cmd* com);
 
 /** initialize sfp chain*/
 int goscmd_init(struct gosip_cmd* com);
+
+/** change sfp chain link speed*/
+int goscmd_set_speed (struct gosip_cmd* com);
 
 /** load register values from configuration file*/
 int goscmd_configure(struct gosip_cmd* com);

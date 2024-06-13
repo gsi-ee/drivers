@@ -2,7 +2,7 @@
  * \file
  *  Command line interface for gosip io protocol with mbxpex library
  * \author J.Adamczewski-Musch (j.adamczewski@gsi.de)
- * \date 26-Aug_2014
+ * \date 26-Aug_2014 - 14-Jun-2024
  *
  */
 
@@ -72,6 +72,9 @@ void goscmd_assert_arguments (struct gosip_cmd* com, int arglen)
     do_exit = 1;
   if ((com->command == GOSIP_CLEARBIT) && (arglen < 4))
     do_exit = 1;
+  if ((com->command == GOSIP_SETSPEED) && (arglen < 2))
+     do_exit = 1;
+
   if (do_exit)
   {
     printm (" gosipcmd ERROR - number of parameters not sufficient for command!\n");
@@ -87,7 +90,7 @@ void goscmd_assert_command (struct gosip_cmd* com)
     do_exit = 1;
   if (com->fd_pex < 0)
     do_exit = 1;
-  if ((com->command != GOSIP_CONFIGURE) && (com->command != GOSIP_VERIFY) && (com->command != GOSIP_RESET))
+  if ((com->command != GOSIP_CONFIGURE) && (com->command != GOSIP_VERIFY) && (com->command != GOSIP_RESET) && (com->command != GOSIP_SETSPEED))
   {
     if (com->sfp < -1) /*allow broadcast statements -1*/
       do_exit = 1;
@@ -144,6 +147,9 @@ char* goscmd_get_description (struct gosip_cmd* com)
     case GOSIP_CLEARBIT:
       snprintf (CommandDescription, GOSIP_MAXTEXT, "Clear Bitmask");
       break;
+    case GOSIP_SETSPEED:
+      snprintf (CommandDescription, GOSIP_MAXTEXT, "Set link speed");
+      break;
     default:
       snprintf (CommandDescription, GOSIP_MAXTEXT, "Unknown command");
       break;
@@ -188,7 +194,7 @@ int goscmd_open_configuration (struct gosip_cmd* com)
 
 int goscmd_close_configuration (struct gosip_cmd* com)
 {
-  fclose (com->configfile);
+  return (fclose (com->configfile));
 }
 
 int goscmd_next_config_values (struct gosip_cmd* com)
@@ -411,6 +417,16 @@ int goscmd_init (struct gosip_cmd* com)
   return (mbspex_slave_init (com->fd_pex, com->sfp, com->slave));
 }
 
+int goscmd_set_speed (struct gosip_cmd* com)
+{
+  goscmd_assert_command (com);
+  if (com->verboselevel)
+    goscmd_dump_command (com);
+  // we misuse the slave parameter for the speed specification here
+  return (mbspex_set_linkspeed (com->fd_pex, com->sfp, com->slave));
+}
+
+
 int goscmd_configure (struct gosip_cmd* com)
 {
   int rev = 0;
@@ -574,7 +590,7 @@ int goscmd_verify_single (struct gosip_cmd* com)
 int goscmd_broadcast (struct gosip_cmd* com)
 {
   int rev = 0;
-  int slavebroadcast, sfpbroadcast = 0;
+  int slavebroadcast=0, sfpbroadcast = 0;
   long sfpmax;
   long slavemax;
   if (com->verboselevel)
@@ -674,15 +690,16 @@ void goscmd_usage (const char *progname)
   printf ("***************************************************************************\n");
 
   printf (" %s for mbspex library  \n", progname);
-  printf (" v0.4242 4-Nov-2016 by JAM (j.adamczewski@gsi.de)\n");
+  printf (" v0.560 14-Jun-2024 by JAM (j.adamczewski@gsi.de)\n");
   printf ("***************************************************************************\n");
   printf (
-      "  usage: %s [-h|-z] [[-i|-r|-w|-s|-u] [-b] | [-c|-v FILE] [-n DEVICE |-d|-x] sfp slave [address [value [words]|[words]]]] \n",
+      "  usage: %s [-h|-z] [[-i|-l|-r|-w|-s|-u] [-b] | [-c|-v FILE] [-n DEVICE |-d|-x] sfp [slave | speed] [address [value [words]|[words]]]] \n",
       progname);
   printf ("\t Options:\n");
   printf ("\t\t -h        : display this help\n");
   printf ("\t\t -z        : reset (zero) pexor/kinpex board \n");
   printf ("\t\t -i        : initialize sfp chain \n");
+  printf ("\t\t -l        : set sfp chain Linkspeed \n");
   printf ("\t\t -r        : read from register \n");
   printf ("\t\t -w        : write to  register\n");
   printf ("\t\t -s        : set bits of given mask in  register\n");
@@ -702,6 +719,7 @@ void goscmd_usage (const char *progname)
   printf ("\t Examples:\n");
   printf ("\t  %s -z -n 1                   : master gosip reset of board /dev/pexor1 \n", progname);
   printf ("\t  %s -i 0 24                   : initialize chain at sfp 0 with 24 slave devices\n", progname);
+  printf ("\t  %s -l -- -1 2                : set all sfp chains to linkspeed setup 2 (2.5 Gb)\n", progname);
   printf ("\t  %s -r -x 1 0 0x1000          : read from sfp 1, slave 0, address 0x1000 and printout value\n", progname);
   printf ("\t  %s -r -x 0 3 0x1000 5        : read from sfp 0, slave 3, address 0x1000 next 5 words\n", progname);
   printf (
@@ -754,6 +772,9 @@ int goscmd_execute_command (struct gosip_cmd* com)
     case GOSIP_VERIFY:
       rev = goscmd_verify (com);
       break;
+    case GOSIP_SETSPEED:
+      rev = goscmd_set_speed (com);
+      break;
     default:
       printm ("Error: Unknown command %d \n", com->command);
       rev = -2;
@@ -774,7 +795,7 @@ int main (int argc, char *argv[])
 
   /* get arguments*/
   optind = 1;
-  while ((opt = getopt (argc, argv, "hzwrsuin:c:v:dxb")) != -1)
+  while ((opt = getopt (argc, argv, "hzwrsuiln:c:v:dxb")) != -1)
   {
     switch (opt)
     {
@@ -804,6 +825,9 @@ int main (int argc, char *argv[])
         break;
       case 'i':
         goscmd_set_command (&theCommand, GOSIP_INIT);
+        break;
+      case 'l':
+        goscmd_set_command (&theCommand, GOSIP_SETSPEED);
         break;
       case 'c':
         goscmd_set_command (&theCommand, GOSIP_CONFIGURE);

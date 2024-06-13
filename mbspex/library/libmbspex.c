@@ -21,6 +21,7 @@ struct pex_token_io token_descriptor;
 struct pex_reg_io   reg_descriptor;
 struct pex_dma_io   dma_descriptor;
 struct pex_pipebuf  pipe_descriptor;
+struct pex_linkspeed_set _speed_descriptor;
 
 #endif
 
@@ -68,6 +69,37 @@ int mbspex_reset (int handle)
 }
 
 /*****************************************************************************/
+
+
+int mbspex_set_linkspeed (int handle, long l_sfp, enum pex_linkspeed specs)
+{
+  int rev = 0, errsv=0;
+#ifndef MBSPEX_IOCTL_GLOBAL_DESCRIPTORS
+  struct pex_linkspeed_set speed_descriptor;
+#endif
+
+  mbspex_assert_handle(handle);
+  if(specs <=0 || specs>=PEX_MAX_SPEEDSETUP) return -1;
+  speed_descriptor.sfp = l_sfp;
+  speed_descriptor.specs = specs;
+  printm ("mbspex: Change  linkspeed of SFP chain %d to preset %d (%s Gb)...", l_sfp, specs,gLinkspeed[specs]);
+  rev = ioctl (handle, PEX_IOC_CHANGE_LINKSPEED, &speed_descriptor);
+  errsv = errno;
+  if (rev)
+  {
+    printm ("\n\nError %d  on  changing  linkspeed of SFP chain %d to preset %d (%s Gb) - %s\n", errsv, l_sfp, specs, strerror (errsv));
+  }
+  else
+  {
+    printm(" done!\n");
+  }
+  return rev;
+}
+
+
+
+
+
 
 int  mbspex_slave_init (int handle, long l_sfp, long l_n_slaves)
 
@@ -373,7 +405,7 @@ int mbspex_register_rd (int handle, unsigned char s_bar, long l_address, long * 
 }
 
 
-int mbspex_dma_rd (int handle, long source, long dest, long size, int burst)
+int mbspex_dma_rd (int handle, unsigned int source, unsigned long dest, unsigned int size, unsigned int burst)
 {
   int rev = 0, errsv = 0;;
 #ifndef MBSPEX_IOCTL_GLOBAL_DESCRIPTORS
@@ -384,6 +416,11 @@ int mbspex_dma_rd (int handle, long source, long dest, long size, int burst)
   dma_descriptor.target = dest;
   dma_descriptor.size = size;
   dma_descriptor.burst=burst;
+#if 0
+  // JAM24 debug
+  printm("libmbspex: mbspex_dma_rd: source:0x%x, target:0x%lx, size:0x%lx, burst:0x%x", dma_descriptor.source,  dma_descriptor.target,  dma_descriptor.size, dma_descriptor.burst);
+  //
+#endif
   rev = ioctl (handle, PEX_IOC_READ_DMA, &dma_descriptor);
   errsv = errno;
   if (rev)

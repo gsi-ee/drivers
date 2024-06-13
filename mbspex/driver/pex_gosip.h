@@ -245,7 +245,7 @@
           return X;\
         }\
 
-#define PEX_MAX_SPEEDSETUP 6
+
 
 
 ///////////////////////////////////////////////////77
@@ -492,11 +492,11 @@ int pex_write_linkspeed_registers(struct pex_privdata* privdata);
 
 
 
-/** configure speed of GTX for given channel*/
-int pex_gtx_configure(struct pex_privdata* priv, struct pex_gtx_set* conf);
-
-/** configure MMCM for new channel speed*/
-int pex_mmcm_configure(struct pex_privdata* priv, struct pex_mmcm_set* conf);
+///** configure speed of GTX for given channel*/
+//int pex_gtx_configure(struct pex_privdata* priv, struct pex_gtx_set* conf);
+//
+///** configure MMCM for new channel speed*/
+//int pex_mmcm_configure(struct pex_privdata* priv, struct pex_mmcm_set* conf);
 
 /** Define the default values for the possible gtx setup*/
 void pex_gtx_init_defaults(void);

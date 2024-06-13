@@ -1411,65 +1411,65 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
   switch (cmd)
   {
     case PEX_IOC_RESET:
-    pex_dbg(KERN_NOTICE "** pex_ioctl reset\n");
-    retval = pex_ioctl_reset(privdata,arg);
+      pex_dbg(KERN_NOTICE "** pex_ioctl reset\n");
+      retval = pex_ioctl_reset(privdata,arg);
     break;
 
     case PEX_IOC_TEST:
-    pex_dbg(KERN_NOTICE "** pex_ioctl test\n");
-    retval = pex_ioctl_test(privdata, arg);
+      pex_dbg(KERN_NOTICE "** pex_ioctl test\n");
+      retval = pex_ioctl_test(privdata, arg);
     break;
 
     case PEX_IOC_WRITE_BUS:
-    pex_dbg(KERN_NOTICE "** pex_ioctl write bus\n");
-    retval = pex_ioctl_write_bus(privdata, arg);
+      pex_dbg(KERN_NOTICE "** pex_ioctl write bus\n");
+      retval = pex_ioctl_write_bus(privdata, arg);
     break;
 
     case PEX_IOC_READ_BUS:
-    pex_dbg(KERN_NOTICE "** pex_ioctl read bus\n");
-    retval = pex_ioctl_read_bus(privdata, arg);
+      pex_dbg(KERN_NOTICE "** pex_ioctl read bus\n");
+      retval = pex_ioctl_read_bus(privdata, arg);
     break;
 
     case PEX_IOC_INIT_BUS:
-    pex_dbg(KERN_NOTICE "** pex_ioctl init bus\n");
-    retval = pex_ioctl_init_bus(privdata, arg);
+      pex_dbg(KERN_NOTICE "** pex_ioctl init bus\n");
+      retval = pex_ioctl_init_bus(privdata, arg);
     break;
 
     case PEX_IOC_CONFIG_BUS:
-    pex_dbg(KERN_NOTICE "** pex_ioctl config bus\n");
-    retval = pex_ioctl_configure_bus(privdata, arg);
+      pex_dbg(KERN_NOTICE "** pex_ioctl config bus\n");
+      retval = pex_ioctl_configure_bus(privdata, arg);
     break;
 
     case PEX_IOC_REQUEST_TOKEN:
-    pex_tdbg(KERN_NOTICE "** pex_ioctl request token\n");
-    retval = pex_ioctl_request_token(privdata, arg);
+      pex_tdbg(KERN_NOTICE "** pex_ioctl request token\n");
+      retval = pex_ioctl_request_token(privdata, arg);
     break;
 
     case PEX_IOC_WAIT_TOKEN:
-    pex_tdbg(KERN_NOTICE "** pex_ioctl wait token\n");
-    retval = pex_ioctl_wait_token(privdata, arg);
+      pex_tdbg(KERN_NOTICE "** pex_ioctl wait token\n");
+      retval = pex_ioctl_wait_token(privdata, arg);
     break;
 
     case PEX_IOC_REQUEST_RECEIVE_TOKENS:
-    pex_tdbg(KERN_NOTICE "** pex_ioctl request and receive parallel tokens\n");
-    retval = pex_ioctl_request_receive_token_parallel(privdata, arg);
+      pex_tdbg(KERN_NOTICE "** pex_ioctl request and receive parallel tokens\n");
+      retval = pex_ioctl_request_receive_token_parallel(privdata, arg);
     break;
 
 
     case PEX_IOC_WRITE_REGISTER:
-    pex_dbg(KERN_NOTICE "** pex_ioctl write register\n");
-    retval = pex_ioctl_write_register(privdata, arg);
-    break;
+      pex_dbg(KERN_NOTICE "** pex_ioctl write register\n");
+      retval = pex_ioctl_write_register(privdata, arg);
+      break;
 
     case PEX_IOC_READ_REGISTER:
-    pex_dbg(KERN_NOTICE "** pex_ioctl read register\n");
-    retval = pex_ioctl_read_register(privdata, arg);
-    break;
+      pex_dbg(KERN_NOTICE "** pex_ioctl read register\n");
+      retval = pex_ioctl_read_register(privdata, arg);
+      break;
 
     case PEX_IOC_READ_DMA:
-    pex_tdbg(KERN_NOTICE "** pex_ioctl read dma\n");
-    retval = pex_ioctl_read_dma(privdata, arg);
-    break;
+      pex_tdbg(KERN_NOTICE "** pex_ioctl read dma\n");
+      retval = pex_ioctl_read_dma(privdata, arg);
+      break;
 
     case PEX_IOC_READ_DMA_PIPE:
       pex_dbg(KERN_NOTICE "** pex_ioctl read dma_pipe\n");
@@ -1477,26 +1477,53 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
       break;
 
     case PEX_IOC_MAP_PIPE:
-      pex_msg(KERN_NOTICE "** pex_ioctl map pipe\n");
+      pex_dbg(KERN_NOTICE "** pex_ioctl map pipe\n");
       retval = pex_ioctl_map_pipe(privdata, arg);
       break;
 
     case PEX_IOC_UNMAP_PIPE:
-      pex_msg(KERN_NOTICE "** pex_ioctl unmap pipe\n");
+      pex_dbg(KERN_NOTICE "** pex_ioctl unmap pipe\n");
       retval = pex_ioctl_unmap_pipe(privdata, arg);
+      break;
+
+    case PEX_IOC_GET_SFP_LINKS:
+      pex_dbg(KERN_NOTICE "** pex_ioctl get sfp links\n");
+      retval = pex_ioctl_get_sfp_links(privdata, arg);
+      break;
+
+    case PEX_IOC_CHANGE_LINKSPEED:
+      pex_dbg(KERN_NOTICE "** pex_ioctl set linkspeed\n");
+      retval=pex_ioctl_set_linkspeed(privdata, arg);
+      break;
+
+
+    case GET_BAR0_BASE:
+    case PEX_IOC_GET_BAR0_BASE:
+      pex_dbg(KERN_INFO " before GET_BAR0_BASE \n");
+      retval = __put_user(privdata->l_bar0_base, (int __user *)arg);
+      pex_dbg(KERN_INFO " after  GET_BAR0_BASE \n");
       break;
 
 
 #ifdef PEX_WITH_TRIXOR
     case PEX_IOC_WAIT_TRIGGER:
-    pex_dbg(KERN_NOTICE "** pex_ioctl wait trigger\n");
-    retval = pex_ioctl_wait_trigger(privdata, arg);
-    break;
+      pex_dbg(KERN_NOTICE "** pex_ioctl wait trigger\n");
+      retval = pex_ioctl_wait_trigger(privdata, arg);
+      break;
 
     case PEX_IOC_SET_TRIXOR:
-    pex_dbg(KERN_NOTICE "** pex_ioctl set trixor\n");
-    retval = pex_ioctl_set_trixor(privdata, arg);
-    break;
+      pex_dbg(KERN_NOTICE "** pex_ioctl set trixor\n");
+      retval = pex_ioctl_set_trixor(privdata, arg);
+      break;
+
+    case GET_BAR0_TRIX_BASE:
+    case PEX_IOC_GET_BAR0_TRIX_BASE:
+      pex_dbg(KERN_INFO " before GET_TRIX_BASE \n");
+      retval = __put_user(privdata->l_bar0_trix_base, (int __user *)arg);
+      pex_dbg(KERN_INFO " after  GET_TRIX_BASE \n");
+      break;
+
+
 
 #ifdef  PEX_IRQ_WAITQUEUE
     case WAIT_SEM:
@@ -1562,23 +1589,7 @@ long pex_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 #endif /* irq waitqueue */
 #endif /* pex with trixor*/
-    case GET_BAR0_BASE:
-    case PEX_IOC_GET_BAR0_BASE:
-    pex_dbg(KERN_INFO " before GET_BAR0_BASE \n");
-    retval = __put_user(privdata->l_bar0_base, (int __user *)arg);
-    pex_dbg(KERN_INFO " after  GET_BAR0_BASE \n");
-    break;
-    case GET_BAR0_TRIX_BASE:
-    case PEX_IOC_GET_BAR0_TRIX_BASE:
-    pex_dbg(KERN_INFO " before GET_TRIX_BASE \n");
-    retval = __put_user(privdata->l_bar0_trix_base, (int __user *)arg);
-    pex_dbg(KERN_INFO " after  GET_TRIX_BASE \n");
-    break;
 
-    case PEX_IOC_GET_SFP_LINKS:
-    pex_dbg(KERN_NOTICE "** pex_ioctl get sfp links\n");
-    retval = pex_ioctl_get_sfp_links(privdata, arg);
-    break;
 
     default:
     retval=-ENOTTY;
@@ -2107,9 +2118,11 @@ static int probe (struct pci_dev *dev, const struct pci_device_id *id)
     }
 
 #endif
-
-
-
+    if(privdata->board_type == BOARDTYPE_KINPEX)
+    {
+      pex_msg( KERN_NOTICE "PEX: Set linkspeed of all chains to preset %d (%s)\n", 1, gLinkspeed[1]);
+      pex_configure_linkspeed(privdata,-1,1);
+    }
 
 #ifdef INTERNAL_TRIG_TEST
     // initalize TRIXOR only for internal tests

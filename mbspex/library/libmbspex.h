@@ -6,7 +6,7 @@
  * C user library to work with mbspex.ko kernel module
  *
  * \author JAM (Joern Adamczewski-Musch, GSI Darmstadt, Germany -- j.adamczewski@gsi.de)
- * \date 26-August-2014 -- 10-Sep-2015
+ * \date 26-August-2014 -- 10-Sep-2015 -- 13-06-2024:
  *
  */
 
@@ -15,6 +15,9 @@
  * */
 //#define MBSPEX_IOCTL_GLOBAL_DESCRIPTORS 1
 
+/** JAM 12-06-2024:
+ * added functions to change sfp link speed
+ * */
 
 
 #include "../include/pex_user.h"
@@ -60,6 +63,12 @@ int mbspex_slave_wr (int handle, long l_sfp, long l_slave, long l_slave_off, lon
 
 /** initialize chain at l_sfp with l_s_slaves number of slaves*/
 int mbspex_slave_init (int handle, long l_sfp, long l_n_slaves);
+
+/** set chain at l_sfp to specified linkspeed*/
+int mbspex_set_linkspeed (int handle, long l_sfp, enum pex_linkspeed specs);
+
+
+
 
 /** write block of configuration data to driver*/
 int mbspex_slave_config (int handle, struct pex_bus_config* config);
@@ -133,7 +142,7 @@ int mbspex_register_rd (int handle, unsigned char s_bar, long l_address, long * 
  * burst size may be specified, or 0 for automatic burst adjustment in driver
  * returns real number of bytes transferred, or -1 in case of error
  * This function will no sooner return than dma is complete*/
-int mbspex_dma_rd (int handle, long source, long dest, long size, int burst);
+int mbspex_dma_rd (int handle, unsigned int source, unsigned long dest, unsigned int size, unsigned int burst);
 
 /** transfer dma of size bytes from board source to virtual user space dest address.
  * Destination memory must be part of the virtual mbs pipe that has been mapped at iniatializatio to sg list
