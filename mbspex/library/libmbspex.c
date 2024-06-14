@@ -82,7 +82,8 @@ int mbspex_set_linkspeed (int handle, long l_sfp, enum pex_linkspeed specs)
   if(specs <=0 || specs>=PEX_MAX_SPEEDSETUP) return -1;
   speed_descriptor.sfp = l_sfp;
   speed_descriptor.specs = specs;
-  printm ("mbspex: Change  linkspeed of SFP chain %d to preset %d (%s Gb)...", l_sfp, specs,gLinkspeed[specs]);
+  printm ("mbspex: Change  linkspeed of %s%d) to preset %d (%s Gb)...",
+      (l_sfp<0 ? "all SFPs (id:": "SFP chain (%d") , l_sfp, specs,gLinkspeed[specs]);
   rev = ioctl (handle, PEX_IOC_CHANGE_LINKSPEED, &speed_descriptor);
   errsv = errno;
   if (rev)

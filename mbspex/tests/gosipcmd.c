@@ -8,6 +8,7 @@
 
 
 #include "gosipcmd.h"
+#include "../include/pex_user.h"
 #include <string.h>
 
 static char CommandDescription[GOSIP_MAXTEXT];
@@ -72,7 +73,7 @@ void goscmd_assert_arguments (struct gosip_cmd* com, int arglen)
     do_exit = 1;
   if ((com->command == GOSIP_CLEARBIT) && (arglen < 4))
     do_exit = 1;
-  if ((com->command == GOSIP_SETSPEED) && (arglen < 2))
+  if ((com->command == GOSIP_SETSPEED) && (arglen < 1))
      do_exit = 1;
 
   if (do_exit)
@@ -90,7 +91,7 @@ void goscmd_assert_command (struct gosip_cmd* com)
     do_exit = 1;
   if (com->fd_pex < 0)
     do_exit = 1;
-  if ((com->command != GOSIP_CONFIGURE) && (com->command != GOSIP_VERIFY) && (com->command != GOSIP_RESET) && (com->command != GOSIP_SETSPEED))
+  if ((com->command != GOSIP_CONFIGURE) && (com->command != GOSIP_VERIFY) && (com->command != GOSIP_RESET))
   {
     if (com->sfp < -1) /*allow broadcast statements -1*/
       do_exit = 1;
@@ -422,8 +423,9 @@ int goscmd_set_speed (struct gosip_cmd* com)
   goscmd_assert_command (com);
   if (com->verboselevel)
     goscmd_dump_command (com);
-  // we misuse the slave parameter for the speed specification here
-  return (mbspex_set_linkspeed (com->fd_pex, com->sfp, com->slave));
+  // we misuse the sfp parameter for the speed specification here
+  // always do broadcast option for all sfps, since kinpex can not run with different speed chains yet
+  return (mbspex_set_linkspeed (com->fd_pex, -1, com->sfp));
 }
 
 
@@ -687,19 +689,24 @@ int goscmd_output (struct gosip_cmd* com)
 
 void goscmd_usage (const char *progname)
 {
+  int i=0;
   printf ("***************************************************************************\n");
 
   printf (" %s for mbspex library  \n", progname);
-  printf (" v0.560 14-Jun-2024 by JAM (j.adamczewski@gsi.de)\n");
+  printf (" v0.561 14-Jun-2024 by JAM (j.adamczewski@gsi.de)\n");
   printf ("***************************************************************************\n");
   printf (
-      "  usage: %s [-h|-z] [[-i|-l|-r|-w|-s|-u] [-b] | [-c|-v FILE] [-n DEVICE |-d|-x] sfp [slave | speed] [address [value [words]|[words]]]] \n",
+      "  usage: %s [-h|-z] [[-i|-l|-r|-w|-s|-u] [-b] | [-c|-v FILE] [-n DEVICE |-d|-x] [sfp | speed] [slave [address [value [words]|[words]]]] \n",
       progname);
   printf ("\t Options:\n");
   printf ("\t\t -h        : display this help\n");
   printf ("\t\t -z        : reset (zero) pexor/kinpex board \n");
+  printf ("\t\t -l        : set gosip Linkspeed: ");
+  for(i=1;i<PEX_MAX_SPEEDSETUP;++i)
+      printf ("%d:(%s)\t",i,gLinkspeed[i]);
+  printf ("\n");
+
   printf ("\t\t -i        : initialize sfp chain \n");
-  printf ("\t\t -l        : set sfp chain Linkspeed \n");
   printf ("\t\t -r        : read from register \n");
   printf ("\t\t -w        : write to  register\n");
   printf ("\t\t -s        : set bits of given mask in  register\n");
@@ -718,8 +725,8 @@ void goscmd_usage (const char *progname)
   printf ("\t\t words    - number of words to read/write/set incrementally\n");
   printf ("\t Examples:\n");
   printf ("\t  %s -z -n 1                   : master gosip reset of board /dev/pexor1 \n", progname);
+  printf ("\t  %s -l 2                      : set all sfp chains to linkspeed setup 2 (2.5 Gb)\n", progname);
   printf ("\t  %s -i 0 24                   : initialize chain at sfp 0 with 24 slave devices\n", progname);
-  printf ("\t  %s -l -- -1 2                : set all sfp chains to linkspeed setup 2 (2.5 Gb)\n", progname);
   printf ("\t  %s -r -x 1 0 0x1000          : read from sfp 1, slave 0, address 0x1000 and printout value\n", progname);
   printf ("\t  %s -r -x 0 3 0x1000 5        : read from sfp 0, slave 3, address 0x1000 next 5 words\n", progname);
   printf (

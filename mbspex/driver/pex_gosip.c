@@ -42,15 +42,7 @@ static struct pex_fbdiv_decode gFbdivCode[16]={
 {20, 15},
 };
 
-/** relate speed setup index to desired link speed */
-//static char gLinkspeed[PEX_MAX_SPEEDSETUP][64] = {
-//    "none",
-//    "2.0 Gb",
-//    "2.5 Gb",
-//    "3.125 Gb",
-//    "5.0 Gb",
-//    "6.250"
-//    };
+
 
 
 ssize_t pex_gtx_register_dump(struct pex_gtx_set* conf, char *buf, size_t maxsize)
@@ -1158,7 +1150,7 @@ int pex_configure_linkspeed(struct pex_privdata* privdata, int ch, enum pex_link
   struct regs_pex *pg;
   pg=&(privdata->regs);
   sfp=&(pg->sfp);
-   if(setup <=0 || setup>=PEX_MAX_SPEEDSETUP) return -1;
+   if(setup <=0 || setup>=PEX_MAX_SPEEDSETUP ||  gosip_version<6 ) return -1;
   pex_msg(KERN_NOTICE "** pex_configure_linkspeed wants to set link speed type %d (%s) for SFP channel %d  ",setup, gLinkspeed[setup], ch);
 
   // first change speed status structures in driver privdata:
@@ -1369,28 +1361,6 @@ int pex_write_linkspeed_registers(struct pex_privdata* privdata)
 
    return retval;
 }
-
-///** configure speed of GTX for given channel*/
-//int pex_gtx_configure(struct pex_privdata* priv, struct pex_gtx_set* conf)
-//{
-//  int retval = 0;
-//
-//   /////// TODO:
-//
-//
-//   return retval;
-//}
-//
-///** configure MMCM for new channel speed*/
-//int pex_mmcm_configure(struct pex_privdata* priv, struct pex_mmcm_set* conf)
-//{
-//  int retval = 0;
-//
-//   /////// TODO:
-//
-//
-//   return retval;
-//}
 
 
 
@@ -1786,7 +1756,7 @@ void pex_show_version (struct pex_sfp* sfp, char* buf)
       version[0], version[1]);
 #ifdef PEX_SFP_USE_KINPEX_V5
   // this function is called in probe anyway. we use it to check if device understands fpga version 5
-  curs+=snprintf (txt+curs, 512-curs, " - kernel module wants to use kinpex gosip version 5....\n");
+  curs+=snprintf (txt+curs, 512-curs, " - kernel module wants to use kinpex gosip version > 5....\n");
   if(version[0]<5)
     {
     curs+=snprintf (txt+curs, 512-curs, " !!! FPGA gosip version is only %d.%d !!! downgrading driver features...\n",version[0], version[1]);
@@ -1795,6 +1765,7 @@ void pex_show_version (struct pex_sfp* sfp, char* buf)
   else
     {
     curs+=snprintf (txt+curs, 512-curs, "   OK! gosip version is %d.%d.\n",version[0], version[1]);
+    gosip_version=version[0];
     }
 #endif
 
@@ -1907,7 +1878,13 @@ ssize_t  pex_sysfs_linkspeed_store (struct device *dev, struct device_attribute 
   val=simple_strtoul(buf,&endp, 0);
   count= endp - buf; // do we need this?
 #endif
-  if(val<0 || val >= PEX_MAX_SPEEDSETUP)
+
+  if(gosip_version < 6)
+  {
+    pex_msg( KERN_NOTICE "PEX: gosipversion %d does not allow changing link speed. Do not change anything.", gosip_version);
+  }
+
+  if(val<0 || val >= PEX_MAX_SPEEDSETUP )
   {
     pex_msg( KERN_NOTICE "PEX: invalid linkspeed index %d! Do not change anything.", val);
   }

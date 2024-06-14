@@ -59,7 +59,7 @@
 
 #define PEXAUTHORS     "Nikolaus Kurz, Joern Adamczewski-Musch, EEL, GSI, 2015-2024"
 #define PEXDESC        "MBSPEX driver for PCIe DAQ with Multi Branch System"
-#define PEXVERSION     "3.00"
+#define PEXVERSION     "3.01"
 
 
 //#define PEX_DEBUGPRINT 1
@@ -69,7 +69,7 @@
 //#define PEX_TRIGGERDEBUG 1
 
 /* enable this to get printouts of GTX/MCMCM setups  */
-#define PEX_GTXDEBUG 1
+//#define PEX_GTXDEBUG 1
 
 
 /** this will enable a faster parameter copy between kernel and user space at ioctls
