@@ -125,7 +125,7 @@ static char gLinkspeed[PEX_MAX_SPEEDSETUP][64] = {
     "2.5 Gb",
     "3.125 Gb",
     "5.0 Gb",
-    "6.250"
+    "6.250 Gb"
     };
 
 
