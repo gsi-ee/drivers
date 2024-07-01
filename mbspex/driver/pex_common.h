@@ -59,7 +59,7 @@
 
 #define PEXAUTHORS     "Nikolaus Kurz, Joern Adamczewski-Musch, EEL, GSI, 2015-2024"
 #define PEXDESC        "MBSPEX driver for PCIe DAQ with Multi Branch System"
-#define PEXVERSION     "3.01"
+#define PEXVERSION     "3.02"
 
 
 //#define PEX_DEBUGPRINT 1
@@ -124,14 +124,15 @@
 #define PEX_DMA_MAXPOLLS 10000
 
 /** polling delay for each cycle in ns for dma complete bit*/
-#define PEX_DMA_POLLDELAY 0
+#define PEX_DMA_POLLDELAY 20
+// 0
 //20
 
 /** if set, we use a schedule() in the dma complete polling.
  * Note: according to linux kernel book, yield() will just prepare this
  * task to be scheduled in near future, but schedule() will initiate the
  * schedule directly*/
-#define PEX_DMA_POLL_SCHEDULE 0
+#define PEX_DMA_POLL_SCHEDULE 1
 //1
 
 /* with this define we can disable the ioctl semaphore

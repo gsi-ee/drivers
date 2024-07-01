@@ -519,6 +519,10 @@ int pex_poll_dma_complete (struct pex_privdata* priv)
     if (PEX_DMA_POLL_SCHEDULE)
       schedule ();
   };
+
+  // added JAM 14-06-2024 - protect subsequent read of dma length here!?
+//   pex_bus_delay();
+//   schedule ();
   pex_tdbg(KERN_ERR "pex_poll_dma_complete: returns...\n");
   return 0;
 }

@@ -865,7 +865,10 @@ int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigne
   phys_addr_t pipephys=0;
   phys_addr_t poff[PEX_SFP_NUMBER] = { 0 };    // pipe pointer offset
   u32 paddington[PEX_SFP_NUMBER] = { 0 };
-  u32 dmalen = 0, dmaburst = 0, tokenmemsize = 0, dmalencheck = 0, datalensum = 0, paddingdelta=0;
+  u32 dmalen = 0, dmaburst = 0, tokenmemsize = 0,  datalensum = 0, paddingdelta=0;
+#ifndef PEX_NO_PARALLAL_DMALENCHECK
+  u32 dmalencheck = 0;
+#endif
   u32* pipepartbase = 0;
   u32* pdat = 0;
 
@@ -988,6 +991,8 @@ int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigne
 
     if ((retval = pex_poll_dma_complete (priv)) != 0)
       return retval;
+
+#ifndef PEX_NO_PARALLAL_DMALENCHECK
     /* find out real package length after dma:*/
     dmalencheck = ioread32 (priv->regs.dma_len);
 
@@ -1000,7 +1005,7 @@ int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigne
           sfp, dmalencheck, dmalen);
       return -EIO;
     }
-
+#endif
     dmatarget =  descriptor.dmatarget + poff[sfp] + paddington[sfp]+ tokenmemsize; // increment pipe data pointer to end of real payload
     datalensum += tokenmemsize + paddington[sfp];    // for ioremap also account possible padding space here
 
@@ -1011,7 +1016,17 @@ int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigne
   //pipepartbase = ioremap_nocache (descriptor.dmatarget, dmalensum);
   // < JAM this gives error on kernel 3.2.0-4:  ioremap error for 0xa641000-0xa643000, requested 0x10, got 0x0
   pipephys=descriptor.dmatarget;
+
+#ifdef PEX_USE_MREMAP
+  // JAM 27-06-24: try different mapping first
+   pipepartbase = memremap(pipephys, datalensum, MEMREMAP_WB);
+#else
   pipepartbase = ioremap_cache(pipephys, datalensum);
+#endif
+
+
+
+
   // JAM need to sync page cache with phys pipe afterwards?
   if (pipepartbase == NULL )
   {

@@ -13,6 +13,15 @@
 /** JAM 18-09-23: switch to version 5 of kinpex gosip engine */
 #define PEX_SFP_USE_KINPEX_V5 1
 
+
+/**JAM 27-06-24: do not check length register after DMA in parallel token request ioctl*/
+#define PEX_NO_PARALLAL_DMALENCHECK 1
+
+/**JAM 27-06-24: mremap instead of ioremap_cache when mapping pipe to write the padding words (parallel token request ioctl)*/
+#define PEX_USE_MREMAP 1
+
+
+
 /* SFP registers and commands: this definition was moved to pex_user.h*/
 /*#define PEX_SFP_NUMBER 4  number of used sfp connections */
 
