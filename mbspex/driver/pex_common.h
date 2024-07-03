@@ -59,7 +59,7 @@
 
 #define PEXAUTHORS     "Nikolaus Kurz, Joern Adamczewski-Musch, EEL, GSI, 2015-2024"
 #define PEXDESC        "MBSPEX driver for PCIe DAQ with Multi Branch System"
-#define PEXVERSION     "3.02"
+#define PEXVERSION     "3.03"
 
 
 //#define PEX_DEBUGPRINT 1
@@ -95,6 +95,16 @@
  * if undefined, we will sync only parts of sglist that have been touched*/
 #define PEX_SG_SYNCFULLPIPE 1
 
+/* if this is set, first mmap of mbs pipe will also do mapping of complete pipe
+ * to kernel space, for later use in token parallel ioctl (write padding words)*/
+#define PEX_PREMAP_PIPE_TO_KERNELSPACE 1
+
+/**JAM 27-06-24: mremap instead of ioremap_cache when mapping pipe to write the padding words (parallel token request ioctl)*/
+#define PEX_USE_MREMAP 1
+
+
+
+
 /** maximum number of devices controlled by this driver*/
 #define PEX_MAXDEVS 4
 
@@ -124,7 +134,7 @@
 #define PEX_DMA_MAXPOLLS 10000
 
 /** polling delay for each cycle in ns for dma complete bit*/
-#define PEX_DMA_POLLDELAY 20
+#define PEX_DMA_POLLDELAY 0
 // 0
 //20
 

@@ -18,6 +18,7 @@
 
 #ifdef WR_TIME_STAMP
  #define USE_TLU_FINE_TIME   1
+ #define WR_USE_TLU_DIRECT   1
 #endif
 
 //----------------------------------------------------------------------------
@@ -66,7 +67,10 @@
 // nr of slaves on SFP 0   1   2   3
 //                     |   |   |   |
 //#define NR_SLAVES    { 1,  0,  0,  0}
-#define NR_SLAVES    { 0,  1,  0,  0}
+#define NR_SLAVES    { 0,  1,  0,  0} // x86l-59
+
+//x86l-115 test:
+//#define NR_SLAVES    { 1,  1,  1,  1}
 
                               // maximum trace length 8000 (133 us)
                               // attention
@@ -74,8 +78,8 @@
   
 //#define FEB_TRACE_LEN  1024  // in nr of samples
 //#define FEB_TRIG_DELAY  300  // in nr.of samples
-#define FEB_TRACE_LEN   300  // in nr of samples
-#define FEB_TRIG_DELAY   30  // in nr.of samples
+#define FEB_TRACE_LEN   100  // in nr of samples
+#define FEB_TRIG_DELAY   50  // in nr.of samples
 
 #define CLK_SOURCE_ID     {0xff,0}  // sfp_port, module_id of the module to distribute clock
 //#define CLK_SOURCE_ID     {0x0,0}  // sfp_port, module_id of the module to distribute clock
@@ -302,10 +306,14 @@ static long l_sfp3_thresh[MAX_SLAVE][FEBEX_CH] = {
                                        // - otherwisse send data immediately
                                        //   after token arrived at febex/exploder  
 
-#define SEQUENTIAL_TOKEN_SEND 1        // - token sending and receiving is
+// JAM2024: changed for testing high speed DMA
+//#define SEQUENTIAL_TOKEN_SEND 1        // - token sending and receiving is
                                        //   sequential for all used SFPs
                                        // - otherwise token sending and receiving
                                        //   is done parallel for all used SFPs
+
+//#define ZERO_LENGTH_DATA 1        // Some firmware can have absolute zero length data and can skip dma data transfer time to time.
+                                  // We need extra reset for the events without dma transfer.
 #ifdef WR_TIME_STAMP
  #define SUB_SYSTEM_ID      0x100
  #define TS__ID_L16         0x3e1
@@ -326,15 +334,16 @@ static long l_sfp3_thresh[MAX_SLAVE][FEBEX_CH] = {
 //----------------------------------------------------------------------------
 
 #ifdef SEQUENTIAL_TOKEN_SEND
- #define DIRECT_DMA    1 
+ #define DIRECT_DMA    1
  #ifdef DIRECT_DMA 
   #define BURST_SIZE 128
  #endif
 #endif
 
+// JAM 6-2024 disabled again for speed test
 #if defined (USE_MBSPEX_LIB) && ! defined (SEQUENTIAL_TOKEN_SEND)
  #define USE_DRIVER_PARALLEL_TOKENREAD 1
-#endif 
+#endif
 
 #define PEXOR_PC_DRAM_DMA 1
 
@@ -381,6 +390,8 @@ int  f_pex_send_tok (long, long);
 int  f_pex_receive_tok (long, long*, long*, long*);
 #endif // USE_MBSPEX_LIB 
 void f_feb_init ();
+void sched_yield (); // to avoid warning message at coompile.... added by s.minami
+void f_pex_dma_reset ();
 
 #ifdef WR_TIME_STAMP
  void f_wr_init ();
@@ -443,6 +454,7 @@ static  INTU4 *pl_dat_save, *pl_tmp;
 static  INTU4 volatile *pl_pex_sfp_mem_base[MAX_SFP];
 static  INTU4 volatile *pl_dma_source_base;
 static  INTU4 volatile *pl_dma_target_base;
+static  INTU4 volatile *pl_dma_target_high; // upper 32-bit of 64-bit target address
 static  INTU4 volatile *pl_dma_trans_size;
 static  INTU4 volatile *pl_dma_burst_size;
 static  INTU4 volatile *pl_dma_stat;
@@ -480,6 +492,26 @@ static long l_ena_trig[MAX_SFP][MAX_SLAVE];
 static long l_thresh  [MAX_SFP][MAX_SLAVE][FEBEX_CH]; 
 
 #ifdef WR_TIME_STAMP
+ static FILE* dactl_handle =0;
+ static int tlu_address = 0x4000100; // TLU base register to map into vme address space
+ //static int tlu_direct_off = 0xFFFFFFFF; // -1, but better send decimal expression as string directly
+ #ifdef WR_USE_TLU_DIRECT
+  static   INTS4    fd_tlu;
+  static INTU4  volatile * p_TLU;
+
+  static INTS4* ch_select;
+  static INTS4* ch_fifosize;
+  static INTS4* fifoclear;
+  static INTS4* armset;
+
+  static INTS4* fifo_ready;
+  static INTS4* fifo_cnt;
+  static INTS4* ft_shi;
+  static INTS4* ft_slo;
+  static INTS4* ft_ssub;
+  static INTS4* fifo_pop;
+ #endif //WR_USE_TLU_DIRECT
+
  static  long              l_eb_first1=0, l_eb_first2=0;  
  static  long              l_used_tlu_fifo = 1 << WR_TLU_FIFO_NR;    
  static  eb_status_t       eb_stat;
@@ -536,6 +568,12 @@ static long l_thresh  [MAX_SFP][MAX_SLAVE][FEBEX_CH];
  static long l_pola    [MAX_SFP];
 #endif
 
+#define NOPCIEBUSERROREXIT 1
+
+#ifdef  NOPCIEBUSERROREXIT
+ static long pcibuserrcount =0;
+#endif
+
 /*****************************************************************************/
 
 int f_user_get_virt_ptr (long  *pl_loc_hwacc, long  pl_rem_cam[])
@@ -548,6 +586,77 @@ int f_user_get_virt_ptr (long  *pl_loc_hwacc, long  pl_rem_cam[])
   if (l_eb_first1 == 0)
   {
     l_eb_first1 = 1;
+
+    #ifdef WR_USE_TLU_DIRECT
+    printm ("f_user_get_virt_ptr switches PEXARIA to DIRECT ACCESS TLU mode... \n");
+
+    dactl_handle= fopen ("/sys/class/pcie_wb/pcie_wb0/dactl", "a");
+    if(dactl_handle==NULL)
+    {
+      printm ("!!! Could not open dactl control sysfs handle!!! \n");
+      exit(-1); // probably wrong driver?
+    }
+    else
+    {
+      fprintf(dactl_handle,"%d",tlu_address);
+      fclose(dactl_handle);
+      //sleep(1);
+    }
+    printm ("f_user_get_virt_ptr for DIRECT TLU \n");
+
+    if ((fd_tlu = open (PEXARIA_DEVICE_NAME, O_RDWR)) == -1)
+    {
+      printm (RON"ERROR>>"RES" could not open %s device \n", PEXARIA_DEVICE_NAME);
+      exit (0);
+    }
+    else
+    {
+      printm ("opened device: %s, fd = %d \n", PEXARIA_DEVICE_NAME, fd_tlu);
+    }
+
+    // map bar1 directly via pcie_wb driver and access TLU registers:
+    prot  = PROT_WRITE | PROT_READ;
+    flags = MAP_SHARED | MAP_LOCKED;
+    if ((p_TLU = (INTU4*) mmap (NULL, 0x100, prot, flags, fd_tlu, 0)) == MAP_FAILED)
+    {
+      printm (RON"failed to mmap bar1 from pexaria"RES", return: 0x%x, %d \n", p_TLU, p_TLU);
+      perror ("mmap");
+      exit (-1);
+    }
+
+    // used in init function
+    ch_select           = (INTS4*) ((char*)(p_TLU)      + GSI_TM_LATCH_CH_SELECT);
+    ch_fifosize         = (INTS4*) ((char*)(p_TLU)      + GSI_TM_LATCH_CHNS_FIFOSIZE);
+    fifoclear           = (INTS4*) ((char*)(p_TLU)      + GSI_TM_LATCH_FIFO_CLEAR);
+    armset              = (INTS4*) ((char*)(p_TLU)      + GSI_TM_LATCH_TRIG_ARMSET);
+
+    // set here pointers to mapped registers used in readout function:
+    fifo_ready          = (INTS4*) ((char*)(p_TLU)      + GSI_TM_LATCH_FIFO_READY);
+    fifo_cnt            = (INTS4*) ((char*)(p_TLU)      + GSI_TM_LATCH_FIFO_CNT);
+    ft_shi              = (INTS4*) ((char*)(p_TLU)      + GSI_TM_LATCH_FIFO_FTSHI);
+    ft_slo              = (INTS4*) ((char*)(p_TLU)      + GSI_TM_LATCH_FIFO_FTSLO);
+    ft_ssub		= (INTS4*) ((char*)(p_TLU)      + GSI_TM_LATCH_FIFO_FTSSUB);
+    fifo_pop		= (INTS4*) ((char*)(p_TLU)      + GSI_TM_LATCH_FIFO_POP);
+
+    #else  // WR_USE_TLU_DIRECT
+
+    ////////// JAM comment the following block out to check for old pcie_wb.ko driver
+    printm ("f_user_get_virt_ptr  switches PEXARIA to etherbone access mode... \n");
+    dactl_handle= fopen ("/sys/class/pcie_wb/pcie_wb0/dactl", "a");
+    if(dactl_handle==NULL)
+    {
+      printm ("!!! Could not open dactl control sysfs handle!!! \n");
+      exit(-1); // probably wrong driver?
+    }
+    else
+    {
+      //fprintf(dactl_handle,"%d",tlu_direct_off);
+      fprintf(dactl_handle,"4294967295"); // -1 or hex 0xffffffff
+      fclose(dactl_handle);
+      //sleep(1);
+    }
+    ///////////////////////
+
     if ((eb_stat = eb_socket_open(EB_ABI_CODE, 0, EB_ADDR32|EB_DATA32, &eb_socket)) != EB_OK)
     {
       printm (RON"ERROR>>"RES" etherbone eb_open_socket, status: %s \n", eb_status(eb_stat));
@@ -578,7 +687,9 @@ int f_user_get_virt_ptr (long  *pl_loc_hwacc, long  pl_rem_cam[])
     /* Record the address of the device */
     wrTLU     = sdbDevice.sdb_component.addr_first;
     //wrTLUFIFO = wrTLU + GSI_TM_LATCH_FIFO_OFFSET + WR_TLU_FIFO_NR * GSI_TM_LATCH_FIFO_INCR;
-  }
+    #endif // TLU direct
+
+  } // ebfirst
   #endif // WR_TIME_STAMP
 
   #ifdef USE_MBSPEX_LIB
@@ -676,6 +787,7 @@ int f_user_get_virt_ptr (long  *pl_loc_hwacc, long  pl_rem_cam[])
 
         pl_dma_source_base = (INTU4 volatile*)((long)pl_virt_bar0 + (long)PEX_REG_OFF + (long) 0x0 );
         pl_dma_target_base = (INTU4 volatile*)((long)pl_virt_bar0 + (long)PEX_REG_OFF + (long) 0x4 );
+        pl_dma_target_high = (INTU4 volatile*)((long)pl_virt_bar0 + (long)PEX_REG_OFF + (long) 0x1c);
         pl_dma_trans_size  = (INTU4 volatile*)((long)pl_virt_bar0 + (long)PEX_REG_OFF + (long) 0x8 );
         pl_dma_burst_size  = (INTU4 volatile*)((long)pl_virt_bar0 + (long)PEX_REG_OFF + (long) 0xc );
         pl_dma_stat        = (INTU4 volatile*)((long)pl_virt_bar0 + (long)PEX_REG_OFF + (long) 0x10);
@@ -848,9 +960,20 @@ int f_user_readout (unsigned char   bh_trig_typ,
   #ifdef WR_TIME_STAMP  
   if (bh_trig_typ < 14)
   {
-    *pl_dat++ = SUB_SYSTEM_ID;  *l_se_read_len =+ 4;
+    *pl_dat++ = SUB_SYSTEM_ID;  //*l_se_read_len =+ 4;
 
+    #ifdef WR_USE_TLU_DIRECT
+    eb_stat_before= *fifo_ready;
+    eb_fifo_ct_brd= *fifo_cnt;
+    *fifo_pop=0xF;
+    SERIALIZE_IO;
+    eb_tlu_high_ts = (*ft_shi)  & 0xFFFFFFFF;
+    eb_tlu_low_ts  = (*ft_slo)  & 0xFFFFFFFF;
+    eb_tlu_fine_ts = (*ft_ssub) & 0xFFFFFFFF;
+    eb_stat_after  =  *fifo_ready
+     #else // WR_USE_TLU_DIRECT
     if ((eb_stat = eb_cycle_open(eb_device, 0, eb_block, &eb_cycle)) != EB_OK)
+
     {
       printm (RON"ERROR>>"RES" etherbone EP eb_cycle_open, status: %s \n", eb_status(eb_stat));
       //l_err_wr_ct++;
@@ -884,6 +1007,7 @@ int f_user_readout (unsigned char   bh_trig_typ,
       //l_err_wr_ct++;
       //l_check_wr_err = 2; goto bad_event; 
     }
+    #endif // WR_USE_TLU_DIRECT
 
     if ((eb_stat_before & l_used_tlu_fifo) != l_used_tlu_fifo)
     {
@@ -1086,18 +1210,20 @@ int f_user_readout (unsigned char   bh_trig_typ,
             l_dma_target_base = (long) pl_dat + l_diff_pipe_phys_virt;
           }
 
-          #ifndef USE_MBSPEX_LIB
-          // select SFP for PCI Express DMA
-          *pl_dma_stat = 1 << (l_i+1);
-          #endif // USE_MBSPEX_LIB
+//      #ifndef USE_MBSPEX_LIB
+//      // select SFP for PCI Express DMA
+//      *pl_dma_stat = 1 << (l_i+1);
+//      #endif // USE_MBSPEX_LIB
 
-          #endif //DIRECT_DMA
+      #endif //DIRECT_DMA
+
 
           #ifdef USE_MBSPEX_LIB
           l_stat = mbspex_send_and_receive_tok (fd_pex, l_i, l_tog | l_tok_mode,
                   (long) l_dma_target_base, (long unsigned*) &l_dma_trans_size, 
                   &l_dummy, &l_tok_check, &l_n_slaves);
 	  
+          #ifdef ZERO_LENGTH_DATA
 	  // try to check if we have zero suppression.
 	  if(l_dma_trans_size<=16) // minimum kernel module automatic burst size?
 	    {
@@ -1107,9 +1233,12 @@ int f_user_readout (unsigned char   bh_trig_typ,
 	    
 	     mbspex_register_wr(fd_pex,0, (long)PEX_REG_OFF + (long) 0x10, 0); // reset dma for zero suppression mode
 	     mbspex_register_wr(fd_pex,0,(long)PEX_REG_OFF + (long) 0x8,0); // reset previous dma length, for zero supression
-	     
-          #else
-          *pl_dma_target_base = l_dma_target_base;
+	      #endif //ZERO_LENGTH_DATA
+          #else // USE_MBSPEX_LIB
+          // select SFP for PCI Express DMA
+          *pl_dma_stat = 1 << (l_i+1);
+          *pl_dma_target_base = l_dma_target_base & 0xffffffff;
+          *pl_dma_target_high = l_dma_target_base >> 32;
           l_stat = f_pex_send_and_receive_tok (l_i, l_tog | l_tok_mode, &l_dummy, &l_tok_check, &l_n_slaves);
           #endif // USE_MBSPEX_LIB
 
@@ -1136,10 +1265,15 @@ int f_user_readout (unsigned char   bh_trig_typ,
             //printm ("exiting..\n"); exit (0);
           }
 
+          #ifdef USE_KINPEX_V5
+          if (l_n_slaves != (l_sfp_slaves[l_i] & 0xf)) // v5, the value is truncated to 4 bits.
+          #else
           if (l_n_slaves != l_sfp_slaves[l_i])
+          #endif
           {
             printm (RON"ERROR>>"RES" nr. of slaves specified: %d differ from token return: %d \n",
-                                                        l_sfp_slaves[l_i], l_n_slaves);
+                                        
+                        l_sfp_slaves[l_i], l_n_slaves);
             l_err_prot_ct++;
             l_check_err = 2; goto bad_event; 
             //printm ("exiting..\n"); exit (0);   
@@ -1185,11 +1319,11 @@ int f_user_readout (unsigned char   bh_trig_typ,
           }
           l_dma_trans_size = *pl_dma_trans_size; // in this case true, not BURST_SIZE aligned size
           
-
+#ifdef ZERO_LENGTH_DATA
           *pl_dma_stat = 0;// shizu debugging.... de-activate dma 
 	  *pl_dma_trans_size=0; // shizu debugging.... set data size 0
 
-	  
+#endif
           #endif // not USE_MBSPEX_LIB
 
           //if(l_dma_trans_size % 8 != 0) {printm ("dma data size  0x%x\n", l_dma_trans_size);}
@@ -1274,10 +1408,15 @@ int f_user_readout (unsigned char   bh_trig_typ,
             //printm ("exiting..\n"); exit (0);
           }
 
+          #ifdef USE_KINPEX_V5
+          if (l_n_slaves != (l_sfp_slaves[l_i] & 0xf))
+          #else
           if (l_n_slaves != l_sfp_slaves[l_i])
+          #endif
           {
-            printm (RON"ERROR>>"RES" nr. of slaves specified: %d differ from token return: %d \n",
+            printm (RON"ERROR>>"RES" nr. of slaves specified: %d differ from token return:%d \n",
                                                         l_sfp_slaves[l_i], l_n_slaves);
+
             l_err_prot_ct++;
             l_check_err = 2; goto bad_event; 
             //printm ("exiting..\n"); exit (0);   
@@ -1297,7 +1436,9 @@ int f_user_readout (unsigned char   bh_trig_typ,
           l_dat_len_sum[l_i] = mbspex_get_tok_memsize(fd_pex, l_i); // in bytes
           #else
           l_dat_len_sum[l_i] = PEXOR_TK_Mem_Size (&sPEXOR, l_i);    // in bytes
+           #ifdef ZERO_LENGTH_DATA
 	    	PEXOR_RX_Clear_Ch (&sPEXOR, l_i);  // shizu
+	    	#endif //ZERO_LENGTH_DATA
 	      #endif // USE_MBSPEX_LIB
 	    if(l_dat_len_sum[l_i] > 0x0)// zero suppression by shizu
           l_dat_len_sum[l_i] += 4; // wg. shizu !!??
@@ -1340,10 +1481,16 @@ int f_user_readout (unsigned char   bh_trig_typ,
 
           #ifdef USE_MBSPEX_LIB
            if(l_dma_trans_size > 0x0) // JAM zero suppression by shizu
-          mbspex_dma_rd (fd_pex, l_pex_sfp_phys_mem_base[l_i], l_dma_target_base,
+           {
+             mbspex_dma_rd (fd_pex, l_pex_sfp_phys_mem_base[l_i], l_dma_target_base,
                                                                          l_dma_trans_size,l_burst_size);
-          // note: return value is true dma transfer size, we do not use this here
 
+             // JAMDEBUG 24
+//             printm("mbspex_dma_rd: sfp %d, source:0x%lx, target:0x%lx, size:0x%lx, burst:0x%x", l_i, l_pex_sfp_phys_mem_base[l_i], l_dma_target_base, l_dma_trans_size, l_burst_size);
+//             sleep(1);
+             // end  JAMDEBUG
+             // note: return value is true dma transfer size, we do not use this here
+           }
           #else // USE_MBSPEX_LIB 
 
           // source address is (must be) adjusted to burst size ! 
@@ -1361,10 +1508,17 @@ int f_user_readout (unsigned char   bh_trig_typ,
             l_dat = *pl_dma_stat;
             if (l_dat == 0xffffffff)
             {
+#ifdef NOPCIEBUSERROREXIT
+              printm (RON"ERROR>>"RES" PCIe bus error reading dma status, continue (%d times).. \n", pcibuserrcount++);
+              if(pcibuserrcount > 100000) exit(0);
+#else
               printm (RON"ERROR>>"RES" PCIe bus errror, exiting.. \n");
               exit (0);
+#endif
+
             }
-            else if (l_dat == 0)
+            //else if (l_dat == 0)   
+            else if ((l_dat&0x1) == 0)
             {
               break; // dma shall be finished 
             }
@@ -2382,11 +2536,41 @@ int f_pex_receive_tok (long l_sfp, long *pl_check1, long *pl_check2, long *pl_ch
 
 /*****************************************************************************/
 
+void f_pex_dma_reset ()
+{
+#ifndef USE_MBSPEX_LIB
+#ifdef USE_KINPEX_V5
+  *pl_dma_stat = 0x20; // reset dma/activates dma start by writing source base
+#else // USE_KINPEX_V5
+  *pl_dma_stat = 0x0; // reset dma
+#endif // USE_KINPEX_V5
+#else //USE_MBSPEX_LIB
+  mbspex_register_wr(fd_pex,0, (long)PEX_REG_OFF + (long) 0x10, 0); // reset dma for zero suppression mode
+#endif //USE_MBSPEX_LIB
+
+}
+
+/*****************************************************************************/
+
 #ifdef WR_TIME_STAMP
 void f_wr_init ()  
 {
-  // select FIFO channel
-  if ((eb_stat = eb_device_write (eb_device, wrTLU + GSI_TM_LATCH_CH_SELECT, EB_BIG_ENDIAN|EB_DATA32, WR_TLU_FIFO_NR, 0, eb_block)) != EB_OK)
+#ifdef WR_USE_TLU_DIRECT
+
+  //sleep(1);
+  *ch_select = WR_TLU_FIFO_NR;
+  printm ("directly selected White Rabbit TLU FIFO channel number: %3d \n", *ch_select);
+  //sleep(1);
+  eb_fifo_size = *ch_fifosize;
+  printm ("size of  White Rabbit TLU FIFO:                %3d \n", eb_fifo_size);
+  printm ("");
+  *fifoclear =0xFFFFFFFF;
+
+  *armset =0xFFFFFFFF;
+
+#else // WR_USE_TLU_DIRECT
+
+eb_stat = eb_device_write (eb_device, wrTLU + GSI_TM_LATCH_CH_SELECT, EB_BIG_ENDIAN|EB_DATA32, WR_TLU_FIFO_NR, 0, eb_block)) != EB_OK)
   {
     printm (RON"ERROR>>"RES" when selecting TLU FIFO channel \n");
   }
@@ -2429,6 +2613,7 @@ void f_wr_init ()
     printm (RON"ERROR>>"RES" etherbone TLU eb_device_write (ARM LATCHING), status: %s \n", eb_status(eb_stat));
   }
 }
+#endif
 #endif // WR_TIME_STAMP
 
 /*****************************************************************************/
@@ -2436,13 +2621,18 @@ void f_wr_init ()
 #ifdef WR_TIME_STAMP
 void f_wr_reset_tlu_fifo ()  
 {
-  /* clear all FIFOs */
-  if ((eb_stat = eb_device_write(eb_device, wrTLU + GSI_TM_LATCH_FIFO_CLEAR,
+  /* clear all FIFOs */ 
+  #ifdef WR_USE_TLU_DIRECT 
+  *fifoclear =0xFFFFFFFF;
+  #else
+ if ((eb_stat = eb_device_write (eb_device, wrTLU + GSI_TM_LATCH_FIFO_CLEAR,
                                           EB_BIG_ENDIAN|EB_DATA32, 0xFFFFFFFF, 0, eb_block)) != EB_OK)
   {
     printm (RON"ERROR>>"RES" etherbone TLU eb_device_write (CLEAR TLU FIFOS), status: %s \n", eb_status(eb_stat));
   }
 }
+#endif
 #endif // WR_TIME_STAMP
 
-/*****************************************************************************/
+/*****************************************************************  #endif
+************/

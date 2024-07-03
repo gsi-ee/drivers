@@ -148,15 +148,21 @@ struct regs_pex
     unsigned char init_done; /**< object is ready flag*/
 };
 
-/* this contains scatter gather information of virtual mbs pipe*/
+/* this contains scatter gather information of virtual mbs pipe
+ * Also used when pipe is premapped into kernel space for internal parallel mode JAM7-24*/
 struct mbs_pipe
 {
   unsigned long virt_start;         /**< virtual start address*/
+#ifdef PEX_PREMAP_PIPE_TO_KERNELSPACE
+  u32* kern_start;                  /**< kernel mapped pipe base address */
+  unsigned long phys_start;         /**< physical pipe base address */
+#endif
   unsigned long size;               /**< total size of pipe */
   struct scatterlist* sg;           /**<  sg list of pipe memory*/
   unsigned int sg_ents;             /**< actual entries in the scatter/gatter list (NOT nents for the map function, but the result) */
   struct page **pages;              /**< list of pointers to the pages */
   int num_pages;                    /**< number of pages for this user memory area*/
+
 };
 
 

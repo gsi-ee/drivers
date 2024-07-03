@@ -587,6 +587,8 @@ int pex_mmap (struct file *filp, struct vm_area_struct *vma)
     pex_dbg(
         KERN_NOTICE "Pexor is Mapping external address %lx / PFN %lx\n", (vma->vm_pgoff << PAGE_SHIFT ), vma->vm_pgoff);
 
+
+
     /* JAM tried to check via bios map if the requested region is usable or reserved
      * This will not work, since the e820map as present in Linux kernel was already cut above mem=1024M
      * So we would need to rescan the original bios entries, probably too much effort if standard MBS hardware is known
@@ -607,7 +609,32 @@ int pex_mmap (struct file *filp, struct vm_area_struct *vma)
 #endif
     ret = remap_pfn_range (vma, vma->vm_start, vma->vm_pgoff, bufsize, vma->vm_page_prot);
 
-  }
+#ifdef PEX_PREMAP_PIPE_TO_KERNELSPACE
+ if((privdata->pipe).kern_start==NULL)
+    {
+       // only first mmap call will be used to get internal kernel mapping
+      (privdata->pipe).phys_start=(vma->vm_pgoff << PAGE_SHIFT );
+      (privdata->pipe).size=bufsize;
+#ifdef PEX_USE_MREMAP
+      (privdata->pipe).kern_start = memremap((privdata->pipe).phys_start, (privdata->pipe).size, MEMREMAP_WB);
+#else
+      (privdata->pipe).kern_start = ioremap_cache((privdata->pipe).phys_start, (privdata->pipe).size);
+#endif
+
+    if ((privdata->pipe).kern_start == NULL )
+     {
+       pex_msg(KERN_ERR "**  pex_mmap: Could not remap %ld bytes of pipe memory at 0x%lx to kernel space ", (privdata->pipe).size, (privdata->pipe).phys_start);
+       return -EFAULT;
+     }
+    pex_dbg(KERN_NOTICE "**  pex_mmap: remapped %ld bytes of pipe memory at 0x%lx, to kernel address:%p  ",
+        (privdata->pipe).size, (privdata->pipe).phys_start, (privdata->pipe).kern_start);
+
+    } // if((privdata->pipe).kern_start==NULL)
+#endif
+
+
+
+  } //  if (vma->vm_pgoff == 0)
 
   if (ret)
   {
@@ -615,6 +642,8 @@ int pex_mmap (struct file *filp, struct vm_area_struct *vma)
         KERN_ERR "Pexor mmap: remap_pfn_range failed with %d\n", ret);
     return -EFAULT;
   }
+
+
   return ret;
 }
 
@@ -1278,6 +1307,14 @@ int pex_ioctl_unmap_pipe (struct pex_privdata *priv, unsigned long arg)
 {
   int i = 0;
   if((priv->pipe).size==0) return 1;
+  // JAM 2024: also remove mapping to kernel space if any when called from remove
+  #ifdef PEX_PREMAP_PIPE_TO_KERNELSPACE
+     if((priv->pipe).kern_start)
+     {
+       iounmap ((priv->pipe).kern_start);
+     }
+  #endif
+  if((priv->pipe).sg==0) return 1;
    pex_dbg(KERN_NOTICE "**mbspex unmapping sg pipe, size=%ld, user start address=%lx \n", (priv->pipe).size, (priv->pipe).virt_start);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
    dma_unmap_sg (&(priv->pdev->dev), (priv->pipe).sg, (priv->pipe).num_pages, DMA_FROM_DEVICE);
@@ -1306,6 +1343,9 @@ int pex_ioctl_unmap_pipe (struct pex_privdata *priv, unsigned long arg)
    }
    vfree ((priv->pipe).pages);
    vfree ((priv->pipe).sg);
+
+
+
    (priv->pipe).size=0;
   return 0;
 }

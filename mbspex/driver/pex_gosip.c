@@ -871,7 +871,9 @@ int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigne
 #endif
   u32* pipepartbase = 0;
   u32* pdat = 0;
-
+#ifdef PEX_PREMAP_PIPE_TO_KERNELSPACE
+  unsigned long pipeoffset=0;
+#endif
   retval = pex_copy_from_user (&descriptor, (void __user *) arg, sizeof(struct pex_token_io));
   if (retval)
     return retval;
@@ -1015,17 +1017,23 @@ int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigne
 
   //pipepartbase = ioremap_nocache (descriptor.dmatarget, dmalensum);
   // < JAM this gives error on kernel 3.2.0-4:  ioremap error for 0xa641000-0xa643000, requested 0x10, got 0x0
+
   pipephys=descriptor.dmatarget;
+#ifdef PEX_PREMAP_PIPE_TO_KERNELSPACE
+  //  JAM 01-07-2024 here just get offset from premapped pipe window
+  pipeoffset =  pipephys - (priv->pipe).phys_start;
+  pipepartbase = (priv->pipe).kern_start +  pipeoffset /sizeof(u32);
+#else
+
+
 
 #ifdef PEX_USE_MREMAP
   // JAM 27-06-24: try different mapping first
    pipepartbase = memremap(pipephys, datalensum, MEMREMAP_WB);
 #else
   pipepartbase = ioremap_cache(pipephys, datalensum);
+
 #endif
-
-
-
 
   // JAM need to sync page cache with phys pipe afterwards?
   if (pipepartbase == NULL )
@@ -1035,6 +1043,9 @@ int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigne
   }
   pex_dbg(KERN_NOTICE "** pex_ioctl_request_receive_token_parallel: remapped %d bytes of pipe memory at 0x%lx, kernel address:%p  ",
       datalensum, descriptor.dmatarget, pipepartbase);
+
+
+#endif //PEX_PREMAP_PIPE_TO_KERNELSPACE
 
   pdat = pipepartbase;
   for (sfp = 0; sfp < PEX_SFP_NUMBER; ++sfp)
@@ -1058,7 +1069,9 @@ int pex_ioctl_request_receive_token_parallel (struct pex_privdata *priv, unsigne
     }
   }      // for sfp end padding loop
 
+#ifndef PEX_PREMAP_PIPE_TO_KERNELSPACE
   iounmap (pipepartbase); // seems to be that any cache is sync'ed to phys memory after this...
+#endif
   // now return new position of data pointer in pipe:
   descriptor.dmasize = datalensum; /* contains sum of token data length and sum of padding fields => new pdat offset */
 
